@@ -229,13 +229,14 @@ BEGIN
 			,	CreatedBy					INT UNSIGNED
 			,	IsMarkedDirectly			BIT(1) DEFAULT 0
 			,	IsReturnData				BIT(1) DEFAULT 1
+			,	Remark						VARCHAR(500)
 			, 	PRIMARY KEY (CustID, DWCategoryID)
 		); 
 		
 		IF ip_InputFlowID IN (50) THEN /*PA - ip_InputType = 'Category'*/
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
-			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
+			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, MatchID, TVSRequestID, IsTVSParlay, SportType
 			, 	TVSIssueTypeID, CategoryPriority, CustomerClassPriority, ParentID, IsReturnData, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
@@ -259,7 +260,6 @@ BEGIN
 				,	tmpJs.IsFromTW
 				,	tmpJs.IsFromCTS
 				,	tmpJs.IsFromAI
-				,	tmpJs.IsDataChanged
 				,	sp.CustomerClass AS SpecialCC
 				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
 				,	cat.RelevantCategoryID
@@ -307,41 +307,41 @@ BEGIN
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID
-			ON DUPLICATE KEY UPDATE TurnoverRM = IFNULL(Temp_PA.TurnoverRM, tmpJs.TurnoverRM)  
-								,	WinlossRM = IFNULL(Temp_PA.WinlossRM, tmpJs.WinlossRM)  
-								,	BetCount = IFNULL(Temp_PA.BetCount, tmpJs.BetCount)  
-								,	ActiveDays = IFNULL(Temp_PA.ActiveDays, tmpJs.ActiveDays)
-								,	IsFromTW = CASE WHEN tmpJs.IsFromTW = 1 THEN 1 ELSE Temp_PA.IsFromTW END
-								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_PA.IsFromCTS END
-								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_PA.IsFromAI END
-								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_PA.IsFromTVS END
-								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_PA.IsMarkedDirectly END
-								,	IsTVSParlay = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+			ON DUPLICATE KEY UPDATE TurnoverRM = IFNULL(Temp_NewClassification.TurnoverRM, tmpJs.TurnoverRM)  
+								,	WinlossRM = IFNULL(Temp_NewClassification.WinlossRM, tmpJs.WinlossRM)  
+								,	BetCount = IFNULL(Temp_NewClassification.BetCount, tmpJs.BetCount)  
+								,	ActiveDays = IFNULL(Temp_NewClassification.ActiveDays, tmpJs.ActiveDays)
+								,	IsFromTW = CASE WHEN tmpJs.IsFromTW = 1 THEN 1 ELSE Temp_NewClassification.IsFromTW END
+								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_NewClassification.IsFromCTS END
+								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_NewClassification.IsFromAI END
+								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_NewClassification.IsFromTVS END
+								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_NewClassification.IsMarkedDirectly END
+								,	IsTVSParlay = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.IsTVSParlay 
-														ELSE Temp_PA.IsTVSParlay END
-								,	SportType = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+														ELSE Temp_NewClassification.IsTVSParlay END
+								,	SportType = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.SportType 
-														ELSE Temp_PA.SportType END
-								,	CreatedBy = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+														ELSE Temp_NewClassification.SportType END
+								,	CreatedBy = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.CreatedBy 
-														ELSE Temp_PA.CreatedBy END
-								,	TVSIssueTypeID = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+														ELSE Temp_NewClassification.CreatedBy END
+								,	TVSIssueTypeID = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.TVSIssueTypeID 
-														ELSE Temp_PA.TVSIssueTypeID END
-								,	TVSRequestID = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+														ELSE Temp_NewClassification.TVSIssueTypeID END
+								,	TVSRequestID = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.TVSRequestID 
-														ELSE Temp_PA.TVSRequestID END
+														ELSE Temp_NewClassification.TVSRequestID END
 								;
 
 		ELSEIF ip_InputFlowID = 51 THEN /*PA - ip_InputType = 'Reason'*/
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, IsMarkedDirectly
-			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsDataChanged, SpecialCC, IsPAProbation
+			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, SpecialCC, IsPAProbation
 			, 	RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority, CustomerClassPriority
 			, 	ParentID, IsReturnData, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
@@ -361,7 +361,6 @@ BEGIN
 				, 	tmpJs.BetCount 
 				, 	tmpJs.ActiveDays
 				,	tmpJs.IsFromTVS
-				,	tmpJs.IsDataChanged
 				,	sp.CustomerClass AS SpecialCC
 				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/		
 				,	cat.RelevantCategoryID
@@ -401,35 +400,35 @@ BEGIN
 				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.TVSReasonID = tmpJs.TVSReasonID
-			ON DUPLICATE KEY UPDATE TurnoverRM = IFNULL(Temp_PA.TurnoverRM, tmpJs.TurnoverRM)  
-								,	WinlossRM = IFNULL(Temp_PA.WinlossRM, tmpJs.WinlossRM)  
-								,	BetCount = IFNULL(Temp_PA.BetCount, tmpJs.BetCount)  
-								,	ActiveDays = IFNULL(Temp_PA.ActiveDays, tmpJs.ActiveDays)
-								,	IsFromTW = CASE WHEN tmpJs.IsFromTW = 1 THEN 1 ELSE Temp_PA.IsFromTW END
-								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_PA.IsFromCTS END
-								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_PA.IsFromAI END
-								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_PA.IsFromTVS END
-								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_PA.IsMarkedDirectly END
-								,	IsTVSParlay = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+			ON DUPLICATE KEY UPDATE TurnoverRM = IFNULL(Temp_NewClassification.TurnoverRM, tmpJs.TurnoverRM)  
+								,	WinlossRM = IFNULL(Temp_NewClassification.WinlossRM, tmpJs.WinlossRM)  
+								,	BetCount = IFNULL(Temp_NewClassification.BetCount, tmpJs.BetCount)  
+								,	ActiveDays = IFNULL(Temp_NewClassification.ActiveDays, tmpJs.ActiveDays)
+								,	IsFromTW = CASE WHEN tmpJs.IsFromTW = 1 THEN 1 ELSE Temp_NewClassification.IsFromTW END
+								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_NewClassification.IsFromCTS END
+								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_NewClassification.IsFromAI END
+								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_NewClassification.IsFromTVS END
+								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_NewClassification.IsMarkedDirectly END
+								,	IsTVSParlay = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.IsTVSParlay 
-														ELSE Temp_PA.IsTVSParlay END
-								,	SportType = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+														ELSE Temp_NewClassification.IsTVSParlay END
+								,	SportType = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.SportType 
-														ELSE Temp_PA.SportType END
-								,	CreatedBy = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+														ELSE Temp_NewClassification.SportType END
+								,	CreatedBy = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.CreatedBy 
-														ELSE Temp_PA.CreatedBy END
-								,	TVSIssueTypeID = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+														ELSE Temp_NewClassification.CreatedBy END
+								,	TVSIssueTypeID = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.TVSIssueTypeID 
-														ELSE Temp_PA.TVSIssueTypeID END
-								,	TVSRequestID = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+														ELSE Temp_NewClassification.TVSIssueTypeID END
+								,	TVSRequestID = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.TVSRequestID 
-														ELSE Temp_PA.TVSRequestID END
+														ELSE Temp_NewClassification.TVSRequestID END
 								;
 								
 			/*INSERT INTO TABLE TVS_LOG*/
@@ -437,7 +436,7 @@ BEGIN
 		ELSEIF ip_InputFlowID IN (6) THEN /*ip_InputType = PotentialPA*/
 			INSERT IGNORE INTO Temp_NewClassification(
 				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
-			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
+			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW, IsFromCTS, IsFromAI
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, CategoryPriority, CustomerClassPriority
 			, 	ParentID, IsReturnData, IsDataChanged, PerformanceTime, SportType, SourceCreatedDate, GBTicketCount)
 			SELECT 	tmpJs.CustID
@@ -460,7 +459,6 @@ BEGIN
 				,	tmpJs.IsFromTW
 				,	tmpJs.IsFromCTS
 				,	tmpJs.IsFromAI
-				,	tmpJs.IsDataChanged
 				,	sp.CustomerClass AS SpecialCC
 				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
 				,	cat.RelevantCategoryID
@@ -504,7 +502,7 @@ BEGIN
 		ELSEIF ip_InputFlowID = 7 THEN /*Robot*/
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, DWCategoryID, DWCategoryGroupID, IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
-			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsDataChanged
+			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority
 			, 	CustomerClassPriority, ParentID, TWRobotCounter, IsFromImperva, IsReturnData, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
@@ -528,7 +526,6 @@ BEGIN
 				,	tmpJs.IsFromTW
 				,	tmpJs.IsFromCTS
 				,	tmpJs.IsFromAI
-				,	tmpJs.IsDataChanged
 				,	sp.CustomerClass AS SpecialCC
 				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
 				,	cat.RelevantCategoryID
@@ -575,37 +572,37 @@ BEGIN
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
-			ON DUPLICATE KEY UPDATE TWRobotCounter = IFNULL(Temp_PA.TWRobotCounter, tmpJs.TWRobotCounter)
-								,	TurnoverRM = IFNULL(Temp_PA.TurnoverRM, tmpJs.TurnoverRM)  
-								,	WinlossRM = IFNULL(Temp_PA.WinlossRM, tmpJs.WinlossRM)  
-								,	BetCount = IFNULL(Temp_PA.BetCount, tmpJs.BetCount)  
-								,	ActiveDays = IFNULL(Temp_PA.ActiveDays, tmpJs.ActiveDays)
-								,	IsFromTW = CASE WHEN tmpJs.IsFromTW = 1 THEN 1 ELSE Temp_PA.IsFromTW END
-								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_PA.IsFromCTS END
-								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_PA.IsFromAI END
-								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_PA.IsFromTVS END
-								,	IsFromImperva = CASE WHEN tmpJs.IsFromImperva = 1 THEN 1 ELSE Temp_PA.IsFromImperva END
-								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_PA.IsMarkedDirectly END
-								,	IsTVSParlay = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+			ON DUPLICATE KEY UPDATE TWRobotCounter = IFNULL(Temp_NewClassification.TWRobotCounter, tmpJs.TWRobotCounter)
+								,	TurnoverRM = IFNULL(Temp_NewClassification.TurnoverRM, tmpJs.TurnoverRM)  
+								,	WinlossRM = IFNULL(Temp_NewClassification.WinlossRM, tmpJs.WinlossRM)  
+								,	BetCount = IFNULL(Temp_NewClassification.BetCount, tmpJs.BetCount)  
+								,	ActiveDays = IFNULL(Temp_NewClassification.ActiveDays, tmpJs.ActiveDays)
+								,	IsFromTW = CASE WHEN tmpJs.IsFromTW = 1 THEN 1 ELSE Temp_NewClassification.IsFromTW END
+								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_NewClassification.IsFromCTS END
+								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_NewClassification.IsFromAI END
+								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_NewClassification.IsFromTVS END
+								,	IsFromImperva = CASE WHEN tmpJs.IsFromImperva = 1 THEN 1 ELSE Temp_NewClassification.IsFromImperva END
+								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_NewClassification.IsMarkedDirectly END
+								,	IsTVSParlay = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.IsTVSParlay 
-														ELSE Temp_PA.IsTVSParlay END
-								,	SportType = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+														ELSE Temp_NewClassification.IsTVSParlay END
+								,	SportType = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.SportType 
-														ELSE Temp_PA.SportType END
-								,	CreatedBy = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+														ELSE Temp_NewClassification.SportType END
+								,	CreatedBy = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.CreatedBy 
-														ELSE Temp_PA.CreatedBy END
-								,	TVSIssueTypeID = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+														ELSE Temp_NewClassification.CreatedBy END
+								,	TVSIssueTypeID = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.TVSIssueTypeID 
-														ELSE Temp_PA.TVSIssueTypeID END
-								,	TVSRequestID = CASE WHEN Temp_PA.TVSRequestID IS NULL 
+														ELSE Temp_NewClassification.TVSIssueTypeID END
+								,	TVSRequestID = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
 																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
 															THEN tmpJs.TVSRequestID 
-														ELSE Temp_PA.TVSRequestID END
+														ELSE Temp_NewClassification.TVSRequestID END
 								;
 			/*INSERT INTO TABLE TVS_LOG*/
 		ELSEIF ip_InputFlowID = 8 THEN /*Normal*/
