@@ -95,7 +95,7 @@ BEGIN
 		INSERT IGNORE INTO Temp_ProbationCustomer(CustID, DWCategoryGroupID, ScanDate, ScanTaggingType, IsPassProbationRule)
 		SELECT 	cls.CustID
 			,	temp.DWCategoryGroupID	
-			, 	cls.LastScannedDate
+			, 	DATE(cls.CreatedDate)
 			, 	temp.ScanTaggingType
 			, 	CASE WHEN cls.LastScannedDate >= lv_ToProbationLastDay THEN 0 ELSE 1 END AS IsPassProbationRule
 		FROM Temp_NewClassification AS temp
