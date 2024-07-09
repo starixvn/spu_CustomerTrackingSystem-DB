@@ -97,7 +97,7 @@ BEGIN
 			,	temp.DWCategoryGroupID	
 			, 	DATE(cls.CreatedDate)
 			, 	temp.ScanTaggingType
-			, 	CASE WHEN cls.LastScannedDate >= lv_ToProbationLastDay THEN 0 ELSE 1 END AS IsPassProbationRule
+			, 	CASE WHEN DATE(cls.CreatedDate) >= lv_ToProbationLastDay THEN 0 ELSE 1 END AS IsPassProbationRule
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
 		WHERE cls.CategoryID = CONST_CATEID_PROBATION;
