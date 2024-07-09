@@ -100,7 +100,8 @@ BEGIN
 			, 	CASE WHEN DATE(cls.CreatedDate) >= lv_ToProbationLastDay THEN 0 ELSE 1 END AS IsPassProbationRule
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
-		WHERE cls.CategoryID = CONST_CATEID_PROBATION;
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
+		WHERE cate.CategoryGroupID = CONST_CATEGROUPID_PROBATION;
 		
 		/*DWCategoryGroupID IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION)*/
 		UPDATE Temp_ProbationCustomer AS temp
