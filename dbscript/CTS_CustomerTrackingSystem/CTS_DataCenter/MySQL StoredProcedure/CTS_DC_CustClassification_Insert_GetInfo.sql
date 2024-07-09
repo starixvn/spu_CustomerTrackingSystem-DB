@@ -506,7 +506,7 @@ BEGIN
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority
 			, 	CustomerClassPriority, ParentID, TWRobotCounter, IsFromImperva, IsReturnData, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
-				,	tmpJs.CTSCustID
+				,	cus.CTSCustID
 				, 	tmpJs.SubscriberID
 				, 	cus.RoleID
 				,	tmpJs.DWCategoryID				
