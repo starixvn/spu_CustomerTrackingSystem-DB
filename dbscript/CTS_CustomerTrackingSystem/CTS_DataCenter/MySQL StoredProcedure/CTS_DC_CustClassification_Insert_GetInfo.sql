@@ -205,6 +205,7 @@ BEGIN
 
 			,	IsFromTW					BIT(1)  DEFAULT 0
 			,	TWRobotCounter				INT -- RobotCounter
+			
 			,	TWBetCount					BIGINT
 			,	TWGroupBettingRate			DECIMAL(10,4)
 			,	TWTicketRejectRate			DECIMAL(10,4)

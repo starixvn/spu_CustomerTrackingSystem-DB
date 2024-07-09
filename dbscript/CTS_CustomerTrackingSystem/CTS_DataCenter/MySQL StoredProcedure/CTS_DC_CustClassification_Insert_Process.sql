@@ -412,9 +412,8 @@ BEGIN
 		/*Insert cust has pin/vvip into CTSCustomerClassification*/
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(
 				CustID, CTSCustID, SubscriberID, RoleID, ParentID, CategoryID, Remark, CreatedDate
-			, 	CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS
-			, 	IsFromTW, IsFromCTS, IsFromAI, InsertTime, TVSRequestID, IsTVSParlay
-			, 	SportType, TVSIssueTypeID, IsMarkedDirectly) 
+			, 	CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva
+			, 	InsertTime, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, IsMarkedDirectly, TWRobotCounter) 
 		SELECT	temp.CustID
 			,	temp.CTSCustID
 			,	temp.SubscriberID
@@ -431,12 +430,14 @@ BEGIN
 			,	temp.IsFromTW
 			,	temp.IsFromCTS
 			,	temp.IsFromAI
+			,	temp.IsFromImperva
 			,	lv_CurrentDateTime AS InsertTime
 			,	temp.TVSRequestID
 			,	temp.IsTVSParlay
 			,	temp.SportType
 			,	temp.TVSIssueTypeID
 			,	temp.IsMarkedDirectly
+			,	temp.TWRobotCounter
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID 
 																			AND ccs.IsKeepOldCateID = 1
@@ -449,9 +450,9 @@ BEGIN
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(
 				CustID, CTSCustID, SubscriberID, ParentID, CategoryID, CategoryGroupID, ExistCategoryID, RelevantCategoryID
 			, 	Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS
-			, 	IsFromTW, IsFromCTS, IsFromAI, InsertTime, TVSRequestID, IsTVSParlay
-			, 	SportType, TVSIssueTypeID, IsMarkedDirectly, SpecialCC, CustomerClass
-			,	CategoryPriority, IsPAProbation, IsNew, IsRemove) 
+			, 	IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, InsertTime, TVSRequestID, IsTVSParlay
+			, 	SportType, TVSIssueTypeID, IsMarkedDirectly, SpecialCC, CustomerClass, CategoryPriority, IsPAProbation
+			, 	IsNew, IsRemove, ) 
 		SELECT	cls.CustID
 			,	cls.CTSCustID
 			,	cls.SubscriberID
@@ -470,6 +471,7 @@ BEGIN
 			,	cls.IsFromTW
 			,	cls.IsFromCTS
 			,	cls.IsFromAI
+			,	cls.IsFromImperva
 			,	lv_CurrentDateTime AS InsertTime
 			,	cls.TVSRequestID
 			,	cls.IsTVSParlay
@@ -488,12 +490,12 @@ BEGIN
 					 ELSE 
 						(CASE 	WHEN ccs.IsMultiCateIDSameParentID = 1 THEN 0
 								WHEN ccs.IsMultiCateIDSameParentID = 0 NULL END) END AS IsRemove
+			,	
 		FROM CTS_DataCenter.CTSCustomerClassification AS cls
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cls.CustID
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = cls.CategoryID 
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID AND cc.IsActive = 1
-		WHERE cls.ParentID IN (CONST_PARENTID_PA,PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL)
-		;
+		WHERE cls.ParentID IN (CONST_PARENTID_PA,PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL);
 
 		DELETE temp
 		FROM Temp_NewClassification AS temp 
