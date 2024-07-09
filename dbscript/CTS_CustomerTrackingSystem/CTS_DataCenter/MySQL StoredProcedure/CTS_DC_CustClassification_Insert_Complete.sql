@@ -20,33 +20,25 @@ BEGIN
 */
 
 	-- CALL CTS_DataCenter.CTS_DC_CustClassification_Remark_Get(ip_InputFlowID); 
-	DECLARE CONST_CATEID_VVIP 				INT;
+
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 	INT;
 	DECLARE CONST_CATEID_LICVIPDANGEROUS 	INT;
 	DECLARE CONST_CATEID_LICBA 				INT;
 	
-	DECLARE CONST_PARENTID_VVIP 			INT;
 	DECLARE CONST_PARENTID_WRAPPER 			INT;
-	DECLARE CONST_PARENTID_PA 				INT;
 	DECLARE CONST_PARENTID_NORMAL			INT;
 	
 	DECLARE CONST_ACTIONTYPE_INSERT 		INT DEFAULT 0;
-	DECLARE	CONST_ACTIONTYPE_UPDATE 		INT DEFAULT 1;
 	
 	
-    DECLARE lv_MaxCTSCustID					BIGINT UNSIGNED;
-    DECLARE lv_LicVIPPriority				SMALLINT UNSIGNED;
-    DECLARE lv_LicBAPriority				SMALLINT UNSIGNED;
     DECLARE lv_CreatedBy 					INT DEFAULT 10278938;
 	DECLARE	lv_CurrentDateTime				DATETIME DEFAULT CURRENT_TIME();
 	
-	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
 	SET CONST_CATEID_LICVIPDANGEROUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
 	SET CONST_CATEID_LICBA 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
-	SET CONST_PARENTID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+	
 	SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
-	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 	
 	IF ip_InputFlowID = 8 THEN /*Normal*/
@@ -152,6 +144,9 @@ BEGIN
 		FROM 	Temp_NewClassification AS temp;
 
 	ELSEIF (ip_InputFlowID IN (50,51,6,7) OR ip_InputFlowID IN (150,151,16,17)) THEN
+	/*(ip_InputFlowID IN (50,51,6,7) - insert
+	ip_InputFlowID IN (150,151,16,17) - rescan*/
+	
 		-- ADD MAIN TABLE CC - FROM OLD - isnew = 1
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
 				CustID, CTSCustID, SubscriberID,RoleID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
@@ -229,7 +224,7 @@ BEGIN
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType
 			, 	InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays
 			, 	IsMarkedDirectly, Remark, TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsParlay, SportType
-			, 	IssueTypeID, RobotCounter)
+			, 	IssueTypeID, RobotCounter, OldCategoryID, DWCategoryID, PerformanceTime)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.NewCategoryID AS CategoryID
@@ -261,6 +256,9 @@ BEGIN
 			,	temp.SportType
 			,	temp.TVSIssueTypeID
 			,	temp.TWRobotCounter
+			,	temp.OldCategoryID
+			,	temp.DWCategoryID
+			,	temp.PerformanceTime
 		FROM Temp_NewClassification AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID 
 		WHERE temp.IsDataChanged = 1 
@@ -269,7 +267,8 @@ BEGIN
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate
 			, 	TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirectly, Remark, TVSRequestID
-			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsParlay, SportType, IssueTypeID, RobotCounter)
+			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsParlay, SportType, IssueTypeID, RobotCounter
+			, 	OldCategoryID, DWCategoryID, PerformanceTime)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			,	temp.NewCategoryID
@@ -302,6 +301,9 @@ BEGIN
 			,	temp.SportType
 			,	temp.TVSIssueTypeID
 			,	temp.TWRobotCounter
+			,	temp.OldCategoryID
+			,	temp.DWCategoryID
+			,	temp.PerformanceTime
 		FROM Temp_NewClassification AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID ;
 	

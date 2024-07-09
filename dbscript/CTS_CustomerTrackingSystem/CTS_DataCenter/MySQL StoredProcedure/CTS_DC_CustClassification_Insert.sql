@@ -119,7 +119,7 @@ BEGIN
 			, 	temp.SubscriberID
 			,	temp.RoleID
 			,	temp.ParentID
-			,	temp.CategoryID
+			,	temp.NewCategoryID
 			,	temp.Remark
 			,   temp.CreatedBy AS CreatedBy
 			,   temp.CreatedBy AS LastModifiedBy
@@ -139,7 +139,7 @@ BEGIN
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			,	temp.ParentID
-			,	temp.CategoryID
+			,	temp.NewCategoryID
 			, 	lv_CurrentDateTime AS LastModifiedDate
 			,   DATE(lv_CurrentDateTime) AS InsertDate  
 			, 	temp.CreatedBy AS LastModifiedBy
@@ -150,7 +150,7 @@ BEGIN
 			,	1 AS IsDataChanged
 			,	lv_IsMarkedDirectly AS IsMarkedDirectly
 		FROM Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.CategoryID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
 		WHERE temp.IsExistVVIP = 0;
 		
 		/*Insert VVIP log*/
@@ -160,7 +160,7 @@ BEGIN
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			,	temp.ParentID
-			,	temp.CategoryID
+			,	temp.NewCategoryID
 			, 	lv_CurrentDateTime AS LastModifiedDate
 			,   DATE(lv_CurrentDateTime) AS InsertDate
 			, 	temp.CreatedBy AS LastModifiedBy
@@ -170,7 +170,7 @@ BEGIN
 			,	1 AS IsDataChanged
 			,	lv_IsMarkedDirectly AS IsMarkedDirectly
 		FROM Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.CategoryID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
 		WHERE temp.IsExistVVIP = 0;
 		
 		IF ip_FromAction = 2 AND ip_QueueID IS NOT NULL THEN
@@ -329,7 +329,7 @@ BEGIN
 		WHERE ccs.CategoryID = CONST_CATEID_LICVIPDANGEROUS;
 		
 		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, ParentID, CategoryID
+				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, ParentID, NewCategoryID
 			, 	IsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC, IsReturnData ) 
 		WITH CTE_LastCategory AS
 		(SELECT	temp.CustID
@@ -344,7 +344,6 @@ BEGIN
 			,	tmpLastCat.CategoryPriority
 			,	tmpLastCat.CustomerClassPriority
 			,	tmpLastCat.CustomerClass AS TargetCC
-			,	1 AS IsReturnData
 		FROM Temp_Customer AS temp,
 		LATERAL (
 					SELECT cls.ParentID, cls.CategoryID, cat.CategoryPriority, cat.CustomerClassPriority, cat.IsDangerProbation, cat.CustomerClass 
@@ -361,11 +360,12 @@ BEGIN
 			,	cte.CreatedBy
 			,	cte.IsLicenseeVIP
 			,	cte.ParentID
-			,	cte.CategoryID
+			,	cte.CategoryID AS NewCategoryID
 			,	cte.IsDangerProbation
 			,	cte.CategoryPriority
 			,	cte.CustomerClassPriority
-			,	cte.CustomerClass
+			,	cte.TargetCC
+			,	1 AS IsReturnData
 		FROM  CTE_LastCategory AS cte; 
 	
 		UPDATE Temp_NewClassification AS temp
@@ -377,7 +377,7 @@ BEGIN
 						) AS tcc
 		SET 	temp.IsDataChanged 	= 1
 			, 	temp.ParentID 		= tcc.ParentID
-			, 	temp.CategoryID 	= tcc.CategoryID
+			, 	temp.NewCategoryID 	= tcc.CategoryID
 			, 	temp.TargetCC 		= tcc.CustomerClass
 		WHERE temp.IsLicenseeVIP = 0 
 			AND ( temp.CategoryPriority IS NULL 
@@ -412,7 +412,7 @@ BEGIN
 				,	temp.SubscriberID
 				,	temp.RoleID
 				,	temp.ParentID
-				,	temp.CategoryID
+				,	temp.NewCategoryID
 				,	lv_CurrentDateTime AS CreatedDate
 				,	temp.CreatedBy
 				,	lv_CurrentDateTime AS LastModifiedDate
@@ -427,7 +427,7 @@ BEGIN
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
 				,	temp.ParentID
-				,	temp.CategoryID
+				,	temp.NewCategoryID
 				, 	lv_CurrentDateTime AS LastModifiedDate
 				, 	temp.CreatedBy AS LastModifiedBy
 				,	lv_ActionType AS ActionType
@@ -446,7 +446,7 @@ BEGIN
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
 				,	temp.ParentID
-				,	temp.CategoryID
+				,	temp.NewCategoryID
 				, 	lv_CurrentDateTime AS LastModifiedDate
 				, 	temp.CreatedBy AS LastModifiedBy
 				,	lv_ActionType AS ActionType
@@ -460,7 +460,7 @@ BEGIN
 			
 		ELSE
 			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-					CTSCustID, CustID, SubscriberID, RoleID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly) 
+					CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly) 
 			SELECT	temp.CTSCustID
 				,	temp.CustID
 				,	temp.SubscriberID
@@ -493,7 +493,7 @@ BEGIN
 		WHERE ccs.CategoryID = CONST_CATEID_LICBA;
 	
 		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeBA, ParentID, CategoryID
+				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeBA, ParentID, NewCategoryID
 			, 	CategoryPriority, CustomerClassPriority, TargetCC, IsReturnData ) 
 		WITH CTE_LastCategory AS
 		(
@@ -507,8 +507,7 @@ BEGIN
 			,	tmpLastCat.CategoryID
 			,	tmpLastCat.CategoryPriority
 			,	tmpLastCat.CustomerClassPriority
-			,	tmpLastCat.CustomerClass
-			,	1 AS IsReturnData
+			,	tmpLastCat.CustomerClass AS TargetCC
 		 FROM Temp_Customer AS temp,
 		 LATERAL (
 					SELECT cls.ParentID, cls.CategoryID, cat.CategoryPriority, cat.CustomerClassPriority, cat.CustomerClass 
@@ -527,16 +526,17 @@ BEGIN
 		,	cte.CreatedBy
 		,	cte.IsLicenseeBA
 		,	cte.ParentID
-		,	cte.CategoryID
+		,	cte.CategoryID AS NewCategoryID
 		,	cte.CategoryPriority
 		,	cte.CustomerClassPriority
-		,	cte.CustomerClass
+		,	cte.TargetCC
+		,	1 AS IsReturnData
 		FROM  CTE_LastCategory AS cte;  
 		
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsDataChanged 		= 1
 			, 	temp.ParentID 			= lv_ParentID
-			, 	temp.CategoryID			= CONST_CATEID_LICBA
+			, 	temp.NewCategoryID		= CONST_CATEID_LICBA
 			, 	temp.TargetCC 			= lv_CustomerClass
 		WHERE temp.IsLicenseeBA = 0
 			AND ( temp.CategoryPriority IS NULL OR temp.CategoryPriority > lv_CategoryPriority); 
@@ -570,7 +570,7 @@ BEGIN
 				,	temp.SubscriberID
 				,	temp.RoleID
 				,	temp.ParentID
-				,	temp.CategoryID 
+				,	temp.NewCategoryID 
 				,	lv_CurrentDateTime AS CreatedDate
 				,	temp.CreatedBy
 				,	lv_CurrentDateTime AS LastModifiedDate
@@ -585,7 +585,7 @@ BEGIN
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
 				,	temp.ParentID
-				,	temp.CategoryID 
+				,	temp.NewCategoryID 
 				, 	lv_CurrentDateTime AS LastModifiedDate
 				, 	temp.CreatedBy AS LastModifiedBy
 				,	lv_ActionType  AS ActionType
@@ -604,7 +604,7 @@ BEGIN
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
 				,	temp.ParentID
-				,	temp.CategoryID 
+				,	temp.NewCategoryID 
 				, 	lv_CurrentDateTime AS LastModifiedDate
 				, 	temp.CreatedBy AS LastModifiedBy
 				,	lv_ActionType  AS ActionType
@@ -618,7 +618,7 @@ BEGIN
 			
 		ELSE
 			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-					CTSCustID, CustID, SubscriberID, RoleID, SportGroupID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate) 
+					CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly) 
 			SELECT	temp.CTSCustID
 				,	temp.CustID
 				,	temp.SubscriberID
@@ -658,7 +658,7 @@ BEGIN
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		SELECT  lv_LogTypeID
 			, 	lv_SPName
-			, 	CONCAT('Insert VVIP: CTSCustID_', temp.CTSCustID,'; RoleID_', temp.RoleID, '; AffectDownline_', ip_AffectDownline,'; SubscriberID_', temp.SubscriberID, '; CategoryID_', temp.CategoryID, '; Remark_', temp.Remark)
+			, 	CONCAT('Insert VVIP: CTSCustID_', temp.CTSCustID,'; RoleID_', temp.RoleID, '; AffectDownline_', ip_AffectDownline,'; SubscriberID_', temp.SubscriberID, '; CategoryID_', temp.NewCategoryID, '; Remark_', temp.Remark)
             ,	lv_CurrentDateTime AS CreatedDate
             , 	temp.CreatedBy
         FROM Temp_NewClassification AS temp;

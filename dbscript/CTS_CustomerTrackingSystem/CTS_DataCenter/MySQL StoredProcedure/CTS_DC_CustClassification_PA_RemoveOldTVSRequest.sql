@@ -63,14 +63,14 @@ BEGIN
 																		AND temp.CustID = d.CustID
 	SET d.IsFromTVS = 0
 	WHERE IFNULL(temp.TVSRequestID,0) <> 0
-		AND ((temp.IsExistVVIP = 1 OR temp.IsExistWrapper = 1) AND temp.IsExistKeepOldCateID = 1);
+		AND ((temp.IsExistVVIP = 1 OR temp.IsExistWrapper = 1) AND temp.IsFromOldPA = 1);
     
     DELETE d
     FROM Temp_NewClassification AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON temp.TVSRequestID = d.TVSRequestID 
 																		AND temp.CustID = d.CustID
 	WHERE IFNULL(temp.TVSRequestID,0) <> 0
-		AND ((temp.IsExistVVIP = 1 OR temp.IsExistWrapper = 1) AND temp.IsExistKeepOldCateID = 1)
+		AND ((temp.IsExistVVIP = 1 OR temp.IsExistWrapper = 1) AND temp.IsFromOldPA = 1)
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
     
     /* REMOVE FROM CLASSIFICATION HISTORY  */    

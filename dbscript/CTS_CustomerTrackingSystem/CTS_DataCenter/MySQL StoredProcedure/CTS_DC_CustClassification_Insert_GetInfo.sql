@@ -55,7 +55,7 @@ BEGIN
 			,	TargetCC					SMALLINT UNSIGNED
 			,	CategoryPriority			SMALLINT UNSIGNED
 			,	CustomerClassPriority		SMALLINT UNSIGNED
-			,	CategoryID					INT
+			,	NewCategoryID				INT
 			,	ParentID					INT UNSIGNED
 			,	IsDangerProbation			BIT(1) DEFAULT 0
 			,	IsDataChanged				BIT(1) DEFAULT 0	/*0: No change category => No Action*/
@@ -68,13 +68,15 @@ BEGIN
 				CustID						BIGINT UNSIGNED PRIMARY KEY
 			, 	CTSCustID					BIGINT UNSIGNED
 			, 	SubscriberID				INT 
+			,	RoleID						INT	
 			,	CreatedBy 					INT UNSIGNED
+			,	IsLicenseeVIP				BIT(1) DEFAULT 0
 			, 	IsLicenseeBA				INT 
 		);
 
 		IF ip_InputFlowID = 1 THEN /*VVIP*/
 			INSERT INTO Temp_NewClassification (
-					CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsExistVVIP, ParentID, CategoryID, IsReturnData)
+					CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsExistVVIP, ParentID, NewCategoryID, IsReturnData)
 			SELECT DISTINCT 
 					tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.RoleID, tmpJs.Remark, tmpJs.CreatedBy
 				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
@@ -115,7 +117,7 @@ BEGIN
 			
 		ELSEIF ip_InputFlowID = 3 THEN	/*LicVIP*/
 			INSERT INTO Temp_Customer (CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP)
-			SELECT tmpJs.CustID, cus.CTSCustID, tmpJs.SubscriberID, cus.RoleID, tmpJs.CreatedBy, cus.IsLicenseeVIP
+			SELECT tmpJs.CustID, cus.CTSCustID, cus.SubscriberID, cus.RoleID, tmpJs.CreatedBy, cus.IsLicenseeVIP
 			FROM JSON_TABLE(ip_CustInfo,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED	PATH "$.CustID"
@@ -126,7 +128,7 @@ BEGIN
 			
 		ELSEIF ip_InputFlowID = 4 THEN /*LicBA*/
 			INSERT INTO Temp_Customer (CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeBA)
-			SELECT tmpJs.CustID, cus.CTSCustID, tmpJs.SubscriberID, cus.RoleID, tmpJs.CreatedBy, cus.IsLicenseeBA
+			SELECT tmpJs.CustID, cus.CTSCustID, cus.SubscriberID, cus.RoleID, tmpJs.CreatedBy, cus.IsLicenseeBA
 			FROM JSON_TABLE(ip_CustInfo,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED	PATH "$.CustID"
@@ -339,6 +341,46 @@ BEGIN
 								;
 
 		ELSEIF ip_InputFlowID IN (51,151) THEN /*PA - ip_InputType = 'Reason'*/
+			
+			IF ip_InputFlowID = 51 THEN
+				INSERT INTO CTS_DataCenter.TVSVoidRequest_Log(
+					TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,CreatedTime,IsParlay,SportType,IssueTypeID)
+				WITH CTECustInfo AS (
+					SELECT	tmpJs.TVSRequestID AS TVSRequestID
+						,	tmpJs.CustID AS CustID
+						,	tmpJs.TVSReasonID AS ReasonID
+						,	tmpJs.CreatedBy AS CreatedBy
+						,	tmpJs.IsTVSParlay AS IsParlay
+						,	tmpJs.SportType AS SportType
+						,	tmpJs.TVSIssueTypeID AS IssueTypeID
+					FROM JSON_TABLE(ip_CustInfo,
+						"$[*]" COLUMNS(
+								CustID 			BIGINT UNSIGNED		PATH "$.CustID"
+							,	TVSReasonID		INT 				PATH "$.ReasonID"
+							, 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
+							, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
+							, 	TVSRequestID	BIGINT UNSIGNED		PATH "$.TVSRequestID"
+							,	IsTVSParlay		BOOLEAN 			PATH "$.IsParlay"
+							,	SportType		SMALLINT 			PATH "$.SportType"
+							,	TVSIssueTypeID	TINYINT 			PATH "$.IssueTypeID"
+						)) AS tmpJs
+						LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.TVSReasonID = tmpJs.TVSReasonID
+					WHERE tmpJs.IsFromTVS = 1
+				)
+				SELECT	TVSRequestID
+					,	GROUP_CONCAT(DISTINCT CustID) AS CustIDs
+					,	ReasonID
+					,	CreatedBy
+					,	NOW() AS CreatedDate
+					,	CURRENT_TIMESTAMP(3) AS CreatedTime
+					,	IsParlay
+					,	SportType
+					,	IssueTypeID
+				FROM CTECustInfo AS cte
+				GROUP BY TVSRequestID, ReasonID, CreatedBy, IsParlay, SportType, IssueTypeID;
+
+			END IF;
+		
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, IsMarkedDirectly
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, SpecialCC, IsPAProbation
