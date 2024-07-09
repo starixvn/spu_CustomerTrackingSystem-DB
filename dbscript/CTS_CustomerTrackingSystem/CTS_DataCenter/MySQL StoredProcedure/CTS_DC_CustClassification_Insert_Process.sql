@@ -145,18 +145,18 @@ BEGIN
 
 	IF ip_InputFlowID = 8 THEN
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old (CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID, IsNew, IsRemove)
-		SELECT 	temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, cc.CategoryID, cc.CategoryGroupID, 0 AS IsNew, 0 AS IsRemove
+		SELECT 	temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, ccs.CategoryID, ccs.CategoryGroupID, 0 AS IsNew , 1 AS IsRemove
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
 																			AND cls.ParentID = CONST_PARENTID_NORMAL
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = ccs.CategoryID
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
 
 		UPDATE Temp_NewClassification AS temp
 			LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID
 		SET 	temp.OldCategoryGroupID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryGroupID END
 			,	temp.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryID END
-			,	temp.ActionType = CASE 	WHEN o.CustID IS NULL OR (o.IsNew = 1 AND o.IsRemove = 0) 
+			,	temp.ActionType = CASE 	WHEN o.CustID IS NULL OR (o.IsNew = 1 AND o.IsRemove = 0) OR (o.IsNew = 0 AND o.IsRemove = 1)
 											THEN CONST_ACTIONTYPE_INSERT 
 										ELSE CONST_ACTIONTYPE_UPDATE END
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;

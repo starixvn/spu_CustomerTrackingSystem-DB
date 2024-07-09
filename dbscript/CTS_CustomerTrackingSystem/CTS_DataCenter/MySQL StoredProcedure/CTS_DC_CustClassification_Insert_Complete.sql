@@ -76,8 +76,8 @@ BEGIN
 			, 	temp.CTSCustID
 			, 	temp.SubscriberID
 			, 	temp.RoleID
-			, 	CONST_PARENTID_NORMAL
-			, 	temp.NewCategoryID
+			, 	CONST_PARENTID_NORMAL AS ParentID
+			, 	temp.NewCategoryID AS CategoryID
 			, 	lv_CurrentDateTime
 			, 	lv_CreatedBy
 			, 	lv_CurrentDateTime
