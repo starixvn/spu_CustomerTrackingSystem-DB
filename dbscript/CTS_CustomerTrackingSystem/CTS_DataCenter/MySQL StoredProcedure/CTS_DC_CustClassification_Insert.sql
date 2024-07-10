@@ -577,7 +577,7 @@ BEGIN
 				,	temp.CreatedBy AS LastModifiedBy
 				,	DATE(lv_CurrentDateTime) LastScannedDate
 				,	lv_IsMarkedDirectly AS IsMarkedDirectly
-			FROM Temp_CustCategory AS temp;
+			FROM Temp_NewClassification AS temp;
 		
 			/*Insert history*/
 			INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(
@@ -595,7 +595,7 @@ BEGIN
 				,   lv_SourceTypeID AS SourceTypeID
 				,	1 AS IsDataChanged
 				,	lv_IsMarkedDirectly AS IsMarkedDirectly
-			FROM Temp_CustCategory AS temp
+			FROM Temp_NewClassification AS temp
 			WHERE temp.IsDataChanged = 1;
 			
 			/*Insert log*/
@@ -614,7 +614,7 @@ BEGIN
 				,   lv_SourceTypeID AS SourceTypeID
 				,	temp.IsDataChanged
 				,	lv_IsMarkedDirectly AS IsMarkedDirectly
-			FROM Temp_CustCategory AS temp;
+			FROM Temp_NewClassification AS temp;
 			
 		ELSE
 			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
