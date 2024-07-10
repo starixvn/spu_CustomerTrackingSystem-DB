@@ -100,7 +100,7 @@ BEGIN
 			AND clss.LastScannedDate <= '",lv_ScanDateValid,"' ","
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.CTSCustomerClassification AS vvip
-							 WHERE vvip.ParentID = ",CONST_PARENTID_VVIP,")
+							 WHERE clss.CustID = vvip.CustID AND vvip.ParentID = ",CONST_PARENTID_VVIP,")
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.CTSCustomerClassification AS pro 
 								INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = pro.CategoryID AND cate.IsActive = 1
@@ -125,7 +125,7 @@ BEGIN
 			AND clss.LastScannedDate <= cate.ScanDate
             AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.CTSCustomerClassification AS vvip
-							 WHERE vvip.ParentID = CONST_PARENTID_VVIP)
+							 WHERE clss.CustID = vvip.CustID AND vvip.ParentID = CONST_PARENTID_VVIP)
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.CTSCustomerClassification AS pro 
 								INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = pro.CategoryID AND cate.IsActive = 1
@@ -150,7 +150,7 @@ BEGIN
 			AND clss.LastScannedDate <= '", lv_NextScanDateValid,"' ","
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.CTSCustomerClassification AS vvip
-							 WHERE vvip.ParentID = ",CONST_PARENTID_VVIP,")
+							 WHERE clss.CustID = vvip.CustID AND vvip.ParentID = ",CONST_PARENTID_VVIP,")
 			AND NOT EXISTS (SELECT 1 
 							 FROM  CTS_DataCenter.CTSCustomerClassification AS pro 
 								INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = pro.CategoryID AND cate.IsActive = 1
