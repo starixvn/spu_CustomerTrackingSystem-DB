@@ -193,6 +193,12 @@ BEGIN
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) 
 			AND temp.DWCategoryGroupID = CONST_CATEGROUPID_INACTIVE; 
 			
+		UPDATE Temp_NewClassification AS temp
+		SET 	temp.IsDataChanged = 0
+			,	temp.ActionType = CONST_ACTIONTYPE_UPDATE 
+		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT
+			AND temp.NewCategoryID = temp.OldCategoryID;
+			
 		UPDATE Temp_NewClassification AS temp 
 		SET temp.SourceTypeID = (CASE	WHEN (temp.OldCategoryGroupID IS NULL 
 													OR temp.OldCategoryGroupID = CONST_CATEGROUPID_NEW) 
@@ -216,11 +222,6 @@ BEGIN
 										ELSE CONST_SOURCETYPE_SCANONSCHEDULE
 									END)
 		WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
-
-		UPDATE Temp_NewClassification AS temp
-		SET temp.IsDataChanged = 0
-		WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE 
-			AND temp.NewCategoryID = temp.OldCategoryID;
 			
 		UPDATE Temp_NewClassification AS tmp 
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = tmp.NewCategoryID
