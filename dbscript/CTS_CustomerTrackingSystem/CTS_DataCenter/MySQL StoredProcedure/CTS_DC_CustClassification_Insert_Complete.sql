@@ -85,7 +85,7 @@ BEGIN
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, TurnoverRM
 			, 	WinlossRM, BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
 			, 	IsAuto, InsertDate, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged
-			, 	TaggingType, TargetDangerLevel1, PerformanceTime)
+			, 	TaggingType, TargetDangerLevel1, PerformanceTime, ActionType)
 		SELECT DISTINCT	
 				temp.CustID
 			, 	temp.CTSCustID
@@ -111,6 +111,7 @@ BEGIN
 			,	temp.TaggingType
 			,	temp.TargetDangerLevel AS TargetDangerLevel1
 			,	temp.PerformanceTime
+			,	temp.ActionType
 		FROM 	Temp_NewClassification AS temp
 		WHERE temp.IsDataChanged  = 1;	
         
@@ -118,7 +119,7 @@ BEGIN
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM
 			, 	BetCount, ActiveDays, TWBetCount, TWGroupBettingRate, TWTicketRejectRate, TWDesktopUsageRate
 			, 	IsAuto, InsertDate, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged
-			, 	TaggingType, TargetDangerLevel1, PerformanceTime)
+			, 	TaggingType, TargetDangerLevel1, PerformanceTime, ActionType)
 		SELECT DISTINCT	
 				temp.CustID
 			, 	temp.CTSCustID
@@ -144,6 +145,7 @@ BEGIN
 			,	temp.TaggingType
 			,	temp.TargetDangerLevel AS TargetDangerLevel1
 			,	temp.PerformanceTime
+			,	temp.ActionType
 		FROM 	Temp_NewClassification AS temp;
 
 	ELSEIF (ip_InputFlowID IN (50,51,6,7) OR ip_InputFlowID IN (150,151,16,17)) THEN
