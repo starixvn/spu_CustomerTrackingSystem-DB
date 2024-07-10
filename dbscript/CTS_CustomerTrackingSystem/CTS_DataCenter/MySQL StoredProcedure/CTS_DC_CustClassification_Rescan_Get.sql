@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsService,ctsAPI" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DC_CustClassification_Rescan_Get_UAT4`;
+DROP procedure IF EXISTS `CTS_DC_CustClassification_Rescan_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Rescan_Get_UAT4`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Rescan_Get`(
 		IN ip_CustIDs	LONGTEXT
 )
     SQL SECURITY INVOKER
@@ -278,28 +278,27 @@ sp: BEGIN
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
         ,	NULL 							AS CategoryID
-        , 	tvs.ReasonID 					AS TVSReasonID
+        , 	s.ReasonID 						AS TVSReasonID
         ,	tmp.RoleID 						AS RoleID
         ,	tmp.SubscriberID				AS SubscriberID
  		,	tmp.IsLicensee					AS IsLicensee
         ,	NULL 							AS Remark
-        ,	tvs.CreatedBy 					AS CreatedBy
+        ,	s.CreatedBy 					AS CreatedBy
         ,	1 								AS IsMarkedDirectly
  		,	1 								AS IsFromTVS
         ,	0 								AS IsFromTW
         ,   0 								AS IsFromCTS
         ,	0 								AS IsFromAI
 		,	0								AS IsFromImperva
-        ,	tvs.InsertedTime 				AS LastModifiedDate
+        ,	s.InsertedTime 				AS LastModifiedDate
         ,   CONST_INPUTFLOWID_REASON_PA 	AS InputFlowID
     FROM  Temp_CustInfo AS tmp
- 		,	LATERAL (SELECT ID
+ 		,	LATERAL (SELECT ReasonID, CreatedBy, InsertedTime
  					 FROM CTS_DataCenter.TVSVoidRequest 
  					 WHERE CustID = tmp.CustID
 						AND RequestTypeID = CONST_TVSREQUESTTYPE_PA
-                     GROUP BY CustID, RequestTypeID, ID
 					 ORDER BY ID DESC
-					 LIMIT 1) AS s INNER JOIN CTS_DataCenter.TVSVoidRequest AS tvs ON tvs.ID = s.ID;
+					 LIMIT 1) AS s;
     
     /***********************Check affected PA from Upline****************************/   
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)
