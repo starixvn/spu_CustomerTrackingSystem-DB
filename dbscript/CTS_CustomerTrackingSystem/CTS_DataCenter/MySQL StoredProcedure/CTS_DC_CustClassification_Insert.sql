@@ -5,12 +5,12 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert`(
 		IN	ip_InputFlowID			INT 
 	,	IN	ip_FromAction			TINYINT
-	,	IN	ip_UplineRoleID			TINYINT
+	,	IN	ip_UplineRoleID			INT
 	,	IN	ip_QueueID				BIGINT
 	,	IN	ip_AffectDownline		BIT(1)
 	,	IN	ip_IsToQueue			BIT(1)
 	,	IN	ip_CustInfo				JSON
-	,	OUT op_ErrorMessage 		VARCHAR(200)
+	,	OUT op_ErrorMessage 		VARCHAR(2000)
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -675,7 +675,7 @@ BEGIN
 
 	END IF;
 	
-
+	/*STEP 6: AffectedDownline*/
 	IF (ip_IsToQueue = 1 OR (ip_FromAction = 2 AND ip_AffectDownline = 1)) THEN
 		CALL CTS_DC_CustClassification_AffectedDownline_Insert ('Temp_NewClassification',ip_InputFlowID);
 	END IF;

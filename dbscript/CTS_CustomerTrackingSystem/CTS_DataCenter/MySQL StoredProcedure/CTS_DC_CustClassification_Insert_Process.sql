@@ -107,10 +107,10 @@ BEGIN
 		,	SubscriberID			INT UNSIGNED
 		,	RoleID					INT
 		,	ParentID				INT UNSIGNED
-		,	CategoryID				INT
-		,	CategoryGroupID			INT
-		,	ExistCategoryID			INT
-		,	RelevantCategoryID		INT
+		,	CategoryID				INT UNSIGNED
+		,	CategoryGroupID			INT UNSIGNED
+		,	ExistCategoryID			INT UNSIGNED
+		,	RelevantCategoryID		INT UNSIGNED
 		,	Remark					VARCHAR(500)
 		,	CreatedDate				DATETIME(3)
 		,	CreatedBy				INT UNSIGNED
@@ -341,7 +341,7 @@ BEGIN
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_CustProbationStatus ;
 		CREATE TEMPORARY TABLE Temp_CustProbationStatus(
-				CustID 					INT UNSIGNED PRIMARY KEY
+				CustID 					BIGINT UNSIGNED PRIMARY KEY
 			,	CTSCustID 				BIGINT UNSIGNED
 			,	IsPAProbation			BIT(1)
 			,	TurnoverRM				DECIMAL(20,4)
@@ -354,14 +354,14 @@ BEGIN
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_LicVIPCust;
 		CREATE TEMPORARY TABLE Temp_LicVIPCust(
-				CustID					INT UNSIGNED PRIMARY KEY
+				CustID					BIGINT UNSIGNED PRIMARY KEY
 			,	CategoryID 				INT UNSIGNED
 			,	CustomerClass 			INT UNSIGNED
 		); 
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;
 		CREATE TEMPORARY TABLE Temp_LastHistory(
-				CustID					INT UNSIGNED PRIMARY KEY
+				CustID					BIGINT UNSIGNED PRIMARY KEY
 			,	CategoryID				INT UNSIGNED
 			,	TargetCC				INT UNSIGNED
 		);

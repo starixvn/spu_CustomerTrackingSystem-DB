@@ -67,11 +67,11 @@ BEGIN
 		CREATE TEMPORARY TABLE Temp_Customer (
 				CustID						BIGINT UNSIGNED PRIMARY KEY
 			, 	CTSCustID					BIGINT UNSIGNED
-			, 	SubscriberID				INT 
+			, 	SubscriberID				INT UNSIGNED
 			,	RoleID						INT	
 			,	CreatedBy 					INT UNSIGNED
 			,	IsLicenseeVIP				BIT(1) DEFAULT 0
-			, 	IsLicenseeBA				INT 
+			, 	IsLicenseeBA				BIT(1) DEFAULT 0
 		);
 
 		IF ip_InputFlowID = 1 THEN /*VVIP*/
@@ -143,7 +143,7 @@ BEGIN
 		DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 		CREATE TEMPORARY TABLE Temp_NewClassification(	  	
 				CustID						BIGINT UNSIGNED
-			, 	CTSCustID					BIGINT 
+			, 	CTSCustID					BIGINT UNSIGNED
 			,	SubscriberID 				INT UNSIGNED
 			,	RoleID						INT		
 			,	IsLicensee					BIT(1) DEFAULT 0
