@@ -232,6 +232,7 @@ BEGIN
 			,	IsMarkedDirectly			BIT(1) DEFAULT 0
 			,	IsReturnData				BIT(1) DEFAULT 1
 			,	Remark						VARCHAR(500)
+			,	GroupName					VARCHAR(100)
 			, 	PRIMARY KEY (CustID, DWCategoryID)
 		); 
 		
@@ -278,6 +279,7 @@ BEGIN
 				,	1 AS IsReturnData
 				,	0 AS IsDataChanged
 				,	tmpJs.PerformanceTime
+				,	tmpJs.GroupName
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
@@ -305,6 +307,7 @@ BEGIN
 											,	TVSIssueTypeID				TINYINT 			PATH "$.IssueTypeID"
 											,	SportType					SMALLINT 			PATH "$.SportType"
 											, 	PerformanceTime				DATETIME(3)			PATH "$.PerformanceTime"
+											,	GroupName					VARCHAR(100)		PATH "$.GroupName"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID

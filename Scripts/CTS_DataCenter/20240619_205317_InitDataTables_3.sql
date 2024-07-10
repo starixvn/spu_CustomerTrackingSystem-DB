@@ -283,9 +283,9 @@ VALUES (1,'Account has less than 10 bets for first time scan','New: New Customer
 (7,'Add from Evidence manually','From Evidence'),
 (8,'Remove Problem Account manually','From PA'),
 (9,'Remove Problem Account manually','From Evidence'),
-(10,'Add Customer Class manually | [UserComment]','From Special CC'),
+(10,'Add Customer Class manually | [Remark]','From Special CC'),
 (11,'Update Category and Customer Class','From Robot'),
-(12,'Remove Customer Class manually | [UserComment]','From CC'),
+(12,'Remove Customer Class manually | [Remark]','From CC'),
 (13,'VVIP is marked manually','From VVIP'),
 (14,'VVIP is unmarked manually','From VVIP'),
 (15,'Re-scan Problem Account by Customer','From PA'),
@@ -304,10 +304,10 @@ VALUES (1,'Account has less than 10 bets for first time scan','New: New Customer
 (28,'VVIP untag is affected by Master','Remove VVIP For Downline'),
 (29,'VVIP untag is affected by Agent','Remove VVIP For Downline'),
 (30,'VVIP tag is affected by direct upline','Insert New Cust Affected By Upline'),
-(31,'Problem Account is marked directly | Win loss: [Winloss] | [UserComment]','Problem Account is marked directly'),
-(32,'Problem Account is affected by Uplines | Win loss: [Winloss] | [UserComment]','Problem Account is affected by Uplines'),
-(33,'Problem Account is unmarked directly | [UserComment]','Problem Account is unmarked directly'),
-(34,'Unmarking Problem Account is affected by Uplines | [UserComment]','Unmarking Problem Account is affected by Uplines'),
+(31,'Problem Account is marked directly | Win loss: [Winloss] | [Remark]','Problem Account is marked directly'),
+(32,'Problem Account is affected by Uplines | Win loss: [Winloss] | [Remark]','Problem Account is affected by Uplines'),
+(33,'Problem Account is unmarked directly | [Remark]','Problem Account is unmarked directly'),
+(34,'Unmarking Problem Account is affected by Uplines | [Remark]','Unmarking Problem Account is affected by Uplines'),
 (35,'Match ID [MatchID] | Win loss: [Winloss]','Auto Mark Group Betting From Match Monitor'),
 (36,'Rescan Robot','Rescan Robot'),
 (37,'Insert Robot','Insert Robot'),
@@ -324,12 +324,12 @@ VALUES (1,'Account has less than 10 bets for first time scan','New: New Customer
 (48,'Detection Date: [DetectedDate] - Dangerous Score: [DangerousScore]% | Turnover: [TurnOver] | Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]',''),
 (49,'[SourceTypeName]',''),
 (50,'Counter: [RobotCounter] | Win loss: [Winloss]',''),
-(51,'[UserComment] Win loss: [Winloss]',''),
+(51,'[Remark] Win loss: [Winloss]',''),
 (52,'Win loss: [Winloss]',''),
-(53,'Robot is marked directly | Win loss: [Winloss] | Remark: [UserComment]',''),
+(53,'Robot is marked directly | Win loss: [Winloss] | Remark: [Remark]',''),
 (54,'Void by RequestID: [TVSRequestID] | Win loss: [Winloss]',''),
 (55,'Void by BetID |  Win loss: [Winloss]',''),
-(56,'[UserComment] | Win loss: [Winloss]','');
+(56,'[Remark] | Win loss: [Winloss]','');
 
 INSERT INTO `CTS_DataCenter`.`SystemParameter`
 (`ParameterID`,`ParameterName`,`ParameterDesc`,`ParameterDataType`,`ParameterValue`) VALUES
