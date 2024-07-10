@@ -1,10 +1,9 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsAPI,ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_GetLatestRiskLevel`;
-
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsAPI" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetLatestRiskLevel`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetLatestRiskLevel`(
 		IN ip_SubscriberID	INT
-    ,	IN ip_MaxID			BIGINT UNSIGNED
+    ,	IN ip_LastID		BIGINT UNSIGNED
     ,	IN ip_BatchSize		INT
 )
     SQL SECURITY INVOKER
@@ -18,16 +17,9 @@ BEGIN
 			- 20240708@Casey.Huynh: Created [RedmineID: #206486]
         Param's Explanation:     
         Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetLatestRiskLevel(169, 1, 1000);
+			CALL CTS_DC_CustClassification_GetLatestRiskLevel(4400, 1016629001, 1000);
 	*/ 
-    
-	DECLARE	CONST_GROUP_NORMAL 					INT DEFAULT 200;
-    DECLARE	CONST_GROUP_PROBLEM 				INT DEFAULT 0;
-    DECLARE	CONST_GROUP_ROBOTUSER 				INT DEFAULT 61;
-    DECLARE	CONST_CATEGORY_BADROBOTUSER 		INT DEFAULT 163;
-    DECLARE	CONST_CATEGORY_GOODROBOTUSER 		INT DEFAULT 164;
-    
-    DECLARE lv_CurrentDateTime		DATETIME DEFAULT CURRENT_TIMESTAMP();
+
     DECLARE lv_LastModifiedDate BIGINT UNSIGNED;
         
     DROP TEMPORARY TABLE IF EXISTS Temp_ClassificationHistory;    
@@ -37,54 +29,45 @@ BEGIN
         ,	CustID				BIGINT UNSIGNED
         ,	RegisterName		VARCHAR(50)
 	);
+     
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
-    CREATE TEMPORARY TABLE 		Temp_Customer (
-			CustMaxID			BIGINT UNSIGNED
-		,	LastModifiedDate	DATETIME
-		,	CustID          	BIGINT UNSIGNED PRIMARY KEY
-		,	RegisterName		VARCHAR(50)
-        
-    );  
-    /*=========Get Customer =========================*/
-    
-    SET lv_LastModifiedDate = TIMESTAMPADD(Minute, -1, NOW());
+    SET lv_LastModifiedDate = TIMESTAMPADD(MINUTE, -1, NOW());
  
     INSERT INTO Temp_ClassificationHistory(ID, CustID, RegisterName)
-    SELECT	his.ID
-		,	his.CustID
+    SELECT DISTINCT
+			clh.ID
+		,	clh.CustID
         ,	cus.RegisterName
-	FROM CTS_DataCenter.CTSCustomerClassification_History_Original AS his 
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON his.CustID = cus.CustID AND cus.CustSubID = 0 AND cus.SubscriberID = ip_SubscriberID
-        INNER JOIN CTS_DataCenter.CustDCSAccount AS ds ON cus.CTSCustID = ds.CTSCustID
-	WHERE	his.ID > ip_MaxID
-		AND his.LastModifiedDate <= lv_LastModifiedDate
-	ORDER BY his.ID ASC
+	FROM CTS_DataCenter.CTSCustomerClassification_History_Original AS clh
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification_Original AS cls ON  cls.SubscriberID = ip_SubscriberID AND cls.CustID = clh.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = clh.CustID AND cus.CustSubID = 0 AND cus.RegisterName IS NOT NULL 
+	WHERE	clh.ID > ip_LastID
+		AND clh.LastModifiedDate <= lv_LastModifiedDate
+	ORDER BY clh.ID
 	LIMIT ip_BatchSize;
 
-    INSERT IGNORE INTO Temp_Customer(CustMaxID, CustID, RegisterName)
+    WITH CTE_History(ID, CustID, RegisterName) AS
+    (
     SELECT DISTINCT
-			tmpCls.ID
+			MAX(tmpCls.ID) AS ID
 		,	tmpCls.CustID
 		,	tmpCls.RegisterName
     FROM Temp_ClassificationHistory AS tmpCls
-    ORDER BY tmpCls.ID DESC;      
-    
-    SELECT	tmpCus.CustMaxID AS ID
-		,	ltr.LastModifiedDate
-        ,	tmpCus.RegisterName
+    GROUP BY tmpCls.CustID, tmpCls.RegisterName)
+    SELECT cte.ID AS ID		
+        ,	cte.RegisterName 
+        ,	ltr.SabaIntelligent_RiskLevel AS RiskLevel       
+		,	cte.CustID
+        ,	ltr.CategoryName
+        ,	ltr.CustomerClassName
         ,	ltr.CustomerClass
-        ,	ltr.SabaIntelligent_RiskLevel        
-		,	tmpCus.CustID
-    FROM Temp_Customer AS tmpCus,
-		LATERAL(SELECT cat.CustomerClass, cat.SabaIntelligent_RiskLevel, cls.LastModifiedDate
+        ,	ltr.LastModifiedDate
+    FROM 	CTE_History AS cte
+		,	LATERAL(SELECT cat.CategoryName, cat.CustomerClassName, cat.CustomerClass, cat.SabaIntelligent_RiskLevel, cls.LastModifiedDate
 				FROM CTS_DataCenter.CTSCustomerClassification_Original AS cls
 					INNER JOIN CTS_DataCenter.CustomerCategory_Original AS cat ON cls.CategoryID = cat.CategoryID
-                WHERE cls.CustID = tmpCus.CustID
+                WHERE cls.CustID = cte.CustID
                 ORDER BY cat.Priority ASC, cls.LastModifiedDate DESC		
-                LIMIT 1) AS ltr;       
-
+                LIMIT 1) AS ltr;
 END$$
-DELIMITER;
-
-CALL CTS_DataCenter.CTS_DC_CustClassification_GetLatestRiskLevel(169, 1, 1000);
+DELIMITER ;
