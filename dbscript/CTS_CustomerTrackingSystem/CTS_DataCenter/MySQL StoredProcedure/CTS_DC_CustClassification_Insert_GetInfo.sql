@@ -696,7 +696,7 @@ BEGIN
 											, 	TaggingID				SMALLINT			PATH "$.TaggingID"
 											, 	TaggingType				SMALLINT			PATH "$.TaggingType"	
 											, 	PerformanceTime			DATETIME(3)			PATH "$.PerformanceTime"
-											, 	ScanTaggingType			BIT(1)				PATH "$.ScanTaggingType"
+											, 	ScanTaggingType			TINYINT				PATH "$.ScanTaggingType"
 										)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID;
