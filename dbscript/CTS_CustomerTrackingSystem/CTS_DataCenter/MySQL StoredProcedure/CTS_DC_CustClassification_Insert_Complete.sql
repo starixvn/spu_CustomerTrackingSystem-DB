@@ -342,7 +342,7 @@ BEGIN
 		IF (IFNULL(lv_InsertedCount,0) > 0) THEN
 			IF ip_InputFlowID IN (50,51) AND EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTVS = 1) THEN
 				INSERT INTO CTS_DataCenter.TVSVoidRequest (
-						TVSRequestID,CustID,ReasonID,IssueTypeID,CreatedBy,IsParlay,SportType
+						TVSRequestID,CustID,TVSReasonID,IssueTypeID,CreatedBy,IsParlay,SportType
 					,	RequestTypeID,CreatedDate,InsertedTime)
 				SELECT 	temp.TVSRequestID,temp.CustID,temp.TVSReasonID,temp.TVSIssueTypeID,temp.CreatedBy,temp.IsTVSParlay,temp.SportType
 					,	CASE WHEN cc.CustomerClassName = 'Robot' THEN CONST_TVSRequestTypeID_ROBOT ELSE CONST_TVSRequestTypeID_PA END AS RequestTypeID
