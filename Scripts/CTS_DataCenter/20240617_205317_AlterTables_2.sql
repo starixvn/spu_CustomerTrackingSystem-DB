@@ -92,3 +92,20 @@ RENAME COLUMN IsDirect TO IsMarkedDirectly;
 ALTER TABLE CTSCustomerClassificationQueue
 MODIFY COLUMN CategoryID INT UNSIGNED;
 
+/*CTSCustomerClassification_BySport*/
+ALTER TABLE CTSCustomerClassification_BySport
+MODIFY COLUMN CategoryID INT UNSIGNED;
+
+/*CTSCustomerClassification_BySport_History*/
+ALTER TABLE CTSCustomerClassification_BySport_History
+MODIFY COLUMN CategoryID INT UNSIGNED;
+
+/*CTSCustomerClassification_BySport_Log*/
+ALTER TABLE CTSCustomerClassification_BySport_Log
+MODIFY COLUMN CategoryID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification_BySport_Log
+MODIFY COLUMN OldCategoryID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification_BySport_Log
+MODIFY COLUMN DWCategoryID INT UNSIGNED;
