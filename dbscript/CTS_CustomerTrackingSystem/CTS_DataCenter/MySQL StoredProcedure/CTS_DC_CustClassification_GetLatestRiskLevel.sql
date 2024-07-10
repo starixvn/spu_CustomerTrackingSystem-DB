@@ -40,7 +40,7 @@ BEGIN
         ,	cus.RegisterName
 	FROM CTS_DataCenter.CTSCustomerClassification_History_Original AS clh
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification_Original AS cls ON  cls.SubscriberID = ip_SubscriberID AND cls.CustID = clh.CustID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = clh.CustID AND cus.CustSubID = 0 AND cus.RegisterName IS NOT NULL 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = clh.CustID AND cus.CustSubID = 0 AND cus.RegisterName IS NOT NULL AND cus.RoleID = 1
 	WHERE	clh.ID > ip_LastID
 		AND clh.LastModifiedDate <= lv_LastModifiedDate
 	ORDER BY clh.ID
