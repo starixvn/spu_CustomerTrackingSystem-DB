@@ -37,3 +37,6 @@ CHANGE COLUMN `ChallengeCode` `ChallengeCode` VARCHAR(50) NOT NULL ;
 
 ALTER TABLE `DCS_DataCenter`.`Cookie`
 ADD COLUMN `FirstTransTime` TIMESTAMP(4);
+
+DROP TABLE IF EXISTS DCS_DataCenter.DeviceCookie;
+DROP PROCEDURE IF EXISTS `DCS_DC_Identity_DeviceCookie_Insert`;
