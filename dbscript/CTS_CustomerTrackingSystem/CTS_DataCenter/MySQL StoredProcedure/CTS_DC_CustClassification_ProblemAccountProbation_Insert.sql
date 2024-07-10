@@ -36,7 +36,6 @@ BEGIN
 	DECLARE CONST_CATEID_LICVIPDANGEROUS 		INT;
 	DECLARE CONST_CATEID_LICBA 					INT;
 	
-	DECLARE CONST_PARENTID_POTENTIALPA			INT;
 	DECLARE CONST_PARENTID_WRAPPER 				INT;
 
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
@@ -56,7 +55,6 @@ BEGIN
 	SET CONST_CATEID_LICBA 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
 	
 	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
-	SET CONST_PARENTID_POTENTIALPA				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
    
 	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
@@ -78,7 +76,7 @@ BEGIN
         ,	IsLicenseeVIP			BIT(1)
         ,	IsLicenseeBA			BIT(1)
         , 	IsDataChanged			BIT(1)
-        ,	Remark				    VARCHAR(500)
+        ,	PerformanceTime		    DATETIME(3)
         , 	PRIMARY KEY(CustID,CategoryID)  
     );  
     
@@ -98,7 +96,7 @@ BEGIN
     /* START */
     INSERT IGNORE INTO Temp_PA(
 			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetCCName,TargetDangerLevel1, IsDangerProbation
-		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsMarkedDirectly,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, Remark)
+		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsMarkedDirectly,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
@@ -121,7 +119,7 @@ BEGIN
                  WHEN js.WinlossStatus = 2 AND cate.IsDangerProbation = 0 THEN 0  /*Win + PA => No Change  */
                  WHEN js.WinlossStatus = 2 AND cate.IsDangerProbation = 1 THEN 1  /*Win + Probation => Update */
 			END AS IsDataChanged
-        ,   js.Remark
+        ,   js.PerformanceTime
 	FROM JSON_TABLE(ip_ProblemAccount,
 		"$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED			PATH "$.CustID"
@@ -130,7 +128,7 @@ BEGIN
             ,	WinlossRM		DECIMAL(20,4) 			PATH "$.WinlossRM"	
 			,	BetCount		BIGINT 					PATH "$.BetCount"	
             ,	ActiveDays		INT 					PATH "$.ActiveDays"
-            ,   Remark          VARCHAR(500)            PATH "$.Remark"	
+            ,   PerformanceTime DATETIME(3)            	PATH "$.PerformanceTime"	
 		 )) AS js
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON js.CustID = cust.CustID AND cust.CustSubID = 0 AND cust.IsInternal = 0
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = js.CustID
@@ -170,7 +168,7 @@ BEGIN
 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(
 			CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate
-		, 	TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, Remark)
+		, 	TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT  tmp.CustID
 		, 	tmp.CTSCustID
 		, 	tmp.RelevantCategoryID
@@ -190,13 +188,13 @@ BEGIN
         ,	tmp.WinlossRM
         , 	tmp.BetCount
         , 	tmp.ActiveDays
-        ,   tmp.Remark
+        ,   tmp.PerformanceTime
 	FROM Temp_PA AS tmp
 		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.RelevantCategoryID
     WHERE tmp.IsDataChanged = 1
 		AND ParentID <> CONST_PARENTID_WRAPPER;
 
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, Remark)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT  tmp.CustID
 		, 	tmp.CTSCustID
 		, 	CASE WHEN tmp.IsDataChanged = 1 THEN tmp.RelevantCategoryID ELSE tmp.CategoryID END AS CategoryID
@@ -216,7 +214,7 @@ BEGIN
         ,	tmp.WinlossRM
         , 	tmp.BetCount
         , 	tmp.ActiveDays
-        ,   tmp.Remark
+        ,   tmp.PerformanceTime
 	FROM Temp_PA AS tmp
 		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.RelevantCategoryID;
     

@@ -32,8 +32,6 @@ BEGIN
     DECLARE CONST_WINLOSSSTATUS_LOSING		SMALLINT DEFAULT 0;
     DECLARE CONST_WINLOSSSTATUS_KEEP		SMALLINT DEFAULT 1;
     DECLARE CONST_WINLOSSSTATUS_WINNING		SMALLINT DEFAULT 2;
-	DECLARE CONST_TVSRequestTypeID_PA		TINYINT DEFAULT 1;
-	DECLARE CONST_TVSRequestTypeID_ROBOT	TINYINT DEFAULT 2;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEvidence;
 	CREATE TEMPORARY TABLE Temp_ExistedEvidence(	  
@@ -128,16 +126,6 @@ BEGIN
     SELECT CTSCustID, EvidenceID, NOW() 
     FROM CTE_data
     WHERE EvidenceID IS NOT NULL;
-
-	/* LOG THE VOID REQUEST FOR FURTHER TRACKING */
-	INSERT INTO CTS_DataCenter.TVSVoidRequest (TVSRequestID,CustID,ReasonID,CreatedBy,IsParlay,SportType,IssueTypeID,RequestTypeID,CreatedDate)
-	SELECT 	temp.TVSRequestID,temp.CustID,temp.ReasonID,temp.CreatedBy,temp.IsParlay,temp.SportType,temp.IssueTypeID,temp.RequestTypeID
-		,	CASE WHEN c.CustomerClassName = 'Robot' THEN CONST_TVSRequestTypeID_ROBOT ELSE CONST_TVSRequestTypeID_PA END AS RequestTypeID
-		,	NOW()
-    FROM Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CustomerCategory AS c ON temp.CategoryID = c.CategoryID
-															AND temp.ReasonID = c.TVSReasonID
-	WHERE temp.IsFromTVS = 1;
 	
 END$$
 DELIMITER ;
