@@ -29,13 +29,16 @@ BEGIN
 	DECLARE CONST_PARENTID_NORMAL			INT;
 	
 	DECLARE CONST_ACTIONTYPE_INSERT 		INT DEFAULT 0;
+	DECLARE	CONST_ACTIONTYPE_UPDATE 		INT DEFAULT 1;
 	
+	DECLARE	CONST_SCANTAGGINGTYPE_EXISTONLY TINYINT DEFAULT 2;
 	
     DECLARE lv_CreatedBy 					INT DEFAULT 10278938;
 	DECLARE	lv_CurrentDateTime				DATETIME DEFAULT CURRENT_TIME();
 	DECLARE	lv_InsertedCount				INT DEFAULT 0;
 	DECLARE CONST_TVSRequestTypeID_PA		TINYINT DEFAULT 1;
 	DECLARE CONST_TVSRequestTypeID_ROBOT	TINYINT DEFAULT 2;
+
 	
 	SET CONST_CATEID_LICVIPSUSPICIOUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
 	SET CONST_CATEID_LICVIPDANGEROUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
@@ -45,14 +48,24 @@ BEGIN
 	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 	
 	IF ip_InputFlowID = 8 THEN /*Normal*/
+		
+		UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
+			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cate.CustID AND cate.ParentID = CONST_PARENTID_NORMAL
+		SET   	cate.CTSCustID 			= temp.CTSCustID
+			, 	cate.SubscriberID 		= temp.SubscriberID
+			, 	cate.CategoryID 		= temp.NewCategoryID
+			, 	cate.LastModifiedDate 	= lv_CurrentDateTime
+			, 	cate.LastScannedDate 	= CASE WHEN temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY 
+														THEN cate.LastScannedDate 
+												ELSE DATE(lv_CurrentDateTime) END
+		WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE;
+	
 		UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cate.CustID 
 															AND cate.ParentID = CONST_PARENTID_WRAPPER
-		SET   	cate.CategoryID = 	CASE 
-										WHEN temp.NewIsDangerProbation = 1 
+		SET   	cate.CategoryID = 	CASE WHEN temp.NewIsDangerProbation = 1 
 											THEN CONST_CATEID_LICVIPSUSPICIOUS
-										ELSE CONST_CATEID_LICVIPDANGEROUS 
-									END
+										ELSE CONST_CATEID_LICVIPDANGEROUS END
 		WHERE cate.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS,CONST_CATEID_LICVIPDANGEROUS)
 			AND temp.IsDataChanged = 1;
 		
