@@ -93,7 +93,7 @@ BEGIN
 												,	Remark			VARCHAR(500)	PATH "$.Remark"
 											 )) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpJs.CustID = cls.CustID 
-																				AND cls.ParentID = CONST_PARENTID_VVIP;
+																				AND cls.CategoryID = CONST_CATEID_VVIP;
 																				
 		ELSEIF ip_InputFlowID = 2 THEN /*SpecialCC*/
 			INSERT INTO Temp_NewClassification (
@@ -716,7 +716,7 @@ BEGIN
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						WHERE temp.CustID = cls.CustID
-							AND cls.ParentID = CONST_PARENTID_VVIP
+							AND cls.CategoryID = CONST_CATEID_VVIP
 					 );
 		
 		
