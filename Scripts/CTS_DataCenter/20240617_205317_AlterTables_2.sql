@@ -109,3 +109,11 @@ MODIFY COLUMN OldCategoryID INT UNSIGNED;
 
 ALTER TABLE CTSCustomerClassification_BySport_Log
 MODIFY COLUMN DWCategoryID INT UNSIGNED;
+
+/*Customer_InitialSmart*/
+ALTER TABLE Customer_InitialSmart
+RENAME COLUMN PredictTime TO SourceCreatedDate;
+
+/*Customer_InitialSmart_Log*/
+ALTER TABLE Customer_InitialSmart_Log
+RENAME COLUMN PredictTime TO SourceCreatedDate;
