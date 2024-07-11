@@ -216,8 +216,7 @@ BEGIN
             ,	temp.TWGroupBettingRate
             ,	temp.TWTicketRejectRate
             ,	temp.TWDesktopUsageRate
-			/*,	(CASE WHEN temp.Remark LIKE 'Auto MatchID: %' THEN REPLACE(temp.Remark,'Auto MatchID: ','') ELSE temp.Remark END) AS Remark*/
-			,	REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
+			,	TRIM(TRAILING '|' FROM RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
                         '[TVSRequestID]', IFNULL(temp.TVSRequestID,0))
                     ,   '[Winloss]', IFNULL(FORMAT(temp.WinlossRM, 2),0))
                     ,   '[TVSSportType]', IFNULL(temp.SportType,0))
@@ -225,14 +224,13 @@ BEGIN
                     ,   '[BetCount]', IFNULL(temp.BetCount,0))
                     ,   '[TurnOver]', IFNULL(FORMAT(temp.TurnOverRM, 2),0))
                     ,   '[ActiveDays]', IFNULL(temp.ActiveDays,0))
-                    /*,   '[TWBetCount]', temp.TWBetCount*/
                     ,   '[TWGBRate]', IFNULL(temp.TWGroupBettingRate,0))
                     ,   '[TWDesktopUsageRate]', IFNULL(temp.TWDesktopUsageRate,0))
                     ,   '[TWTicketRejectRate]', IFNULL(temp.TWTicketRejectRate,0))
                     ,   '[TWRobotCounter]', IFNULL(temp.RobotCounter,0))
                     ,   '[MatchID]', CASE WHEN temp.Remark LIKE 'Auto MatchID: %' THEN REPLACE(temp.Remark,'Auto MatchID: ','') ELSE '' END)
                     ,   '[Remark]', IFNULL(temp.Remark,''))
-					,   '[SourceTypeName]', IFNULL(s.ItemNameDisplay,'')) AS Remark
+					,   '[SourceTypeName]', IFNULL(s.ItemNameDisplay,'')))) AS Remark
 			,	temp.TVSRequestID
             ,	temp.IsFromTVS
             ,	temp.IsFromTW
