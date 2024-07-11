@@ -159,7 +159,6 @@ BEGIN
 					WHERE cc.CTSCustID = cus.CTSCustID
 						AND ca.IsActive = 1
 					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
-					LIMIT 1
 			   ) AS tmplc
     WHERE	tmplc.ParentID = CONST_PARENTID_PA
 		AND tmplc.RootTaggingID IS NOT NULL
