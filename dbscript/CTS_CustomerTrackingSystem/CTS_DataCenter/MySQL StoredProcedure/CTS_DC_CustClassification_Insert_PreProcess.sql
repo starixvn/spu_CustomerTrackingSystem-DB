@@ -67,7 +67,7 @@ BEGIN
 		,	temp.SpecialCCDangerProbation = cc.IsDangerProbation
 	WHERE temp.SpecialCC IS NOT NULL;
 
-	IF ip_InputFlowID = 8 THEN /* Normal */
+	IF ip_InputFlowID = 9 THEN /* Normal */
 		 
 		/* TEMPORARY TABLE */
 		DROP TEMPORARY TABLE IF EXISTS Temp_ProbationCustomer;    
@@ -155,7 +155,7 @@ BEGIN
 		SET temp.DWCategoryID = cate.CategoryID
 		WHERE temp.DWCategoryGroupID <> CONST_CATEGROUPID_INACTIVE;
 		
-	ELSEIF ip_InputFlowID IN (51,7) THEN
+	ELSEIF ip_InputFlowID IN (6,7) THEN
 		CALL CTS_DataCenter.CTS_DC_CustClassification_PA_RemoveOldTVSRequest();
 
     END IF;   

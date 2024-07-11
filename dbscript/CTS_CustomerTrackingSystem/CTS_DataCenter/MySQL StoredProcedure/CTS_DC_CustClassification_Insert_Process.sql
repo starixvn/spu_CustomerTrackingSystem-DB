@@ -145,7 +145,7 @@ BEGIN
 		,	CustomerClass 			SMALLINT
 	); 
 
-	IF ip_InputFlowID = 8 THEN
+	IF ip_InputFlowID = 9 THEN
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old (CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID, IsNew, IsRemove)
 		SELECT 	temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, ccs.CategoryID, ccs.CategoryGroupID, 0 AS IsNew , 1 AS IsRemove
 		FROM Temp_NewClassification AS temp
@@ -329,9 +329,9 @@ BEGIN
 		SET 	temp.TargetDangerLevel = CASE WHEN temp.IsLicensee = 1 THEN d.Ext_ABIDangerLevel_Licensee ELSE d.Ext_ABIDangerLevel_Credit END
 		WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE); 
 	
-	ELSEIF (ip_InputFlowID IN (50,51,6,7) OR ip_InputFlowID IN (150,151,16,17)) THEN 
-	/*ip_InputFlowID IN (50,51,6,7) - Insert
-	ip_InputFlowID IN (150,151,16,17) - Rescan*/
+	ELSEIF (ip_InputFlowID IN (5,6,7,8) OR ip_InputFlowID IN (115,116,117,118)) THEN 
+	/*ip_InputFlowID IN (5,6,7,8) - Insert
+	ip_InputFlowID IN (115,116,117,118) - Rescan*/
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_PAWinlossStatus;    
 		CREATE TEMPORARY TABLE Temp_PAWinlossStatus(	

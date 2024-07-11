@@ -78,9 +78,9 @@ BEGIN
 		,	tmpPa.IsFromCTS
 		,	CASE	
 				WHEN ip_InputFlowID = 1 THEN CONST_ACTION_INSERTVVIP
-                WHEN ip_InputFlowID = 50 THEN CONST_ACTION_MARKPA
-                WHEN ip_InputFlowID = 98 THEN CONST_ACTION_UNMARKPA
-                WHEN ip_InputFlowID = 100 THEN CONST_ACTION_REMOVEVVIP
+                WHEN ip_InputFlowID = 5 THEN CONST_ACTION_MARKPA
+                WHEN ip_InputFlowID = 225 THEN CONST_ACTION_UNMARKPA
+                WHEN ip_InputFlowID = 221 THEN CONST_ACTION_REMOVEVVIP
 			END AS ActionType
 		,	CURRENT_TIMESTAMP(3) AS InsertTime
 		,	tmpPa.TVSRequestID
