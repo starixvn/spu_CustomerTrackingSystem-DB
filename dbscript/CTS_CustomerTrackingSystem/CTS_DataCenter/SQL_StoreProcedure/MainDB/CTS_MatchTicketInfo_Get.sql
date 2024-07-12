@@ -156,7 +156,7 @@ BEGIN
 	INSERT INTO @tmpSport (SportType)
 	SELECT ssk.value FROM STRING_SPLIT (@SportList, ',') AS ssk;
 
-	IF @UserNameList <> ''
+	IF @UserNameList <> '' AND @UserNameList IS NOT NULL
 	BEGIN
 		INSERT INTO #tmpUsername(UserName)
 		SELECT ssk.value FROM STRING_SPLIT (@UserNameList, ',') AS ssk;
@@ -229,7 +229,7 @@ BEGIN
 		WHERE LEN(ssk.value) > 0;
 	END;
 
-	IF @UsernameList <> ''
+	IF @UsernameList <> '' AND @UserNameList IS NOT NULL
 	BEGIN
 		INSERT INTO #tmpCustomer(CustId)
 		SELECT cs.custid
