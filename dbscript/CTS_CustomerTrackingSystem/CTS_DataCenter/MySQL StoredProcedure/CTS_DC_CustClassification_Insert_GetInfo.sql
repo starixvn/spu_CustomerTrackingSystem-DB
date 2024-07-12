@@ -43,7 +43,7 @@ BEGIN
 	
 		DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;
 		CREATE TEMPORARY TABLE 	Temp_NewClassification (
-				CustID						BIGINT UNSIGNED  
+				CustID						BIGINT UNSIGNED  PRIMARY KEY
 			, 	CTSCustID					BIGINT UNSIGNED
 			,	SubscriberID 				INT UNSIGNED
 			,	RoleID						INT		
@@ -60,7 +60,6 @@ BEGIN
 			,	IsDangerProbation			BIT(1) DEFAULT 0
 			,	IsDataChanged				BIT(1) DEFAULT 0	/*0: No change category => No Action*/
 			,	IsReturnData				BIT(1) DEFAULT 0
-			,	PRIMARY KEY (CustID)
 		);
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_Customer;

@@ -37,15 +37,40 @@ BEGIN
 		,	IsLicenseeBA						BIT(1) 
 		,	IsExceptDirectDownline				BIT(1) DEFAULT NULL
         ,	IsMarkedDirectly					BIT(1) DEFAULT NULL
-		,	IsRemovedPA							BIT(1) DEFAULT 1
+		,	IsRemovedPA							BIT(1) DEFAULT 0
 		,	CategoryID 							INT UNSIGNED
 		,	Ext_EvidenceID_Licensee 			SMALLINT UNSIGNED	
 		,	Ext_EvidenceID_Credit				SMALLINT UNSIGNED
+		,	IsCleanPA							BIT(1)
+		,	IsDangerProbation					BIT(1)
+		,	CategoryPriority					SMALLINT UNSIGNED
+		,	CustomerClass						SMALLINT UNSIGNED
+		,	IsReturnData						BIT(1) DEFAULT 0
+	);
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
+	CREATE TEMPORARY TABLE Temp_Customer (
+			CustID								BIGINT UNSIGNED PRIMARY KEY
+		, 	CTSCustID							BIGINT UNSIGNED
+		, 	SubscriberID						INT UNSIGNED
+		,	RoleID								INT	
+		,	Remark 								VARCHAR(500) 
+		,	CreatedBy 							INT UNSIGNED
+		,	IsLicenseeVIP						BIT(1) 
+		,	IsLicenseeBA						BIT(1) 
+		,	IsExceptDirectDownline				BIT(1) DEFAULT NULL
+        ,	IsMarkedDirectly					BIT(1) DEFAULT NULL
+		-- ,	IsRemovedPA							BIT(1) DEFAULT 0
+	);
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_KeepDirect;
+	CREATE TEMPORARY TABLE Temp_KeepDirect(
+			CustID 								BIGINT UNSIGNED PRIMARY KEY
 	);
 	
 	IF ip_InputFlowID = 221 THEN /*VVIP*/
-		INSERT INTO Temp_CustomerClassification(CustID, CTSCustID, CreatedBy, CategoryID, IsExistVVIP)
-		SELECT DISTINCT temp.CustID, temp.CTSCustID, temp.CreatedBy
+		INSERT INTO Temp_CustomerClassification(CustID, CTSCustID, CreatedBy, CategoryID, IsExistVVIP, IsReturnData)
+		SELECT DISTINCT temp.CustID, temp.CTSCustID, temp.CreatedBy, 1 AS IsReturnData
 			, 	cls.CategoryID
 			, 	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
 		FROM JSON_TABLE(ip_CustInfo,
@@ -58,8 +83,8 @@ BEGIN
 																			AND cls.CategoryID = CONST_CATEID_VVIP;     
 	
 	ELSEIF ip_InputFlowID = 222 THEN /*SpecialCC*/
-		INSERT INTO Temp_CustomerClassification(CustID, CTSCustID, SubscriberID, CreatedBy, Remark)
-		SELECT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.CreatedBy, temp.Remark
+		INSERT INTO Temp_CustomerClassification(CustID, CTSCustID, SubscriberID, CreatedBy, Remark, IsReturnData)
+		SELECT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.CreatedBy, temp.Remark, 1 AS IsReturnData
 		FROM JSON_TABLE(ip_CustInfo,
 						"$[*]" COLUMNS(
 											CTSCustID				BIGINT UNSIGNED			PATH '$.CTSCustID'
@@ -70,7 +95,7 @@ BEGIN
 										)) AS temp;    
 
 	ELSEIF ip_InputFlowID = 223 THEN /*LicVIP*/
-		INSERT INTO Temp_CustomerClassification(CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP)
+		INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP)
 		SELECT temp.CustID, cus.CTSCustID, cus.SubscriberID, temp.CreatedBy, cus.IsLicenseeVIP
 		FROM JSON_TABLE(ip_CustInfo,
 						"$[*]" COLUMNS(
@@ -80,7 +105,7 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON temp.CustID = cus.CustID AND cus.CustSubID = 0;   
 	
 	ELSEIF ip_InputFlowID = 224 THEN /*LicBA*/
-		INSERT INTO Temp_CustomerClassification(CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeBA)
+		INSERT INTO Temp_Customer(CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeBA)
 		SELECT temp.CustID, cus.CTSCustID, cus.SubscriberID, temp.CreatedBy, cus.IsLicenseeBA
 		FROM JSON_TABLE(ip_CustInfo,
 						"$[*]" COLUMNS(
@@ -90,7 +115,7 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON temp.CustID = cus.CustID AND cus.CustSubID = 0;   
 										
 	ELSEIF ip_InputFlowID = 225 THEN /*PA*/
-		INSERT INTO Temp_CustomerClassification(CustID, CTSCustID, RoleID, SubscriberID, CreatedBy, Remark, IsExceptDirectDownline, IsMarkedDirectly)
+		INSERT INTO Temp_Customer(CustID, CTSCustID, RoleID, SubscriberID, CreatedBy, Remark, IsExceptDirectDownline, IsMarkedDirectly)
 		SELECT DISTINCT temp.CustID, temp.CTSCustID, temp.RoleID, temp.SubscriberID, temp.CreatedBy, temp.Remark, temp.IsExceptDirectDownline, temp.IsMarkedDirectly
 		FROM JSON_TABLE(ip_CustInfo,
 						"$[*]" COLUMNS(
