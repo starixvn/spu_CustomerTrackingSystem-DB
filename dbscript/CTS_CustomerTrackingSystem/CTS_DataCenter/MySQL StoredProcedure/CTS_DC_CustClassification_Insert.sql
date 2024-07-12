@@ -401,9 +401,9 @@ BEGIN
 		SET 	temp.IsDataChanged 	= 1
 			, 	temp.ParentID 		= CONST_PARENTID_WRAPPER
 			, 	temp.NewCategoryID 	= (CASE WHEN temp.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS 
-											ELSE CONST_CATEID_LICVIPDANGEROUS END) AS CategoryID
+											ELSE CONST_CATEID_LICVIPDANGEROUS END) 
 			, 	temp.TargetCC 		= (CASE WHEN temp.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS 
-											ELSE CONST_CC_LICVIPDANGEROUS END) AS TargetCC
+											ELSE CONST_CC_LICVIPDANGEROUS END)
 			, 	temp.IsReturnData	= 1
 		WHERE temp.IsLicenseeVIP = 0 
 			AND ( temp.CategoryPriority IS NULL 

@@ -41,11 +41,16 @@ BEGIN
 		,	CategoryID 							INT UNSIGNED
 		,	Ext_EvidenceID_Licensee 			SMALLINT UNSIGNED	
 		,	Ext_EvidenceID_Credit				SMALLINT UNSIGNED
-		,	IsCleanPA							BIT(1)
+		,	IsCleanPA							BIT(1) DEFAULT 1
 		,	IsDangerProbation					BIT(1)
 		,	CategoryPriority					SMALLINT UNSIGNED
 		,	CustomerClass						SMALLINT UNSIGNED
 		,	IsReturnData						BIT(1) DEFAULT 0
+		,	IsExistRobot						BIT(1) DEFAULT 0
+		,	IsFromTW							BIT(1) DEFAULT 0
+		,	IsFromTVS							BIT(1) DEFAULT 0
+		,	IsFromAI							BIT(1) DEFAULT 0
+		,	IsFromCTS							BIT(1) DEFAULT 0
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;

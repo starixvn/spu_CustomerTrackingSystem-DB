@@ -407,7 +407,8 @@ BEGIN
 	
 		INSERT IGNORE INTO Temp_CustomerClassification (
 				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, Remark, IsMarkedDirectly
-			, 	CategoryID, Ext_EvidenceID_Licensee, Ext_EvidenceID_Credit, IsRemovedPA)
+			, 	CategoryID, Ext_EvidenceID_Licensee, Ext_EvidenceID_Credit, IsRemovedPA
+			,	IsExistRobot, IsFromTW, IsFromTVS, IsFromAI, IsFromCTS, IsReturnData)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			,	temp.SubscriberID
@@ -420,15 +421,67 @@ BEGIN
 			,	cc.Ext_EvidenceID_Credit
 			,	(CASE WHEN (IsExceptDirectDownline = 1 AND IsMarkedDirectly = 1 AND ip_IsFromQueue = 1) THEN 0 
 					  ELSE 1 END) AS IsRemovedPA
+			,	IsCheckExistRobot.IsExistRobot
+			,	IsCheckSourceTW.IsFromTW
+			,	IsCheckSourceTVS.IsFromTVS
+			,	IsCheckSourceAI.IsFromAI
+			,	IsCheckSourceCTS.IsFromCTS
+			,	1 AS IsReturnData
 		FROM Temp_Customer AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
 																			AND cls.ParentID = CONST_PARENTID_PA
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cls.CategoryID = cc.CategoryID; 
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cls.CategoryID = cc.CategoryID AND cc.IsActive = 1
+			, LATERAL (
+						SELECT 1 AS IsExistRobot
+						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON cls.CategoryID = cc.CategoryID 
+																					AND ccR.CustomerClassName = 'Robot'
+																					AND cc.IsActive = 1
+						WHERE clsR.CustID = temp.CustID
+						LIMIT 1
+					  ) AS IsCheckExistRobot
+			, LATERAL (
+						SELECT clsR.IsFromTW
+						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON cls.CategoryID = cc.CategoryID
+																					AND cc.IsActive = 1
+						WHERE clsR.CustID = temp.CustID AND clsR.IsFromTW = 1
+						LIMIT 1
+					  ) AS IsCheckSourceTW
+			, LATERAL (
+						SELECT clsR.IsFromTVS
+						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON cls.CategoryID = cc.CategoryID
+																					AND cc.IsActive = 1
+						WHERE clsR.CustID = temp.CustID AND clsR.IsFromTVS = 1
+						LIMIT 1
+					  ) AS IsCheckSourceTVS
+			, LATERAL (
+						SELECT clsR.IsFromAI
+						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON cls.CategoryID = cc.CategoryID
+																					AND cc.IsActive = 1
+						WHERE clsR.CustID = temp.CustID AND clsR.IsFromAI = 1
+						LIMIT 1
+					  ) AS IsCheckSourceAI
+			, LATERAL (
+						SELECT clsR.IsFromCTS
+						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON cls.CategoryID = cc.CategoryID
+																					AND cc.IsActive = 1
+						WHERE clsR.CustID = temp.CustID AND clsR.IsFromCTS = 1
+						LIMIT 1
+					  ) AS IsCheckSourceCTS
+			; 
 		
 		INSERT INTO Temp_KeepDirect
 		SELECT DISTINCT temp.CustID
 		FROM Temp_CustomerClassification AS temp 
 		WHERE temp.IsRemovedPA = 0;
+		
+		UPDATE Temp_CustomerClassification AS temp
+			INNER JOIN Temp_KeepDirect AS tmpKd ON temp.CustID = tmpKd.CustID
+		SET temp.IsCleanPA = 0;
 		
 		INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueRemove(CTSCustID, EvidenceID, Created)
 		SELECT	temp.CTSCustID
@@ -466,30 +519,101 @@ BEGIN
 		END IF;
 		
 		UPDATE CTS_DataCenter.RobotDetection AS rd
-			INNER JOIN Temp_CustomerClassification AS temp ON  rd.CustID = temp.CustID
+			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID
+																AND temp.IsExistRobot = 1 AND temp.IsFromAI = 1
 		SET rd.IsDisabled = 1
 		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
 		
-		-- DELETE ROBOT TW
-		-- DELETE ROBOT TVS
-		-- DELETE ROBOT CTS
+		-- ROBOT TW
+		UPDATE CTS_DataCenter.TWRobotUser AS rd
+			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID 
+																AND temp.IsExistRobot = 1 AND temp.IsFromTW = 1
+		SET rd.IsDisabled = 1
+		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
+		
+		-- ROBOT CTS
+		UPDATE CTS_DataCenter.CTSRobotUser AS rd
+			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID 
+																AND temp.IsExistRobot = 1 AND temp.IsFromCTS = 1
+		SET rd.IsDisabled = 1
+		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
+		
+		-- PA/ROBOT TVS <ADD INSERT PA - SOURCETYPEID>
+		UPDATE CTS_DataCenter.TVSVoidRequest AS rd
+			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID 
+																AND temp.IsFromTVS = 1
+		SET rd.IsDisabled = 1
+		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
 		
 		-- DELETE PA 305/3005
-		-- DELETE PA TVS <ADD INSERT PA - SOURCETYPEID>
+		DELETE cld
+		FROM CTS_DataCenter.CustomerLoginInfoDetection AS cld
+			INNER JOIN Temp_CustomerClassification AS temp ON cld.CustID = temp.CustID
+																AND cls.CategoryID = temp.CategoryID
+																AND temp.IsFromCTS = 1
+		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
 		
 		DELETE cls
 		FROM CTS_DataCenter.CTSCustomerClassification AS cls
 			INNER JOIN Temp_CustomerClassification AS temp ON cls.CustID = temp.CustID
 																AND cls.CategoryID = temp.CategoryID
+																AND temp.IsFromCTS = 1
 		WHERE temp.IsRemovedPA = 1;
 		
+		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(
+				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType
+			, 	InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1,TurnoverRM, WinlossRM
+			, 	BetCount, ActiveDays, IsMarkedDirectly, Remark)
+		SELECT DISTINCT 
+				temp.CustID
+			, 	temp.CTSCustID
+			, 	NULL AS CategoryID
+			, 	CONST_PARENTID_PA AS ParentID
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	temp.CreatedBy AS LastModifiedBy
+			, 	CONST_ACTIONTYPE_REMOVE AS ActionType
+			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			, 	NULL AS TargetCC
+			, 	(CASE WHEN temp.IsMarkedDirectly = 1 THEN 33 
+					  WHEN temp.IsMarkedDirectly = 0 THEN 34 END) AS SourceTypeID
+			,  	1 AS IsDataChanged
+			,	NULL AS TargetDangerLevel1
+			,	NULL AS TurnoverRM
+			,	NULL AS WinlossRM
+			, 	NULL AS BetCount
+			, 	NULL AS ActiveDays
+			,	NULL AS IsMarkedDirectly
+			,	temp.Remark
+		FROM Temp_CustomerClassification AS temp
+		WHERE temp.IsRemovedPA = 1;
 		
-	
+		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(
+				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType
+			, 	InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1,TurnoverRM, WinlossRM
+			, 	BetCount, ActiveDays, IsMarkedDirectly)
+		SELECT DISTINCT 
+				temp.CustID
+			, 	temp.CTSCustID
+			, 	NULL AS CategoryID
+			, 	CONST_PARENTID_PA AS ParentID
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	temp.CreatedBy AS LastModifiedBy
+			, 	CONST_ACTIONTYPE_REMOVE AS ActionType
+			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			, 	NULL AS TargetCC
+			, 	(CASE WHEN temp.IsMarkedDirectly = 1 THEN 33 
+					  WHEN temp.IsMarkedDirectly = 0 THEN 34 END) AS SourceTypeID
+			,  	1 AS IsDataChanged
+			,	NULL AS TargetDangerLevel1
+			,	NULL AS TurnoverRM
+			,	NULL AS WinlossRM
+			, 	NULL AS BetCount
+			, 	NULL AS ActiveDays
+			,	NULL AS IsMarkedDirectly
+		FROM Temp_Customer AS temp;
+
 	END IF;
-	
-	/*STEP 2: Preprocess*/
-	/*STEP 3: Process*/
-	/*STEP 4: Complete*/
+
 	/*STEP 5: User Log*/
 	IF ip_FromAction = 1 THEN
         SET lv_LogTypeID = 10;
@@ -542,7 +666,7 @@ BEGIN
     END IF;
 	
 	/*STEP N: Return data*/
-	SELECT temp.CustID, temp.CTSCustID, temp.IsCleanPA
+	SELECT DISTINCT temp.CustID, temp.CTSCustID, temp.IsCleanPA
 	FROM Temp_CustomerClassification AS temp
 	WHERE temp.IsReturnData = 1;
 	
