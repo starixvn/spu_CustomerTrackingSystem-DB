@@ -552,7 +552,6 @@ BEGIN
 		FROM CTS_DataCenter.CTSCustomerClassification AS cls
 			INNER JOIN Temp_CustomerClassification AS temp ON cls.CustID = temp.CustID
 																AND cls.CategoryID = temp.CategoryID
-																AND temp.IsFromCTS = 1
 		WHERE temp.IsRemovedPA = 1;
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(
