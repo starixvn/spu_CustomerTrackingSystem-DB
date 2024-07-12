@@ -95,8 +95,8 @@ sp: BEGIN
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCategoryDuplicate; 
-	CREATE TEMPORARY TABLE Temp_CustID (	  
-			CustID          BIGINT UNSIGNED PRIMARY KEY 	
+	CREATE TEMPORARY TABLE Temp_CustCategoryDuplicate (	  
+			CustID          BIGINT UNSIGNED 	
 		,	CategoryID      INT UNSIGNED  
         ,	TVSReasonID     INT 
         ,	InputFlowID	 	INT
@@ -278,7 +278,7 @@ sp: BEGIN
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
         ,	NULL 							AS CategoryID
-        , 	s.ReasonID 						AS TVSReasonID
+        , 	s.TVSReasonID 					AS TVSReasonID
         ,	tmp.RoleID 						AS RoleID
         ,	tmp.SubscriberID				AS SubscriberID
  		,	tmp.IsLicensee					AS IsLicensee
@@ -293,7 +293,7 @@ sp: BEGIN
         ,	s.InsertedTime 				AS LastModifiedDate
         ,   CONST_INPUTFLOWID_REASON_PA 	AS InputFlowID
     FROM  Temp_CustInfo AS tmp
- 		,	LATERAL (SELECT ReasonID, CreatedBy, InsertedTime
+ 		,	LATERAL (SELECT TVSReasonID, CreatedBy, InsertedTime
  					 FROM CTS_DataCenter.TVSVoidRequest 
  					 WHERE CustID = tmp.CustID
 						AND RequestTypeID = CONST_TVSREQUESTTYPE_PA
@@ -416,33 +416,28 @@ sp: BEGIN
 					  WHERE cc.CustID = tmp.CustID 
 						AND cc.InputFlowID IN (CONST_INPUTFLOWID_ROBOT, CONST_INPUTFLOWID_CATEGORY_PA, CONST_INPUTFLOWID_REASON_PA));
                         
-	/***********************Check Normal****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, InputFlowID)
-    SELECT cust.CTSCustID
-		,	cust.CustID
+	/***********************Return****************************/ 
+	SELECT cc.CTSCustID
+		,	cc.CustID
+		, 	cc.CategoryID
+		, 	cc.TVSReasonID
+		, 	cc.RoleID
+		, 	cc.SubscriberID
+		, 	cc.IsLicensee
+		, 	cc.Remark
+		, 	cc.CreatedBy
+		, 	cc.IsMarkedDirectly
+		, 	cc.IsFromTVS
+		, 	cc.IsFromTW
+		, 	cc.IsFromCTS
+		, 	cc.IsFromAI
+		, 	cc.IsFromImperva
+		, 	cc.LastModifiedDate
 		, 	CASE WHEN cc.CategoryID IS NULL THEN CONST_INPUTFLOWID_NORMAL ELSE cc.InputFlowID END AS InputFlowID
-    FROM Temp_CustInfo AS cust
+	FROM Temp_CustInfo AS cust
 		LEFT JOIN Temp_CustCategory AS cc ON cc.CustID = cust.CustID
-	WHERE cc.CategoryID IS NULL AND cust.RoleID = 1;
- 
-	SELECT CTSCustID
-		,	CustID
-		, 	CategoryID
-		, 	TVSReasonID
-		, 	RoleID
-		, 	SubscriberID
-		, 	IsLicensee
-		, 	Remark
-		, 	CreatedBy
-		, 	IsMarkedDirectly
-		, 	IsFromTVS
-		, 	IsFromTW
-		, 	IsFromCTS
-		, 	IsFromAI
-		, 	IsFromImperva
-		, 	LastModifiedDate
-		, 	InputFlowID
-	FROM Temp_CustCategory;
+	WHERE cc.CustID IS NOT NULL
+		OR (cc.CategoryID IS NULL AND cust.RoleID = 1);
     
 END$$
 
