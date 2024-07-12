@@ -26,7 +26,7 @@ BEGIN
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustomerClassification;
 	CREATE TEMPORARY TABLE Temp_CustomerClassification (
-			CustID								BIGINT UNSIGNED PRIMARY KEY
+			CustID								BIGINT UNSIGNED 
 		, 	CTSCustID							BIGINT UNSIGNED
 		, 	SubscriberID						INT UNSIGNED
 		,	RoleID								INT	
@@ -51,6 +51,8 @@ BEGIN
 		,	IsFromTVS							TINYINT(1) DEFAULT 0
 		,	IsFromAI							TINYINT(1) DEFAULT 0
 		,	IsFromCTS							TINYINT(1) DEFAULT 0
+		,	INDEX IX_Temp_CC_CustID_CategoryID (CustID, CategoryID)
+		,	INDEX IX_Temp_CC_IsRemovedPA (IsRemovedPA)
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
