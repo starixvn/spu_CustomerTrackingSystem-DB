@@ -61,7 +61,7 @@ BEGIN
 	SET CONST_CATEID_LICBA								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
 	
 	/*STEP 1: Parse raw data and get custinfo*/
-	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_GetInfo (ip_InputFlowID,ip_CustInfo);
+	CALL CTS_DataCenter.CTS_DC_CustClassification_Remove_GetInfo (ip_InputFlowID,ip_CustInfo);
 	
 	IF ip_InputFlowID = 221 THEN /*VVIP*/
 		SET lv_ActionType 			= CONST_ACTIONTYPE_REMOVE;
