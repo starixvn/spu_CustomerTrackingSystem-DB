@@ -407,8 +407,7 @@ BEGIN
 	
 		INSERT IGNORE INTO Temp_CustomerClassification (
 				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, Remark, IsMarkedDirectly
-			, 	CategoryID, Ext_EvidenceID_Licensee, Ext_EvidenceID_Credit, IsRemovedPA
-			,	IsExistRobot, IsFromTW, IsFromTVS, IsFromAI, IsFromCTS, IsReturnData)
+			, 	CategoryID, Ext_EvidenceID_Licensee, Ext_EvidenceID_Credit, IsRemovedPA, IsReturnData)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			,	temp.SubscriberID
@@ -421,58 +420,55 @@ BEGIN
 			,	cc.Ext_EvidenceID_Credit
 			,	(CASE WHEN (temp.IsExceptDirectDownline = 1 AND temp.IsMarkedDirectly = 1 AND ip_IsFromQueue = 1) THEN 0 
 					  ELSE 1 END) AS IsRemovedPA
-			,	IsCheckExistRobot.IsExistRobot
-			,	IsCheckSourceTW.IsFromTW
-			,	IsCheckSourceTVS.IsFromTVS
-			,	IsCheckSourceAI.IsFromAI
-			,	IsCheckSourceCTS.IsFromCTS
 			,	1 AS IsReturnData
 		FROM Temp_Customer AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
 																			AND cls.ParentID = CONST_PARENTID_PA
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cls.CategoryID = cc.CategoryID AND cc.IsActive = 1
-			, LATERAL (
-						SELECT 1 AS IsExistRobot
+			; 
+			
+		UPDATE Temp_CustomerClassification AS temp
+		SET temp.IsExistRobot = 1
+		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
 							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON clsR.CategoryID = ccR.CategoryID 
 																					AND ccR.CustomerClassName = 'Robot'
 																					AND ccR.IsActive = 1
-						WHERE clsR.CustID = temp.CustID
-						LIMIT 1
-					  ) AS IsCheckExistRobot
-			, LATERAL (
-						SELECT clsR.IsFromTW
+						WHERE clsR.CustID = temp.CustID);
+		
+		UPDATE Temp_CustomerClassification AS temp
+		SET temp.IsFromTW = 1
+		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
 							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON clsR.CategoryID = ccR.CategoryID
 																					AND ccR.IsActive = 1
-						WHERE clsR.CustID = temp.CustID AND clsR.IsFromTW = 1
-						LIMIT 1
-					  ) AS IsCheckSourceTW
-			, LATERAL (
-						SELECT clsR.IsFromTVS
+						WHERE clsR.CustID = temp.CustID AND clsR.IsFromTW = 1);	
+
+
+		UPDATE Temp_CustomerClassification AS temp
+		SET temp.IsFromTVS = 1
+		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
 							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON clsR.CategoryID = ccR.CategoryID
 																					AND ccR.IsActive = 1
-						WHERE clsR.CustID = temp.CustID AND clsR.IsFromTVS = 1
-						LIMIT 1
-					  ) AS IsCheckSourceTVS
-			, LATERAL (
-						SELECT clsR.IsFromAI
+						WHERE clsR.CustID = temp.CustID AND clsR.IsFromTVS = 1);	
+						
+						
+		UPDATE Temp_CustomerClassification AS temp
+		SET temp.IsFromAI = 1
+		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
 							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON clsR.CategoryID = ccR.CategoryID
 																					AND ccR.IsActive = 1
-						WHERE clsR.CustID = temp.CustID AND clsR.IsFromAI = 1
-						LIMIT 1
-					  ) AS IsCheckSourceAI
-			, LATERAL (
-						SELECT clsR.IsFromCTS
+						WHERE clsR.CustID = temp.CustID AND clsR.IsFromAI = 1);	
+						
+		UPDATE Temp_CustomerClassification AS temp
+		SET temp.IsFromCTS = 1
+		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
 							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON clsR.CategoryID = ccR.CategoryID
 																					AND ccR.IsActive = 1
-						WHERE clsR.CustID = temp.CustID AND clsR.IsFromCTS = 1
-						LIMIT 1
-					  ) AS IsCheckSourceCTS
-			; 
+						WHERE clsR.CustID = temp.CustID AND clsR.IsFromCTS = 1);	
 		
 		INSERT INTO Temp_KeepDirect
 		SELECT DISTINCT temp.CustID
