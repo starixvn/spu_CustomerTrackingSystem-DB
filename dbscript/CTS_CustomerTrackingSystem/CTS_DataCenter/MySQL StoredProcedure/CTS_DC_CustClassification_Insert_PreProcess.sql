@@ -76,14 +76,14 @@ BEGIN
 			,	DWCategoryGroupID		INT UNSIGNED
 			, 	ScanDate				DATE
 			,	ScanTaggingType			TINYINT DEFAULT 0   
-			,	IsPassProbationRule		BIT(1)
+			,	IsPassProbationRule		TINYINT(1)
 		);
 
 		DROP TEMPORARY TABLE IF EXISTS Temp_CustIgnoranceAction;    
 		CREATE TEMPORARY TABLE Temp_CustIgnoranceAction(	  	
 				CustID					BIGINT UNSIGNED	PRIMARY KEY
 			, 	ActionType				SMALLINT      
-			,	IsReturnData			BIT(1)
+			,	IsReturnData			TINYINT(1)
 		); 
 		
 		SELECT cat.CategoryPriority

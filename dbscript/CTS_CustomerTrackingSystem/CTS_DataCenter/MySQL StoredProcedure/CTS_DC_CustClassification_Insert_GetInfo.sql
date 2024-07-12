@@ -27,13 +27,10 @@ BEGIN
 	DECLARE CONST_PARENTID_PA 				INT;
 	DECLARE CONST_PARENTID_POTENTIALPA		INT;
 	
-	
     DECLARE lv_MaxCTSCustID					BIGINT UNSIGNED;
 	
 	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
-	-- SET CONST_CATEID_LICVIPDANGEROUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
-	-- SET CONST_CATEID_LICBA 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
 	SET CONST_PARENTID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
 	SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
@@ -49,17 +46,17 @@ BEGIN
 			,	RoleID						INT		
 			,	Remark						VARCHAR(500)
 			,	CreatedBy					INT UNSIGNED
-			,	IsExistVVIP					BIT(1) DEFAULT 0
-			,	IsLicenseeVIP				BIT(1) DEFAULT 0
-			,	IsLicenseeBA				BIT(1) DEFAULT 0
+			,	IsExistVVIP					TINYINT(1) DEFAULT 0
+			,	IsLicenseeVIP				TINYINT(1) DEFAULT 0
+			,	IsLicenseeBA				TINYINT(1) DEFAULT 0
 			,	TargetCC					SMALLINT UNSIGNED
 			,	CategoryPriority			SMALLINT UNSIGNED
 			,	CustomerClassPriority		SMALLINT UNSIGNED
 			,	NewCategoryID				INT
 			,	ParentID					INT UNSIGNED
-			,	IsDangerProbation			BIT(1) DEFAULT 0
-			,	IsDataChanged				BIT(1) DEFAULT 0	/*0: No change category => No Action*/
-			,	IsReturnData				BIT(1) DEFAULT 0
+			,	IsDangerProbation			TINYINT(1) DEFAULT 0
+			,	IsDataChanged				TINYINT(1) DEFAULT 0	/*0: No change category => No Action*/
+			,	IsReturnData				TINYINT(1) DEFAULT 0
 		);
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
@@ -69,8 +66,8 @@ BEGIN
 			, 	SubscriberID				INT UNSIGNED
 			,	RoleID						INT	
 			,	CreatedBy 					INT UNSIGNED
-			,	IsLicenseeVIP				BIT(1) DEFAULT 0
-			, 	IsLicenseeBA				BIT(1) DEFAULT 0
+			,	IsLicenseeVIP				TINYINT(1) DEFAULT 0
+			, 	IsLicenseeBA				TINYINT(1) DEFAULT 0
 		);
 
 		IF ip_InputFlowID = 1 THEN /*VVIP*/
@@ -105,7 +102,7 @@ BEGIN
 													CustID 			BIGINT UNSIGNED		PATH "$.CustID"
 												,	CTSCustID 		BIGINT UNSIGNED		PATH "$.CTSCustID"
 												,	SubscriberID 	INT UNSIGNED		PATH "$.SubscriberID"
-												,	IsLicenseeVIP	BIT(1)				PATH "$.IsLicenseeVIP"            
+												,	IsLicenseeVIP	TINYINT(1)			PATH "$.IsLicenseeVIP"            
 												,	TargetCC		SMALLINT			PATH "$.CustomerClass"            
 												,	CreatedBy 		INT UNSIGNED		PATH "$.CreatedBy"          
 												,	Remark			VARCHAR(500)		PATH "$.Remark"
@@ -145,16 +142,16 @@ BEGIN
 			, 	CTSCustID					BIGINT UNSIGNED
 			,	SubscriberID 				INT UNSIGNED
 			,	RoleID						INT		
-			,	IsLicensee					BIT(1) DEFAULT 0
-			,	IsLicenseeVIP				BIT(1) DEFAULT 0
-			,	IsLicenseeBA				BIT(1) DEFAULT 0
-			,	IsExistVVIP					BIT(1) DEFAULT 0
-			,	IsExistWrapper				BIT(1) DEFAULT 0
-			,	IsExistPA					BIT(1) DEFAULT 0
-			,	IsExistPotentialPA			BIT(1) DEFAULT 0
+			,	IsLicensee					TINYINT(1) DEFAULT 0
+			,	IsLicenseeVIP				TINYINT(1) DEFAULT 0
+			,	IsLicenseeBA				TINYINT(1) DEFAULT 0
+			,	IsExistVVIP					TINYINT(1) DEFAULT 0
+			,	IsExistWrapper				TINYINT(1) DEFAULT 0
+			,	IsExistPA					TINYINT(1) DEFAULT 0
+			,	IsExistPotentialPA			TINYINT(1) DEFAULT 0
 			-- ,	IsExistRobot				BIT(1) DEFAULT 0 
 			-- ,	IsExistKeepOldCateID		BIT(1) DEFAULT 0 
-			,	IsFromOldPA					BIT(1) DEFAULT 0
+			,	IsFromOldPA					TINYINT(1) DEFAULT 0
 			
 			, 	TurnoverRM					DECIMAL(20,4)
 			, 	WinlossRM					DECIMAL(20,4)
@@ -167,8 +164,8 @@ BEGIN
 			
 			, 	NewCategoryID		   		INT UNSIGNED
 			,	NewCategoryGroupID     		INT UNSIGNED -- CategoryGroup
-			,	NewIsDangerProbation		BIT(1) DEFAULT 0
-			,	IsPAProbation	     		BIT(1) DEFAULT 0-- IsProbation
+			,	NewIsDangerProbation		TINYINT(1) DEFAULT 0
+			,	IsPAProbation	     		TINYINT(1) DEFAULT 0-- IsProbation
 			
 			,	OldCategoryID		    	INT UNSIGNED
 			,	OldCategoryGroupID	    	INT UNSIGNED
@@ -186,25 +183,25 @@ BEGIN
 			
 			, 	RelevantCategoryID			INT UNSIGNED
 			,	RelevantCategoryGroupID   	INT UNSIGNED
-			,	RelevantIsPAProbation	   	BIT(1) -- RelevantIsProbation
+			,	RelevantIsPAProbation	   	TINYINT(1) -- RelevantIsProbation
 			
-			,	IsDataChanged				BIT(1) 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
+			,	IsDataChanged				TINYINT(1) 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
 			,	DataChangeType				TINYINT DEFAULT 0	/* 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE */
 			,	SourceTypeID      			SMALLINT
 
 			, 	WinlossStatus				SMALLINT /*LOSING  = 0 (PROBATION), KEEPSTATE = 1 (NOT CHANGE), WINNING = 2 (NOT PROBATION);*/
 			
-			,	IsFromTVS					BIT(1)  DEFAULT 0
+			,	IsFromTVS					TINYINT(1)  DEFAULT 0
 			,	TVSRequestID				BIGINT UNSIGNED
 			, 	TVSReasonID		   			INT
 			,	TVSIssueTypeID 				TINYINT DEFAULT NULL 
-			,	IsTVSParlay					BIT(1) DEFAULT NULL
+			,	IsTVSParlay					TINYINT(1) DEFAULT NULL
 			,	SportType					SMALLINT DEFAULT NULL 
 			
 			,	SourceCreatedDate			DATETIME(3)
 			,	GBTicketCount				INT
 
-			,	IsFromTW					BIT(1)  DEFAULT 0
+			,	IsFromTW					TINYINT(1)  DEFAULT 0
 			,	TWRobotCounter				INT -- RobotCounter
 			
 			,	TWBetCount					BIGINT
@@ -212,9 +209,9 @@ BEGIN
 			,	TWTicketRejectRate			DECIMAL(10,4)
 			,	TWDesktopUsageRate			DECIMAL(10,4)
 			
-			,	IsFromCTS					BIT(1)  DEFAULT 0
-			,	IsFromAI					BIT(1)  DEFAULT 0
-			,	IsFromImperva				BIT(1) 	DEFAULT 0
+			,	IsFromCTS					TINYINT(1)  DEFAULT 0
+			,	IsFromAI					TINYINT(1)  DEFAULT 0
+			,	IsFromImperva				TINYINT(1) 	DEFAULT 0
 			
 			,	TaggingID					SMALLINT
 			,	TaggingType					SMALLINT	
@@ -223,13 +220,13 @@ BEGIN
 			,   SpecialCC	       			SMALLINT  
 			,	SpecialCCName				VARCHAR(50)
 			,   SpecialCCCatePriority  		SMALLINT DEFAULT -1
-			,   SpecialCCDangerProbation   	BIT(1) DEFAULT NULL
+			,   SpecialCCDangerProbation   	TINYINT(1) DEFAULT NULL
 			
 			,	LastModifiedDate			DATETIME(3)
 			, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
 			,	CreatedBy					INT UNSIGNED
-			,	IsMarkedDirectly			BIT(1) DEFAULT 0
-			,	IsReturnData				BIT(1) DEFAULT 1
+			,	IsMarkedDirectly			TINYINT(1) DEFAULT 0
+			,	IsReturnData				TINYINT(1) DEFAULT 1
 			,	Remark						VARCHAR(500)
 			,	GroupName					VARCHAR(100)
 			, 	PRIMARY KEY (CustID, DWCategoryID)
@@ -286,23 +283,23 @@ BEGIN
 											,	RoleID 						INT					PATH "$.RoleID" 
 											,	SubscriberID 				INT UNSIGNED		PATH "$.SubscriberID"
 											,	DWCategoryID				INT UNSIGNED		PATH "$.CategoryID"
-											,	IsLicensee					BIT(1)				PATH "$.IsLicensee"
+											,	IsLicensee					TINYINT(1)			PATH "$.IsLicensee"
 											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
 											, 	Remark						VARCHAR(500)		PATH "$.Remark"
-											, 	IsMarkedDirectly			BIT(1)				PATH "$.IsDirectPA"
+											, 	IsMarkedDirectly			TINYINT(1)			PATH "$.IsDirectPA"
 											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
 											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
 											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
 											, 	BetCount					BIGINT 				PATH "$.BetCount"
 											, 	ActiveDays					INT 				PATH "$.ActiveDays"
-											, 	IsFromTVS					BIT(1) 				PATH "$.IsFromTVS"
-											, 	IsFromTW					BIT(1) 				PATH "$.IsFromTW"
-											, 	IsFromCTS					BIT(1) 				PATH "$.IsFromCTS"
-											, 	IsFromAI					BIT(1) 				PATH "$.IsFromAI"
+											, 	IsFromTVS					TINYINT(1) 			PATH "$.IsFromTVS"
+											, 	IsFromTW					TINYINT(1)			PATH "$.IsFromTW"
+											, 	IsFromCTS					TINYINT(1) 			PATH "$.IsFromCTS"
+											, 	IsFromAI					TINYINT(1) 			PATH "$.IsFromAI"
 											, 	LastModifiedDate			DATETIME(3)			PATH "$.LastModifiedDate"
 											, 	MatchID						INT 				PATH "$.MatchID"	
 											, 	TVSRequestID				BIGINT UNSIGNED		PATH "$.TVSRequestID"
-											,	IsTVSParlay					BIT(1)  			PATH "$.IsParlay"
+											,	IsTVSParlay					TINYINT(1)  		PATH "$.IsParlay"
 											,	TVSIssueTypeID				TINYINT 			PATH "$.IssueTypeID"
 											,	SportType					SMALLINT 			PATH "$.SportType"
 											, 	PerformanceTime				DATETIME(3)			PATH "$.PerformanceTime"
@@ -424,19 +421,19 @@ BEGIN
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
 											,	TVSReasonID					INT 				PATH "$.ReasonID"
 											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
-											, 	IsMarkedDirectly			BIT(1)				PATH "$.IsDirectPA"
+											, 	IsMarkedDirectly			TINYINT(1)			PATH "$.IsDirectPA"
 											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
 											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
 											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
 											, 	BetCount					BIGINT 				PATH "$.BetCount"
 											, 	ActiveDays					INT 				PATH "$.ActiveDays"
-											, 	IsFromTVS					BIT(1) 				PATH "$.IsFromTVS"
-											, 	IsFromTW					BIT(1) 				PATH "$.IsFromTW"
-											, 	IsFromCTS					BIT(1) 				PATH "$.IsFromCTS"
-											, 	IsFromAI					BIT(1) 				PATH "$.IsFromAI"
+											, 	IsFromTVS					TINYINT(1) 			PATH "$.IsFromTVS"
+											, 	IsFromTW					TINYINT(1) 			PATH "$.IsFromTW"
+											, 	IsFromCTS					TINYINT(1) 			PATH "$.IsFromCTS"
+											, 	IsFromAI					TINYINT(1) 			PATH "$.IsFromAI"
 											, 	TVSRequestID				BIGINT UNSIGNED		PATH "$.TVSRequestID"
 											, 	Remark						VARCHAR(500) 		PATH "$.Remark"
-											,	IsTVSParlay					BIT(1)	 			PATH "$.IsParlay"
+											,	IsTVSParlay					TINYINT(1) 			PATH "$.IsParlay"
 											,	SportType					SMALLINT 			PATH "$.SportType"
 											,	TVSIssueTypeID				TINYINT 			PATH "$.IssueTypeID"
 											, 	PerformanceTime				DATETIME(3)			PATH "$.PerformanceTime"
@@ -531,17 +528,17 @@ BEGIN
 											, 	BetCount				BIGINT 				PATH "$.BetCount"
 											, 	ActiveDays				INT 				PATH "$.ActiveDays"
 
-											, 	IsFromTW				BIT(1)  			PATH "$.IsFromTW"
-											, 	IsFromCTS				BIT(1)  			PATH "$.IsFromCTS"
-											, 	IsFromAI				BIT(1)  			PATH "$.IsFromAI"
-											, 	IsFromTVS				BIT(1)  			PATH "$.IsFromTVS"
-											,	IsFromImperva			BIT(1) 				PATH "$.IsFromImperva"
+											, 	IsFromTW				TINYINT(1) 			PATH "$.IsFromTW"
+											, 	IsFromCTS				TINYINT(1) 			PATH "$.IsFromCTS"
+											, 	IsFromAI				TINYINT(1) 			PATH "$.IsFromAI"
+											, 	IsFromTVS				TINYINT(1)  		PATH "$.IsFromTVS"
+											,	IsFromImperva			TINYINT(1) 			PATH "$.IsFromImperva"
 											, 	TVSRequestID			BIGINT UNSIGNED 	PATH "$.TVSRequestID"
-											, 	IsMarkedDirectly		BIT(1)  			PATH "$.IsDirect"
+											, 	IsMarkedDirectly		TINYINT(1) 			PATH "$.IsDirect"
 
 											, 	Remark					VARCHAR(500)		PATH "$.Remark"
 											, 	CreatedBy				INT UNSIGNED		PATH "$.CreatedBy"
-											,	IsTVSParlay				BIT(1) 				PATH "$.IsParlay"
+											,	IsTVSParlay				TINYINT(1) 			PATH "$.IsParlay"
 											,	SportType				SMALLINT			PATH "$.SportType"
 											,	TVSIssueTypeID			TINYINT				PATH "$.IssueTypeID"
 											, 	PerformanceTime			DATETIME(3)			PATH "$.PerformanceTime"
@@ -627,18 +624,18 @@ BEGIN
 											,	RoleID 						INT					PATH "$.RoleID" 
 											,	SubscriberID 				INT UNSIGNED		PATH "$.SubscriberID"
 											,	DWCategoryID				INT UNSIGNED		PATH "$.CategoryID"
-											,	IsLicensee					BIT(1)				PATH "$.IsLicensee"
+											,	IsLicensee					TINYINT(1)			PATH "$.IsLicensee"
 											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
 											, 	Remark						VARCHAR(500)		PATH "$.Remark"
-											, 	IsMarkedDirectly			BIT(1)				PATH "$.IsDirectPA"
+											, 	IsMarkedDirectly			TINYINT(1)			PATH "$.IsDirectPA"
 											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
 											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
 											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
 											, 	BetCount					BIGINT 				PATH "$.BetCount"
 											, 	ActiveDays					INT 				PATH "$.ActiveDays"
-											, 	IsFromTW					BIT(1) 				PATH "$.IsFromTW"
-											, 	IsFromCTS					BIT(1) 				PATH "$.IsFromCTS"
-											, 	IsFromAI					BIT(1) 				PATH "$.IsFromAI"
+											, 	IsFromTW					TINYINT(1)			PATH "$.IsFromTW"
+											, 	IsFromCTS					TINYINT(1) 			PATH "$.IsFromCTS"
+											, 	IsFromAI					TINYINT(1) 			PATH "$.IsFromAI"
 											, 	PerformanceTime				DATETIME(3)			PATH "$.PerformanceTime"
 											,	SportType					SMALLINT 			PATH "$.SportType"
 											, 	SourceCreatedDate			DATETIME(3)			PATH "$.DetectionDate"

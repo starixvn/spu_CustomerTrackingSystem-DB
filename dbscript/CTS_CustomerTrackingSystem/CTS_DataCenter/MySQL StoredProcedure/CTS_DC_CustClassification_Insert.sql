@@ -7,8 +7,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert`(
 	,	IN	ip_FromAction			TINYINT
 	,	IN	ip_UplineRoleID			INT
 	,	IN	ip_QueueID				BIGINT
-	,	IN	ip_AffectDownline		BIT(1)
-	,	IN	ip_IsToQueue			BIT(1)
+	,	IN	ip_AffectDownline		TINYINT(1)
+	,	IN	ip_IsToQueue			TINYINT(1)
 	,	IN	ip_CustInfo				JSON
 	,	OUT op_ErrorMessage 		VARCHAR(2000)
 )

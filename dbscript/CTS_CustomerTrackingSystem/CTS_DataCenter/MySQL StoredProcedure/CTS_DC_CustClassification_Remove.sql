@@ -7,8 +7,8 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Remove`(
 	,	IN	ip_FromAction			TINYINT
 	,	IN	ip_UplineRoleID			INT
 	,	IN	ip_QueueID				BIGINT
-	,	IN	ip_AffectDownline		BIT(1)
-	,	IN	ip_IsFromQueue			BIT(1)
+	,	IN	ip_AffectDownline		TINYINT(1)
+	,	IN	ip_IsFromQueue			TINYINT(1)
 	,	IN	ip_CustInfo				JSON
 	,	OUT op_ErrorMessage 		VARCHAR(200)
 )
@@ -47,7 +47,7 @@ BEGIN
 	DECLARE lv_TargetCC									INT;
 	DECLARE lv_LogTypeID								INT;
 	DECLARE lv_CreatedBy								INT;
-	DECLARE lv_IsExceptDirectDownline					BIT(1);
+	DECLARE lv_IsExceptDirectDownline					TINYINT(1);
 	DECLARE lv_CategoryPriority							SMALLINT UNSIGNED;  
 	DECLARE lv_SPName 									VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Remove';
 	DECLARE lv_LogInfo 									VARCHAR(500);

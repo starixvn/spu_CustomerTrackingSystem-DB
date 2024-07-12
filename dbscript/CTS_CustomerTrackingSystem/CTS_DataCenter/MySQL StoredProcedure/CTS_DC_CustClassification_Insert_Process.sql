@@ -343,13 +343,13 @@ BEGIN
 		CREATE TEMPORARY TABLE Temp_CustProbationStatus(
 				CustID 					BIGINT UNSIGNED PRIMARY KEY
 			,	CTSCustID 				BIGINT UNSIGNED
-			,	IsPAProbation			BIT(1)
+			,	IsPAProbation			TINYINT(1)
 			,	TurnoverRM				DECIMAL(20,4)
 			,	WinlossRM				DECIMAL(20,4)
 			, 	BetCount				BIGINT 
 			, 	ActiveDays				INT
 			,	WinlossStatus			TINYINT
-			,	IsLicensee				BIT(1)
+			,	IsLicensee				TINYINT(1)
 		);   
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_LicVIPCust;

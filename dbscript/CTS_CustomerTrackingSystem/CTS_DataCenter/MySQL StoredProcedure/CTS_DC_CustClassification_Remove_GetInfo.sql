@@ -32,25 +32,25 @@ BEGIN
 		,	RoleID								INT	
 		,	Remark 								VARCHAR(500) 
 		,	CreatedBy 							INT UNSIGNED
-		,	IsExistVVIP							BIT(1) 
-		,	IsLicenseeVIP						BIT(1) 
-		,	IsLicenseeBA						BIT(1) 
-		,	IsExceptDirectDownline				BIT(1) DEFAULT NULL
-        ,	IsMarkedDirectly					BIT(1) DEFAULT NULL
-		,	IsRemovedPA							BIT(1) DEFAULT 0
+		,	IsExistVVIP							TINYINT(1) 
+		,	IsLicenseeVIP						TINYINT(1) 
+		,	IsLicenseeBA						TINYINT(1) 
+		,	IsExceptDirectDownline				TINYINT(1) DEFAULT NULL
+        ,	IsMarkedDirectly					TINYINT(1) DEFAULT NULL
+		,	IsRemovedPA							TINYINT(1) DEFAULT 0
 		,	CategoryID 							INT UNSIGNED
 		,	Ext_EvidenceID_Licensee 			SMALLINT UNSIGNED	
 		,	Ext_EvidenceID_Credit				SMALLINT UNSIGNED
-		,	IsCleanPA							BIT(1) DEFAULT 1
-		,	IsDangerProbation					BIT(1)
+		,	IsCleanPA							TINYINT(1) DEFAULT 1
+		,	IsDangerProbation					TINYINT(1)
 		,	CategoryPriority					SMALLINT UNSIGNED
 		,	CustomerClass						SMALLINT UNSIGNED
-		,	IsReturnData						BIT(1) DEFAULT 0
-		,	IsExistRobot						BIT(1) DEFAULT 0
-		,	IsFromTW							BIT(1) DEFAULT 0
-		,	IsFromTVS							BIT(1) DEFAULT 0
-		,	IsFromAI							BIT(1) DEFAULT 0
-		,	IsFromCTS							BIT(1) DEFAULT 0
+		,	IsReturnData						TINYINT(1) DEFAULT 0
+		,	IsExistRobot						TINYINT(1) DEFAULT 0
+		,	IsFromTW							TINYINT(1) DEFAULT 0
+		,	IsFromTVS							TINYINT(1) DEFAULT 0
+		,	IsFromAI							TINYINT(1) DEFAULT 0
+		,	IsFromCTS							TINYINT(1) DEFAULT 0
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
@@ -61,11 +61,10 @@ BEGIN
 		,	RoleID								INT	
 		,	Remark 								VARCHAR(500) 
 		,	CreatedBy 							INT UNSIGNED
-		,	IsLicenseeVIP						BIT(1) 
-		,	IsLicenseeBA						BIT(1) 
-		,	IsExceptDirectDownline				BIT(1) DEFAULT NULL
-        ,	IsMarkedDirectly					BIT(1) DEFAULT NULL
-		-- ,	IsRemovedPA							BIT(1) DEFAULT 0
+		,	IsLicenseeVIP						TINYINT(1) 
+		,	IsLicenseeBA						TINYINT(1) 
+		,	IsExceptDirectDownline				TINYINT(1) DEFAULT NULL
+        ,	IsMarkedDirectly					TINYINT(1) DEFAULT NULL
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_KeepDirect;
@@ -130,8 +129,8 @@ BEGIN
 										,   SubscriberID 			INT	UNSIGNED		PATH "$.SubscriberID"
 										, 	CreatedBy				INT UNSIGNED		PATH "$.CreatedBy"
 										, 	Remark					VARCHAR(500)		PATH "$.Remark"
-										, 	IsExceptDirectDownline	BIT(1) 				PATH "$.IsExceptDirectDownline"
-										, 	IsMarkedDirectly		BIT(1) 				PATH "$.IsDirectPA"
+										, 	IsExceptDirectDownline	TINYINT(1) 			PATH "$.IsExceptDirectDownline"
+										, 	IsMarkedDirectly		TINYINT(1) 			PATH "$.IsDirectPA"
 										)) AS temp
 			LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
 																			AND cls.CategoryID = CONST_CATEID_VVIP
