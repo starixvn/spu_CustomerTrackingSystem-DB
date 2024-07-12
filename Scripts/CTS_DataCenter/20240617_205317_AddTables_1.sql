@@ -57,6 +57,7 @@ CREATE TABLE TVSVoidRequest
 	RequestTypeID TINYINT COMMENT '1: PA, 2: Robot',
     CreatedDate DATETIME,
 	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
+	IsDisabled BIT(1) DEFAULT 0,
     PRIMARY KEY (ID),
     KEY IX_TVSVoidRequest_CustID_CreatedDate (CustID, CreatedDate),
 	KEY IX_TVSVoidRequest_TVSReasonID (TVSReasonID)
@@ -68,7 +69,8 @@ CREATE TABLE CTSRobotUser
 	CategoryID INT UNSIGNED NOT NULL,
 	Remark VARCHAR(500),
 	CreatedDate DATETIME,
-	PRIMARY KEY (CustID, CategoryID)
+	IsDisabled BIT(1) DEFAULT 0,
+	PRIMARY KEY (CustID, IsDisabled)
 );
 
 CREATE TABLE TWRobotUser
@@ -77,7 +79,8 @@ CREATE TABLE TWRobotUser
 	CategoryID INT UNSIGNED NOT NULL,
 	RobotCounter SMALLINT,
 	CreatedDate DATETIME,
-	PRIMARY KEY (CustID, CategoryID)
+	IsDisabled BIT(1) DEFAULT 0,
+	PRIMARY KEY (CustID, IsDisabled)
 );
 
 
@@ -132,5 +135,5 @@ CREATE TABLE CustomerCategory
 	KEY IX_CustomerCategory_ParentID (ParentID), 
 	KEY IX_CustomerCategory_IsActive (IsActive),
 	KEY IX_CustomerCategory_CategoryGroupID (CategoryGroupID), 
-	KEY IX_CustomerCategory_ReasonID (IsHedgingReasonMM) 
+	KEY IX_CustomerCategory_TVSReasonID (TVSReasonID) 
 );
