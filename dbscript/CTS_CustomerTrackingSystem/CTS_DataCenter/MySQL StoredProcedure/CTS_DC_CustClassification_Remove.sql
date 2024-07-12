@@ -419,7 +419,7 @@ BEGIN
 			,	cls.CategoryID
 			,	cc.Ext_EvidenceID_Licensee
 			,	cc.Ext_EvidenceID_Credit
-			,	(CASE WHEN (IsExceptDirectDownline = 1 AND IsMarkedDirectly = 1 AND ip_IsFromQueue = 1) THEN 0 
+			,	(CASE WHEN (temp.IsExceptDirectDownline = 1 AND temp.IsMarkedDirectly = 1 AND ip_IsFromQueue = 1) THEN 0 
 					  ELSE 1 END) AS IsRemovedPA
 			,	IsCheckExistRobot.IsExistRobot
 			,	IsCheckSourceTW.IsFromTW
@@ -434,41 +434,41 @@ BEGIN
 			, LATERAL (
 						SELECT 1 AS IsExistRobot
 						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
-							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON cls.CategoryID = cc.CategoryID 
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON clsR.CategoryID = ccR.CategoryID 
 																					AND ccR.CustomerClassName = 'Robot'
-																					AND cc.IsActive = 1
+																					AND ccR.IsActive = 1
 						WHERE clsR.CustID = temp.CustID
 						LIMIT 1
 					  ) AS IsCheckExistRobot
 			, LATERAL (
 						SELECT clsR.IsFromTW
 						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
-							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON cls.CategoryID = cc.CategoryID
-																					AND cc.IsActive = 1
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON clsR.CategoryID = ccR.CategoryID
+																					AND ccR.IsActive = 1
 						WHERE clsR.CustID = temp.CustID AND clsR.IsFromTW = 1
 						LIMIT 1
 					  ) AS IsCheckSourceTW
 			, LATERAL (
 						SELECT clsR.IsFromTVS
 						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
-							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON cls.CategoryID = cc.CategoryID
-																					AND cc.IsActive = 1
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON clsR.CategoryID = ccR.CategoryID
+																					AND ccR.IsActive = 1
 						WHERE clsR.CustID = temp.CustID AND clsR.IsFromTVS = 1
 						LIMIT 1
 					  ) AS IsCheckSourceTVS
 			, LATERAL (
 						SELECT clsR.IsFromAI
 						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
-							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON cls.CategoryID = cc.CategoryID
-																					AND cc.IsActive = 1
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON clsR.CategoryID = ccR.CategoryID
+																					AND ccR.IsActive = 1
 						WHERE clsR.CustID = temp.CustID AND clsR.IsFromAI = 1
 						LIMIT 1
 					  ) AS IsCheckSourceAI
 			, LATERAL (
 						SELECT clsR.IsFromCTS
 						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
-							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON cls.CategoryID = cc.CategoryID
-																					AND cc.IsActive = 1
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON clsR.CategoryID = ccR.CategoryID
+																					AND ccR.IsActive = 1
 						WHERE clsR.CustID = temp.CustID AND clsR.IsFromCTS = 1
 						LIMIT 1
 					  ) AS IsCheckSourceCTS
@@ -549,7 +549,6 @@ BEGIN
 		DELETE cld
 		FROM CTS_DataCenter.CustomerLoginInfoDetection AS cld
 			INNER JOIN Temp_CustomerClassification AS temp ON cld.CustID = temp.CustID
-																AND cls.CategoryID = temp.CategoryID
 																AND temp.IsFromCTS = 1
 		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
 		
