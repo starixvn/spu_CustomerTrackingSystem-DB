@@ -95,7 +95,8 @@ BEGIN
 	SET CONST_CC_LICBA				 					= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICBA');
 
 	-- -------------------------------------
-	SELECT CategoryPriority
+	-- SELECT CategoryPriority
+	SELECT CustomerClassPriority
     INTO lv_LicBAPriority
     FROM CTS_DataCenter.CustomerCategory 
 	WHERE CategoryID = CONST_CC_LICBA;
@@ -222,7 +223,7 @@ BEGIN
 										ELSE CONST_SOURCETYPE_SCANONSCHEDULE
 									END)
 		WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
-			
+		/*	
 		UPDATE Temp_NewClassification AS tmp 
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = tmp.NewCategoryID
 		SET tmp.TargetCC = CASE  
@@ -251,6 +252,36 @@ BEGIN
 										END
 								ELSE tmp.SpecialCC
 							END
+		WHERE 	tmp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_IGNOREPROBATION);*/
+	
+		UPDATE Temp_NewClassification AS tmp 
+			LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = tmp.NewCategoryID
+		SET tmp.TargetCC = CASE  
+								WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCCatePriority <> -1)
+									THEN CASE
+											WHEN cate.CustomerClass = CONST_CC_VVIP 
+												THEN CONST_CC_VVIP                                                
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.CustomerClassPriority > tmp.SpecialCCCatePriority 
+													AND tmp.SpecialCCDangerProbation = 1 
+												THEN CONST_CC_LICVIPSUSPICIOUS
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.CustomerClassPriority > tmp.SpecialCCCatePriority 
+													AND tmp.SpecialCCDangerProbation IS NOT NULL 
+												THEN CONST_CC_LICVIPDANGEROUS
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 
+												THEN CONST_CC_LICVIPSUSPICIOUS
+											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 
+												THEN CONST_CC_LICVIPDANGEROUS                                                
+											WHEN tmp.IsLicenseeBA = 1 AND tmp.SpecialCCCatePriority <> -1 
+													AND tmp.SpecialCCCatePriority < lv_LicBAPriority 
+												THEN tmp.SpecialCC  
+											WHEN tmp.IsLicenseeBA = 1 AND cate.CustomerClassPriority > lv_LicBAPriority 
+												THEN CONST_CC_LICBA                                            
+											WHEN tmp.SpecialCCCatePriority <> -1 AND cate.CustomerClassPriority > tmp.SpecialCCCatePriority 
+												THEN tmp.SpecialCC
+											ELSE cate.CustomerClass
+										END
+								ELSE tmp.SpecialCC
+							END
 		WHERE 	tmp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_IGNOREPROBATION);
 		
 		INSERT IGNORE INTO Temp_UpdateCustomerClass(CustID, CustomerClass)
@@ -273,7 +304,7 @@ BEGIN
 		UPDATE Temp_UpdateCustomerClass AS c
 			INNER JOIN Temp_NewClassification AS temp ON c.CustID = temp.CustID
 		SET temp.OldTargetCC = c.CustomerClass;
-		
+		/*
 		UPDATE Temp_NewClassification AS tmp
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON tmp.OldCategoryID = cate.CategoryID
 		SET tmp.TargetCC = 	CASE  
@@ -297,6 +328,39 @@ BEGIN
 												WHEN tmp.IsLicenseeBA = 1 AND cate.CategoryPriority > lv_LicBAPriority 
 													THEN CONST_CC_LICBA                                            
 												WHEN tmp.SpecialCCCatePriority <> -1 AND cate.CategoryPriority > tmp.SpecialCCCatePriority 
+													THEN tmp.SpecialCC
+												ELSE cate.CustomerClass
+											END
+								ELSE tmp.SpecialCC
+							END
+			,	tmp.NewCategoryID = tmp.OldCategoryID
+			, 	tmp.NewCategoryGroupID = tmp.OldCategoryGroupID
+			,	tmp.NewIsDangerProbation = cate.IsDangerProbation
+		WHERE tmp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;*/
+		
+		UPDATE Temp_NewClassification AS tmp
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON tmp.OldCategoryID = cate.CategoryID
+		SET tmp.TargetCC = 	CASE  
+								WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCCatePriority <> -1)
+										THEN CASE
+												WHEN cate.CustomerClass = CONST_CC_VVIP 
+													THEN CONST_CC_VVIP
+												WHEN tmp.IsLicenseeVIP = 1 AND cate.CustomerClassPriority > tmp.SpecialCCCatePriority 
+														AND tmp.SpecialCCDangerProbation = 1 
+													THEN CONST_CC_LICVIPSUSPICIOUS
+												WHEN tmp.IsLicenseeVIP = 1 AND cate.CustomerClassPriority > tmp.SpecialCCCatePriority 
+														AND tmp.SpecialCCDangerProbation IS NOT NULL 
+													THEN CONST_CC_LICVIPDANGEROUS
+												WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 
+													THEN CONST_CC_LICVIPSUSPICIOUS
+												WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 
+													THEN CONST_CC_LICVIPDANGEROUS
+												WHEN tmp.IsLicenseeBA = 1 AND tmp.SpecialCCCatePriority <> -1 
+														AND tmp.SpecialCCCatePriority < lv_LicBAPriority 
+													THEN tmp.SpecialCC    
+												WHEN tmp.IsLicenseeBA = 1 AND cate.CustomerClassPriority > lv_LicBAPriority 
+													THEN CONST_CC_LICBA                                            
+												WHEN tmp.SpecialCCCatePriority <> -1 AND cate.CustomerClassPriority > tmp.SpecialCCCatePriority 
 													THEN tmp.SpecialCC
 												ELSE cate.CustomerClass
 											END
