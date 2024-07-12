@@ -130,7 +130,7 @@ BEGIN
 										, 	CreatedBy				INT UNSIGNED		PATH "$.CreatedBy"
 										, 	Remark					VARCHAR(500)		PATH "$.Remark"
 										, 	IsExceptDirectDownline	TINYINT(1) 			PATH "$.IsExceptDirectDownline"
-										, 	IsMarkedDirectly		TINYINT(1) 			PATH "$.IsDirectPA"
+										, 	IsMarkedDirectly		TINYINT(1) 			PATH "$.IsMarkedDirectly"
 										)) AS temp
 			LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
 																			AND cls.CategoryID = CONST_CATEID_VVIP
