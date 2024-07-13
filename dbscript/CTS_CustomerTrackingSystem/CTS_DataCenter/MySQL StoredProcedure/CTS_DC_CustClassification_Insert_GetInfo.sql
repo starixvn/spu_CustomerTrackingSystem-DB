@@ -707,7 +707,7 @@ BEGIN
 		
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsExistVVIP = 1
-			,	IsFromOldPA = 1
+			-- ,	IsFromOldPA = 1
 			,	IsDataChanged = 1
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
@@ -718,7 +718,7 @@ BEGIN
 		
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsExistWrapper = 1
-			,	IsFromOldPA = 1
+			-- ,	IsFromOldPA = 1
 			,	IsDataChanged = 1
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls

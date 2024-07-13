@@ -79,12 +79,12 @@ BEGIN
 		WHERE cate.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS,CONST_CATEID_LICVIPDANGEROUS)
 			AND temp.IsDataChanged = 1;
 		
-		DELETE del
+		/*DELETE del
 		FROM CTS_DataCenter.CTSCustomerClassification AS del
 			INNER JOIN Temp_NewClassification AS temp ON del.CustID = temp.CustID 
 															AND del.ParentID = CONST_PARENTID_NORMAL
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.ParentID = del.ParentID AND ccs.IsKeepOldCateID = 0 
-		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
+		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;*/
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
 				CustID,CTSCustID,SubscriberID,RoleID,ParentID,CategoryID,CreatedDate,CreatedBy,LastModifiedDate
@@ -96,10 +96,10 @@ BEGIN
 			, 	temp.RoleID
 			, 	CONST_PARENTID_NORMAL AS ParentID
 			, 	temp.NewCategoryID AS CategoryID
-			, 	lv_CurrentDateTime
-			, 	lv_CreatedBy
-			, 	lv_CurrentDateTime
-			, 	lv_CreatedBy
+			, 	lv_CurrentDateTime AS CreatedDate
+			, 	lv_CreatedBy AS CreatedBy
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	lv_CreatedBy AS LastModifiedBy
 			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
 		FROM Temp_NewClassification AS temp
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
@@ -149,7 +149,7 @@ BEGIN
 			, 	temp.NewCategoryID AS CategoryID
 			, 	CONST_PARENTID_NORMAL AS ParentID
 			, 	lv_CurrentDateTime AS LastModifiedDate
-			, 	lv_CreatedBy
+			, 	lv_CreatedBy AS LastModifiedBy
 			, 	temp.TurnoverRM
 			, 	temp.WinlossRM
 			, 	temp.BetCount
@@ -176,53 +176,33 @@ BEGIN
 	ip_InputFlowID IN (115,116,117,118) - rescan*/
 		SET lv_InsertedCount = 0;
 		
-		/*Insert into main table*/
-		-- ADD MAIN TABLE CC - FROM OLD - isnew = 1
-		-- Vic: check logic: if existing VVIP >> current will store in old table >> reonovate: store in CTCC main >> DWCateID? OldCateID?
-		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-				CustID, CTSCustID, SubscriberID,RoleID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-			, 	LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsMarkedDirectly, TVSRequestID, IsParlay
-			, 	SportType, IssueTypeID) 
-		SELECT 	temp_old.CustID
-			, 	temp_old.CTSCustID
-			, 	temp_old.SubscriberID
-			, 	temp_old.RoleID
-			, 	temp_old.ParentID
-			, 	temp_old.CategoryID
-			, 	temp_old.Remark
-			, 	temp_old.CreatedDate
-			, 	temp_old.CreatedBy
-			, 	temp_old.LastModifiedDate
-			, 	temp_old.LastModifiedBy
-			, 	temp_old.LastScannedDate
-			, 	temp_old.IsFromTVS
-			, 	temp_old.IsFromTW
-			, 	temp_old.IsFromCTS
-			, 	temp_old.IsFromAI
-			, 	temp_old.IsFromImperva
-			, 	temp_old.IsMarkedDirectly
-			, 	temp_old.TVSRequestID
-			, 	temp_old.IsTVSParlay
-			, 	temp_old.SportType
-			, 	temp_old.TVSIssueTypeID
-		FROM Temp_CTSCustomerClassification_Old AS temp_old
-		WHERE temp_old.IsNew = 1;
-		
-		SET lv_InsertedCount = FOUND_ROWS();
-		
-		-- DELETE MAIN TABLE - FROM OLD - isnew = 0 + IsRemove = 1
+		/*delete Normal/PotentialPA - IsKeepOldCateID = 0*/
 		DELETE cls
 		FROM CTS_DataCenter.CTSCustomerClassification AS cls
 			INNER JOIN Temp_CTSCustomerClassification_Old AS temp_old ON temp_old.CustID = cls.CustID
 																			AND temp_old.ExistCategoryID = cls.CategoryID
 		WHERE temp_old.IsNew = 0 AND temp_old.IsRemove = 1;
 		
+		/*update PA/PotentialPA when change probation status*/
 		UPDATE IGNORE CTS_DataCenter.CTSCustomerClassification AS cls
 			INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID AND cls.CategoryID = temp.OldCategoryID 
 																						AND temp.DataChangeType = 1
 		SET 	cls.CTSCustID 			=  temp.CTSCustID
 			,	cls.CategoryID 			=  temp.NewCategoryID
-			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime); 
+			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime)
+			,	cls.IsFromTW 			=   CASE WHEN temp.IsFromTW 		= 1 THEN temp.IsFromTW 			ELSE cls.IsFromTW 			END
+			,	cls.IsFromCTS 			=   CASE WHEN temp.IsFromCTS 		= 1 THEN temp.IsFromCTS 		ELSE cls.IsFromCTS 			END
+			,	cls.IsFromAI 			=   CASE WHEN temp.IsFromAI 		= 1 THEN temp.IsFromAI 			ELSE cls.IsFromAI 			END
+			,	cls.IsFromTVS 			=   CASE WHEN temp.IsFromTVS 		= 1 THEN temp.IsFromTVS 		ELSE cls.IsFromTVS 			END
+			,	cls.IsFromImperva		=   CASE WHEN temp.IsFromImperva	= 1 THEN temp.IsFromImperva 	ELSE cls.IsFromImperva 		END
+			,	cls.IsMarkedDirectly	=   CASE WHEN temp.IsMarkedDirectly	= 1 THEN temp.IsMarkedDirectly 	ELSE cls.IsMarkedDirectly 	END
+			; 
+		
+		/*update LicVIP*/
+		UPDATE IGNORE CTS_DataCenter.CTSCustomerClassification AS cls
+			INNER JOIN Temp_LicVIPCust AS tmpVip ON cls.CustID = tmpVip.CustID
+		SET 	cls.CategoryID 			=  temp.CategoryID
+		WHERE cls.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS,CONST_CATEID_LICVIPDANGEROUS);
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, ParentID, CreatedDate, CreatedBy, LastModifiedDate
@@ -247,11 +227,12 @@ BEGIN
 			,	temp.IsFromTVS
 			,	temp.IsFromTW
 			,	temp.TVSRequestID
-			,	temp.IsTVSParlay
+			,	temp.IsTVSParlay AS IsParlay
 			,	temp.SportType
-			,	temp.TVSIssueTypeID
+			,	temp.TVSIssueTypeID AS IssueTypeID
 		FROM Temp_NewClassification AS temp 
-		WHERE temp.DataChangeType = 0 OR temp.IsFromOldPA = 1;   
+		WHERE 	temp.DataChangeType = 0 
+			OR 	temp.IsFromOldPA 	= 1;
 		
 		SET lv_InsertedCount = FOUND_ROWS();
 		
@@ -274,7 +255,7 @@ BEGIN
 						WHEN temp.GroupName IS NOT NULL THEN CONST_REMARKID_PABYASSOCIATEDGROUP
 						WHEN temp.IsMarkedDirectly = 1 THEN CONST_REMARKID_PAMARKEDDIRECTLY 
 						WHEN temp.IsMarkedDirectly = 0 THEN CONST_REMARKID_PAAFFECTEDBYUPLINE END) AS SourceTypeID
-			,  	1 AS IsDataChanged
+			,  	temp.IsDataChanged
 			,	temp.TargetDangerLevel AS TargetDangerLevel1
 			,	temp.TurnoverRM
 			,	temp.WinlossRM
@@ -288,10 +269,10 @@ BEGIN
 			,	temp.IsFromCTS
 			,	temp.IsFromAI
 			,	temp.IsFromImperva
-			,	temp.IsTVSParlay
+			,	temp.IsTVSParlay AS IsParlay
 			,	temp.SportType
-			,	temp.TVSIssueTypeID
-			,	temp.TWRobotCounter
+			,	temp.TVSIssueTypeID AS IssueTypeID
+			,	temp.TWRobotCounter AS RobotCounter
 			,	temp.OldCategoryID
 			,	temp.DWCategoryID
 			,	temp.PerformanceTime
@@ -302,8 +283,8 @@ BEGIN
 		
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate
-			, 	TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirectly, Remark, TVSRequestID
-			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsParlay, SportType, IssueTypeID, RobotCounter
+			, 	TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirectly, Remark
+			, 	TVSRequestID, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsParlay, SportType, IssueTypeID, RobotCounter
 			, 	OldCategoryID, DWCategoryID, PerformanceTime)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
@@ -334,10 +315,10 @@ BEGIN
 			,	temp.IsFromCTS
 			,	temp.IsFromAI
 			,	temp.IsFromImperva
-			,	temp.IsTVSParlay
+			,	temp.IsTVSParlay AS IsParlay
 			,	temp.SportType
-			,	temp.TVSIssueTypeID
-			,	temp.TWRobotCounter
+			,	temp.TVSIssueTypeID AS IssueTypeID
+			,	temp.TWRobotCounter AS RobotCounter
 			,	temp.OldCategoryID
 			,	temp.DWCategoryID
 			,	temp.PerformanceTime

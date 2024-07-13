@@ -115,10 +115,10 @@ BEGIN
 		WHERE 	temp.IsPassProbationRule = 0
 			AND temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_NOTEXIST;
 			
-		/*INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType, IsReturnData)
+		INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType, IsReturnData)
 		SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_EXISTEDVVIP, 0 AS IsReturnData
 		FROM Temp_NewClassification AS temp
-		WHERE temp.IsExistVVIP = 1;*/
+		WHERE temp.IsExistVVIP = 1;
 
         INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType, IsReturnData)
 		SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_EXISTEDPA, 0 AS IsReturnData
