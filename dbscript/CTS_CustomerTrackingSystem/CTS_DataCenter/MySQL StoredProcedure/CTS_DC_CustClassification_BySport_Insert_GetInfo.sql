@@ -104,7 +104,7 @@ BEGIN
 					,	tmpJs.PerformanceTime
 					,	sp.CustomerClass AS SpecialCC
 					,	1 AS IsReturnData
-		FROM JSON_TABLE(ip_NewClassification,
+		FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 					BIGINT UNSIGNED		PATH "$.CustId"
 											, 	SportID					SMALLINT UNSIGNED	PATH "$.SportGroup"
