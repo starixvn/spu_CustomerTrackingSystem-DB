@@ -27,8 +27,6 @@ BEGIN
 		Example:
 			- CALL CTS_DC_CustClassification_Insert(8, 0, 0, 0, false, false, '[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]', @outParam7);
 */
-
-
 	DECLARE CONST_CATEID_VVIP 				INT;
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 	INT;
 	DECLARE CONST_CATEID_LICVIPDANGEROUS 	INT;
@@ -42,12 +40,12 @@ BEGIN
 	
 	DECLARE lv_MaxCTSCustID					BIGINT;
 	
-	DECLARE lv_IsParallelParentID			BIT(1);  
+	DECLARE lv_IsParallelParentID			TINYINT(1);  
 	DECLARE lv_ParentID						INT UNSIGNED;  
 	DECLARE lv_SourceTypeID					INT;  
 	DECLARE lv_ActionType					INT;  
-	DECLARE lv_IsAuto						BIT(1);  
-	DECLARE lv_IsMarkedDirectly				BIT(1);  
+	DECLARE lv_IsAuto						TINYINT(1);  
+	DECLARE lv_IsMarkedDirectly				TINYINT(1);  
 
 	DECLARE lv_CustomerClass				SMALLINT UNSIGNED;  
 	DECLARE lv_CategoryPriority				SMALLINT UNSIGNED;  

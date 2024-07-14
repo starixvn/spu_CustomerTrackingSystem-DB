@@ -35,7 +35,6 @@ BEGIN
 			,	CategoryPriority			SMALLINT UNSIGNED
 			,	CustomerClassPriority		SMALLINT UNSIGNED
 			,	NewCategoryID				INT
-			,	ParentID					INT UNSIGNED
 			,	IsDataChanged				TINYINT(1) DEFAULT 0	/*0: No change category => No Action*/
 			,	IsReturnData				TINYINT(1) DEFAULT 0
 			,	PRIMARY KEY (CustID, SportID)
@@ -79,7 +78,7 @@ BEGIN
 			,	OldCategoryGroupID			INT UNSIGNED
 			,	NewCategoryID				INT UNSIGNED
 			, 	NewCategoryGroupID			INT UNSIGNED
-			,	IsDataChanged				BIT DEFAULT 1 /*0: No change category => No Action*/
+			,	IsDataChanged				TINYINT(1) DEFAULT 1 /*0: No change category => No Action*/
 			,	OldTargetCC					SMALLINT
 			,	TargetCC					SMALLINT
 			, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/

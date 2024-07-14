@@ -16,7 +16,8 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 20240314@Thomas.Nguyen: Created [Redmine ID: #201360]
+			- 20240314@Thomas.Nguyen: 		Created [Redmine ID: #201360]
+			- 20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
 		
 		Param's Explanation (filtered by):   
             - ip_ActionType: 0: Add, 2: Remove
@@ -31,7 +32,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_Cust(
 			Username 	    VARCHAR(50)
 		,	CTSCustID	    BIGINT UNSIGNED
-		,	CustID		    INT UNSIGNED
+		,	CustID		    BIGINT UNSIGNED
 		,	SportID		    SMALLINT UNSIGNED
 		,	SubscriberID	INT
 		,	IsLicenseeVIP	TINYINT

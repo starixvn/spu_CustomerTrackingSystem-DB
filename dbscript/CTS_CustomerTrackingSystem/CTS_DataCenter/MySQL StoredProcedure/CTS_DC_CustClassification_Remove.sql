@@ -40,11 +40,11 @@ BEGIN
 	DECLARE lv_SourceTypeID								INT;
 	DECLARE lv_MaxCTSCustID								BIGINT UNSIGNED;
 	
-	DECLARE lv_CurrentDateTime 							DATETIME DEFAULT CURRENT_TIME();
-	DECLARE lv_IsAuto									INT;
+	DECLARE lv_CurrentDateTime 							DATETIME(3) DEFAULT CURRENT_TIME();
+	DECLARE lv_IsAuto									TINYINT(1);
 	DECLARE lv_ActionType								INT;
-	DECLARE lv_IsDataChanged							INT;
-	DECLARE lv_TargetCC									INT;
+	DECLARE lv_IsDataChanged							TINYINT(1);
+	DECLARE lv_TargetCC									SMALLINT;
 	DECLARE lv_LogTypeID								INT;
 	DECLARE lv_CreatedBy								INT;
 	DECLARE lv_IsExceptDirectDownline					TINYINT(1);

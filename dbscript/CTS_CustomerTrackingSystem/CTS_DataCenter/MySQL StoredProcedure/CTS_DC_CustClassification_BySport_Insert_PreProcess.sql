@@ -100,7 +100,7 @@ BEGIN
 		INNER JOIN Temp_CustIgnoranceAction AS ig ON temp.CustID = ig.CustID 
 														AND temp.SportID = ig.SportID
     SET 	temp.ActionType = ig.ActionType
-		, 	temp.IsDataChanged = 0;
+		, 	temp.IsDataChanged = 0
 		, 	temp.IsReturnData = ig.IsReturnData;
 
 END$$
