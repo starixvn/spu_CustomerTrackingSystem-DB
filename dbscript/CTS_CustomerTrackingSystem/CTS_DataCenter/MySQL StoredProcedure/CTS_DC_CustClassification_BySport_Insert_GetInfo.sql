@@ -92,28 +92,34 @@ BEGIN
 		); 
 	
 		INSERT IGNORE INTO Temp_NewClassification(
-			CustID, SportID, DWCategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
-		SELECT DISTINCT temp.CustID
-					, 	temp.SportID
-					, 	temp.DWCategoryID
-					, 	temp.TurnoverRM
-					, 	temp.WinlossRM
-					, 	temp.BetCount
-					, 	temp.ActiveDays
-					,	temp.PerformanceTime
-		 FROM JSON_TABLE(ip_NewClassification,
-			"$[*]" COLUMNS(
-					CustID 					BIGINT UNSIGNED		PATH "$.CustId"
-				, 	SportID					SMALLINT UNSIGNED	PATH "$.SportGroup"
-				, 	DWCategoryID			INT UNSIGNED		PATH "$.CategoryId"
-				, 	TurnoverRM				DECIMAL(20,4)		PATH "$.TurnoverRM"
-				, 	WinlossRM				DECIMAL(20,4)		PATH "$.WinlossRM"
-				, 	BetCount				BIGINT				PATH "$.BetCount"
-				, 	ActiveDays				INT					PATH "$.ActiveDays"		
-				,	PerformanceTime			DATETIME(3)			PATH "$.PerformanceTime"
-			 )) AS 	temp
-		 WHERE temp.DWCategoryID <> 0;
-	
+				CTSCustID, CustID, SportID, DWCategoryID, TurnoverRM, WinlossRM, BetCount
+			, 	ActiveDays, PerformanceTime, SpecialCC, IsReturnData)
+		SELECT DISTINCT cus.CTSCustID
+					,	tmpJs.CustID
+					, 	tmpJs.SportID
+					, 	tmpJs.DWCategoryID
+					, 	tmpJs.TurnoverRM
+					, 	tmpJs.WinlossRM
+					, 	tmpJs.BetCount
+					, 	tmpJs.ActiveDays
+					,	tmpJs.PerformanceTime
+					,	sp.CustomerClass AS SpecialCC
+					,	1 AS IsReturnData
+		FROM JSON_TABLE(ip_NewClassification,
+							"$[*]" COLUMNS(
+												CustID 					BIGINT UNSIGNED		PATH "$.CustId"
+											, 	SportID					SMALLINT UNSIGNED	PATH "$.SportGroup"
+											, 	DWCategoryID			INT UNSIGNED		PATH "$.CategoryId"
+											, 	TurnoverRM				DECIMAL(20,4)		PATH "$.TurnoverRM"
+											, 	WinlossRM				DECIMAL(20,4)		PATH "$.WinlossRM"
+											, 	BetCount				BIGINT				PATH "$.BetCount"
+											, 	ActiveDays				INT					PATH "$.ActiveDays"		
+											,	PerformanceTime			DATETIME(3)			PATH "$.PerformanceTime"
+										   )) AS tmpJs
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
+			LEFT JOIN CTS_DataCenter.SpecialCustomerClass_BySport AS sp ON tmpJs.CustID = sp.CustID AND tmpJs.SportID = sp.SportID
+		WHERE tmpJs.DWCategoryID <> 0;
+		
 	END IF;
 
 

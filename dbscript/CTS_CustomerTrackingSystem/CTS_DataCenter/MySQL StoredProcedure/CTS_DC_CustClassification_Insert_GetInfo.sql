@@ -111,7 +111,7 @@ BEGIN
 											 )) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpJs.CustID
-																				AND cls.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS,CONST_CATEID_LICVIPDANGEROUS);
+																				AND cls.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS;
 			
 		ELSEIF ip_InputFlowID = 3 THEN	/*LicVIP*/
 			INSERT INTO Temp_Customer (CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP)
@@ -122,7 +122,6 @@ BEGIN
 												,	CreatedBy 		INT UNSIGNED	PATH "$.CreatedBy"
 											 )) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0;
-			
 			
 		ELSEIF ip_InputFlowID = 4 THEN /*LicBA*/
 			INSERT INTO Temp_Customer (CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeBA)

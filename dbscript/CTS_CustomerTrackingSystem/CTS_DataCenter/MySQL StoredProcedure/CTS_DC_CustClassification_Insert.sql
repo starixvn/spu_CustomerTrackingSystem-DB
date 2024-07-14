@@ -56,7 +56,7 @@ BEGIN
 	
 	DECLARE lv_LogTypeID					INT;
 	DECLARE lv_CreatedBy					INT;
-	DECLARE	lv_CurrentDateTime				DATETIME DEFAULT CURRENT_TIME();
+	DECLARE	lv_CurrentDateTime				DATETIME(3) DEFAULT CURRENT_TIME();
 	DECLARE lv_SPName 						VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
 	
 	
@@ -222,8 +222,9 @@ BEGIN
 				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID 
 																	AND cc.IsActive = 1 AND cc.RelevantCategoryID IS NOT NULL
 																	AND cc.IsPAProbation = 1
-			SET cls.CategoryID = cc.RelevantCategoryID
-			WHERE temp.IsDataChanged = 1;
+			SET 	cls.CategoryID 		= cc.RelevantCategoryID
+				,	clss.LastModifiedBy	= temp.CreatedBy
+			WHERE 	temp.IsDataChanged 	= 1;
 			
 		END IF;
 		
@@ -235,7 +236,7 @@ BEGIN
 			,	temp.CTSCustID AS RootCTSCustID
 			,	temp.SubscriberID
 			,	temp.RoleID
-			,	temp.CustomerClass
+			,	temp.TargetCC AS CustomerClass
 			,	temp.CreatedBy
 			,	lv_CurrentDateTime AS CreatedDate
 			,	temp.CreatedBy AS LastModifiedBy
@@ -251,7 +252,7 @@ BEGIN
 			,	temp.CustID
 			,	temp.CTSCustID
 			,	temp.SubscriberID
-			,	temp.CustomerClass
+			,	temp.TargetCC AS CustomerClass
 			,	temp.CreatedBy
 			,	lv_CurrentDateTime AS CreatedDate
 			,	temp.CreatedBy AS LastModifiedBy
@@ -298,7 +299,7 @@ BEGIN
 			, 	lv_ActionType  AS ActionType 
 			, 	lv_IsAuto AS IsAuto
 			, 	DATE(lv_CurrentDateTime) AS InsertDate
-			,	temp.CustomerClass AS TargetCC
+			,	temp.TargetCC AS TargetCC
 			, 	lv_SourceTypeID AS SourceTypeID
 			, 	temp.IsDataChanged
 			, 	temp.Remark
@@ -318,7 +319,7 @@ BEGIN
 			, 	lv_ActionType AS ActionType 
 			, 	lv_IsAuto AS IsAuto
 			, 	DATE(lv_CurrentDateTime) AS InsertDate
-			,	temp.CustomerClass AS TargetCC
+			,	temp.TargetCC AS TargetCC
 			, 	lv_SourceTypeID AS SourceTypeID
 			, 	temp.IsDataChanged
 			, 	temp.Remark
@@ -724,7 +725,7 @@ BEGIN
 		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 		SELECT	lv_LogTypeID
 			,	lv_SPName
-			,	CONCAT('Insert SpecialCustomerClass: CTSCustList: ', GROUP_CONCAT(CTSCustID),';CustIDList: ', GROUP_CONCAT(CustID), ';CustomerClass: ', GROUP_CONCAT(DISTINCT CustomerClass)) AS LogInfo
+			,	CONCAT('Insert SpecialCustomerClass: CTSCustList: ', GROUP_CONCAT(CTSCustID),';CustIDList: ', GROUP_CONCAT(CustID), ';CustomerClass: ', GROUP_CONCAT(DISTINCT TargetCC)) AS LogInfo
 			,	lv_CurrentDateTime AS CreatedDate
 			,	lv_CreatedBy
 		FROM Temp_NewClassification;
