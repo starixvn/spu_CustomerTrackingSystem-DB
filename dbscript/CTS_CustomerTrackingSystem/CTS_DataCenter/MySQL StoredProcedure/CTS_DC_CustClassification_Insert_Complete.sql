@@ -201,7 +201,7 @@ BEGIN
 		/*update LicVIP*/
 		UPDATE IGNORE CTS_DataCenter.CTSCustomerClassification AS cls
 			INNER JOIN Temp_LicVIPCust AS tmpVip ON cls.CustID = tmpVip.CustID
-		SET 	cls.CategoryID 	=  temp.CategoryID
+		SET 	cls.CategoryID 	=  tmpVip.CategoryID
 		WHERE cls.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS,CONST_CATEID_LICVIPDANGEROUS);
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
