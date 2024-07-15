@@ -352,7 +352,11 @@ BEGIN
 					INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate)
 					SELECT temp.CustID,temp.NewCategoryID,temp.Remark,lv_CurrentDateTime AS CreatedDate
 					FROM Temp_NewClassification AS temp
-					WHERE temp.IsFromCTS = 1;
+					WHERE temp.IsFromCTS = 1
+                    ON DUPLICATE KEY UPDATE CreatedDate = lv_CurrentDateTime
+										,	IsDisabled = 0
+                                        ,	Remark = temp.Remark
+                                        ,	CategoryID = temp.NewCategoryID;
 				END IF;
 			END IF;
 	

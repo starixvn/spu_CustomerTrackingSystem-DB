@@ -68,6 +68,7 @@ CREATE TABLE CTSRobotUser
 	CategoryID INT UNSIGNED NOT NULL,
 	Remark VARCHAR(500),
 	CreatedDate DATETIME,
+    IsDisabled  BIT(1) DEFAULT 0,
 	PRIMARY KEY (CustID, CategoryID)
 );
 
@@ -77,6 +78,7 @@ CREATE TABLE TWRobotUser
 	CategoryID INT UNSIGNED NOT NULL,
 	RobotCounter SMALLINT,
 	CreatedDate DATETIME,
+    IsDisabled  BIT(1) DEFAULT 0,
 	PRIMARY KEY (CustID, CategoryID)
 );
 
