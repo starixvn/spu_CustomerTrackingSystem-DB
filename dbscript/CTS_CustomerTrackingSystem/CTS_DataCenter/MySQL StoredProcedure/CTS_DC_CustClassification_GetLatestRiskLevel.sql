@@ -25,7 +25,6 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_ClassificationHistory;    
     CREATE TEMPORARY TABLE Temp_ClassificationHistory(
 			ID 					BIGINT UNSIGNED PRIMARY KEY
-		,	LastModifiedDate	DATETIME
         ,	CustID				BIGINT UNSIGNED
         ,	RegisterName		VARCHAR(50)
 	);
@@ -68,6 +67,8 @@ BEGIN
 					INNER JOIN CTS_DataCenter.CustomerCategory_Original AS cat ON cls.CategoryID = cat.CategoryID
                 WHERE cls.CustID = cte.CustID
                 ORDER BY cat.Priority ASC, cls.LastModifiedDate DESC		
-                LIMIT 1) AS ltr;
+                LIMIT 1) AS ltr
+	ORDER BY cte.ID ASC;
+    
 END$$
 DELIMITER ;
