@@ -223,6 +223,7 @@ sp: BEGIN
         ,   CONST_INPUTFLOWID_ROBOT		AS InputFlowID
     FROM  Temp_CustInfo AS tmp
 		INNER JOIN CTS_DataCenter.CTSRobotUser AS s ON s.CustID = tmp.CustID
+	WHERE s.IsDisabled = 0
 	ON DUPLICATE KEY UPDATE IsFromCTS = 1
 						,	LastModifiedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.LastModifiedDate THEN s.CreatedDate ELSE Temp_CustCategory.LastModifiedDate END
                         ,	Remark = CASE WHEN s.CreatedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END;
@@ -248,6 +249,7 @@ sp: BEGIN
         ,   CONST_INPUTFLOWID_ROBOT		AS InputFlowID
     FROM  Temp_CustInfo AS tmp
 		INNER JOIN CTS_DataCenter.TWRobotUser AS s ON s.CustID = tmp.CustID
+	WHERE s.IsDisabled = 0
    	ON DUPLICATE KEY UPDATE IsFromTW = 1
 						,	LastModifiedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.LastModifiedDate THEN s.CreatedDate ELSE Temp_CustCategory.LastModifiedDate END;
                         
