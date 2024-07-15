@@ -121,6 +121,7 @@ sp:BEGIN
 					LIMIT 1
 				) AS tmplc
 		WHERE cate.CategoryID > lv_LastCategoryID
+			AND tmplc.CategoryID > lv_LastCategoryID
 			AND tmplc.CreatedDate <= lv_ScanDateValid
             AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
