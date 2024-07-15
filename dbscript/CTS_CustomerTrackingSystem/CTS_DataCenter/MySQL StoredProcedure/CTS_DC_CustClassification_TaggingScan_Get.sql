@@ -119,6 +119,7 @@ BEGIN
 					LIMIT 1
 			    ) AS tmplc
 		WHERE cate.CategoryID > lv_LastCategoryID
+			AND tmplc.CategoryID > lv_LastCategoryID
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
     END IF;
