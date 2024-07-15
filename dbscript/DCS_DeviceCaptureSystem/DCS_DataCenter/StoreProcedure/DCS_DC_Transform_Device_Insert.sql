@@ -298,6 +298,18 @@ BEGIN
     WHERE tts.FingerprintCode IS NOT NULL
     GROUP BY tts.FingerprintCode, tmpEd.DeviceID;
     
+    # INSERT new Association
+    INSERT IGNORE INTO DCS_DataCenter.Association(DeviceID, AccountID, SubscriberID, CreatedTime, CreatedDate, InsertTime)
+    SELECT 	de.DeviceID
+		,	tts.AccountID
+		,	MIN(tts.SubscriberID) AS SubscriberID
+		,	MIN(tts.TransTime) AS CreatedTime
+		,	MIN(tts.CreatedDate) AS CreatedDate
+		,	lv_InsertionTime AS InsertTime
+    FROM Temp_Transaction AS tts
+		INNER JOIN Temp_ExistedDevice de ON de.DeviceCode = tts.DeviceCode
+    GROUP BY  de.DeviceID, tts.AccountID;
+    
     # UPDATE back Temp_ExistedDevice
     UPDATE Temp_ExistedDevice AS de
 		INNER JOIN DCS_DataCenter.Device AS dv ON dv.DeviceID = de.DeviceID
