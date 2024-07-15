@@ -79,12 +79,12 @@ BEGIN
 		WHERE cate.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS,CONST_CATEID_LICVIPDANGEROUS)
 			AND temp.IsDataChanged = 1;
 		
-		/*DELETE del
+		DELETE del
 		FROM CTS_DataCenter.CTSCustomerClassification AS del
 			INNER JOIN Temp_NewClassification AS temp ON del.CustID = temp.CustID 
 															AND del.ParentID = CONST_PARENTID_NORMAL
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.ParentID = del.ParentID AND ccs.IsKeepOldCateID = 0 
-		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;*/
+		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
 				CustID,CTSCustID,SubscriberID,RoleID,ParentID,CategoryID,CreatedDate,CreatedBy,LastModifiedDate

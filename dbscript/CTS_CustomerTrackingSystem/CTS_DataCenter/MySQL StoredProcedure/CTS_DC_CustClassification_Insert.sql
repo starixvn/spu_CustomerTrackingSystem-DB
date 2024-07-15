@@ -151,7 +151,7 @@ BEGIN
 			, 	temp.CreatedBy AS LastModifiedBy
 			,	temp.Remark
 			,	lv_IsAuto AS IsAuto
-			,   cat.CustomerClass.CustomerClass AS TargetCC
+			,   cat.CustomerClass AS TargetCC
 			,   lv_SourceTypeID AS SourceTypeID
 			,	1 AS IsDataChanged
 			,	lv_IsMarkedDirectly AS IsMarkedDirectly
