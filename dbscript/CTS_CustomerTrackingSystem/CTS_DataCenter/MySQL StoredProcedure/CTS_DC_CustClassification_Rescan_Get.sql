@@ -428,7 +428,7 @@ sp: BEGIN
 		, 	cc.SubscriberID
 		, 	cc.IsLicensee
 		, 	cc.Remark
-		, 	CASE WHEN cc.CreatedBy IS NULL THEN CONST_CREATEDBY_STARIXITID ELSE cc.CreatedBy END
+		, 	CASE WHEN cc.CreatedBy IS NULL THEN CONST_CREATEDBY_STARIXITID ELSE cc.CreatedBy END AS CreatedBy
 		, 	cc.IsMarkedDirectly
 		, 	cc.IsFromTVS
 		, 	cc.IsFromTW
