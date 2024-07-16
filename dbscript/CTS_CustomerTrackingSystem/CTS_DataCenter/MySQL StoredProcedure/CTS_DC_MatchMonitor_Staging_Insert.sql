@@ -36,7 +36,9 @@ sp: BEGIN
             -	20240509@Casey.Huynh: HF Hedging StepTime, Add column TransDateToSecond [Redmine ID: #204338]
             -	20240530@Casey.Huynh: Saba Group Betting [Redmine ID: #191972]
             -	20240417@Casey.Huynh: Renovate Arbitrage Rule [Redmine ID: #203639]
+            -	20240417@Casey.Huynh: Renovate GroupBetting Rule [Redmine ID: #203319]
             
+           
 		Param's Explanation (filtered by):		
 			ip_PoolType: 
             LIVE:
@@ -320,8 +322,6 @@ sp: BEGIN
         #=====Staging Fixed Game Betting================================
         IF (ip_PoolType = 1004) THEN
 			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingFixedGameLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
-        IF (ip_PoolType = 1004) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingFixedGameLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
 			SELECT	tmpSt.SequenceID
 				,	tmpSt.TransID
 				,	tmpSt.TransDate
@@ -566,44 +566,8 @@ sp: BEGIN
 														AND ABS(tmpSt.Odds) >= tmpMst.MinOdds
 			WHERE tmpSt.LeagueGroupID IS NULL; 
 			
-			LEAVE sp;
-        #=====IRRIGATION================================        
-		IF (ip_PoolType = 2006) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingIrrigationNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, Hdp, InsertTime)
-			SELECT	tmpSt.SequenceID
-				,	tmpSt.TransID
-				,	tmpSt.TransDate
-				,	tmpSt.LeagueName
-				,	tmpSt.SportType
-				,	tmpSt.MatchID
-				,	tmpSt.HomeID
-				,	tmpSt.AwayID
-				,	tmpSt.EventStatus
-				,	tmpSt.KickOffTime
-				,	tmpSt.LeagueID
-				,	tmpSt.EventDate
-				,	tmpSt.LiveHomeScore
-				,	tmpSt.LiveAwayScore
-				,	tmpSt.ScoreDiff
-				,	tmpSt.BettypeID
-				,	tmpSt.BetID
-				,	tmpSt.CustID
-				,	tmpSt.Stake
-				,	tmpSt.Betteam
-				,	tmpSt.Odds
-				,	tmpSt.HDP
-				,	CURRENT_TIMESTAMP(3) AS InsertTime
-			FROM Temp_Staging AS tmpSt
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_IRRIGATION
-														AND tmpMst.SportType = tmpSt.SportType 
-														AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
-														AND tmpMst.BettypeID = tmpSt.BettypeID
-			WHERE tmpSt.LeagueGroupID IS NULL; 
-			
-			LEAVE sp;
-			
-		END IF;    
-		
+			LEAVE sp;           
+		END IF;
         #=====IRRIGATION================================        
 		IF (ip_PoolType = 2006) THEN
 			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingIrrigationNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, Hdp, InsertTime)

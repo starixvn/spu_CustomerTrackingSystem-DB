@@ -48,6 +48,7 @@ sp: BEGIN
             -	20231120@Casey.Huynh:	Enhance Rule for Esport. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: #196396]
             -	20240627@Casey.Huynh:	EuroCup Exclude AssociationByIP [RedmineID: #207117]
             -	20240716@Casey.Huynh:	After EuroCup, Rollback AssociationByIP [RedmineID: #207117]
+            - 	20240417@Casey.Huynh: 	Renovate GroupBetting Rule [Redmine ID: #203319]
             
 		Param's Explanation (filtered by):	
 		Example:
