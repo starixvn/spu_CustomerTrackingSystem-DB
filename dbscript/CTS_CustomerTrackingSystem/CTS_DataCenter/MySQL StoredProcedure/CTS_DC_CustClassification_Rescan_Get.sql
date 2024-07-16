@@ -420,8 +420,8 @@ sp: BEGIN
 						AND cc.InputFlowID IN (CONST_INPUTFLOWID_ROBOT, CONST_INPUTFLOWID_CATEGORY_PA, CONST_INPUTFLOWID_REASON_PA));
                         
 	/***********************Return****************************/ 
-	SELECT cc.CTSCustID
-		,	cc.CustID
+	SELECT cust.CTSCustID
+		,	cust.CustID
 		, 	cc.CategoryID
 		, 	cc.TVSReasonID
 		, 	cc.RoleID
