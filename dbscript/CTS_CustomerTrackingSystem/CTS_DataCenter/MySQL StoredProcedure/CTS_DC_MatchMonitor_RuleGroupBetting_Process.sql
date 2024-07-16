@@ -44,7 +44,8 @@ sp: BEGIN
             -	20231016@Casey.Huynh:	Enhance Rule for BasketBall. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: 195473]
             -	20231120@Thomas.Nguyen: Add the condition stake of licensee group for Basketball: >= 50RM [Redmine ID: #188553]
             -	20231120@Casey.Huynh:	Enhance Rule for Esport. Adjust Group Stake to 300, Add AssociationByIP, ShareMatch(3 Match(last 7 day) [Redmine ID: #196396]
-            -	20240627@Casey.Huynh: EuroCup Exclude IP3Days [RedmineID: #207117]
+            -	20240627@Casey.Huynh:	EuroCup Exclude AssociationByIP [RedmineID: #207117]
+            -	20240716@Casey.Huynh:	After EuroCup, Rollback AssociationByIP [RedmineID: #207117]
             
 		Param's Explanation (filtered by):	
 			ip_SharedMatches: JSON '[{"O": 1, "D": 2}]'
@@ -454,7 +455,7 @@ sp: BEGIN
 	WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tic WHERE tic.CustID = ai.FromCustID);
     
     #====================GET ASSOCIATION BY IP==================
-    /*IF (lv_SportType IN (CONST_SPORTTYPE_BASKETBALL,CONST_SPORTTYPE_ESPORT)) THEN  
+    IF (lv_SportType IN (CONST_SPORTTYPE_BASKETBALL,CONST_SPORTTYPE_ESPORT)) THEN  
 		INSERT IGNORE INTO Temp_Association(CustID_1, CustID_2, AssociationType)
 		SELECT	tmpCus.CustID
 			,	ip.ToCustID
@@ -486,7 +487,7 @@ sp: BEGIN
 		FROM Temp_Cust AS tmpCus 
 			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.ToCustID = tmpCus.CustID
 		WHERE EXISTS (SELECT 1 FROM Temp_Cust_Duplicate AS tmpCdp WHERE tmpCdp.CustID = ip.FromCustID);
-	END IF;*/
+	END IF;
     
 	#====================GET ASSOCIATION BY SHARE MATCH==================
     IF (lv_SportType IN (CONST_SPORTTYPE_BASKETBALL,CONST_SPORTTYPE_ESPORT) AND ip_SharedMatches IS NOT NULL) THEN    

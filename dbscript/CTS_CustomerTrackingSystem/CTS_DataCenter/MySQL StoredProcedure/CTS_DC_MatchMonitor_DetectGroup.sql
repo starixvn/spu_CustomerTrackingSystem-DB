@@ -20,7 +20,8 @@ BEGIN
             -   20221107@Aries.Nguyen: Tuning performance of Hedging Detection  [Redmine ID: #180185]
             - 	20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
             -	20230612@Casey.Huynh: LogInfo [RedmineID: #185793]
-            -	20240627@Casey.Huynh: EuroCup Exclude IP3Days [RedmineID: #207117]
+            -	20240627@Casey.Huynh:	EuroCup Exclude AssociationByIP [RedmineID: #207117]
+            -	20240716@Casey.Huynh:	After EuroCup, Rollback AssociationByIP [RedmineID: #207117]
 
 		Param's Explanation (filtered by):
 			- 	Temp_StagingTrans tbl: CustID,CTSCustID,TransDateSecond,AgentCTSCustID,Processed,GroupID
@@ -139,7 +140,7 @@ BEGIN
 	INTO lv_CTSCustIDs	
     FROM CTE;
 
-    CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdge(lv_CTSCustIDs,1,1,0);
+    CALL CTS_DataCenter.CTS_DC_AssociationDetection_GetEdge(lv_CTSCustIDs,1,1,1);
 
     INSERT IGNORE INTO Temp_Graph(OrigID, DestID, AssociationType)
 	SELECT	grp.CTSCustID 
