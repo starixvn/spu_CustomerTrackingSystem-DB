@@ -58,16 +58,16 @@ sp: BEGIN
 	);
     
     #===============================================================================================
-    DROP TEMPORARY TABLE IF EXISTS Temp_TotalStake;
-    CREATE TEMPORARY TABLE Temp_TotalStake(
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustStake;
+    CREATE TEMPORARY TABLE Temp_CustStake(
 			IsMajorLeague BOOLEAN
-		,	TotalStake DECIMAL(20,4)
+		,	CustStake DECIMAL(20,4)
 	);
     
-	INSERT INTO Temp_TotalStake(IsMajorLeague, TotalStake)
+	INSERT INTO Temp_CustStake(IsMajorLeague, CustStake)
     SELECT 	DISTINCT
 			s.LeagueType
-		,	s.TotalStake
+		,	s.CustStake
     FROM	CTS_DataCenter.MatchMonitorRuleSetting AS s
     WHERE	s.RuleGroupID = CONST_MMRULEGROUP_ARBITRAGE 
 		AND s.Reason = CONST_MMREASON_ARBITRAGE 
@@ -140,12 +140,12 @@ sp: BEGIN
 						,	CASE WHEN mms.SubscriberID IN (CONST_SUBSCRIBERID_ALPHA,CONST_SUBSCRIBERID_MAXBET) THEN mms.CTSCustID ELSE NULL END AS Agent_CTSCustID
 						,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
 				FROM CTS_DataCenter.MatchMonitorStagingArbitrageNonLive AS mms
-					INNER JOIN Temp_TotalStake AS tmpTs ON tmpTs.IsMajorLeague = mms.IsMajorLeague
+					INNER JOIN Temp_CustStake AS tmpTs ON tmpTs.IsMajorLeague = mms.IsMajorLeague
 					LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
 														AND mms.BetID = tmpOg.BetID AND mms.HDP = tmpOg.HDP	AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 				WHERE mms.SequenceID <= lv_MaxSequenceID 
-				GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.HDP, tmpOg.GroupID, mms.CTSCustID, mms.SubscriberID, tmpTs.TotalStake
-                HAVING SUM(mms.Stake) >= tmpTs.TotalStake
+				GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.HDP, tmpOg.GroupID, mms.CTSCustID, mms.SubscriberID, tmpTs.CustStake
+                HAVING SUM(mms.Stake) >= tmpTs.CustStake
 				) AS tmp
 			GROUP BY tmp.MatchID, tmp.ScoreDiff, tmp.BettypeID, tmp.BetID, tmp.HDP, tmp.GroupID
             HAVING COUNT(DISTINCT tmp.CTSCustID) > 1 AND MIN(tmp.MinBetteam) <> MAX(tmp.MaxBetteam)

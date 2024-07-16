@@ -59,7 +59,17 @@ UPDATE MatchMonitorStagingArbitrageNonLive AS arb
 SET TransDateToSecond = UNIX_TIMESTAMP(TransDate)
 	, arb.CTSCustID  = cus.CustID
     , arb.SubscriberID  = cus.SubscriberID;
+    
+ALTER TABLE MatchMonitorRuleSetting
+ADD COLUMN CustStake decimal(20,4) AFTER TotalStake;
 
-SELECT * FROM MatchMonitorStagingArbitrageNonLive;
+UPDATE MatchMonitorRuleSetting
+SET CustStake = TotalStake
+WHERE RuleGroupID = 5; 
+
+UPDATE MatchMonitorRuleSetting
+SET TotalStake = 0
+WHERE RuleGroupID = 5;
+
 
 

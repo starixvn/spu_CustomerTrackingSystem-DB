@@ -58,7 +58,7 @@ sp: BEGIN
 	DECLARE CONST_SUBSCRIBERID_MAXBET	INT 	DEFAULT  	169;
 	
 	DECLARE lv_RuleTimeStep 				SMALLINT;
-	DECLARE lv_RuleTotalStake 				DECIMAL(20,4);
+	DECLARE lv_RuleCustStake 				DECIMAL(20,4);
 	DECLARE lv_CustIDList 					LONGTEXT;
 	DECLARE lv_GroupID 						INT; 
 
@@ -118,8 +118,8 @@ sp: BEGIN
         
 	);
     #=======================================================================
-	SELECT 	st.TotalStake, st.TimeStep
-	INTO 	lv_RuleTotalStake, lv_RuleTimeStep
+	SELECT 	st.CustStake, st.TimeStep
+	INTO 	lv_RuleCustStake, lv_RuleTimeStep
 	FROM	CTS_DataCenter.MatchMonitorRuleSetting AS st 
 	WHERE 	st.RuleGroupID = CONST_MMRULEGROUP_ARBITRAGE
 			AND (st.LeagueType = ip_IsMajorLeague OR st.LeagueType = 2)
@@ -231,7 +231,7 @@ sp: BEGIN
 			LEFT JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
 			WHERE tmpCp.GroupID IS NULL AND tmpGr.IsValidGroup = 1
 			GROUP BY tmpGr.TimeGroupID, mms.CTSCustID, mms.SubscriberID
-			HAVING SUM(mms.Stake) >= lv_RuleTotalStake
+			HAVING SUM(mms.Stake) >= lv_RuleCustStake
 		  ) AS tmp
 	GROUP BY tmp.TimeGroupID
 	HAVING COUNT(DISTINCT CTSCustID) > 1 AND Min(MinBetteam) <> MAX(MaxBetteam);    
