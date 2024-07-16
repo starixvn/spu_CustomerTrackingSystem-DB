@@ -354,7 +354,7 @@ BEGIN
 					FROM JSON_TABLE(ip_CustInfo,
 						"$[*]" COLUMNS(
 								CustID 			BIGINT UNSIGNED		PATH "$.CustID"
-							,	TVSReasonID		INT 				PATH "$.ReasonID"
+							,	TVSReasonID		INT 				PATH "$.TVSReasonID"
 							, 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
 							, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
 							, 	TVSRequestID	BIGINT UNSIGNED		PATH "$.TVSRequestID"
@@ -418,7 +418,7 @@ BEGIN
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
-											,	TVSReasonID					INT 				PATH "$.ReasonID"
+											,	TVSReasonID					INT 				PATH "$.TVSReasonID"
 											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
 											, 	IsMarkedDirectly			TINYINT(1)			PATH "$.IsMarkedDirectly"
 											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
