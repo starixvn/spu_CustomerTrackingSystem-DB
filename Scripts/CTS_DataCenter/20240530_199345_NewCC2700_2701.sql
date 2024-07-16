@@ -58,3 +58,4 @@ VALUES(66,'Initial Smart','Initial Smart',150,66,1,0,NOW(),NULL,NULL,NULL,0,NULL
 
 SELECT * FROM CTS_DataCenter.CustomerCategory WHERE CategoryID IN (66,106);
 
+INSERT INTO SPU_Stats.Function(FunctionId,FunctionName,SystemId) VALUES(244,'AddCustomerInitialSmarts',2);
