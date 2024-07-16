@@ -37,6 +37,7 @@ sp: BEGIN
             -	20240530@Casey.Huynh: Saba Group Betting [Redmine ID: #191972]
             -	20240417@Casey.Huynh: Renovate Arbitrage Rule [Redmine ID: #203639]
             -	20240417@Casey.Huynh: Renovate GroupBetting Rule [Redmine ID: #203319]
+			-	20240704@Casey.Huynh: Saba Group Betting - Add Basketball and enhance Soccer [Redmine ID: #207523]
             
            
 		Param's Explanation (filtered by):		
@@ -114,6 +115,7 @@ sp: BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
     CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
 			RuleGroupID TINYINT 
+		,	LeagueGroupID INT
 		,	SportType 	INT
         ,	BettypeID	INT
 		,	LeagueType 	BOOLEAN
@@ -125,8 +127,9 @@ sp: BEGIN
         
 	);
 
-    INSERT INTO Temp_MatchMonitorRuleSetting(RuleGroupID, SportType, BettypeID, LeagueType,  MinOdds, MaxOdds, MinStake)
+    INSERT INTO Temp_MatchMonitorRuleSetting(RuleGroupID, LeagueGroupID, SportType, BettypeID, LeagueType,  MinOdds, MaxOdds, MinStake)
     SELECT 	mst.RuleGroupID
+		,	IFNULL(mst.LeagueGroupID,0)
 		,	mst.SportType
         ,	tmp.BettypeID
 		,	mst.LeagueType
@@ -270,8 +273,9 @@ sp: BEGIN
 				,	CURRENT_TIMESTAMP(3) AS InsertTime
 			FROM Temp_Staging AS tmpSt
 				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTINGSABA
-			WHERE tmpSt.LeagueGroupID IS NOT NULL;
+				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTINGSABA 
+																	  AND tmpMst.LeagueGroupID = tmpSt.LeagueGroupID
+                                                                      AND tmpMst.SportType = tmpSt.SportType;
             
             LEAVE sp;
             
@@ -437,8 +441,9 @@ sp: BEGIN
 				,	CURRENT_TIMESTAMP(3) AS InsertTime
 			FROM Temp_Staging AS tmpSt
 				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTINGSABA
-			WHERE tmpSt.LeagueGroupID IS NOT NULL;
+				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTINGSABA 
+																	  AND tmpMst.LeagueGroupID = tmpSt.LeagueGroupID
+                                                                      AND tmpMst.SportType = tmpSt.SportType;
             
             LEAVE sp;
             
