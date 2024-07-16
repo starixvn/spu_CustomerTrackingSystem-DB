@@ -18,7 +18,8 @@ BEGIN
             - 20231120@Thomas.Nguyen: Add the condition SportType = 2 and include Odds Crawler Robot (CategoryID 165, 166), Abnormal Account - Robot (CategoryID 179) [Redmine ID: #188553]
 			- 20240319@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
             - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Remove GroupPriority [Redmine ID: #200854]    
-
+			- 20240530@Casey.Huynh:	Saba Group Betting (NOT Classify Saba GB Match) [Redmine ID: #191972]
+            
 		Param's Explanation:
         
 		Example:
@@ -44,6 +45,7 @@ BEGIN
         INTO lv_MatchID
         FROM CTS_DataCenter.MatchMonitor AS mm
         WHERE mm.ClassifyStatus = 2	AND SportType IN (1,2) 
+			AND mm.LeagueGroupID IS NULL
         ORDER BY mm.KickOffTime ASC
         LIMIT 1;
         

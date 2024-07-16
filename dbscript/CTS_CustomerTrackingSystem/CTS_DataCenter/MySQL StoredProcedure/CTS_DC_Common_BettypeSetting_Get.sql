@@ -20,6 +20,7 @@ BEGIN
 
 		Revisions:
 			- 	20231122@Casey.Huynh: Created [Redmine ID: #196396]
+            -	20240530@Casey.Huynh: Saba Group Betting [Redmine ID: #191972]
             
 		Param's Explanation (filtered by):
         	ip_FunctionID: 1, 2
@@ -56,7 +57,8 @@ BEGIN
     END IF;
     
     IF ip_IsShowDetailsX = 1 THEN    
-		SELECT sbs.SportTypeID
+		SELECT  (CASE WHEN sbs.LeagueGroupID = 0 THEN NULL ELSE LeagueGroupID END) AS LeagueGroupID
+			,	sbs.SportTypeID
 			,	sbs.SportName
             ,	sbs.BetTypeID
             ,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(sbs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
@@ -83,9 +85,10 @@ BEGIN
 			AND ((ip_BetTypeIDList IS NOT NULL AND tmpBt.BettypeID IS NOT NULL)
 					OR ip_BetTypeIDList IS NULL)
 			AND (sbs.IsMMDetection = ip_IsFilterMMDetection OR IFNULL(ip_IsFilterMMDetection,0) = 0)
-		ORDER BY sbs.PriorityOrder, js.NameDetailsX ; 
+		ORDER BY LeagueGroupID, sbs.PriorityOrder, js.NameDetailsX ; 
 	ELSE		   
-		SELECT sbs.SportTypeID
+		SELECT  (CASE WHEN sbs.LeagueGroupID = 0 THEN NULL ELSE LeagueGroupID END) AS LeagueGroupID
+			,	sbs.SportTypeID
 			,	sbs.SportName
             ,	sbs.BetTypeID
             , 	sbs.BetTypeNameDisplay
@@ -108,7 +111,8 @@ BEGIN
 			AND ((ip_BetTypeIDList IS NOT NULL AND tmpBt.BettypeID IS NOT NULL)
 					OR ip_BetTypeIDList IS NULL)
 			AND (sbs.IsMMDetection = ip_IsFilterMMDetection OR IFNULL(ip_IsFilterMMDetection,0) = 0)
-		ORDER BY PriorityOrder; 
+		ORDER BY LeagueGroupID, PriorityOrder; 
+        
 	END IF;
 END$$
 DELIMITER ;
