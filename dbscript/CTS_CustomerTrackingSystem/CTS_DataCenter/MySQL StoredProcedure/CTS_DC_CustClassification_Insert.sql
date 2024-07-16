@@ -537,7 +537,7 @@ BEGIN
 					SELECT cls.ParentID, cls.CategoryID, cat.CategoryPriority, cat.CustomerClassPriority, cat.CustomerClass 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID 
-																			AND cc.CategoryID <> CONST_CATEID_SPECIALCC
+																			AND cat.CategoryID <> CONST_CATEID_SPECIALCC
 																			AND cat.CategoryPriority < lv_CategoryPriority
 					WHERE cls.CustID = temp.CustID
 					ORDER BY cls.CustID, cls.LastModifiedDate DESC
