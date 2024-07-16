@@ -345,7 +345,11 @@ BEGIN
 					INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate)
 					SELECT temp.CustID,temp.NewCategoryID,temp.TWRobotCounter,lv_CurrentDateTime AS CreatedDate
 					FROM Temp_NewClassification AS temp
-					WHERE temp.IsFromTW = 1;
+					WHERE temp.IsFromTW = 1
+					ON DUPLICATE KEY UPDATE CategoryID = temp.NewCategoryID
+					 					,	RobotCounter = temp.TWRobotCounter
+										,	IsDisabled = 0
+                                    	,	CreatedDate = lv_CurrentDateTime;
 				END IF;
 				
 				IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromCTS = 1) THEN

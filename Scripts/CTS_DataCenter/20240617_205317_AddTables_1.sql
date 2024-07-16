@@ -66,21 +66,21 @@ CREATE TABLE TVSVoidRequest
 CREATE TABLE CTSRobotUser
 (
 	CustID BIGINT UNSIGNED NOT NULL,
-	CategoryID INT UNSIGNED,
+	CategoryID INT UNSIGNED NOT NULL,
 	Remark VARCHAR(500),
-	CreatedDate DATETIME,
 	IsDisabled BIT(1) DEFAULT 0,
-	PRIMARY KEY (CustID, IsDisabled)
+	CreatedDate DATETIME,
+	PRIMARY KEY (CustID, CategoryID)
 );
 
 CREATE TABLE TWRobotUser
 (
 	CustID BIGINT UNSIGNED NOT NULL,
-	CategoryID INT UNSIGNED,
+	CategoryID INT UNSIGNED NOT NULL,
 	RobotCounter SMALLINT,
-	CreatedDate DATETIME,
 	IsDisabled BIT(1) DEFAULT 0,
-	PRIMARY KEY (CustID, IsDisabled)
+	CreatedDate DATETIME,	
+	PRIMARY KEY (CustID, CategoryID)
 );
 
 
