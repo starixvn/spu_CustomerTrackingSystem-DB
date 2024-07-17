@@ -61,6 +61,8 @@ BEGIN
     	DECLARE CONST_REMARKID_ROBOTFROMCTS				INT;
     	DECLARE CONST_REMARKID_ROBOTFROMTVSREQUESTID	INT;
     	DECLARE CONST_REMARKID_ROBOTFROMTVSBETID		INT;
+		DECLARE CONST_REMARKID_LICVIP					INT;
+		DECLARE CONST_REMARKID_LICBA					INT;
 
         DECLARE lv_LicBA_CategoryName					VARCHAR(50);
 		DECLARE lv_LicBA_CC								SMALLINT UNSIGNED;
@@ -93,6 +95,8 @@ BEGIN
     	SET CONST_REMARKID_ROBOTFROMCTS             	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTFROMCTS');
     	SET CONST_REMARKID_ROBOTFROMTVSREQUESTID    	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTFROMTVSREQUESTID');
     	SET CONST_REMARKID_ROBOTFROMTVSBETID        	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTFROMTVSBETID');
+		SET CONST_REMARKID_LICVIP        				= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_LICVIP');
+		SET CONST_REMARKID_LICBA        				= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_LICBA');
 
         SELECT cat.CategoryName, cat.CustomerClass
         INTO lv_LicVIPProblem_CategoryName, lv_LicVIPProblem_CC
@@ -156,7 +160,9 @@ BEGIN
                                 WHEN clss.IsFromCTS = 1 							THEN CONST_REMARKID_ROBOTFROMCTS
                                 WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID > 0 	THEN CONST_REMARKID_ROBOTFROMTVSREQUESTID
                                 WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID = 0 	THEN CONST_REMARKID_ROBOTFROMTVSBETID END
-                    END AS RemarkID
+					WHEN clss.TargetCC IN (lv_LicVIPProblem_CC, lv_LicVIPNormal_CC) THEN CONST_REMARKID_LICVIP
+					WHEN clss.TargetCC = lv_LicBA_CC 								THEN CONST_REMARKID_LICBA
+                END AS RemarkID
         FROM Temp_CustRemark_Duplicate AS tmp
 			INNER JOIN CTSCustomerClassification_History AS clss ON tmp.HistoryID = clss.ID
         )
@@ -216,7 +222,7 @@ BEGIN
             ,	temp.TWGroupBettingRate
             ,	temp.TWTicketRejectRate
             ,	temp.TWDesktopUsageRate
-			,	TRIM(TRAILING '|' FROM RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
+			,	TRIM(TRAILING '|' FROM RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
                         '[TVSRequestID]', IFNULL(temp.TVSRequestID,0))
                     ,   '[Winloss]', IFNULL(FORMAT(temp.WinlossRM, 2),0))
                     ,   '[TVSSportType]', IFNULL(temp.SportType,0))
@@ -230,7 +236,11 @@ BEGIN
                     ,   '[TWRobotCounter]', IFNULL(temp.RobotCounter,0))
                     ,   '[MatchID]', CASE WHEN temp.Remark LIKE 'Auto MatchID: %' THEN REPLACE(temp.Remark,'Auto MatchID: ','') ELSE '' END)
                     ,   '[Remark]', IFNULL(temp.Remark,''))
-					,   '[SourceTypeName]', IFNULL(s.ItemNameDisplay,'')))) AS Remark
+					,   '[SourceTypeName]', IFNULL(s.ItemNameDisplay,''))
+					,	'[LicVIP]', CASE	WHEN temp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
+											WHEN temp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName ELSE '' END)
+					,	'[LicBA]', IFNULL(lv_LicBA_CategoryName,''))
+					)) AS Remark
 			,	temp.TVSRequestID
             ,	temp.IsFromTVS
             ,	temp.IsFromTW
