@@ -114,7 +114,9 @@ BEGIN
         #=====Remove GroupID > 0 AND NOT IN Last Step Time Group===================
         WHILE EXISTS (	SELECT 1 
 						FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms 
-						WHERE mms.SequenceID <= ip_MaxSequenceID AND mms.GroupID = 0 AND mms.TransDateToSecond < lv_FromTime
+						WHERE mms.SequenceID <= ip_MaxSequenceID
+							AND mms.GroupID = 0
+                            AND mms.TransDateToSecond < lv_FromTime
                         LIMIT 1)
 		DO	
             
@@ -196,7 +198,9 @@ BEGIN
         #=====Remove GroupID > 0 AND NOT IN Last Step Time Group===================
         WHILE EXISTS (	SELECT 1 
 						FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms 
-						WHERE mms.GroupID = 0 AND mms.TransDateToSecond < lv_FromTime
+						WHERE mms.SequenceID <= ip_MaxSequenceID
+							AND mms.GroupID = 0
+                            AND mms.TransDateToSecond < lv_FromTime
                         LIMIT 1)
 		DO	
             
