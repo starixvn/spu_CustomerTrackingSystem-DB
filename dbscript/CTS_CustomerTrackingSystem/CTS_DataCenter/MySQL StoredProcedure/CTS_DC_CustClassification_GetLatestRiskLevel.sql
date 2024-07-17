@@ -24,11 +24,11 @@ BEGIN
         
     DROP TEMPORARY TABLE IF EXISTS Temp_ClassificationHistory;    
     CREATE TEMPORARY TABLE Temp_ClassificationHistory(
-			ID 					BIGINT UNSIGNED PRIMARY KEY
+			ID 					BIGINT
         ,	CustID				BIGINT UNSIGNED
-        ,	RegisterName		VARCHAR(50)
-	);
-     
+        ,	RegisterName		VARCHAR(50)       
+       
+	);     
     
     SET lv_LastModifiedDate = TIMESTAMPADD(MINUTE, -1, NOW());
  
@@ -37,18 +37,21 @@ BEGIN
 			clh.ID
 		,	clh.CustID
         ,	cus.RegisterName
-	FROM CTS_DataCenter.CTSCustomerClassification_History_Original AS clh
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification_Original AS cls ON  cls.SubscriberID = ip_SubscriberID AND cls.CustID = clh.CustID
+	FROM CTS_DataCenter.CTSCustomerClassification_History AS clh
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON  cls.SubscriberID = ip_SubscriberID AND cls.CustID = clh.CustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = clh.CustID AND cus.CustSubID = 0 AND cus.RegisterName IS NOT NULL AND cus.RoleID = 1
 	WHERE	clh.ID > ip_LastID
 		AND clh.LastModifiedDate <= lv_LastModifiedDate
 	ORDER BY clh.ID
 	LIMIT ip_BatchSize;
-
+	
+    ALTER TABLE Temp_ClassificationHistory
+		ADD PRIMARY KEY PK_Temp_ClassificationHistory_ID(ID)
+    ,	ADD INDEX IX_Temp_ClassificationHistory_CustID(CustID);
+    
     WITH CTE_History(ID, CustID, RegisterName) AS
     (
-    SELECT DISTINCT
-			MAX(tmpCls.ID) AS ID
+    SELECT 	MAX(tmpCls.ID) AS ID
 		,	tmpCls.CustID
 		,	tmpCls.RegisterName
     FROM Temp_ClassificationHistory AS tmpCls
@@ -63,8 +66,8 @@ BEGIN
         ,	ltr.LastModifiedDate
     FROM 	CTE_History AS cte
 		,	LATERAL(SELECT cat.CategoryName, cat.CustomerClassName, cat.CustomerClass, cat.SabaIntelligent_RiskLevel, cls.LastModifiedDate
-				FROM CTS_DataCenter.CTSCustomerClassification_Original AS cls
-					INNER JOIN CTS_DataCenter.CustomerCategory_Original AS cat ON cls.CategoryID = cat.CategoryID
+				FROM CTS_DataCenter.CTSCustomerClassification AS cls
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID
                 WHERE cls.CustID = cte.CustID
                 ORDER BY cat.Priority ASC, cls.LastModifiedDate DESC		
                 LIMIT 1) AS ltr
