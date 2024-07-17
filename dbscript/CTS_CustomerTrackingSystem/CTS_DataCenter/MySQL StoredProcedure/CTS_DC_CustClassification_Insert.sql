@@ -613,7 +613,7 @@ BEGIN
 
 		IF EXISTS (SELECT 1 FROM Temp_NewClassification AS temp) THEN		
 			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-				CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate) 
+				CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly) 
 			SELECT	temp.CTSCustID
 				,	temp.CustID
 				,	temp.SubscriberID
@@ -630,7 +630,7 @@ BEGIN
 		
 			/*Insert history*/
 			INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(
-					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
 				,	temp.ParentID
@@ -649,7 +649,7 @@ BEGIN
 			
 			/*Insert log*/
 			INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
-					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
 				,	temp.ParentID
