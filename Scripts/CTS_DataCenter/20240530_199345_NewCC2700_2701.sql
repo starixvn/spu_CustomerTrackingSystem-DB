@@ -48,11 +48,11 @@ INSERT INTO CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,Displ
     ,CustomerClassNameCN,CustomerClassException,RelevantCategoryID,ABIDangerLevel_Licensee,ABIDangerLevelException_Licensee,ABIDangerLevel_Credit,ABIDangerLevelException_Credit
     ,IsProbation,ProblemCaseID,IsHedgingReasonMM,RootTaggingID,IsPAProbation,DangerLevelType,Priority,IsDangerProbation,OldCustomerClass,SabaSportType,SabaIntelligent_RiskLevel,SabaIntelligent_RiskLevel_TCN,SabaIntelligent_RiskLevel_SCN,SabaIntelligent_RiskLevel_CN3,SabaIntelligent_RiskLevel_IND,SabaIntelligent_RiskLevel_THB,GroupPriority)
 VALUES(66,'Initial Smart','Initial Smart',150,66,1,0,NOW(),NULL,NULL,NULL,0,NULL,'初始精明玩家'
-    ,'Cược Thông Minh','นักเดิมพันฉลาดเบื้องต้น','Pemain Pintar Awal',66,NULL,NULL,66,'CTS',NULL,NULL,NULL,NULL,NULL,2700,'Dangerous'
+    ,'Cược Thông Minh','นักเดิมพันฉลาดเบื้องต้น','Pemain Pintar Awal',66,NULL,NULL,NULL,'TW',NULL,NULL,NULL,NULL,NULL,2700,'Dangerous'
     ,'危險',2700,106,NULL,NULL,NULL,NULL
     ,0,NULL,NULL,NULL,0,NULL,53,0,NULL,NULL,'Dangerous','危險','危险','Nguy hiểm','Berbahaya','อันตราย',15201)
  ,(106,'Initial Smart (Losing)','Initial Smart (Losing)',150,106,1,0,NOW(),NULL,NULL,NULL,0,NULL,'初始精明玩家 (输钱)'
-    ,'Cược Thông Minh (Thua)','นักเดิมพันฉลาดเริ่มต้น (ขาดทุน)','Pemain Pintar Awal (Kalah)',106,NULL,NULL,106,'CTS',NULL,NULL,NULL,NULL,NULL,2701,'Dangerous -'
+    ,'Cược Thông Minh (Thua)','นักเดิมพันฉลาดเริ่มต้น (ขาดทุน)','Pemain Pintar Awal (Kalah)',106,NULL,NULL,NULL,'TW',NULL,NULL,NULL,NULL,NULL,2701,'Dangerous -'
     ,'危險-',2701,66,NULL,NULL,NULL,NULL
     ,1,NULL,NULL,NULL,1,NULL,53,1,NULL,NULL,'Dangerous','危險','危险','Nguy hiểm','Berbahaya','อันตราย',15201);
 
