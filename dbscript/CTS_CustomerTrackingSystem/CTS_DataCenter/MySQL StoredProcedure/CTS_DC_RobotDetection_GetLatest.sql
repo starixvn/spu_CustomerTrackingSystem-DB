@@ -3,8 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_RobotDetection_GetLatest`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_RobotDetection_GetLatest`(
-		IN 	ip_RobotDetectionLastID		BIGINT UNSIGNED
-	,	IN	ip_RobotImpervaLastLogID	BIGINT		
+		IN 	ip_RobotDetectionLastID		BIGINT UNSIGNED	
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -18,21 +17,20 @@ BEGIN
 			- 20220523@Long.Luu: 		Created -  Robot Detection [Redmine ID: #172561]
 			- 20230315@Victoria.Le:		Get Robot Imperva [Redmine ID: #184773]
             - 20230517@Casey.Huynh:		New Category for Robot OCRD [Redmine ID: #186991]
+            - 20240717@Jonas.Huynh:		Renovate CC [Redmine ID: #205317]
             
 		Example:
-			CALL CTS_DataCenter.CTS_DC_RobotDetection_GetLatest(@ip_LatestTimeAI:='2022-01-01 02:02:02.000', @ip_LatestTimeImperva:='2022-01-01 02:02:02.000');
+			CALL CTS_DataCenter.CTS_DC_RobotDetection_GetLatest(@ip_RobotDetectionLastID:= 0);
 	*/    
-    
-    DECLARE CONST_CATEGORYID_ROBOTUSER	INT DEFAULT 163;
-    DECLARE CONST_CATEGORYID_ROBOTOCRD	INT DEFAULT 165;    
+       
+    DECLARE	CONST_CATEID_ROBOTUSER					INT;
+    DECLARE	CONST_CATEID_ROBOTOCRD					INT;
     
     DECLARE lv_BatchSize INT;
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_RobotImperva;    
-	CREATE TEMPORARY TABLE Temp_RobotImperva(	  
-			LogID		BIGINT
-	);	
-    
+     
+    SET CONST_CATEID_ROBOTUSER	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
+    SET CONST_CATEID_ROBOTOCRD	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
+        
 	DROP TEMPORARY TABLE IF EXISTS Temp_RobotDetection;    
 	CREATE TEMPORARY TABLE Temp_RobotDetection(
 			ID					BIGINT UNSIGNED 
@@ -52,8 +50,8 @@ BEGIN
     INSERT INTO Temp_RobotDetection(ID, CustID, CategoryID, LastModifiedDate)
     SELECT	rd.ID
 		,	rd.CustID
-		, 	(CASE WHEN rd.PeriodRangeType = 200 THEN CONST_CATEGORYID_ROBOTOCRD 
-				ELSE CONST_CATEGORYID_ROBOTUSER END) AS CategoryID
+		, 	(CASE WHEN rd.PeriodRangeType = 200 THEN CONST_CATEID_ROBOTOCRD 
+				ELSE CONST_CATEID_ROBOTUSER END) AS CategoryID
 		,	rd.LastModifiedDate
     FROM CTS_DataCenter.RobotDetection AS rd
     WHERE rd.ID > ip_RobotDetectionLastID
@@ -67,14 +65,6 @@ BEGIN
         , 	MAX(tmpRd.LastModifiedDate) AS LastModifiedDate
     FROM Temp_RobotDetection AS tmpRd
     GROUP BY tmpRd.CustID, tmpRd.CategoryID;
-
-	SELECT 	ri.LogID AS RobotImpervaLogID
-		,	ri.CustID
-        ,	ri.CreateTime AS LastCreateTime
-	FROM CTS_DataCenter.RobotImperva AS ri
-    WHERE ri.LogID > ip_RobotImpervaLastLogID		
-	ORDER BY ri.LogID ASC
-	LIMIT lv_BatchSize;    
 
 END$$	
 DELIMITER ;
