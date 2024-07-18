@@ -275,8 +275,9 @@ sp: BEGIN
 				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTINGSABA 
 																	  AND tmpMst.LeagueGroupID = tmpSt.LeagueGroupID
-                                                                      AND tmpMst.SportType = tmpSt.SportType;
-            
+                                                                      AND tmpMst.SportType = tmpSt.SportType
+				WHERE tmpSt.LeagueGroupID IS NOT NULL;
+
             LEAVE sp;
             
 		END IF;
@@ -443,8 +444,9 @@ sp: BEGIN
 				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTINGSABA 
 																	  AND tmpMst.LeagueGroupID = tmpSt.LeagueGroupID
-                                                                      AND tmpMst.SportType = tmpSt.SportType;
-            
+                                                                      AND tmpMst.SportType = tmpSt.SportType
+            WHERE tmpSt.LeagueGroupID IS NOT NULL;
+
             LEAVE sp;
             
 		END IF;
