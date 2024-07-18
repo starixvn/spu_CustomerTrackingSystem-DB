@@ -203,7 +203,12 @@ BEGIN
 								  END)
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) 
 			AND temp.DWCategoryGroupID = CONST_CATEGROUPID_INACTIVE; 
-			
+
+		/* UPDATE NewIsDangerProbation */    
+    	UPDATE 	Temp_NewClassification AS temp 
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON temp.NewCategoryID = cate.CategoryID
+    	SET temp.NewIsDangerProbation = cate.IsDangerProbation;
+
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsDataChanged = 0
 			,	temp.ActionType = CONST_ACTIONTYPE_UPDATE 
