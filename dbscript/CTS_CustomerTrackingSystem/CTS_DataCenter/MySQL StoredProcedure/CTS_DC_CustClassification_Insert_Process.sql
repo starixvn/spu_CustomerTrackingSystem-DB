@@ -545,7 +545,7 @@ BEGIN
 			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN NULL ELSE cc.ParentID END AS ParentID
 			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN cc.CategoryID ELSE cc.CategoryGroupID END AS CategoryID
 			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN NULL ELSE cc.CategoryGroupID END AS CategoryGroupID /*NORMAL NOT CONSIDER TO WIN/LOSE >> SET NULL*/
-			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN NULL ELSE cls.CategoryID END AS ExistCategoryID
+			,	cls.CategoryID AS ExistCategoryID
 			,	cc.RelevantCategoryID
 			,	cls.Remark
 			,	cls.CreatedDate
