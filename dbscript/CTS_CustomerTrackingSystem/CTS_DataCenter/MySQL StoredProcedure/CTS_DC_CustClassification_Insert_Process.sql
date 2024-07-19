@@ -156,9 +156,9 @@ BEGIN
 
 	IF ip_InputFlowID = 9 THEN
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old (
-				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID, IsNew, IsRemove)
+				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID, IsNew)
 		SELECT 	temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, ccs.CategoryID, ccs.CategoryGroupID
-			, 	0 AS IsNew , 1 AS IsRemove
+			, 	0 AS IsNew
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
 																			AND cls.ParentID = CONST_PARENTID_NORMAL
@@ -170,7 +170,7 @@ BEGIN
 		SET 	temp.OldCategoryGroupID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryGroupID END
 			,	temp.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryID END
 			-- ,	temp.ActionType = CASE 	WHEN o.CustID IS NULL OR (o.IsNew = 1 AND o.IsRemove = 0) OR (o.IsNew = 0 AND o.IsRemove = 1)
-			,	temp.ActionType = CASE 	WHEN o.CustID IS NULL OR (o.IsNew = 0 AND o.IsRemove = 1)
+			,	temp.ActionType = CASE 	WHEN o.CustID IS NULL /* OR (o.IsNew = 0 AND o.IsRemove = 1)*/
 											THEN CONST_ACTIONTYPE_INSERT 
 										ELSE CONST_ACTIONTYPE_UPDATE END
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
@@ -211,9 +211,9 @@ BEGIN
 
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsDataChanged = 0
-			,	temp.ActionType = CONST_ACTIONTYPE_UPDATE 
-		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT
-			AND (temp.NewCategoryID = temp.OldCategoryID OR temp.NewCategoryGroupID = temp.OldCategoryGroupID);
+			/*,	temp.ActionType = CONST_ACTIONTYPE_UPDATE */
+		WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE/*CONST_ACTIONTYPE_INSERT*/
+			AND (temp.NewCategoryID = temp.OldCategoryID); /*OR temp.NewCategoryGroupID = temp.OldCategoryGroupID);*/
 			
 		UPDATE Temp_NewClassification AS temp 
 		SET temp.SourceTypeID = (CASE	WHEN (temp.OldCategoryGroupID IS NULL 
