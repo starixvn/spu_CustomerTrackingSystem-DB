@@ -21,6 +21,7 @@ AS
 	Revisions:
 		- 20240411@Vitoria.Le: 	Separate between QueryType = 1 and QueryType in (2,3)  [Redmine ID: #201380]
 		- 20240607@CaseyHuynh:	Return Saba Scocer Ticket [Redmine ID: #191972]
+        - 20240704@Casey.Huynh: Saba Group Betting - Add Basketball and enhance Soccer [Redmine ID: #207523]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service MM Staging (get tickets by @LastScannedTransID, @IsLive & @BatchSize & @ListSportBettype)
@@ -151,7 +152,7 @@ BEGIN
 			AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)AND b.statusID <> 101 -- Reject		
 			AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 			AND (l.LeagueGroupID NOT IN (42,74,108,113,122,151)
-				 OR (l.LeagueGroupID = 42 AND m.Sporttype = 1))-- SABA leagues
+				 OR (l.LeagueGroupID = 42 AND m.Sporttype IN (1,2)))-- SABA leagues
 			AND ISNULL(b.oddstype,0) <> 0
 		ORDER BY b.sequenceid ASC;
 		
