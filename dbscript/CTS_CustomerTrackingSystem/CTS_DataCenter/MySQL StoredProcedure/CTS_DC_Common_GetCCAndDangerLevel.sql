@@ -76,7 +76,8 @@ BEGIN
 		,	ParentID			INT
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
-		,	DangerLevelType		SMALLINT  
+		,	DangerLevelType		SMALLINT 
+		,	Ext_CategoryGroupID	INT 
     );  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustLatestCate;
@@ -96,7 +97,8 @@ BEGIN
         ,	CategoryType		TINYINT
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
-		,	DangerLevelType		SMALLINT        
+		,	DangerLevelType		SMALLINT 
+		,	Ext_CategoryGroupID	INT       
         ,	INDEX 				IX_Temp_CustClassificationInfo_CustID(CustID)
     );  
      
@@ -144,7 +146,7 @@ BEGIN
                 LIMIT 1) AS clss
 	GROUP BY tmp.CustID;
         
-    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
+    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType,Ext_CategoryGroupID)
     SELECT 	tmp.CustID
 		,	clss.CategoryID
 		,	clss.CustomerClass
@@ -156,6 +158,7 @@ BEGIN
 				WHEN dangerlvl.DangerLevel IS NULL THEN 0
 				ELSE dangerlvl.Ext_DangerLevelType 
 			END AS DangerLevelType
+		,	clss.Ext_CategoryGroupID
     FROM Temp_CustInfo AS tmp
 		INNER JOIN Temp_CustLatestCate AS t ON tmp.CustID = t.CustID,
 		LATERAL(SELECT 	CASE WHEN clss.ParentID = CONST_PARENTID_PA AND tmp.SpecialCC IS NULL THEN cate.CategoryGroupID 
@@ -190,6 +193,7 @@ BEGIN
 						END AS CustomerClassName
 					,	cate.ParentID
 					,	cate.TaggingType
+					,	cate.Ext_CategoryGroupID
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
@@ -209,7 +213,7 @@ BEGIN
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;
                 
-	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, ParentID, CategoryType, TaggingType, DangerLevel, DangerLevelType)	
+	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, ParentID, CategoryType, TaggingType, DangerLevel, DangerLevelType, Ext_CategoryGroupID)	
 	SELECT 	tmp.CustID
 		,	cate.CategoryID        
 		,	IFNULL(cate.CustomerClass,-1) AS CustomerClass
@@ -221,6 +225,7 @@ BEGIN
 		,	cate.TaggingType
         ,	cate.DangerLevel
         ,	cate.DangerLevelType 
+		,	cate.Ext_CategoryGroupID
     FROM Temp_CustInfo AS tmp
 		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID;
 END$$

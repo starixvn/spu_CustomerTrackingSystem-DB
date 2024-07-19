@@ -32,7 +32,8 @@ BEGIN
 		,	CustomerClass
         ,	CustomerClassName  
         ,	DangerLevel
-        ,	DangerLevelType 
+        ,	DangerLevelType
+		,	Ext_CategoryGroupID
     FROM Temp_CustClassificationInfo ;
 END$$
 
