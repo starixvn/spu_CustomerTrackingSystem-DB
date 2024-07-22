@@ -358,7 +358,7 @@ BEGIN
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID
 																				AND cat.CategoryID <> CONST_CATEID_SPECIALCC
-																				AND cat.CategoryPriority < lv_CategoryPriority
+																				-- AND cat.CategoryPriority < lv_CategoryPriority
 					WHERE cls.CustID = temp.CustID
 					ORDER BY cls.CustID, cls.LastModifiedDate DESC
 					LIMIT 1) AS tmpLastCat) 
@@ -438,7 +438,7 @@ BEGIN
 				,	temp.CustID
 				,	temp.SubscriberID
 				,	temp.RoleID
-				,	temp.ParentID
+				,	CONST_PARENTID_WRAPPER
 				,	temp.NewCategoryID
 				,	lv_CurrentDateTime AS CreatedDate
 				,	temp.CreatedBy
@@ -453,7 +453,7 @@ BEGIN
 					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
-				,	temp.ParentID
+				,	CONST_PARENTID_WRAPPER
 				,	temp.NewCategoryID
 				, 	lv_CurrentDateTime AS LastModifiedDate
 				, 	temp.CreatedBy AS LastModifiedBy
@@ -472,7 +472,7 @@ BEGIN
 					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
-				,	temp.ParentID
+				,	CONST_PARENTID_WRAPPER
 				,	temp.NewCategoryID
 				, 	lv_CurrentDateTime AS LastModifiedDate
 				, 	temp.CreatedBy AS LastModifiedBy
