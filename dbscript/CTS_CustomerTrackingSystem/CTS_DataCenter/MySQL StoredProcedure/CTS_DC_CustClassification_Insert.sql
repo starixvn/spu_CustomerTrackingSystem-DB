@@ -438,7 +438,7 @@ BEGIN
 				,	temp.CustID
 				,	temp.SubscriberID
 				,	temp.RoleID
-				,	CONST_PARENTID_WRAPPER
+				,	CONST_PARENTID_WRAPPER AS ParentID
 				,	temp.NewCategoryID
 				,	lv_CurrentDateTime AS CreatedDate
 				,	temp.CreatedBy
@@ -453,7 +453,7 @@ BEGIN
 					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
-				,	CONST_PARENTID_WRAPPER
+				,	CONST_PARENTID_WRAPPER AS ParentID
 				,	temp.NewCategoryID
 				, 	lv_CurrentDateTime AS LastModifiedDate
 				, 	temp.CreatedBy AS LastModifiedBy
@@ -472,7 +472,7 @@ BEGIN
 					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
-				,	CONST_PARENTID_WRAPPER
+				,	CONST_PARENTID_WRAPPER AS ParentID
 				,	temp.NewCategoryID
 				, 	lv_CurrentDateTime AS LastModifiedDate
 				, 	temp.CreatedBy AS LastModifiedBy
@@ -620,7 +620,7 @@ BEGIN
 				,	temp.CustID
 				,	temp.SubscriberID
 				,	temp.RoleID
-				,	temp.ParentID
+				,	CONST_PARENTID_WRAPPER AS ParentID
 				,	temp.NewCategoryID 
 				,	lv_CurrentDateTime AS CreatedDate
 				,	temp.CreatedBy
@@ -635,7 +635,7 @@ BEGIN
 					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
-				,	temp.ParentID
+				,	CONST_PARENTID_WRAPPER AS ParentID
 				,	temp.NewCategoryID 
 				, 	lv_CurrentDateTime AS LastModifiedDate
 				, 	temp.CreatedBy AS LastModifiedBy
@@ -654,7 +654,7 @@ BEGIN
 					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
-				,	temp.ParentID
+				,	CONST_PARENTID_WRAPPER AS ParentID
 				,	temp.NewCategoryID 
 				, 	lv_CurrentDateTime AS LastModifiedDate
 				, 	temp.CreatedBy AS LastModifiedBy
@@ -793,7 +793,7 @@ BEGIN
 			CTSCustID
 		,  	CustID
 		,	TargetCC AS CustomerClass
-		,  	CASE WHEN NewCategoryID = CONST_CATEID_VVIP THEN lv_Ext_CateGroupID_VVIP ELSE NewCategoryID AS CategoryID /*-1 AS Category; SpecialCC4x*/
+		,  	CASE WHEN NewCategoryID = CONST_CATEID_VVIP THEN lv_Ext_CateGroupID_VVIP ELSE NewCategoryID END AS CategoryID /*-1 AS Category; SpecialCC4x*/
 		,	lv_CurrentDateTime AS ScannedTime 
 	FROM Temp_NewClassification AS temp
 	WHERE temp.IsReturnData = 1;
