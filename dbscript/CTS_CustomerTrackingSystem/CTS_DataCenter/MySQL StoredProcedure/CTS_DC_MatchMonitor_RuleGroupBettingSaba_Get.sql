@@ -119,13 +119,13 @@ sp: BEGIN
 		LIMIT 1;
 
         IF(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans   
-
+		
 			SELECT	tmp.MatchID
+				,	tmp.SportType
 				,	tmp.ScoreDiff
 				,	tmp.BettypeID
 				,	tmp.BetID
-				,	tmp.Betteam
-                ,	tmp.SportType
+				,	tmp.Betteam                
                 ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
                 ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
 				,	GROUP_CONCAT(tmp.CustSequenceIDList) AS SequenceIDList
@@ -138,9 +138,9 @@ sp: BEGIN
 						,	mms.Betteam                
 						,	mms.CustID
 						,	mms.CTSCustID
-						,	mms.GroupID
-                        ,	SUM(mms.Stake) AS CustStake
+						,	tmpOg.GroupID                        
 						,	tmpSt.TotalStake
+                        ,	SUM(mms.Stake) AS CustStake
 						,	GROUP_CONCAT(mms.SequenceID) AS CustSequenceIDList
 					FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
 						INNER JOIN Temp_RuleSetting AS tmpSt ON tmpSt.LeagueGroupID = mms.LeagueGroupID AND tmpSt.SportType = mms.SportType
@@ -148,13 +148,13 @@ sp: BEGIN
 															AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam
 															AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 					WHERE mms.SequenceID <= lv_MaxSequenceID
-					GROUP BY mms.MatchID, mms.SportType, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID, mms.CustID, mms.CTSCustID, tmpSt.TotalStake, tmpSt.CustStake
+					GROUP BY mms.MatchID, mms.SportType, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.CustID, mms.CTSCustID, tmpOg.GroupID, tmpSt.TotalStake, tmpSt.CustStake
 					HAVING SUM(mms.Stake) >= tmpSt.CustStake 
 				) AS tmp
-            GROUP BY tmp.MatchID, tmp.ScoreDiff, tmp.BettypeID, tmp.BetID, tmp.Betteam, tmp.GroupID, tmp.TotalStake              
+            GROUP BY tmp.MatchID, tmp.SportType, tmp.ScoreDiff, tmp.BettypeID, tmp.BetID, tmp.Betteam, tmp.GroupID, tmp.TotalStake              
 			HAVING COUNT(DISTINCT tmp.CustID) > 1
 				AND SUM(tmp.CustStake) >= tmp.TotalStake 
-			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
+			ORDER BY tmp.MatchID, tmp.ScoreDiff, tmp.BettypeID, tmp.BetID, tmp.Betteam, tmp.GroupID;
 			
             SELECT DISTINCT CustID, CTSCustID
             FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
@@ -204,15 +204,14 @@ sp: BEGIN
 		ORDER BY mms.SequenceID DESC
 		LIMIT 1;
 
-        IF(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans   
-
-			
-			SELECT	tmp.MatchID
+        IF(lv_LastSequenceID < lv_MaxSequenceID) THEN # If Has New Trans  
+        
+				SELECT	tmp.MatchID
+				,	tmp.SportType
 				,	tmp.ScoreDiff
 				,	tmp.BettypeID
 				,	tmp.BetID
-				,	tmp.Betteam
-                ,	tmp.SportType
+				,	tmp.Betteam                
                 ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
                 ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
 				,	GROUP_CONCAT(tmp.CustSequenceIDList) AS SequenceIDList
@@ -225,9 +224,9 @@ sp: BEGIN
 						,	mms.Betteam                
 						,	mms.CustID
 						,	mms.CTSCustID
-						,	mms.GroupID
-                        ,	SUM(mms.Stake) AS CustStake
+						,	tmpOg.GroupID                        
 						,	tmpSt.TotalStake
+                        ,	SUM(mms.Stake) AS CustStake
 						,	GROUP_CONCAT(mms.SequenceID) AS CustSequenceIDList
 					FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
 						INNER JOIN Temp_RuleSetting AS tmpSt ON tmpSt.LeagueGroupID = mms.LeagueGroupID AND tmpSt.SportType = mms.SportType
@@ -235,13 +234,13 @@ sp: BEGIN
 															AND mms.BetID = tmpOg.BetID AND mms.Betteam = tmpOg.Betteam
 															AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 					WHERE mms.SequenceID <= lv_MaxSequenceID
-					GROUP BY mms.MatchID, mms.SportType, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID, mms.CustID, mms.CTSCustID, tmpSt.TotalStake, tmpSt.CustStake
+					GROUP BY mms.MatchID, mms.SportType, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, mms.CustID, mms.CTSCustID, tmpOg.GroupID, tmpSt.TotalStake, tmpSt.CustStake
 					HAVING SUM(mms.Stake) >= tmpSt.CustStake 
 				) AS tmp
-            GROUP BY tmp.MatchID, tmp.ScoreDiff, tmp.BettypeID, tmp.BetID, tmp.Betteam, tmp.GroupID, tmp.TotalStake              
+            GROUP BY tmp.MatchID, tmp.SportType, tmp.ScoreDiff, tmp.BettypeID, tmp.BetID, tmp.Betteam, tmp.GroupID, tmp.TotalStake              
 			HAVING COUNT(DISTINCT tmp.CustID) > 1
 				AND SUM(tmp.CustStake) >= tmp.TotalStake 
-			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
+			ORDER BY tmp.MatchID, tmp.ScoreDiff, tmp.BettypeID, tmp.BetID, tmp.Betteam, tmp.GroupID;
 			
             SELECT DISTINCT CustID, CTSCustID
             FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
@@ -261,4 +260,3 @@ sp: BEGIN
  
 END$$
 DELIMITER ;
-

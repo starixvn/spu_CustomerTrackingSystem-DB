@@ -182,7 +182,8 @@ sp: BEGIN
 		SELECT tmpGp.GroupID
 		FROM Temp_Group AS tmpGp
 		GROUP BY tmpGp.GroupID
-		HAVING COUNT(DISTINCT tmpGp.TimeGroupID) = 1 AND MAX(IsValidGroup) = 1;
+		HAVING COUNT(DISTINCT tmpGp.TimeGroupID) = 1
+			AND MAX(IsValidGroup) = 1;
         
 		#=====================RETURN COMPLETE GROUP================================
 		SELECT	tmpGr.GroupID	
@@ -194,13 +195,6 @@ sp: BEGIN
 			AND tmpGr.IsValidGroup = 1;
         
 		#=====================RETURN NOT COMPLETE GROUP================================
-		SELECT	tmpGr.CustIDList
-			,	tmpGr.CTSCustIDList
-			,	tmpGr.SequenceIDList
-		FROM Temp_Group AS tmpGr
-			LEFT JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
-		WHERE tmpCp.GroupID IS NULL
-			AND tmpGr.IsValidGroup = 1;
 		
 		SELECT	GROUP_CONCAT(tmp.CustID) AS CustIDList
 			,	GROUP_CONCAT(tmp.CTSCustID) AS CTSCustIDList
@@ -208,21 +202,22 @@ sp: BEGIN
 		FROM (	SELECT	tmpGr.TimeGroupID
 					,	mms.CustID
 					,	mms.CTSCustID
+                    ,	SUM(mms.Stake) AS CustStake
 					,	GROUP_CONCAT(mms.SequenceID) AS CustSequenceIDList
 				FROM Temp_Group AS tmpGr
 				JOIN JSON_TABLE(REPLACE(JSON_ARRAY(tmpGr.SequenceIDList), ',', '","'), 
 								'$[*]' COLUMNS (SequenceID BIGINT UNSIGNED PATH '$')
 								) js
-				INNER JOIN CTS_DataCenter.MatchMonitorStagingSabaLive AS mms ON js.SequenceID = mms.SequenceID	
+				INNER JOIN CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms ON js.SequenceID = mms.SequenceID	
 				LEFT JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
 				WHERE tmpCp.GroupID IS NULL
 					AND tmpGr.IsValidGroup = 1
-				GROUP BY tmpGr.TimeGroupID, mms.CTSCustID
+				GROUP BY tmpGr.TimeGroupID, mms.CustID, mms.CTSCustID
 				HAVING SUM(mms.Stake) >= lv_RuleCustStake
 			  ) AS tmp
 		GROUP BY tmp.TimeGroupID
 		HAVING COUNT(DISTINCT tmp.CTSCustID) > 1
-			AND SUM(tmp.Stake) >= lv_RuleTotalStake;
+			AND SUM(tmp.CustStake) >= lv_RuleTotalStake;
         
 	ELSE #(ip_LiveIndicator = 0)
 		
@@ -262,7 +257,7 @@ sp: BEGIN
 			,	GROUP_CONCAT(tmp.SequenceID)
             ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= lv_RuleTotalStake THEN 1 ELSE 0 END) AS IsValidGroup
         FROM Temp_Trans AS tmp
-        GROUP BY TimeGroupID;
+        GROUP BY tmp.TimeGroupID;
         
         #===============CHECK IS THE COMPLETED GROUP====================    
 		DROP TEMPORARY TABLE IF EXISTS Temp_Completed;
@@ -281,16 +276,10 @@ sp: BEGIN
 			,	tmpGr.TransIDList        
 		FROM Temp_Group AS tmpGr
 			INNER JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
-		WHERE tmpCp.GroupID IS NOT NULL AND tmpGr.IsValidGroup = 1;
-        
-		#=====================RETURN NOT COMPLETE GROUP================================
-		SELECT	tmpGr.CustIDList
-			,	tmpGr.CTSCustIDList
-			,	tmpGr.SequenceIDList
-		FROM Temp_Group AS tmpGr
-			LEFT JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
-		WHERE tmpCp.GroupID IS NULL
+		WHERE tmpCp.GroupID IS NOT NULL
 			AND tmpGr.IsValidGroup = 1;
+
+		#=====================RETURN NOT COMPLETE GROUP================================
 		
 		SELECT	GROUP_CONCAT(tmp.CustID) AS CustIDList
 			,	GROUP_CONCAT(tmp.CTSCustID) AS CTSCustIDList
@@ -298,24 +287,25 @@ sp: BEGIN
 		FROM (	SELECT	tmpGr.TimeGroupID
 					,	mms.CustID
 					,	mms.CTSCustID
+                    ,	SUM(mms.Stake) AS CustStake
 					,	GROUP_CONCAT(mms.SequenceID) AS CustSequenceIDList
 				FROM Temp_Group AS tmpGr
 				JOIN JSON_TABLE(REPLACE(JSON_ARRAY(tmpGr.SequenceIDList), ',', '","'), 
 								'$[*]' COLUMNS (SequenceID BIGINT UNSIGNED PATH '$')
 								) js
-				INNER JOIN CTS_DataCenter.MatchMonitorStagingSabaNonLive AS mms ON js.SequenceID = mms.SequenceID	
+				INNER JOIN CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms ON js.SequenceID = mms.SequenceID	
 				LEFT JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
 				WHERE tmpCp.GroupID IS NULL
 					AND tmpGr.IsValidGroup = 1
-				GROUP BY tmpGr.TimeGroupID, mms.CTSCustID
+				GROUP BY tmpGr.TimeGroupID, mms.CustID, mms.CTSCustID
 				HAVING SUM(mms.Stake) >= lv_RuleCustStake
 			  ) AS tmp
 		GROUP BY tmp.TimeGroupID
 		HAVING COUNT(DISTINCT tmp.CTSCustID) > 1
-			AND SUM(tmp.Stake) >= lv_RuleTotalStake;
+			AND SUM(tmp.CustStake) >= lv_RuleTotalStake;
             
     END IF;
-	
 
 END$$
 DELIMITER ;
+
