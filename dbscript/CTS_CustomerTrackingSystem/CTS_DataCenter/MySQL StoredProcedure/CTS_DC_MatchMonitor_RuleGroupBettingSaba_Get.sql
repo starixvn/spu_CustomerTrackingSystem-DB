@@ -139,6 +139,7 @@ sp: BEGIN
 						,	mms.CustID
 						,	mms.CTSCustID
 						,	mms.GroupID
+                        ,	SUM(mms.Stake) AS CustStake
 						,	tmpSt.TotalStake
 						,	GROUP_CONCAT(mms.SequenceID) AS CustSequenceIDList
 					FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS mms
@@ -152,7 +153,7 @@ sp: BEGIN
 				) AS tmp
             GROUP BY tmp.MatchID, tmp.ScoreDiff, tmp.BettypeID, tmp.BetID, tmp.Betteam, tmp.GroupID, tmp.TotalStake              
 			HAVING COUNT(DISTINCT tmp.CustID) > 1
-				AND SUM(tmp.Stake) >= tmp.TotalStake 
+				AND SUM(tmp.CustStake) >= tmp.TotalStake 
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
 			
             SELECT DISTINCT CustID, CTSCustID
@@ -225,6 +226,7 @@ sp: BEGIN
 						,	mms.CustID
 						,	mms.CTSCustID
 						,	mms.GroupID
+                        ,	SUM(mms.Stake) AS CustStake
 						,	tmpSt.TotalStake
 						,	GROUP_CONCAT(mms.SequenceID) AS CustSequenceIDList
 					FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive AS mms
@@ -238,7 +240,7 @@ sp: BEGIN
 				) AS tmp
             GROUP BY tmp.MatchID, tmp.ScoreDiff, tmp.BettypeID, tmp.BetID, tmp.Betteam, tmp.GroupID, tmp.TotalStake              
 			HAVING COUNT(DISTINCT tmp.CustID) > 1
-				AND SUM(tmp.Stake) >= tmp.TotalStake 
+				AND SUM(tmp.CustStake) >= tmp.TotalStake 
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
 			
             SELECT DISTINCT CustID, CTSCustID
