@@ -56,6 +56,7 @@ BEGIN
 	DECLARE lv_CreatedBy					INT;
 	DECLARE	lv_CurrentDateTime				DATETIME(3) DEFAULT CURRENT_TIME();
 	DECLARE lv_SPName 						VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
+	DECLARE lv_LogInfo 						VARCHAR(500);
 	
 	
 	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
@@ -727,14 +728,64 @@ BEGIN
 			,	lv_CurrentDateTime AS CreatedDate
 			,	lv_CreatedBy
 		FROM Temp_NewClassification;
-
+	
+	ELSEIF ip_IsToQueue = 1 THEN /*PA*/
+		SET lv_LogTypeID = 32;
+	
+		/*From PAM*/
+		SELECT CreatedBy
+		INTO lv_CreatedBy
+		FROM Temp_NewClassification
+		WHERE IsFromCTS = 1
+		LIMIT 1;
+		
+		IF lv_CreatedBy IS NOT NULL THEN
+			SELECT LEFT(CONCAT('CustNo.:',COUNT(1),'_',GROUP_CONCAT(DISTINCT CTSCustID)),500)
+			INTO lv_LogInfo
+			FROM Temp_NewClassification;
+			
+			INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+			SELECT	lv_LogTypeID
+				,	lv_SPName
+				,	lv_LogInfo AS LogInfo
+				,	lv_CurrentDateTime AS CreatedDate
+				,	lv_CreatedBy
+			FROM Temp_NewClassification;
+			
+		END IF;
+		
 	END IF;
 	
 	/*STEP 6: AffectedDownline*/
 	IF (ip_IsToQueue = 1 OR (ip_FromAction = 2 AND ip_AffectDownline = 1)) THEN
 		CALL CTS_DC_CustClassification_AffectedDownline_Insert ('Temp_NewClassification',ip_InputFlowID);
 	END IF;
-
+	
+	/*STEP 7: Insert Evidence*/
+	IF ip_InputFlowID IN (5,115,6,116) THEN /*PA*/
+		/*For Root*/
+		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, `Level`, FromCustID,  CreatedDate, CreatedBy)
+		SELECT 	temp.CTSCustID
+			,	temp.ToEvidenceID
+			,	temp.Remark
+			,	0 AS `Level`
+			,	temp.CTSCustID
+			,	lv_CurrentDateTime AS CreatedDate
+			,	temp.CreatedBy
+		FROM Temp_NewClassification AS temp    
+		WHERE (temp.ToEvidenceID <> 0) AND (temp.ToEvidenceID IS NOT NULL);
+		
+		/*Queue*/
+		INSERT IGNORE INTO CTS_DataCenter.CustEvidenceAffectedQueueInsert(CTSCustID, EvidenceID, Remark, CreatedBy, Created)
+		SELECT 	temp.CTSCustID
+			,	temp.ToEvidenceID
+			,	temp.Remark
+			,	temp.CreatedBy
+			,	lv_CurrentDateTime AS CreatedDate
+		FROM Temp_NewClassification AS temp
+		WHERE (temp.ToEvidenceID) IS NOT NULL AND (temp.DataChangeType = 0 OR temp.IsFromOldPA = 1); 
+		
+	END IF;
 	
 	/*STEP N: Return data*/
 	SELECT DISTINCT 

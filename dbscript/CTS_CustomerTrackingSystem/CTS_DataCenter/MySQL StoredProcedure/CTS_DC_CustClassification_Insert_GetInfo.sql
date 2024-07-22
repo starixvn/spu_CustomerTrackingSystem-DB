@@ -52,9 +52,14 @@ BEGIN
 			,	TargetCC					SMALLINT UNSIGNED
 			,	CategoryPriority			SMALLINT UNSIGNED
 			,	CustomerClassPriority		SMALLINT UNSIGNED
-			,	NewCategoryID				INT
+			,	NewCategoryID				INT UNSIGNED
+			,	NewCategoryGroupID     		INT UNSIGNED
 			,	ParentID					INT UNSIGNED
 			,	IsDangerProbation			TINYINT(1) DEFAULT 0
+			,	IsFromCTS					TINYINT(1) DEFAULT 0
+			,	IsFromTW					TINYINT(1) DEFAULT 0
+			,	IsFromTVS					TINYINT(1) DEFAULT 0
+			,	TVSRequestID				BIGINT UNSIGNED
 			,	IsDataChanged				TINYINT(1) DEFAULT 0	/*0: No change category => No Action*/
 			,	IsReturnData				TINYINT(1) DEFAULT 0
 		);
