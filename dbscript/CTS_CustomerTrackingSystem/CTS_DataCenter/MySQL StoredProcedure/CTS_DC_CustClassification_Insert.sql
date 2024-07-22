@@ -46,6 +46,7 @@ BEGIN
 	DECLARE lv_ActionType					INT;  
 	DECLARE lv_IsAuto						TINYINT(1);  
 	DECLARE lv_IsMarkedDirectly				TINYINT(1);  
+	DECLARE lv_Ext_CateGroupID_VVIP			INT;
 
 	DECLARE lv_CustomerClass				SMALLINT UNSIGNED;  
 	DECLARE lv_CategoryPriority				SMALLINT UNSIGNED;  
@@ -74,8 +75,8 @@ BEGIN
 	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_GetInfo (ip_InputFlowID,ip_CustInfo);
 	
 	IF ip_InputFlowID = 1 THEN /*VVIP*/
-		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CategoryPriority
-		INTO lv_IsParallelParentID, lv_ParentID, lv_CategoryPriority
+		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CategoryPriority, cc.Ext_CategoryGroupID
+		INTO lv_IsParallelParentID, lv_ParentID, lv_CategoryPriority, lv_Ext_CateGroupID_VVIP
 		FROM CTS_DataCenter.CustomerCategorySettings AS ccs
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID
 		WHERE ccs.CategoryID = CONST_CATEID_VVIP;
@@ -792,7 +793,7 @@ BEGIN
 			CTSCustID
 		,  	CustID
 		,	TargetCC AS CustomerClass
-		,  	NewCategoryID AS CategoryID /*-1 AS Category; SpecialCC4x*/
+		,  	CASE WHEN NewCategoryID = CONST_CATEID_VVIP THEN lv_Ext_CateGroupID_VVIP ELSE NewCategoryID AS CategoryID /*-1 AS Category; SpecialCC4x*/
 		,	lv_CurrentDateTime AS ScannedTime 
 	FROM Temp_NewClassification AS temp
 	WHERE temp.IsReturnData = 1;
