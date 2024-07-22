@@ -15,20 +15,22 @@ BEGIN
 		Original: 
 		Revisions: 
 			- 20231226@Thomas.Nguyen: Created [Redmine ID: #197710] 
-            
+            - 20240626@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryID and unused column [Redmine ID: #205317]
+
         Param's Explanation: 
 
 		Example:
 			-CALL CTS_DataCenter.CTS_DC_CustClassification_DetectUnauthorizedLoginCustomer
 
 	*/
-    DECLARE	CONST_CATEGORY_UNAUTHORIZEDLOGIN        INT DEFAULT 64;
-    
+    DECLARE	CONST_CATEID_UNAUTHORIZEDLOGIN 			INT;
+
     DECLARE lv_FromDate                             DATE;
     DECLARE lv_SubSourceID_DirectAPI                TINYINT DEFAULT 1;
     DECLARE lv_SubSourceID_OddsFeed                 TINYINT DEFAULT 2;
     DECLARE lv_Percentage_Threshold                 DECIMAL(6,2) DEFAULT 50;
     
+    SET CONST_CATEID_UNAUTHORIZEDLOGIN 		        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_UNAUTHORIZEDLOGIN');
     SET lv_FromDate = DATE_ADD(ip_ProcessedDate, INTERVAL -90 DAY);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
@@ -178,16 +180,10 @@ BEGIN
     /*Return data*/
     SELECT  CTSCustID
         ,   CustID
-        ,   FirstBetDate
         ,   SubscriberID
         ,   RoleID
         ,   IsLicensee
-        ,   CONST_CATEGORY_UNAUTHORIZEDLOGIN AS CategoryID
-        ,   CountBotTrans AS Bot
-        ,   CountInvalidBrowserTrans AS InvalidBrowser
-        ,   BotTransPercentage AS BotPCT
-        ,   InvalidBrowserInfoTransPercentage AS InvalidBrowserPCT
-        ,   DetectionDate
+        ,   CONST_CATEID_UNAUTHORIZEDLOGIN AS CategoryID
     FROM Temp_CustUnauthorizedLogin AS ct;
 
 END$$
