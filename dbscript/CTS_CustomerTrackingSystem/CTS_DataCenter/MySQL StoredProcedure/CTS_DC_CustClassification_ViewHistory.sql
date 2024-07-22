@@ -205,7 +205,7 @@ BEGIN
 
 		SELECT  temp.ID
 			,	temp.LastModifiedDate AS CreatedTime
-			,   (CASE WHEN temp.CategoryID IS NULL THEN '-' ELSE cc1.CategoryName END) AS CategoryName
+			,   (CASE WHEN temp.CategoryID IS NULL OR cc1.CustomerClass IS NULL THEN '-' ELSE cc1.CategoryName END) AS CategoryName
 			,   (CASE WHEN temp.TargetCC IN (-1, -99) THEN '-' /* -1: Remove, -99: No mapping CC */ ELSE temp.TargetCC END) AS CustomerClass
 			,	temp.CategoryID
 			,    s.ItemNameDisplay AS SourceTypeName

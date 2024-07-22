@@ -76,9 +76,10 @@ BEGIN
 	
 	IF ip_InputFlowID = 221 THEN /*VVIP*/
 		INSERT INTO Temp_CustomerClassification(CustID, CTSCustID, CreatedBy, CategoryID, IsExistVVIP, IsReturnData)
-		SELECT DISTINCT temp.CustID, temp.CTSCustID, temp.CreatedBy, 1 AS IsReturnData
+		SELECT DISTINCT temp.CustID, temp.CTSCustID, temp.CreatedBy
 			, 	cls.CategoryID
 			, 	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
+			,	1 AS IsReturnData
 		FROM JSON_TABLE(ip_CustInfo,
 						"$[*]" COLUMNS(
 											CustID 				BIGINT UNSIGNED				PATH "$.CustID"
