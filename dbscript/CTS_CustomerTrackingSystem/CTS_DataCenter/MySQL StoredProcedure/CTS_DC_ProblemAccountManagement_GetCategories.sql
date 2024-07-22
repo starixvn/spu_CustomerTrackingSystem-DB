@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_ProblemAccountManagement_GetCa
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_ProblemAccountManagement_GetCategories`(
-	IN ip_IsFromPAM BOOLEAN
+	IN ip_PageSource TINYINT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -23,6 +23,7 @@ BEGIN
             - 20240626@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryID [Redmine ID: #205317]
 
 		Param's Explanation (filtered by):
+			- ip_PageSource: 1: Problem Account Management, 2: Associated Group Monitor, others: Profiler Page
         Example:
 			- CALL CTS_DC_ProblemAccountManagement_GetCategories(1);
 	*/
@@ -50,9 +51,8 @@ BEGIN
 	SET CONST_CATEID_ROBOTUSER					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
 	SET CONST_CATEID_ROBOTOCRD					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
 
-	IF ip_IsFromPAM = 1 THEN
-		SELECT 	DISTINCT 
-				cat.CategoryName
+	IF ip_PageSource = 1 THEN
+		SELECT 	cat.CategoryName
 			, 	cat.CategoryGroupID
 			, 	cat.RelevantCategoryID AS RelevantCategoryGroup
 			, 	cat.CategoryGroupID AS CategoryID
@@ -63,9 +63,18 @@ BEGIN
 									, CONST_CATEID_FORMULABET, CONST_CATEID_ROBOTUSER)
 				AND cat.IsActive = 1
 		ORDER BY cat.CategoryPriority;
+	ELSEIF ip_PageSource = 2 THEN
+		SELECT 	cat.CategoryName
+			, 	cat.CategoryGroupID
+			, 	cat.RelevantCategoryID AS RelevantCategoryGroup
+			, 	cat.CategoryGroupID AS CategoryID
+			,	cat.CategoryPriority AS Priority
+		FROM CTS_DataCenter.CustomerCategory AS cat
+		WHERE	cat.CategoryID IN (CONST_CATEID_INFOBET, CONST_CATEID_GROUPBETTING, CONST_CATEID_HEDGING, CONST_CATEID_ARBITRAGE, CONST_CATEID_FIXEDGAME, CONST_CATEID_FORMULABET)
+				AND cat.IsActive = 1
+		ORDER BY cat.CategoryID;
 	ELSE
-		SELECT 	DISTINCT 
-				cat.CategoryName
+		SELECT 	cat.CategoryName
 			, 	cat.CategoryGroupID
 			, 	cat.RelevantCategoryID AS RelevantCategoryGroup
 			, 	cat.CategoryGroupID AS CategoryID
