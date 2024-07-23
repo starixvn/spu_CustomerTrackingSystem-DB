@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/CTSCustomerClassification_BySport
 DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_ProbationScan_Get`;
 
 DELIMITER $$
@@ -85,7 +85,7 @@ sp: BEGIN
 	END IF;
     
     INSERT INTO Temp_Cust(CustID)
-    SELECT 	clss.CustID
+    SELECT 	tmplc.CustID
     FROM	CTS_DataCenter.CTSCustomerClassification AS clss
 		,	LATERAL	
 				(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroupID, cc.LastScannedDate, cc.CreatedDate
@@ -108,7 +108,7 @@ sp: BEGIN
 	LIMIT	lv_BatchSize;
     
     IF NOT EXISTS (SELECT 1 FROM Temp_Cust) THEN
-		SELECT cate.CategoryID
+		SELECT tmplc.CategoryID
         INTO   lv_NextCategoryID
 		FROM Temp_Category AS cate
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CategoryID = cate.CategoryID
@@ -132,7 +132,7 @@ sp: BEGIN
      
      IF lv_NextCategoryID IS NOT NULL THEN
 		INSERT IGNORE INTO Temp_Cust (CustID)
-		SELECT 	clss.CustID
+		SELECT 	tmplc.CustID
 		FROM	CTS_DataCenter.CTSCustomerClassification AS clss
 			,	LATERAL	
 					(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroupID, cc.LastScannedDate, cc.CreatedDate 

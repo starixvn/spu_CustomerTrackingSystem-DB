@@ -72,7 +72,7 @@ BEGIN
 	
     -- #1: Get customer category
 	INSERT INTO Temp_CustomerCategory(CustID, CTSCustID, ParentID, CategoryID, RelevantCategoryID)
-	SELECT 		temp.CustID
+	SELECT 		tmplc.CustID
 			,	tmplc.CTSCustID
 			, 	tmplc.ParentID
             ,	tmplc.CategoryID

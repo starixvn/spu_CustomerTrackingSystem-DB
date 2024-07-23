@@ -104,7 +104,7 @@ BEGIN
 	LIMIT lv_BatchSize;
     
     IF NOT EXISTS (SELECT 1 FROM Temp_Cust) THEN
-		SELECT cate.CategoryID
+		SELECT tmplc.CategoryID
         INTO   lv_NextCategoryID
 		FROM Temp_Category AS cate
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CategoryID = cate.CategoryID
