@@ -19,15 +19,15 @@ BEGIN
 			- 20220908@Harvey.Nguyen: Created [Redmine ID: #176992]
             - 20230707@Jonas.Huynh: Normal Renovation [Redmine ID: #189875]
 			- 20240124@Jonas.Huynh: Exclude inactive customer within 30days [Redmine ID: #199632]
+			- 20240718@Jonas.Huynh: Renovate CC [Redmine ID: #205317]
             
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_BySport_DailyScan_GetNormal (@op_LastCategoryID, @op_LastCustID);
 	*/
-    
-	DECLARE	CONST_GROUP_NORMAL 			INT DEFAULT 200;
-	DECLARE	CONST_CATEGORYID_PROBATION	INT DEFAULT 206;
-	DECLARE	CONST_MINNORMALCATEGORY		INT DEFAULT 202;
-    
+    DECLARE	CONST_CATEGROUPID_PROBATION 	INT;
+	DECLARE	CONST_PARENTID_NORMAL 			INT;
+	DECLARE	CONST_PARENTID_WRAPPER 			INT;
+        	
 	DECLARE lv_LastCategoryID 		INT;
 	DECLARE lv_LastCustID 			BIGINT UNSIGNED;
     DECLARE lv_BatchSize 			BIGINT;
@@ -39,6 +39,10 @@ BEGIN
     
     DECLARE lv_CurrentDate 			DATE DEFAULT CURRENT_DATE();
     DECLARE lv_From30Date 			DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 29 DAY);
+    
+    SET CONST_PARENTID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+    SET CONST_CATEGROUPID_PROBATION 	= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
+    SET CONST_PARENTID_WRAPPER 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
 	CREATE TEMPORARY TABLE Temp_Category(
@@ -57,10 +61,9 @@ BEGIN
 	SELECT 	CategoryID
         , 	DATE_SUB(NOW(), INTERVAL ScanIntervalInSecond - 86400 SECOND)
 	FROM CTS_DataCenter.CustomerCategory
-	WHERE ParentID = CONST_GROUP_NORMAL 
-		AND CategoryID < CONST_CATEGORYID_PROBATION
+	WHERE ParentID = CONST_PARENTID_NORMAL 
+		AND CategoryGroupID <> CONST_CATEGROUPID_PROBATION 
 		AND IsActive = 1
-		AND IsUsedManually = 0 
 		AND ScanIntervalInSecond > 0; 
     
     SELECT ParameterValue 
@@ -91,26 +94,30 @@ BEGIN
     FROM Temp_Category
     WHERE CategoryID = lv_LastCategoryID;
   
-    SET @sql = CONCAT("
-		INSERT IGNORE INTO Temp_Normal (CustID, SportID)
-		SELECT 	clss.CustID, clss.SportID
-		FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCustomerClassification_BySport_CategoryID_CustID)
-		WHERE clss.CustID > ", lv_LastCustID, " ","
-			AND clss.CategoryID = ", lv_LastCategoryID, " ","
-			AND clss.LastScannedDate <= '", lv_ScanDateValid, "' ","
-			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
-							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
-			AND EXISTS (SELECT 1
-						FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
-                        WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >=", lv_From30Date,")
-		ORDER BY 	clss.CustID ASC
-            , 		clss.SportID ASC
-		LIMIT ", lv_BatchSize, ";");
-
-    PREPARE stmt1 FROM @sql;
-    EXECUTE stmt1; 
-	DEALLOCATE PREPARE stmt1;
+	INSERT IGNORE INTO Temp_Normal (CustID, SportID)
+	SELECT 	tmplc.CustID, tmplc.SportID
+	FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCustomerClassification_BySport_CategoryID_CustID)
+		,	LATERAL	
+			(	SELECT cc.CustID, cc.SportID, cc.CategoryID
+				FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cc 
+					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+				WHERE cc.CustID = clss.CustID
+					AND cc.SportID = clss.SportID
+					AND ca.IsActive = 1
+					AND ca.ParentID <> CONST_PARENTID_WRAPPER 
+				ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+				LIMIT 1
+		   ) AS tmplc
+	WHERE clss.CustID > lv_LastCustID
+		AND clss.CategoryID = lv_LastCategoryID
+		AND clss.LastScannedDate <= lv_ScanDateValid
+		AND tmplc.CategoryID = lv_LastCategoryID
+		AND EXISTS (SELECT 1
+					FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
+					WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >= lv_From30Date)
+	ORDER BY 	clss.CategoryID ASC
+		, 		clss.CustID ASC
+	LIMIT lv_BatchSize;
     
     IF NOT EXISTS (SELECT 1 FROM Temp_Normal) THEN
 		SELECT 	cate.CategoryID
@@ -118,15 +125,24 @@ BEGIN
         INTO 	lv_NextCategoryID
 			,	lv_NextScanDateValid
 		FROM Temp_Category AS cate
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS clss ON cate.CategoryID = clss.CategoryID 
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS clss ON clss.CategoryID = cate.CategoryID
+			,	LATERAL	
+				(	SELECT cc.CategoryID, cc.LastScannedDate
+					FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = clss.CustID
+						AND cc.SportID = clss.SportID
+						AND ca.IsActive = 1
+						AND ca.ParentID <> CONST_PARENTID_WRAPPER 
+					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					LIMIT 1
+			    ) AS tmplc
 		WHERE cate.CategoryID > lv_LastCategoryID
-			AND clss.LastScannedDate <= cate.ScanDate
-			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
-							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
+			AND tmplc.CategoryID > lv_LastCategoryID
+			AND tmplc.LastScannedDate <= cate.ScanDate
 			AND EXISTS (SELECT 1
 						FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
-                        WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >= lv_From30Date)
+						WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >= lv_From30Date)
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
     END IF;
@@ -137,26 +153,30 @@ BEGIN
 		FROM Temp_Category
 		WHERE CategoryID = lv_NextCategoryID;
         
-		SET @sql =  CONCAT("
-		INSERT IGNORE INTO Temp_Normal (CustID, SportID)
-		SELECT 	clss.CustID, clss.SportID
+        INSERT IGNORE INTO Temp_Normal (CustID, SportID)
+		SELECT 	tmplc.CustID, tmplc.SportID
 		FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCustomerClassification_BySport_CategoryID_CustID)
+			, LATERAL	
+				(	SELECT cc.CustID, cc.SportID, cc.CategoryID
+					FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = clss.CustID
+						AND cc.SportID = clss.SportID
+						AND ca.IsActive = 1
+						AND ca.ParentID <> CONST_PARENTID_WRAPPER 
+					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					LIMIT 1
+			   ) AS tmplc 
 		WHERE clss.CustID > 0
-			AND clss.CategoryID = ", lv_NextCategoryID," ","
-			AND clss.LastScannedDate <= '", lv_NextScanDateValid,"' ","
-			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.ProbationAccountMonitor_BySport AS pro 
-							 WHERE pro.CustID = clss.CustID AND pro.SportID = clss.SportID)
+			AND clss.CategoryID = lv_NextCategoryID
+			AND clss.LastScannedDate <= lv_NextScanDateValid
+            AND tmplc.CategoryID = lv_NextCategoryID
 			AND EXISTS (SELECT 1
 						FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
-						WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >=", lv_From30Date,")
-		ORDER BY clss.CustID ASC
-            , 	 clss.SportID ASC
-		LIMIT ", lv_BatchSize,";");
-    
-		PREPARE stmt1 FROM  @sql;
-		EXECUTE stmt1; 
-		DEALLOCATE PREPARE stmt1;        
+						WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >= lv_From30Date)
+		ORDER BY 	clss.CategoryID ASC
+            , 		clss.CustID ASC
+		LIMIT lv_BatchSize;
 	ELSE
 		SET lv_NextCategoryID = lv_LastCategoryID;
 	END IF;
@@ -165,15 +185,7 @@ BEGIN
     INTO lv_NextCustID
     FROM Temp_Normal;
     
-    IF lv_NextCustID IS NOT NULL THEN
-		IF ((SELECT COUNT(1) FROM Temp_Normal) = lv_BatchSize) THEN
-			DELETE FROM Temp_Normal WHERE CustID = lv_NextCustID;
-			
-			SELECT MAX(CustID)
-			INTO lv_NextCustID
-			FROM Temp_Normal;	
-		END IF;
-        
+    IF lv_NextCustID IS NOT NULL THEN      
         SET op_LastCategoryID = lv_NextCategoryID;
 		SET op_LastCustID = lv_NextCustID;
 	ELSE 
@@ -183,7 +195,7 @@ BEGIN
 		ORDER BY CategoryID ASC 
 		LIMIT 1;
 	
-        SET op_LastCategoryID = CONST_MINNORMALCATEGORY;
+        SET op_LastCategoryID = lv_NextCategoryID;
         SET op_LastCustID = 0;
     END IF;
     
