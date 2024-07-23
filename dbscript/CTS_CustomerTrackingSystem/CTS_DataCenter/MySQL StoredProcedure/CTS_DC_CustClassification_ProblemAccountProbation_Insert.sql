@@ -33,7 +33,6 @@ BEGIN
 	*/ 
 	DECLARE CONST_CATEID_VVIP 					INT;
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 		INT;
-	DECLARE CONST_CATEID_LICVIPDANGEROUS 		INT;
 	DECLARE CONST_CATEID_LICBA 					INT;
 	
 	DECLARE CONST_PARENTID_WRAPPER 				INT;
@@ -51,7 +50,6 @@ BEGIN
 
 	SET CONST_CATEID_VVIP 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
-	SET CONST_CATEID_LICVIPDANGEROUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
 	SET CONST_CATEID_LICBA 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
 	
 	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
@@ -81,7 +79,7 @@ BEGIN
     );  
     
     /* INIT */    
-    SELECT CustomerClass, Priority 
+    SELECT CustomerClass, CustomerClassPriority 
     INTO lv_LicBACC, lv_LicBAPriority
     FROM CustomerCategory WHERE CategoryID = CONST_CATEID_LICBA;
     
@@ -162,7 +160,7 @@ BEGIN
 								WHEN s.CustomerClass IS NOT NULL THEN s.CustomerClass
                                 WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
                                 WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 0 THEN lv_LicVIPCC_Danger
-                                WHEN t.IsLicenseeBA = 1 AND c.Priority > lv_LicBAPriority THEN lv_LicBACC
+                                WHEN t.IsLicenseeBA = 1 AND c.CustomerClassPriority > lv_LicBAPriority THEN lv_LicBACC
                                 ELSE t.TargetCC
 							END;
 
