@@ -642,7 +642,7 @@ BEGIN
 											, 	IsFromAI					TINYINT(1) 			PATH "$.IsFromAI"
 											, 	PerformanceTime				DATETIME(3)			PATH "$.PerformanceTime"
 											,	SportType					SMALLINT 			PATH "$.SportType"
-											, 	SourceCreatedDate			DATETIME(3)			PATH "$.DetectionDate"
+											, 	SourceCreatedDate			DATETIME(3)			PATH "$.DetectedDate"
 											, 	GBTicketCount				INT					PATH "$.GBTicketCount"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
