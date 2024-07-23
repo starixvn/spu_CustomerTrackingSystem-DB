@@ -179,27 +179,30 @@ BEGIN
 		IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN CTS_DataCenter.CustomerLoginInfoDetection AS cld ON cld.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmp.Remark,'[FBDate]', DATE_FORMAT(cld.FirstBetDate, '%b %d, %Y'))
-								,'[DetectedDate]', DATE_FORMAT(cld.DetectionDate, '%b %d, %Y')), '[Bot]', cld.Bot),'[BotPCT]',cld.BotTransPercentage),'[InvalidBrowser]'
-                                ,cld.InvalidBrowser),'[InvalidBrowserPCT]',cld.InvalidBrowserInfoTransPercentage)
+            SET tmp.Remark = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmp.Remark,'[FBDate]', IFNULL(DATE_FORMAT(cld.FirstBetDate, '%b %d, %Y'),''))
+								,'[DetectedDate]', IFNULL(DATE_FORMAT(cld.DetectionDate, '%b %d, %Y'),'')), '[Bot]', IFNULL(cld.Bot,0)),'[BotPCT]',IFNULL(cld.BotTransPercentage,0)),'[InvalidBrowser]'
+                                ,IFNULL(cld.InvalidBrowser,0)),'[InvalidBrowserPCT]',IFNULL(cld.InvalidBrowserInfoTransPercentage,0))
             WHERE tmp.CategoryID IN (CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING);
+		END IF;
 
-        ELSEIF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_EARLYWARNING, CONST_CATEID_EARLYWARNINGLOSING)) THEN
+        IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_EARLYWARNING, CONST_CATEID_EARLYWARNINGLOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN CTS_DataCenter.Customer_DangerousScore AS cds ON cds.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', DATE_FORMAT(cds.ClassifiedDate, '%b %d, %Y')), '[DangerousScore]', CAST(cds.ClassifiedScore*100 AS DECIMAL(5,2)))
+            SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', IFNULL(DATE_FORMAT(cds.ClassifiedDate, '%b %d, %Y'),'')), '[DangerousScore]', IFNULL(CAST(cds.ClassifiedScore*100 AS DECIMAL(5,2)),0))
             WHERE tmp.CategoryID IN (CONST_CATEID_EARLYWARNING, CONST_CATEID_EARLYWARNINGLOSING);
+		END IF;
 
-        ELSEIF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING)) THEN
+        IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN CTS_DataCenter.Customer_InitialSmart AS cis ON cis.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', DATE_FORMAT(cis.SourceCreatedDate, '%b %d, %Y')), '[Probability]', cis.Probability)
+            SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', IFNULL(DATE_FORMAT(cis.SourceCreatedDate, '%b %d, %Y'),'')), '[Probability]', IFNULL(cis.Probability,0))
             WHERE tmp.CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING);
+		END IF;
 
-        ELSEIF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALGB, CONST_CATEID_INITIALGBLOSING)) THEN
+        IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALGB, CONST_CATEID_INITIALGBLOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN CTS_DataCenter.Customer_InitialGroupBetting AS cgb ON cgb.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', DATE_FORMAT(cgb.SourceCreatedDate, '%b %d, %Y')), '[GBTicketCount]', cgb.GBTicketCount), '[Sport]', cgb.SportType)
+            SET tmp.Remark = REPLACE(REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', IFNULL(DATE_FORMAT(cgb.SourceCreatedDate, '%b %d, %Y'),'')), '[GBTicketCount]', IFNULL(cgb.GBTicketCount,0)), '[Sport]', IFNULL(cgb.SportType,0))
             WHERE tmp.CategoryID IN (CONST_CATEID_INITIALGB, CONST_CATEID_INITIALGBLOSING);
         END IF;
 
