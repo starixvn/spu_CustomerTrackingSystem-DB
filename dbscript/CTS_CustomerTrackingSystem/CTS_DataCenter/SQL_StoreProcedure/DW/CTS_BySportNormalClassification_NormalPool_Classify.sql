@@ -164,7 +164,7 @@ BEGIN
 	INSERT INTO #tmpCustomers(CustId, SportGroup, CurrentCategoryId, IsCheckBetCount, IsProbationLastDay)
 	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
 		,	T.C.value('./@SportGroup', 'SMALLINT')		AS SportGroup
-		,	T.C.value('./@CategoryId', 'SMALLINT')		AS CurrentCategoryId
+		,	T.C.value('./@CategoryId', 'INT')			AS CurrentCategoryId
 		,	T.C.value('./@IsCheckBetCount', 'BIT')		AS IsCheckBetCount
 		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
 	FROM @CustomersXML.nodes('//r') AS T(C)
