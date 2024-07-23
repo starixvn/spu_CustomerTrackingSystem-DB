@@ -219,7 +219,7 @@ BEGIN
 	SELECT 	DISTINCT
 			tmp.CustID
 		,	tmp.CTSCustID
-        ,	CASE WHEN cat.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS ISRobot
+        ,	CASE WHEN cat.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot
     FROM Temp_PA AS tmp
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON tmp.CategoryID = cat.CategoryID AND cat.IsActive = 1
     WHERE IsDataChanged = 1; 
