@@ -229,7 +229,7 @@ BEGIN
             ,	temp.TWGroupBettingRate
             ,	temp.TWTicketRejectRate
             ,	temp.TWDesktopUsageRate
-			,	CONCAT_WS(	CASE WHEN temp.SourceTypeID <> CONST_REMARKID_NOTSHOWDETAILS AND temp.TargetCC IN (lv_LicVIPProblem_CC,lv_LicVIPNormal_CC,lv_LicBA_CC) THEN '\n' ELSE '' END
+			,	CONCAT_WS(	CASE WHEN temp.SourceTypeID <> CONST_REMARKID_NOTSHOWDETAILS AND temp.TargetCC IN (lv_LicVIPProblem_CC,lv_LicVIPNormal_CC,lv_LicBA_CC) THEN '<br/>' ELSE '' END
 						,	CASE WHEN temp.SourceTypeID <> CONST_REMARKID_NOTSHOWDETAILS THEN
 								CASE temp.TargetCC	WHEN lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
 													WHEN lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName
