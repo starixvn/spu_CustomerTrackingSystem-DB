@@ -20,6 +20,7 @@ sp: BEGIN
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
             -	20240109@Casey.Huynh: Enhance Hedging Rule [Redmine ID: #192172]
             -	20240509@Casey.Huynh: HF Hedging StepTime [Redmine ID: #204338]
+            -	20240724@Casey.Huynh: Enhance Rule [Redmine ID: #207523]
             
 		Param's Explanation (filtered by):	
 
@@ -126,7 +127,7 @@ sp: BEGIN
 													AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 			WHERE mms.SequenceID <= lv_MaxSequenceID 
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
-			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) > lv_Rule_TotalStake
+			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= lv_Rule_TotalStake
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
 			
             SET op_MaxSequenceID = lv_MaxSequenceID ;
@@ -193,7 +194,7 @@ sp: BEGIN
 													AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 			WHERE mms.SequenceID <= lv_MaxSequenceID 
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
-			HAVING COUNT(DISTINCT mms.CustID) > 1  AND SUM(mms.Stake) > lv_Rule_TotalStake
+			HAVING COUNT(DISTINCT mms.CustID) > 1  AND SUM(mms.Stake) >= lv_Rule_TotalStake
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
 			
             SET op_MaxSequenceID = lv_MaxSequenceID ;
