@@ -26,6 +26,7 @@ BEGIN
 	
 	DECLARE CONST_PARENTID_VVIP 						INT;
 	DECLARE CONST_PARENTID_NORMAL		    			INT;
+	DECLARE CONST_PARENTID_WRAPPER		    			INT;
 
 	DECLARE CONST_CATEGROUPID_PROBATION	    			INT;
 
@@ -40,6 +41,7 @@ BEGIN
 
 	SET CONST_PARENTID_VVIP 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
 	SET CONST_PARENTID_NORMAL 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_PARENTID_WRAPPER 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 
 	SET CONST_CATEGROUPID_PROBATION						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
     
@@ -84,95 +86,100 @@ BEGIN
 		FROM Temp_Category
 		ORDER BY CategoryID ASC
         LIMIT 1;
-	END  IF;
+	END IF;
     
     SELECT ScanDate 
     INTO lv_ScanDateValid 
     FROM Temp_Category
     WHERE CategoryID = lv_LastCategoryID;
 
-    SET @sql = 	CONCAT("
-		INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
-		SELECT clss.CustID, clss.CategoryID
-		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
-		WHERE clss.CustID > ", lv_LastCustID," ","
-			AND clss.CategoryID = ",lv_LastCategoryID," ","
-			AND clss.LastScannedDate <= '",lv_ScanDateValid,"' ","
-			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.CTSCustomerClassification AS vvip
-							 WHERE clss.CustID = vvip.CustID AND vvip.ParentID = ",CONST_PARENTID_VVIP,")
-			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.CTSCustomerClassification AS pro 
-								INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = pro.CategoryID AND cate.IsActive = 1
-							 WHERE pro.CustID = clss.CustID 
-								AND cate.CategoryGroupID = ", CONST_CATEGROUPID_PROBATION, ")
-		ORDER BY clss.CategoryID ASC
-			,	 clss.CustID ASC
-		LIMIT ",lv_BatchSize,";");
-
-    PREPARE stmt1 FROM  @sql;
-    EXECUTE stmt1; 
-	DEALLOCATE PREPARE stmt1;
-    
-    IF NOT EXISTS (SELECT 1 FROM Temp_Normal) THEN
+    INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
+	SELECT clss.CustID, clss.CategoryID
+	FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
+	,	LATERAL (
+			SELECT cls.CustID, cls.CategoryID, cat.CategoryGroupID, cat.ParentID
+			FROM CTS_DataCenter.CTSCustomerClassification AS cls 
+				INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
+			WHERE cls.CustID = clss.CustID
+				AND cat.ParentID <> CONST_PARENTID_WRAPPER
+			ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+			LIMIT 1
+		) AS ltc
+	WHERE 	clss.CustID > lv_LastCustID
+		AND clss.CategoryID = ltc.CategoryID
+		AND ltc.CategoryID = lv_LastCategoryID
+		AND clss.LastScannedDate <= lv_ScanDateValid
+		AND ltc.ParentID <> CONST_PARENTID_VVIP
+		AND ltc.CategoryGroupID <> CONST_CATEGROUPID_PROBATION
+	ORDER BY clss.CategoryID ASC
+		,	clss.CustID ASC
+	LIMIT lv_BatchSize
+	;
+	
+	IF NOT EXISTS (SELECT 1 FROM Temp_Normal) THEN
 		SELECT 	cate.CategoryID
 			,	cate.ScanDate
         INTO 	lv_NextCategoryID
 			,	lv_NextScanDateValid
 		FROM Temp_Category  AS cate
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cate.CategoryID = clss.CategoryID 
-		WHERE cate.CategoryID > lv_LastCategoryID
+			,	LATERAL (
+					SELECT cls.CategoryID, cat.CategoryGroupID, cat.ParentID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cls 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
+					WHERE cls.CustID = clss.CustID
+						AND cat.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+					LIMIT 1
+				) AS ltc
+		WHERE 	clss.CategoryID = ltc.CategoryID
+			AND ltc.CategoryID > lv_LastCategoryID
 			AND clss.LastScannedDate <= cate.ScanDate
-            AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.CTSCustomerClassification AS vvip
-							 WHERE clss.CustID = vvip.CustID AND vvip.ParentID = CONST_PARENTID_VVIP)
-			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.CTSCustomerClassification AS pro 
-								INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = pro.CategoryID AND cate.IsActive = 1
-							 WHERE pro.CustID = clss.CustID 
-								AND cate.CategoryGroupID = CONST_CATEGROUPID_PROBATION)
+			AND ltc.ParentID <> CONST_PARENTID_VVIP
+			AND ltc.CategoryGroupID <> CONST_CATEGROUPID_PROBATION
 		ORDER BY cate.CategoryID ASC
-		LIMIT 1; 
+		LIMIT 1;
+		
     END IF;
-    
-    IF lv_NextCategoryID IS NOT NULL THEN
+	
+	IF lv_NextCategoryID IS NOT NULL THEN
 		SELECT ScanDate 
-		INTO lv_ScanDateValid  
+		INTO lv_NextScanDateValid  
 		FROM Temp_Category
 		WHERE CategoryID = lv_NextCategoryID;
-        
-         SET @sql =  CONCAT("
+		
 		INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
-		SELECT 	clss.CustID, clss.CategoryID
+		SELECT clss.CustID, clss.CategoryID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
-		WHERE clss.CustID > 0
-			AND clss.CategoryID = ", lv_NextCategoryID," ","
-			AND clss.LastScannedDate <= '", lv_NextScanDateValid,"' ","
-			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.CTSCustomerClassification AS vvip
-							 WHERE clss.CustID = vvip.CustID AND vvip.ParentID = ",CONST_PARENTID_VVIP,")
-			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.CTSCustomerClassification AS pro 
-								INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = pro.CategoryID AND cate.IsActive = 1
-							 WHERE pro.CustID = clss.CustID 
-								AND cate.CategoryGroupID = ",CONST_CATEGROUPID_PROBATION,")
+		,	LATERAL (
+				SELECT cls.CategoryID, cat.CategoryGroupID, cat.ParentID
+				FROM CTS_DataCenter.CTSCustomerClassification AS cls 
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
+				WHERE cls.CustID = clss.CustID
+					AND cat.ParentID <> CONST_PARENTID_WRAPPER
+				ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+				LIMIT 1
+			) AS ltc
+		WHERE 	clss.CustID > 0
+			AND clss.CategoryID = ltc.CategoryID
+			AND ltc.CategoryID = lv_NextCategoryID
+			AND clss.LastScannedDate <= lv_NextScanDateValid
+			AND ltc.ParentID <> CONST_PARENTID_VVIP
+			AND ltc.CategoryGroupID <> CONST_CATEGROUPID_PROBATION
 		ORDER BY clss.CategoryID ASC
-			,	 clss.CustID ASC
-		LIMIT ", lv_BatchSize,";");
-    
-    PREPARE stmt1 FROM  @sql;
-    EXECUTE stmt1; 
-	DEALLOCATE PREPARE stmt1;
-        
+			,	clss.CustID ASC
+		LIMIT lv_BatchSize
+		;
+	
 	ELSE
 		SET lv_NextCategoryID = lv_LastCategoryID;
 	END IF;
-    
-    SELECT MAX(CustID)
+	
+	SELECT MAX(CustID)
     INTO lv_NextCustID
     FROM Temp_Normal;
-    
-    IF lv_NextCustID IS NOT NULL THEN
+	
+	IF lv_NextCustID IS NOT NULL THEN
         SET op_LastCategoryID = lv_NextCategoryID;
 		SET op_LastCustID = lv_NextCustID;
 	ELSE 
@@ -185,11 +192,12 @@ BEGIN
         SET op_LastCategoryID = lv_NextCategoryID;
         SET op_LastCustID = 0;
     END IF;
-    
-    SELECT DISTINCT	tmpNr.CustID
-		,	cc.CategoryGroupID AS CurrentCategoryID
+	
+	SELECT DISTINCT	
+		tmpNr.CustID
+	,	cc.CategoryGroupID AS CurrentCategoryID
     FROM Temp_Normal AS tmpNr
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON tmpNr.CurrentCategoryID = cc.CategoryID;
-
+	
 END$$
 DELIMITER ;
