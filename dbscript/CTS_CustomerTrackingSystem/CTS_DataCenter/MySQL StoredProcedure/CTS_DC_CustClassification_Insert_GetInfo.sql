@@ -393,7 +393,7 @@ BEGIN
 				,	cus.CTSCustID
 				,	cus.RoleID
 				, 	cus.SubscriberID
-				,	cat.CategoryID
+				,	cat.CategoryGroupID
 				,	cat.CategoryGroupID
 				,	cus.IsLicensee
 				,	cus.IsLicenseeVIP
@@ -444,7 +444,13 @@ BEGIN
 										)) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
-				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.TVSReasonID = tmpJs.TVSReasonID
+				-- LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.TVSReasonID = tmpJs.TVSReasonID
+				,	LATERAL (
+						SELECT cate.CategoryGroupID, cate.RelevantCategoryID, cate.CategoryPriority, cate.CustomerClassPriority,cate.ParentID
+						FROM CTS_DataCenter.CustomerCategory AS cate 
+						WHERE cate.TVSReasonID = tmpJs.TVSReasonID
+						LIMIT 1
+				) AS cat
 			ON DUPLICATE KEY UPDATE TurnoverRM = IFNULL(Temp_NewClassification.TurnoverRM, tmpJs.TurnoverRM)  
 								,	WinlossRM = IFNULL(Temp_NewClassification.WinlossRM, tmpJs.WinlossRM)  
 								,	BetCount = IFNULL(Temp_NewClassification.BetCount, tmpJs.BetCount)  
