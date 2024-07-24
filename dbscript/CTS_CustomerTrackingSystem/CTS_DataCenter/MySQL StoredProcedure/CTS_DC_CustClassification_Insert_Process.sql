@@ -677,7 +677,7 @@ BEGIN
 				,	temp_old.SportType
 				,	temp_old.TVSIssueTypeID
 			FROM Temp_CTSCustomerClassification_Old AS temp_old
-				INNER JOIN Temp_CustProbationStatus AS tmpCp ON temp_old.ParentID IS NOT NULL AND temp_old.IsNew = 0
+				INNER JOIN Temp_CustProbationStatus AS tmpCp ON temp_old.ParentID IS NOT NULL AND temp_old.IsNew = 0 AND temp_old.IsRemove <> 1
 																	AND tmpCp.CustID = temp_old.CustID 
 																	AND tmpCp.IsPAProbation <> temp_old.IsPAProbation
 																	AND tmpCp.WinlossStatus <> 1 
