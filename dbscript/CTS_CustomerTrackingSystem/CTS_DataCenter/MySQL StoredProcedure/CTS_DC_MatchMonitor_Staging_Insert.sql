@@ -246,7 +246,7 @@ sp: BEGIN
 		
         #=====GROUP BETTING SABA===================
 		IF (ip_PoolType = 1002) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime)
+			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, BetID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime)
 			SELECT	tmpSt.SequenceID
 				,	tmpSt.TransID
 				,	tmpSt.TransDate
@@ -255,6 +255,7 @@ sp: BEGIN
 				,	tmpSt.SportType
 				,	tmpSt.ScoreDiff
 				,	tmpSt.BettypeID
+				,	tmpSt.BetID
 				,	tmpSt.Betteam
 				,	tmpSt.CustID
                 ,	cus.CTSCustID
@@ -415,7 +416,7 @@ sp: BEGIN
         
 		#=====GROUP BETTING SABA===================
 		IF (ip_PoolType = 2002) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime)
+			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, BetID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime)
 			SELECT	tmpSt.SequenceID
 				,	tmpSt.TransID
 				,	tmpSt.TransDate
@@ -424,6 +425,7 @@ sp: BEGIN
 				,	tmpSt.SportType
 				,	tmpSt.ScoreDiff
 				,	tmpSt.BettypeID
+                ,	tmpSt.BetID
 				,	tmpSt.Betteam
 				,	tmpSt.CustID
                 ,	cus.CTSCustID
