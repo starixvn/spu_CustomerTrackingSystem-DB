@@ -313,13 +313,13 @@ VALUES (1,'Account has less than 10 bets for first time scan','New: New Customer
 (37,'Insert Robot','Insert Robot'),
 (38,'[CategoryName]','Not show Details'),
 (39,'First Bet Date: [FBDate] | Detection Date: [DetectedDate] - Bot Trans: [Bot] ([BotPCT]%) - Invalid Browser Info Trans: [InvalidBrowser] ([InvalidBrowserPCT]%) | Win loss: [Winloss]','System Detect Unauthorized Login'),
-(40,'Void by RequestID: [TVSRequestID] | Win loss: [Winloss] | Sport: [TVSSportType] | Parlay',NULL),
-(41,'Void by BetID | Win loss: [Winloss] | Sport: [TVSSportType] | Parlay',NULL),
+(40,'Void by RequestID: [TVSRequestID] | Win loss: [Winloss] | Sport: [SportName] | Parlay',NULL),
+(41,'Void by BetID | Win loss: [Winloss] | Sport: [SportName] | Parlay',NULL),
 (42,'Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]',NULL),
 (43,'Turnover: [TurnOver] | Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount] | Active Day: [ActiveDays]',NULL),
 (44,'Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount] | Group Betting Percent: [TWGBRate]',NULL),
 (45,'Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount] | Desktop Percent: [TWDesktopUsageRate] | Reject Percent: [TWTicketRejectRate]',NULL),
-(46,'Detection Date: [DetectedDate] - GB Bet Count: [GBTicketCount] - Sport: [Sport] | Turnover: [TurnOver] | Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]',NULL),
+(46,'Detection Date: [DetectedDate] - GB Bet Count: [GBTicketCount] - Sport: [SportName] | Turnover: [TurnOver] | Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]',NULL),
 (47,'Detection Date: [DetectedDate] - Probability Threshold: [Probability] | Turnover: [TurnOver] | Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]',NULL),
 (48,'Detection Date: [DetectedDate] - Dangerous Score: [DangerousScore]% | Turnover: [TurnOver] | Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]',NULL),
 (49,'[SourceTypeName]',NULL),
@@ -329,9 +329,7 @@ VALUES (1,'Account has less than 10 bets for first time scan','New: New Customer
 (53,'Robot is marked directly | Win loss: [Winloss] | [Remark]',NULL),
 (54,'Void by RequestID: [TVSRequestID] | Win loss: [Winloss]',NULL),
 (55,'Void by BetID | Win loss: [Winloss]',NULL),
-(56,'[Remark] | Win loss: [Winloss]',NULL),
-(57,'[LicVIP] [SourceTypeName]',NULL),
-(58,'[LicBA] [SourceTypeName]',NULL);
+(56,'[Remark] | Win loss: [Winloss]',NULL);
 
 INSERT INTO `CTS_DataCenter`.`SystemParameter`
 (`ParameterID`,`ParameterName`,`ParameterDesc`,`ParameterDataType`,`ParameterValue`) VALUES

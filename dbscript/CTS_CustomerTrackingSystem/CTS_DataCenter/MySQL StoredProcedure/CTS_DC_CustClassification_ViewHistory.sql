@@ -61,13 +61,14 @@ BEGIN
     	DECLARE CONST_REMARKID_ROBOTFROMCTS				INT;
     	DECLARE CONST_REMARKID_ROBOTFROMTVSREQUESTID	INT;
     	DECLARE CONST_REMARKID_ROBOTFROMTVSBETID		INT;
-		DECLARE CONST_REMARKID_LICVIP					INT;
-		DECLARE CONST_REMARKID_LICBA					INT;
+		/*DECLARE CONST_REMARKID_LICVIP					INT;
+		DECLARE CONST_REMARKID_LICBA					INT;*/
+		DECLARE CONST_REMARKID_NOTSHOWDETAILS			INT;
 
-        DECLARE lv_LicBA_CategoryName					VARCHAR(50);
 		DECLARE lv_LicBA_CC								SMALLINT UNSIGNED;
 		DECLARE lv_LicVIPProblem_CC						SMALLINT UNSIGNED;
 		DECLARE lv_LicVIPNormal_CC						SMALLINT UNSIGNED;
+		DECLARE lv_LicBA_CategoryName					VARCHAR(50);
         DECLARE lv_LicVIPProblem_CategoryName			VARCHAR(50);
         DECLARE lv_LicVIPNormal_CategoryName			VARCHAR(50);        
         
@@ -95,8 +96,9 @@ BEGIN
     	SET CONST_REMARKID_ROBOTFROMCTS             	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTFROMCTS');
     	SET CONST_REMARKID_ROBOTFROMTVSREQUESTID    	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTFROMTVSREQUESTID');
     	SET CONST_REMARKID_ROBOTFROMTVSBETID        	= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTFROMTVSBETID');
-		SET CONST_REMARKID_LICVIP        				= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_LICVIP');
-		SET CONST_REMARKID_LICBA        				= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_LICBA');
+		/*SET CONST_REMARKID_LICVIP        				= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_LICVIP');
+		SET CONST_REMARKID_LICBA        				= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_LICBA');*/
+		SET CONST_REMARKID_NOTSHOWDETAILS        		= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_NOTSHOWDETAILS');
 
         SELECT cat.CategoryName, cat.CustomerClass
         INTO lv_LicVIPProblem_CategoryName, lv_LicVIPProblem_CC
@@ -120,6 +122,7 @@ BEGIN
 				,	CategoryID			INT
 				,	SourceTypeID		SMALLINT UNSIGNED
 				,	Remark				TEXT
+				,	SportType			INT
 				,	KEY IX_Temp_CustRemark_CustID_CateID(CustID, CategoryID)	
 		);
 
@@ -160,8 +163,8 @@ BEGIN
                                 WHEN clss.IsFromCTS = 1 							THEN CONST_REMARKID_ROBOTFROMCTS
                                 WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID > 0 	THEN CONST_REMARKID_ROBOTFROMTVSREQUESTID
                                 WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID = 0 	THEN CONST_REMARKID_ROBOTFROMTVSBETID END
-					WHEN clss.TargetCC IN (lv_LicVIPProblem_CC, lv_LicVIPNormal_CC) THEN CONST_REMARKID_LICVIP
-					WHEN clss.TargetCC = lv_LicBA_CC 								THEN CONST_REMARKID_LICBA
+					/*WHEN clss.TargetCC IN (lv_LicVIPProblem_CC, lv_LicVIPNormal_CC) THEN CONST_REMARKID_LICVIP
+					WHEN clss.TargetCC = lv_LicBA_CC 								THEN CONST_REMARKID_LICBA*/
                 END AS RemarkID
         FROM Temp_CustRemark_Duplicate AS tmp
 			INNER JOIN CTSCustomerClassification_History AS clss ON tmp.HistoryID = clss.ID
@@ -202,7 +205,8 @@ BEGIN
         IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALGB, CONST_CATEID_INITIALGBLOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
                 INNER JOIN CTS_DataCenter.Customer_InitialGroupBetting AS cgb ON cgb.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', IFNULL(DATE_FORMAT(cgb.SourceCreatedDate, '%b %d, %Y'),'')), '[GBTicketCount]', IFNULL(cgb.GBTicketCount,0)), '[Sport]', IFNULL(cgb.SportType,0))
+            SET		tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', IFNULL(DATE_FORMAT(cgb.SourceCreatedDate, '%b %d, %Y'),'')), '[GBTicketCount]', IFNULL(cgb.GBTicketCount,0))
+				,	tmp.SportType = cgb.SportType
             WHERE tmp.CategoryID IN (CONST_CATEID_INITIALGB, CONST_CATEID_INITIALGBLOSING);
         END IF;
 
@@ -225,25 +229,31 @@ BEGIN
             ,	temp.TWGroupBettingRate
             ,	temp.TWTicketRejectRate
             ,	temp.TWDesktopUsageRate
-			,	TRIM(TRAILING '|' FROM RTRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
-                        '[TVSRequestID]', IFNULL(temp.TVSRequestID,0))
-                    ,   '[Winloss]', IFNULL(FORMAT(temp.WinlossRM, 2),0))
-                    ,   '[TVSSportType]', IFNULL(temp.SportType,0))
-                    ,   '[Margin]', CASE WHEN IFNULL(temp.TurnOverRM,0) = 0 THEN 0 ELSE ROUND((temp.WinlossRM/temp.TurnOverRM) * 100, 3) END)
-                    ,   '[BetCount]', IFNULL(temp.BetCount,0))
-                    ,   '[TurnOver]', IFNULL(FORMAT(temp.TurnOverRM, 2),0))
-                    ,   '[ActiveDays]', IFNULL(temp.ActiveDays,0))
-                    ,   '[TWGBRate]', IFNULL(temp.TWGroupBettingRate,0))
-                    ,   '[TWDesktopUsageRate]', IFNULL(temp.TWDesktopUsageRate,0))
-                    ,   '[TWTicketRejectRate]', IFNULL(temp.TWTicketRejectRate,0))
-                    ,   '[TWRobotCounter]', IFNULL(temp.RobotCounter,0))
-                    ,   '[MatchID]', CASE WHEN temp.Remark LIKE 'Auto MatchID: %' THEN REPLACE(temp.Remark,'Auto MatchID: ','') ELSE '' END)
-                    ,   '[Remark]', IFNULL(temp.Remark,''))
-					,   '[SourceTypeName]', IFNULL(s.ItemNameDisplay,''))
-					,	'[LicVIP]', CASE	WHEN temp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
-											WHEN temp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName ELSE '' END)
-					,	'[LicBA]', IFNULL(lv_LicBA_CategoryName,''))
-					)) AS Remark
+			,	CONCAT_WS(	CASE WHEN temp.SourceTypeID <> CONST_REMARKID_NOTSHOWDETAILS AND temp.TargetCC IN (lv_LicVIPProblem_CC,lv_LicVIPNormal_CC,lv_LicBA_CC) THEN '\n' ELSE '' END
+						,	CASE WHEN temp.SourceTypeID <> CONST_REMARKID_NOTSHOWDETAILS THEN
+								CASE temp.TargetCC	WHEN lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
+													WHEN lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName
+													WHEN lv_LicBA_CC THEN lv_LicBA_CategoryName ELSE '' END	END
+						,	TRIM(TRAILING '|' FROM TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
+								'[TVSRequestID]', IFNULL(temp.TVSRequestID,0))
+							,   '[Winloss]', IFNULL(FORMAT(temp.WinlossRM, 2),0))
+							/*,   '[TVSSportType]', IFNULL(temp.SportType,0))*/
+							,   '[Margin]', CASE WHEN IFNULL(temp.TurnOverRM,0) = 0 THEN 0 ELSE ROUND((temp.WinlossRM/temp.TurnOverRM) * 100, 3) END)
+							,   '[BetCount]', IFNULL(temp.BetCount,0))
+							,   '[TurnOver]', IFNULL(FORMAT(temp.TurnOverRM, 2),0))
+							,   '[ActiveDays]', IFNULL(temp.ActiveDays,0))
+							,   '[TWGBRate]', IFNULL(temp.TWGroupBettingRate,0))
+							,   '[TWDesktopUsageRate]', IFNULL(temp.TWDesktopUsageRate,0))
+							,   '[TWTicketRejectRate]', IFNULL(temp.TWTicketRejectRate,0))
+							,   '[TWRobotCounter]', IFNULL(temp.RobotCounter,0))
+							,   '[MatchID]', CASE WHEN temp.Remark LIKE 'Auto MatchID: %' THEN REPLACE(temp.Remark,'Auto MatchID: ','') ELSE '' END)
+							,   '[Remark]', IFNULL(temp.Remark,''))
+							,   '[SourceTypeName]', IFNULL(s.ItemNameDisplay,''))
+							,	'[CategoryName]', IFNULL(cc1.CategoryName,''))
+							/*,	'[LicVIP]', CASE	WHEN temp.TargetCC = lv_LicVIPProblem_CC THEN lv_LicVIPProblem_CategoryName
+													WHEN temp.TargetCC = lv_LicVIPNormal_CC THEN lv_LicVIPNormal_CategoryName ELSE '' END)
+							,	'[LicBA]', IFNULL(lv_LicBA_CategoryName,''))*/
+							))) AS Remark
 			,	temp.TVSRequestID
             ,	temp.IsFromTVS
             ,	temp.IsFromTW
@@ -255,7 +265,8 @@ BEGIN
                         ELSE NULL END) AS LicVIP
             ,	(CASE	WHEN temp.TargetCC = lv_LicBA_CC THEN lv_LicBA_CategoryName ELSE NULL END) AS LicBA
 			,	temp.IsParlay
-			,	temp.SportType
+			,	IFNULL(tmpcr.SportType, temp.SportType) AS SportType
+			,	CASE WHEN tmpcr.Remark LIKE '%[SportName]%' THEN 1 ELSE 0 END AS IsGetSportName
 			,	temp.IssueTypeID
 		FROM 	CTS_DataCenter.CTSCustomerClassification_History AS temp
 			LEFT JOIN Temp_CustRemark AS tmpcr ON tmpcr.HistoryID = temp.ID
