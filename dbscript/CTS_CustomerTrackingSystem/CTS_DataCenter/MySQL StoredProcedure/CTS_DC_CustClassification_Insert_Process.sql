@@ -656,56 +656,60 @@ BEGIN
 		
 		/*existing PotentialPA + PA - existing and new: the same CateGroup - WinlossStatus <> KEEP*/
 		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, DWCategoryID, OldCategoryID, NewCategoryID, TargetCC,  TargetDangerLevel
-			, 	ToEvidenceID, Remark, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirectly
+				CustID, CTSCustID, SubscriberID, ParentID, DWCategoryID, DWCategoryGroupID, OldCategoryID, NewCategoryID, NewCategoryGroupID
+			, 	TargetCC,  TargetDangerLevel, ToEvidenceID, Remark, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirectly
 			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsDataChanged, DataChangeType
 			, 	LastModifiedDate, CreatedBy, IsPAProbation, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID)
 		SELECT 		temp_old.CustID
-				,	temp_old.CTSCustID
-				,	temp_old.ExistCategoryID AS DWCategoryID
-				,	temp_old.ExistCategoryID AS OldCategoryID
-				,	tmpLt.CategoryGroupID AS NewCategoryID
-				,	(CASE 	WHEN temp_old.SpecialCC IS NOT NULL THEN temp_old.SpecialCC 
-							ELSE IFNULL(tmpLt.CustomerClass,-99) END) AS TargetCC
-				, 	(CASE 	WHEN tmpCp.IsLicensee = 1 THEN tmpLt.Ext_ABIDangerLevel_Licensee
-							WHEN tmpCp.IsLicensee = 0 THEN tmpLt.Ext_ABIDangerLevel_Credit END) AS TargetDangerLevel
-				,	(CASE 	WHEN tmpCp.IsLicensee = 1 THEN tmpLt.Ext_EvidenceID_Licensee
-							WHEN tmpCp.IsLicensee = 0 THEN tmpLt.Ext_EvidenceID_Credit ELSE NULL END) AS ToEvidenceID
-				,	temp_old.Remark
-				,	tmpCp.TurnoverRM
-				,	tmpCp.WinlossRM
-				,	tmpCp.BetCount
-				,	tmpCp.ActiveDays
-				,	temp_old.IsMarkedDirectly
-				,	temp_old.IsFromTVS
-				,	temp_old.IsFromTW
-				,	temp_old.IsFromCTS
-				,	temp_old.IsFromAI
-				,	temp_old.IsFromImperva
-				,	1 AS IsDataChanged
-				,	(CASE WHEN tmpCp.WinlossStatus = NULL THEN NULL ELSE 1 END) AS DataChangeType
-				,	temp_old.LastModifiedDate
-				,	temp_old.CreatedBy
-				,	temp_old.IsPAProbation
-				,	temp_old.TVSRequestID
-				,	temp_old.IsTVSParlay
-				,	temp_old.SportType
-				,	temp_old.TVSIssueTypeID
-			FROM Temp_CTSCustomerClassification_Old AS temp_old
-				INNER JOIN Temp_CustProbationStatus AS tmpCp ON temp_old.ParentID IS NOT NULL AND temp_old.IsNew = 0 AND temp_old.IsRemove <> 1
-																	AND tmpCp.CustID = temp_old.CustID 
-																	AND tmpCp.IsPAProbation <> temp_old.IsPAProbation
-																	AND tmpCp.WinlossStatus <> 1 
-			, 	LATERAL (SELECT cat.CategoryGroupID
-							,	cat.CustomerClass
-							,	cat.Ext_ABIDangerLevel_Licensee
-							,	cat.Ext_ABIDangerLevel_Credit
-							,	cat.Ext_EvidenceID_Licensee
-							,	cat.Ext_EvidenceID_Credit
-						FROM CTS_DataCenter.CustomerCategory AS cat 
-						WHERE temp_old.RelevantCategoryID = cat.CategoryID 
-						LIMIT 1) AS tmpLt
-			;    
+			,	temp_old.CTSCustID
+			,	temp_old.SubscriberID
+			,	temp_old.ParentID
+			,	temp_old.ExistCategoryID AS DWCategoryID
+			,	temp_old.ExistCategoryID AS DWCategoryGroupID
+			,	temp_old.ExistCategoryID AS OldCategoryID
+			,	tmpLt.CategoryGroupID AS NewCategoryID
+			,	tmpLt.CategoryGroupID AS NewCategoryGroupID
+			,	(CASE 	WHEN temp_old.SpecialCC IS NOT NULL THEN temp_old.SpecialCC 
+						ELSE IFNULL(tmpLt.CustomerClass,-99) END) AS TargetCC
+			, 	(CASE 	WHEN tmpCp.IsLicensee = 1 THEN tmpLt.Ext_ABIDangerLevel_Licensee
+						WHEN tmpCp.IsLicensee = 0 THEN tmpLt.Ext_ABIDangerLevel_Credit END) AS TargetDangerLevel
+			,	(CASE 	WHEN tmpCp.IsLicensee = 1 THEN tmpLt.Ext_EvidenceID_Licensee
+						WHEN tmpCp.IsLicensee = 0 THEN tmpLt.Ext_EvidenceID_Credit ELSE NULL END) AS ToEvidenceID
+			,	temp_old.Remark
+			,	tmpCp.TurnoverRM
+			,	tmpCp.WinlossRM
+			,	tmpCp.BetCount
+			,	tmpCp.ActiveDays
+			,	temp_old.IsMarkedDirectly
+			,	temp_old.IsFromTVS
+			,	temp_old.IsFromTW
+			,	temp_old.IsFromCTS
+			,	temp_old.IsFromAI
+			,	temp_old.IsFromImperva
+			,	1 AS IsDataChanged
+			,	(CASE WHEN tmpCp.WinlossStatus = NULL THEN NULL ELSE 1 END) AS DataChangeType
+			,	temp_old.LastModifiedDate
+			,	temp_old.CreatedBy
+			,	temp_old.IsPAProbation
+			,	temp_old.TVSRequestID
+			,	temp_old.IsTVSParlay
+			,	temp_old.SportType
+			,	temp_old.TVSIssueTypeID
+		FROM Temp_CTSCustomerClassification_Old AS temp_old
+			INNER JOIN Temp_CustProbationStatus AS tmpCp ON temp_old.ParentID IS NOT NULL AND temp_old.IsNew = 0 AND temp_old.IsRemove <> 1
+																AND tmpCp.CustID = temp_old.CustID 
+																AND tmpCp.IsPAProbation <> temp_old.IsPAProbation
+																AND tmpCp.WinlossStatus <> 1 
+		, 	LATERAL (SELECT cat.CategoryGroupID
+						,	cat.CustomerClass
+						,	cat.Ext_ABIDangerLevel_Licensee
+						,	cat.Ext_ABIDangerLevel_Credit
+						,	cat.Ext_EvidenceID_Licensee
+						,	cat.Ext_EvidenceID_Credit
+					FROM CTS_DataCenter.CustomerCategory AS cat 
+					WHERE temp_old.RelevantCategoryID = cat.CategoryID 
+					LIMIT 1) AS tmpLt
+		;        
 		
 		INSERT IGNORE INTO Temp_LicVIPCust(CustID, CategoryID, CustomerClass)
 		SELECT	temp.CustID
