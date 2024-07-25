@@ -25,7 +25,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL  CTS_DC_MatchMonitor_RuleHedging_Get(@ip_LiveIndicator:=1,@op_MaxSequenceID);
+			CALL  CTS_DC_MatchMonitor_RuleHedging_Get_xtest(@ip_LiveIndicator:=1,@op_MaxSequenceID);
 	*/
     DECLARE CONST_LOG					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
 	DECLARE CONST_SUBSCRIBERID_ALPHA	INT DEFAULT 168;
@@ -37,7 +37,7 @@ sp: BEGIN
     DECLARE lv_MaxSequenceID	BIGINT UNSIGNED DEFAULT 0;
 	DECLARE lv_MaxTime			BIGINT;
     DECLARE lv_Rule_TimeStep	SMALLINT;
-    DECLARE lv_Rule_TotalSkate	DECIMAL(20,2);
+    DECLARE lv_Rule_TotalStake	DECIMAL(20,2);
     DECLARE lv_NoOfRow			INT DEFAULT 5000;
     
     #==================LOG=======================================================
@@ -59,11 +59,11 @@ sp: BEGIN
 		
 		,	PRIMARY KEY PK_Temp_OldGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam, GroupID)
 	);
-    SELECT * FROM CTS_DataCenter.MatchMonitorRuleSetting AS s;
+
     #===============================================================================================
 
-	SELECT	s.TimeStep, s.TotalSkate
-    INTO	lv_Rule_TimeStep, lv_Rule_TotalSkate
+	SELECT	s.TimeStep, s.TotalStake
+    INTO	lv_Rule_TimeStep, lv_Rule_TotalStake
     FROM	CTS_DataCenter.MatchMonitorRuleSetting AS s
     WHERE	s.RuleGroupID = CONST_MMRULEGROUP_HEDGING AND s.Reason = CONST_MMREASON_HEDGING AND s.RuleStatus=1 
     LIMIT	1;
