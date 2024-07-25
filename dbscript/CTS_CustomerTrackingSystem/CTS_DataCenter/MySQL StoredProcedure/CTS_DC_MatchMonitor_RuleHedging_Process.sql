@@ -204,18 +204,10 @@ sp: BEGIN
 			INNER JOIN Temp_SequenceID AS tmpSq ON tmpSq.SequenceID = mms.SequenceID
 			INNER JOIN Temp_CustGroup AS tmpCg ON tmpCg.CustID = mms.CustID;
             
-		INSERT INTO Temp_Trans2(GroupID, OrderNum, SequenceID,TransDateToSecond,TransID,CustID,CTSCustID,SubscriberID,Stake,IsHedging,OldGroupID)
+		INSERT INTO Temp_Trans2(GroupID, OrderNum, TransDateToSecond)
 		SELECT tmpTs.GroupID
 			,	tmpTs.OrderNum
-            ,	tmpTs.SequenceID
             ,	tmpTs.TransDateToSecond
-            ,	tmpTs.TransID
-            ,	tmpTs.CustID
-            ,	tmpTs.CTSCustID
-            ,	tmpTs.SubscriberID
-            ,	tmpTs.Stake
-            ,	tmpTs.IsHedging
-            ,	tmpTs.OldGroupID
 		FROM Temp_Trans AS tmpTs;
 
         SET @n=0;
@@ -279,11 +271,11 @@ sp: BEGIN
 		INTO lv_IsHedging
 		FROM Temp_Cust AS tmpCus 
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_Original AS cla ON cla.CustID = tmpCus.CustID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
+			INNER JOIN CTS_DataCenter.CustomerCategory_Original AS cc ON cc.CategoryID = cla.CategoryID
 		WHERE cla.SportGroupID = 0
 		AND cc.IsHedgingReasonMM = 1
 		LIMIT 1;
-                            
+   
         IF lv_IsHedging <> 1 THEN
 			CALL CTS_DataCenter.CTS_DC_Association_IsAssociatedHedgingCustByCustIDList(lv_CustIDList, lv_IsHedging);
         END IF;
