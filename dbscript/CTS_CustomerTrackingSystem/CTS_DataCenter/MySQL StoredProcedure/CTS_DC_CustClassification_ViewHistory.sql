@@ -167,7 +167,7 @@ BEGIN
 					WHEN clss.TargetCC = lv_LicBA_CC 								THEN CONST_REMARKID_LICBA*/
                 END AS RemarkID
         FROM Temp_CustRemark_Duplicate AS tmp
-			INNER JOIN CTSCustomerClassification_History AS clss ON tmp.HistoryID = clss.ID
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS clss ON tmp.HistoryID = clss.ID
         )
 		UPDATE Temp_CustRemark AS tmp
 			INNER JOIN CTECustRemarkID AS cte ON cte.CustID = tmp.CustID AND cte.CategoryID = tmp.CategoryID
