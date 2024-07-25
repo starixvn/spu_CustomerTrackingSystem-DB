@@ -153,8 +153,25 @@ BEGIN
 		,	CategoryID 				INT UNSIGNED
 		,	CustomerClass 			INT UNSIGNED
 	); 
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;
+	CREATE TEMPORARY TABLE Temp_LastHistory(
+			CustID					BIGINT UNSIGNED PRIMARY KEY
+		,	CategoryID				INT UNSIGNED
+		,	TargetCC				INT UNSIGNED
+	);
 
 	IF ip_InputFlowID = 9 THEN
+		INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
+		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC
+		FROM Temp_NewClassification AS temp,
+		LATERAL (	SELECT h.CategoryID, h.TargetCC
+					FROM CTS_DataCenter.CTSCustomerClassification_History AS h
+					WHERE h.CustID = temp.CustID 
+					ORDER BY ID DESC
+					LIMIT 1) AS tmpHis
+		;
+	
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old (
 				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID, IsNew)
 		SELECT 	temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, ccs.CategoryID, ccs.CategoryGroupID
@@ -213,8 +230,13 @@ BEGIN
 		SET 	temp.IsDataChanged = 0
 			/*,	temp.ActionType = CONST_ACTIONTYPE_UPDATE */
 		WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE/*CONST_ACTIONTYPE_INSERT*/
-			AND (temp.NewCategoryID = temp.OldCategoryID); /*OR temp.NewCategoryGroupID = temp.OldCategoryGroupID);*/
-			
+			AND (temp.NewCategoryID = temp.OldCategoryID) /*OR temp.NewCategoryGroupID = temp.OldCategoryGroupID);*/
+			AND NOT EXISTS (SELECT 1 
+							FROM Temp_LastHistory AS h 
+							WHERE h.CustID = temp.CustID 
+								AND h.CategoryID IS NULL 
+								AND h.TargetCC IS NULL); /*Unmark PA*/
+								
 		UPDATE Temp_NewClassification AS temp 
 		SET temp.SourceTypeID = (CASE	WHEN (temp.OldCategoryGroupID IS NULL 
 													OR temp.OldCategoryGroupID = CONST_CATEGROUPID_NEW) 
@@ -430,14 +452,7 @@ BEGIN
 			,	WinlossStatus			TINYINT
 			,	IsLicensee				TINYINT(1)
 		); 
-		
-		DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;
-		CREATE TEMPORARY TABLE Temp_LastHistory(
-				CustID					BIGINT UNSIGNED PRIMARY KEY
-			,	CategoryID				INT UNSIGNED
-			,	TargetCC				INT UNSIGNED
-		);
-	
+
 		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT 
 				temp.CustID
