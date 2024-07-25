@@ -94,13 +94,22 @@ MODIFY COLUMN CategoryID INT UNSIGNED;
 
 /*CTSCustomerClassification_BySport*/
 ALTER TABLE CTSCustomerClassification_BySport
+ADD ParentID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification_BySport
 MODIFY COLUMN CategoryID INT UNSIGNED;
 
 /*CTSCustomerClassification_BySport_History*/
 ALTER TABLE CTSCustomerClassification_BySport_History
+ADD ParentID INT UNSIGNED;
+
+ALTER TABLE CTSCustomerClassification_BySport_History
 MODIFY COLUMN CategoryID INT UNSIGNED;
 
 /*CTSCustomerClassification_BySport_Log*/
+ALTER TABLE CTSCustomerClassification_BySport_Log
+ADD ParentID INT UNSIGNED;
+
 ALTER TABLE CTSCustomerClassification_BySport_Log
 MODIFY COLUMN CategoryID INT UNSIGNED;
 
@@ -117,3 +126,5 @@ RENAME COLUMN PredictTime TO SourceCreatedDate;
 /*Customer_InitialSmart_Log*/
 ALTER TABLE Customer_InitialSmart_Log
 RENAME COLUMN PredictTime TO SourceCreatedDate;
+
+/*Add ParentID for BySport tables*/
