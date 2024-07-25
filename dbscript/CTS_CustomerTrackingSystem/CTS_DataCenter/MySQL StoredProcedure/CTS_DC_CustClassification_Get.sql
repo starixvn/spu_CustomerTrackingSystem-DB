@@ -48,6 +48,8 @@ BEGIN
     DECLARE CONST_PARENTID_VVIP      		INT;
 	DECLARE CONST_CATEID_VVIP				INT;
 
+	DECLARE lv_LowestParentIDPriority		SMALLINT;
+
 	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
 	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
@@ -56,34 +58,68 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
-			CategoryID		SMALLINT UNSIGNED
-		,   CategoryName   	VARCHAR(200) 
-        ,	CategoryGroupID   SMALLINT UNSIGNED
-		,	ParentID		SMALLINT UNSIGNED
-		,	IsProbation		BIT DEFAULT 0
-		,	ColorTypeID		TINYINT UNSIGNED
+			CategoryID				SMALLINT UNSIGNED
+		,   CategoryName   			VARCHAR(200) 
+        ,	CategoryGroupID   		SMALLINT UNSIGNED
+		,	CategoryPriority		SMALLINT UNSIGNED
+		,	ParentID				SMALLINT UNSIGNED
+		,	CustomerClassPriority	SMALLINT UNSIGNED
+		,	IsProbation				BIT DEFAULT 0
+		,	ColorTypeID				TINYINT UNSIGNED
     );
    
-	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName,CategoryGroupID, ParentID, IsProbation, ColorTypeID)
+	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName,CategoryGroupID, CategoryPriority, ParentID, CustomerClassPriority, IsProbation, ColorTypeID)
 	SELECT DISTINCT (CASE 
                         WHEN cc.ParentID = CONST_PARENTID_PA THEN cc.CategoryGroupID
                         ELSE cate.CategoryID 
 					END)
 				,	cc.CategoryName
                 ,	cc.CategoryGroupID
+				,	cc.CategoryPriority
 				,	cc.ParentID
-				,	IsPAProbation AS IsProbation
+				,	cc.CustomerClassPriority
+				,	cc.IsPAProbation AS IsProbation
 				,	cc.ColorTypeID
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
     WHERE	cate.CTSCustID = ip_CTSCustID 
 		AND cc.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA, CONST_PARENTID_VVIP)
         AND cc.IsActive = 1;
-    
+
+	IF EXISTS(SELECT 1 FROM Temp_LatestRecordOfCategory WHERE ParentID = CONST_PARENTID_VVIP) THEN
+		DELETE FROM Temp_LatestRecordOfCategory WHERE ParentID <> CONST_PARENTID_VVIP;
+	END IF;	
+
+	IF (SELECT COUNT(DISTINCT ParentID) FROM Temp_LatestRecordOfCategory) > 1 THEN
+		SELECT MIN(CustomerClassPriority)
+		INTO lv_LowestParentIDPriority
+		FROM Temp_LatestRecordOfCategory;
+
+		DELETE tmp
+		FROM Temp_LatestRecordOfCategory AS tmp
+		WHERE tmp.CustomerClassPriority > lv_LowestParentIDPriority;
+    END IF;
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory_Duplicate;
+	CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory_Duplicate LIKE Temp_LatestRecordOfCategory;
+	INSERT INTO Temp_LatestRecordOfCategory_Duplicate SELECT * FROM Temp_LatestRecordOfCategory;
+
+	IF (SELECT COUNT(DISTINCT CategoryPriority)	FROM Temp_LatestRecordOfCategory GROUP BY ParentID) > 1 THEN
+		WITH CTELowestCategoryPriority AS (
+			SELECT ParentID, MIN(CategoryPriority) AS LowestPriority
+			FROM Temp_LatestRecordOfCategory_Duplicate
+			GROUP BY ParentID
+		)
+		DELETE tmp
+		FROM Temp_LatestRecordOfCategory AS tmp
+		INNER JOIN CTELowestCategoryPriority AS cte ON cte.ParentID = tmp.ParentID
+		WHERE tmp.CategoryPriority > cte.LowestPriority;
+	END IF;	
+/*
     IF (SELECT COUNT(DISTINCT ParentID) FROM Temp_LatestRecordOfCategory) > 1 THEN
 		DELETE FROM Temp_LatestRecordOfCategory WHERE ParentID = CONST_PARENTID_NORMAL;
     END IF;
-        
+*/        
 	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CTSCustID = ip_CTSCustID) THEN 
 		SELECT 1 AS IsExcludedTagAssPA;
 	ELSE 
@@ -93,11 +129,11 @@ BEGIN
 	SELECT	CategoryID
 		,	CategoryName
         ,	CategoryGroupID
-		,	ParentID
-		,	IsProbation 
+		/*,	ParentID*/
+		/*,	IsProbation */
 		,	CASE WHEN CategoryID = CONST_CATEID_VVIP THEN 1 ELSE 0 END AS IsVVIP
 		,	CASE WHEN ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
-		,	CASE WHEN ParentID = CONST_PARENTID_POTENTIALPA THEN 1 ELSE 0 END AS IsPotentialPA
+		/*,	CASE WHEN ParentID = CONST_PARENTID_POTENTIALPA THEN 1 ELSE 0 END AS IsPotentialPA*/
 		,	ColorTypeID
 	FROM Temp_LatestRecordOfCategory;
 END$$

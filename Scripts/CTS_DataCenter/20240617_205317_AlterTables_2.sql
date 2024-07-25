@@ -127,4 +127,3 @@ RENAME COLUMN PredictTime TO SourceCreatedDate;
 ALTER TABLE Customer_InitialSmart_Log
 RENAME COLUMN PredictTime TO SourceCreatedDate;
 
-/*Add ParentID for BySport tables*/
