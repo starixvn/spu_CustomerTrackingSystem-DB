@@ -99,7 +99,7 @@ BEGIN
 	SELECT CustomerClassPriority
     INTO lv_LicBAPriority
     FROM CTS_DataCenter.CustomerCategory 
-	WHERE CategoryID = CONST_CC_LICBA;
+	WHERE CategoryID = CONST_CATEID_LICBA;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_Old;
 	CREATE TEMPORARY TABLE Temp_CTSCustomerClassification_Old (
