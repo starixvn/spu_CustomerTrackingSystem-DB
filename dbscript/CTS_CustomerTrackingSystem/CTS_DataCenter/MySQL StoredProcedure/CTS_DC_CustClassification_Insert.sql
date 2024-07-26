@@ -225,26 +225,25 @@ BEGIN
 																	AND cc.IsActive = 1 AND cc.RelevantCategoryID IS NOT NULL
 																	AND cc.IsPAProbation = 1
 			SET 	cls.CategoryID 		= cc.RelevantCategoryID
-				,	clss.LastModifiedBy	= temp.CreatedBy
+				,	cls.LastModifiedBy	= temp.CreatedBy
 			WHERE 	temp.IsDataChanged 	= 1;
 			
 		END IF;
 		
 		/*	INSERT VALID SPECIAL CUSTOMER CLASS	*/
 		INSERT INTO CTS_DataCenter.SpecialCustomerClass(
-				CTSCustID, CustID, RootCTSCustID, SubscriberID, RoleID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
+				CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
 		SELECT 	temp.CTSCustID
 			,	temp.CustID
 			,	temp.CTSCustID AS RootCTSCustID
 			,	temp.SubscriberID
-			,	temp.RoleID
 			,	temp.TargetCC AS CustomerClass
 			,	temp.CreatedBy
 			,	lv_CurrentDateTime AS CreatedDate
 			,	temp.CreatedBy AS LastModifiedBy
 			,	lv_CurrentDateTime AS LastModifiedDate
 			,   1 AS CreatedFromFunction -- for Special Customer
-		FROM Temp_NewCustomerClass AS temp;
+		FROM Temp_NewClassification AS temp;
 		
 		/*	INSERT LOG FOR SPECIAL CUSTOMER CLASS	*/
 		INSERT INTO CTS_DataCenter.SpecialCustomerClass_History(
@@ -262,12 +261,12 @@ BEGIN
 			,   1 AS CreatedFromFunction -- for Special Customer
 			,	temp.Remark
 			,	lv_ActionType AS ActionType -- insert
-		FROM Temp_NewCustomerClass AS temp;
+		FROM Temp_NewClassification AS temp;
 		
 		/*	INSERT */
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification (
 				CustID, CTSCustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy
-			, 	LastModifiedDate, LastModifiedBy, LastScannedDate, ActionType, IsAuto, Remark)
+			, 	LastModifiedDate, LastModifiedBy, LastScannedDate, Remark)
 		SELECT  temp.CustID
 			, 	temp.CTSCustID
 			,	temp.SubscriberID
@@ -279,10 +278,8 @@ BEGIN
 			, 	lv_CurrentDateTime AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
-			, 	lv_ActionType  AS ActionType 
-			, 	lv_IsAuto AS IsAuto
 			, 	temp.Remark
-		FROM Temp_NewCustomerClass AS temp
+		FROM Temp_NewClassification AS temp
 		WHERE NOT EXISTS (SELECT 1
 							FROM CTS_DataCenter.CTSCustomerClassification AS cls
 							WHERE cls.CustID = temp.CustID
@@ -305,7 +302,7 @@ BEGIN
 			, 	lv_SourceTypeID AS SourceTypeID
 			, 	temp.IsDataChanged
 			, 	temp.Remark
-		FROM Temp_NewCustomerClass AS temp
+		FROM Temp_NewClassification AS temp
 		WHERE temp.IsDataChanged = 1;
 		
 		/*	INSERT LOG*/
@@ -325,7 +322,7 @@ BEGIN
 			, 	lv_SourceTypeID AS SourceTypeID
 			, 	temp.IsDataChanged
 			, 	temp.Remark
-		FROM Temp_NewCustomerClass AS temp;
+		FROM Temp_NewClassification AS temp;
 
 	ELSEIF ip_InputFlowID = 3 THEN /*LicVIP*/
 		SET lv_SourceTypeID 			= 28;
