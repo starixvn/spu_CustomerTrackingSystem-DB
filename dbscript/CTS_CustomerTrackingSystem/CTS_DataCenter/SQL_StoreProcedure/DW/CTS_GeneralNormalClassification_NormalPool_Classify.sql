@@ -425,7 +425,7 @@ BEGIN
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT a.CustId
 			,  @GENERAL_SPORTID
-			,  CASE WHEN a.CurrentCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY, @CATEGORY_PROBATION, @CATEGORY_SMARTINACTIVE) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
+			,  CASE WHEN a.NewCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY, @CATEGORY_PROBATION) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
 			,  a.CurrentCategoryId
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime
