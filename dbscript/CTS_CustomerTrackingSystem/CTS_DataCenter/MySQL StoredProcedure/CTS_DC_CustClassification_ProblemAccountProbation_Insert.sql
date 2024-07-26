@@ -33,6 +33,7 @@ BEGIN
 	*/ 
 	DECLARE CONST_CATEID_VVIP 					INT;
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 		INT;
+	DECLARE CONST_CATEID_LICVIPDANGEROUS 		INT;
 	DECLARE CONST_CATEID_LICBA 					INT;
 	
 	DECLARE CONST_PARENTID_PA               	INT;
@@ -51,6 +52,7 @@ BEGIN
 
 	SET CONST_CATEID_VVIP 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
+	SET CONST_CATEID_LICVIPDANGEROUS			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
 	SET CONST_CATEID_LICBA 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
 	
 	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
@@ -87,7 +89,7 @@ BEGIN
     
     SELECT CustomerClass
     INTO lv_LicVIPCC_Danger
-    FROM CustomerCategory WHERE CategoryID = CONST_LICVIP_DANGEROUSCATEGORY;
+    FROM CustomerCategory WHERE CategoryID = CONST_CATEID_LICVIPDANGEROUS;
     
     SELECT CustomerClass
     INTO lv_LicVIPCC_Suspicious
@@ -95,7 +97,7 @@ BEGIN
     
     /* START */
     INSERT IGNORE INTO Temp_PA(
-			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetCCName,TargetDangerLevel1, IsDangerProbation
+			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetDangerLevel1, IsDangerProbation
 		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsMarkedDirectly,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
@@ -172,7 +174,7 @@ BEGIN
 	SELECT  tmp.CustID
 		, 	tmp.CTSCustID
 		, 	tmp.RelevantCategoryID
-		, 	ParentID
+		, 	tmp.ParentID
 		, 	lv_CurrentDateTime AS LastModifiedDate
 		, 	lv_CreatedBy AS LastModifiedBy
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
@@ -192,7 +194,7 @@ BEGIN
 	FROM Temp_PA AS tmp
 		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.RelevantCategoryID
     WHERE tmp.IsDataChanged = 1
-		AND ParentID <> CONST_PARENTID_WRAPPER;
+		AND tmp.ParentID <> CONST_PARENTID_WRAPPER;
 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT  tmp.CustID
