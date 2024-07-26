@@ -211,13 +211,7 @@ BEGIN
 			AND temp.DWCategoryGroupID <> CONST_CATEGROUPID_INACTIVE; /*Exclude Inactive category*/
 			
 		UPDATE Temp_NewClassification AS temp 
-		SET temp.NewCategoryID = (CASE WHEN temp.OldCategoryGroupID IS NULL 
-												OR temp.OldCategoryGroupID IN (CONST_CATEGROUPID_NEW,CONST_CATEGROUPID_NORMAL,CONST_CATEGROUPID_GOOD) 
-											THEN CONST_CATEID_INACTIVENORMAL
-									   WHEN temp.OldCategoryGroupID IN (CONST_CATEGROUPID_SMART,CONST_CATEGROUPID_RISKY,CONST_CATEGROUPID_PROBATION) 
-											THEN CONST_CATEID_INACTIVESMART
-									   ELSE temp.OldCategoryID
-								  END)
+		SET temp.NewCategoryID = DWCategoryID
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE) 
 			AND temp.DWCategoryGroupID = CONST_CATEGROUPID_INACTIVE; 
 
