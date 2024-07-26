@@ -331,6 +331,37 @@ sp: BEGIN
 						,	CreatedBy = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.CreatedBy ELSE Temp_CustCategory.CreatedBy END
                         ,	IsFromCTS = CASE WHEN s.IsFromCTS = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsFromCTS ELSE Temp_CustCategory.IsFromCTS END;
 	
+    /***********************Check PA from main table ****************************/   
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)
+    SELECT tmp.CTSCustID					AS CTSCustID
+		,	tmp.CustID						AS CustID
+        ,	s.CategoryID					AS CategoryID
+        , 	NULL 							AS TVSReasonID
+        ,	tmp.RoleID 						AS RoleID
+        ,	tmp.SubscriberID				AS SubscriberID
+		,	tmp.IsLicensee					AS IsLicensee
+        ,	s.Remark						AS Remark
+        ,	s.CreatedBy 					AS CreatedBy
+        ,	s.IsMarkedDirectly				AS IsMarkedDirectly
+		,	s.IsFromTVS 					AS IsFromTVS
+        ,	s.IsFromTW 						AS IsFromTW
+        ,   s.IsFromCTS 					AS IsFromCTS
+        ,	s.IsFromAI 						AS IsFromAI
+        ,	s.IsFromImperva					AS IsFromImperva
+        ,	s.CreatedDate 					AS LastModifiedDate
+        ,   CONST_INPUTFLOWID_CATEGORY_PA	AS InputFlowID
+    FROM Temp_CustInfo AS tmp    
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS s USE INDEX (PRIMARY) ON s.CustID = tmp.CustID
+					AND s.ParentID = CONST_PARENTID_PA 
+	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
+						,	LastModifiedDate = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END
+						,	CreatedBy = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.CreatedBy ELSE Temp_CustCategory.CreatedBy END
+                        ,	IsMarkedDirectly = CASE WHEN s.IsMarkedDirectly = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsMarkedDirectly ELSE Temp_CustCategory.IsMarkedDirectly END
+                        ,	IsFromCTS = CASE WHEN s.IsFromCTS = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsFromCTS ELSE Temp_CustCategory.IsFromCTS END
+                        ,	IsFromTVS = CASE WHEN s.IsFromTVS = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsFromTVS ELSE Temp_CustCategory.IsFromTVS END
+                        ,	IsFromAI = CASE WHEN s.IsFromAI = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsFromAI ELSE Temp_CustCategory.IsFromAI END
+                        ,	IsFromImperva = CASE WHEN s.IsFromImperva = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsFromImperva ELSE Temp_CustCategory.IsFromImperva END;
+						
     /*********************** Get completely PA Rescan  ****************************/
 	INSERT INTO Temp_CustCategoryDuplicate (CustID, CategoryID, TVSReasonID, InputFlowID)
 	SELECT CustID, CategoryID, TVSReasonID, InputFlowID
