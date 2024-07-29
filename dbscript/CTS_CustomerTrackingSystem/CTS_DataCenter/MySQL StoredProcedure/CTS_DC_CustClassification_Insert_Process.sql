@@ -548,6 +548,8 @@ BEGIN
 							THEN (CASE 	WHEN ccs.IsMultiCateIDSameParentID = 0 AND ccs.IsKeepOldCateID = 1 THEN 0
 										WHEN ccs.IsMultiCateIDSameParentID = 0 AND ccs.IsKeepOldCateID = 0 THEN 1
 										WHEN ccs.IsMultiCateIDSameParentID = 1 THEN 0 END)
+					 WHEN cc.CategoryPriority = temp.CategoryPriority
+							THEN (CASE WHEN	ccs.IsKeepOldCateID = 1 THEN 0 ELSE 1 END)
 					 ELSE NULL END AS IsRemove
 		FROM CTS_DataCenter.CTSCustomerClassification AS cls
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cls.CustID
