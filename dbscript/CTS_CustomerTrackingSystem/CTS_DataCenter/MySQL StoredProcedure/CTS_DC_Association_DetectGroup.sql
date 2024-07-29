@@ -41,9 +41,7 @@ BEGIN
 			CALL CTS_DC_Association_DetectGroup('2551030,2551022', '[]', '[{"O":2551030,"D":2551022,"A":3},{"O":2551022,"D":2551030,"A":3}]', '[]', '[{"O":2551030,"D":2551022,"A":0}]', '[]', '[]', true);
 
 	*/
-	DECLARE	CONST_PARENTID_PA 					INT;
-	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
-	DECLARE	CONST_PARENTID_NORMAL 				INT;
+	DECLARE	CONST_PARENTID_WRAPPER 				INT;
 
     DECLARE lv_OrigID 							BIGINT;
     DECLARE lv_GroupID 							BIGINT DEFAULT 1;
@@ -54,9 +52,7 @@ BEGIN
 	DECLARE lv_SubSourceID_DirectAPI			TINYINT DEFAULT 1;
 	DECLARE lv_SubSourceID_OddsFeed				TINYINT DEFAULT 2;
 
-	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
-    SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
-	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_PARENTID_WRAPPER 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
 	CREATE TEMPORARY TABLE	Temp_Cust (
@@ -564,7 +560,7 @@ BEGIN
         LEFT JOIN Temp_CustClassificationInfo AS cusclss ON cus.CustID = cusclss.CustID
         LEFT JOIN Temp_CustAssociationType AS asTy ON cus.CTSCustID = asTy.CTSCustID
         LEFT JOIN Temp_Recommend AS re ON cus.Recommend = re.CustID
-		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cus.CustID = clss.CustID AND clss.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)
+		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cus.CustID = clss.CustID AND clss.ParentID NOT IN (CONST_PARENTID_WRAPPER)
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
         LEFT JOIN Temp_CustLogTransInfo AS cti ON cti.CTSCustID = cus.CTSCustID
 	GROUP BY cus.RowNumber 
