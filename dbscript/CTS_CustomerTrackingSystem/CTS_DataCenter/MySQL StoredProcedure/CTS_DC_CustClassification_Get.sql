@@ -99,7 +99,7 @@ BEGIN
 		FROM Temp_LatestRecordOfCategory AS tmp
 		WHERE tmp.CustomerClassPriority > lv_LowestParentIDPriority;
     END IF;
-
+/*
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory_Duplicate;
 	CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory_Duplicate LIKE Temp_LatestRecordOfCategory;
 	INSERT INTO Temp_LatestRecordOfCategory_Duplicate SELECT * FROM Temp_LatestRecordOfCategory;
@@ -115,6 +115,7 @@ BEGIN
 		INNER JOIN CTELowestCategoryPriority AS cte ON cte.ParentID = tmp.ParentID
 		WHERE tmp.CategoryPriority > cte.LowestPriority;
 	END IF;	
+*/	
 /*
     IF (SELECT COUNT(DISTINCT ParentID) FROM Temp_LatestRecordOfCategory) > 1 THEN
 		DELETE FROM Temp_LatestRecordOfCategory WHERE ParentID = CONST_PARENTID_NORMAL;
