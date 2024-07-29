@@ -158,14 +158,14 @@ BEGIN
             ,   tmp.CategoryID
             ,   CASE
                     WHEN tmp.CategoryID IN (CONST_CATEID_ROBOTUSER, CONST_CATEID_ROBOTOCRD, CONST_CATEID_ROBOTUSERLOSING, CONST_CATEID_ROBOTOCRDLOSING) THEN
-                        CASE    WHEN clss.IsFromTW = 1 								THEN CONST_REMARKID_ROBOTFROMTW
-                                WHEN clss.IsFromImperva = 1 						THEN CONST_REMARKID_ROBOTFROMIMPERVA
-                                WHEN clss.IsFromAI = 1 								THEN CONST_REMARKID_ROBOTFROMAI
-                                WHEN clss.IsFromCTS = 1 							THEN CONST_REMARKID_ROBOTFROMCTS
-                                WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID > 0 	THEN CONST_REMARKID_ROBOTFROMTVSREQUESTID
-                                WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID = 0 	THEN CONST_REMARKID_ROBOTFROMTVSBETID END
+                        CASE    WHEN clss.IsFromTW = 1 											THEN CONST_REMARKID_ROBOTFROMTW
+                                WHEN clss.IsFromImperva = 1 									THEN CONST_REMARKID_ROBOTFROMIMPERVA
+                                WHEN clss.IsFromAI = 1 											THEN CONST_REMARKID_ROBOTFROMAI
+                                WHEN clss.IsFromCTS = 1 										THEN CONST_REMARKID_ROBOTFROMCTS
+                                WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID > 0 				THEN CONST_REMARKID_ROBOTFROMTVSREQUESTID
+                                WHEN clss.IsFromTVS = 1 AND IFNULL(clss.TVSRequestID,0) = 0 	THEN CONST_REMARKID_ROBOTFROMTVSBETID END
 					WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID > 0 THEN CONST_REMARKID_TVSREQUESTIDPARLAY
-                    WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID = 0 THEN CONST_REMARKID_TVSBETIDPARLAY
+                    WHEN clss.IsFromTVS = 1 AND IFNULL(clss.TVSRequestID,0) = 0 THEN CONST_REMARKID_TVSBETIDPARLAY
                 END AS RemarkID
         FROM Temp_CustRemark_Duplicate AS tmp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS clss ON tmp.HistoryID = clss.ID
@@ -252,7 +252,6 @@ BEGIN
 							,   '[SourceTypeName]', IFNULL(s.ItemNameDisplay,''))
 							,	'[CategoryName]', IFNULL(cc1.CategoryName,''))
 							))) AS Remark
-            ,	temp.IsFromTVS
 			,	temp.SportType AS SportType
 			,	CASE WHEN tmpcr.Remark LIKE '%[SportName]%' AND temp.SportType IS NOT NULL THEN 1 ELSE 0 END AS IsGetSportName
 		FROM 	CTS_DataCenter.CTSCustomerClassification_History AS temp
