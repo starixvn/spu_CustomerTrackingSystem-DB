@@ -117,17 +117,24 @@ BEGIN
 				,	CustID				BIGINT UNSIGNED
 				,	CategoryID			INT
 				,	SourceTypeID		SMALLINT UNSIGNED
+				,	RemarkID			SMALLINT UNSIGNED
 				,	Remark				TEXT
+				,	RoleID				TINYINT
+				,	SportType			SMALLINT
+				,	IsParlay			BIT(1)
 				,	KEY IX_Temp_CustRemark_CustID_CateID(CustID, CategoryID)	
 		);
 
-		INSERT IGNORE INTO Temp_CustRemark(HistoryID, CustID, CategoryID, SourceTypeID, Remark)
+		INSERT IGNORE INTO Temp_CustRemark(HistoryID, CustID, CategoryID, SourceTypeID, RoleID, SportType, IsParlay)
 		SELECT  clss.ID
 			,	clss.CustID
             ,   clss.CategoryID
 			,	clss.SourceTypeID
-			,	NULL AS Remark
-		FROM CTS_DataCenter.CTSCustomerClassification_History AS clss	
+			,	cus.RoleID
+			,	clss.SportType
+			,	clss.IsParlay
+		FROM CTS_DataCenter.CTSCustomerClassification_History AS clss
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON clss.CustID = cus.CustID
 		WHERE 	clss.CTSCustID = ip_CTSCustID AND clss.IsDataChanged = 1;
 
 		UPDATE Temp_CustRemark AS tmp
@@ -146,11 +153,10 @@ BEGIN
 		WHERE Remark IS NULL;
 
 		WITH CTECustRemarkID AS (
-        SELECT  tmp.CustID
+        SELECT  tmp.HistoryID
+			,	tmp.CustID
             ,   tmp.CategoryID
-            ,   CASE    
-                    WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID > 0 AND clss.WinlossRM IS NOT NULL AND clss.SportType > 0 AND clss.IsParlay = 1 THEN CONST_REMARKID_TVSREQUESTIDPARLAY
-                    WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID = 0 AND clss.WinlossRM IS NOT NULL AND clss.SportType > 0 AND clss.IsParlay = 1 THEN CONST_REMARKID_TVSBETIDPARLAY
+            ,   CASE
                     WHEN tmp.CategoryID IN (CONST_CATEID_ROBOTUSER, CONST_CATEID_ROBOTOCRD, CONST_CATEID_ROBOTUSERLOSING, CONST_CATEID_ROBOTOCRDLOSING) THEN
                         CASE    WHEN clss.IsFromTW = 1 								THEN CONST_REMARKID_ROBOTFROMTW
                                 WHEN clss.IsFromImperva = 1 						THEN CONST_REMARKID_ROBOTFROMIMPERVA
@@ -158,14 +164,31 @@ BEGIN
                                 WHEN clss.IsFromCTS = 1 							THEN CONST_REMARKID_ROBOTFROMCTS
                                 WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID > 0 	THEN CONST_REMARKID_ROBOTFROMTVSREQUESTID
                                 WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID = 0 	THEN CONST_REMARKID_ROBOTFROMTVSBETID END
+					WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID > 0 THEN CONST_REMARKID_TVSREQUESTIDPARLAY
+                    WHEN clss.IsFromTVS = 1 AND clss.TVSRequestID = 0 THEN CONST_REMARKID_TVSBETIDPARLAY
                 END AS RemarkID
         FROM Temp_CustRemark_Duplicate AS tmp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS clss ON tmp.HistoryID = clss.ID
         )
 		UPDATE Temp_CustRemark AS tmp
-			INNER JOIN CTECustRemarkID AS cte ON cte.CustID = tmp.CustID AND cte.CategoryID = tmp.CategoryID
+			INNER JOIN CTECustRemarkID AS cte ON cte.HistoryID = tmp.HistoryID
         	INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = cte.RemarkID
-		SET tmp.Remark = cr.RemarkTemplate;
+		SET		tmp.Remark = cr.RemarkTemplate
+			,	tmp.RemarkID = cr.RemarkID;
+
+		IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE RemarkID IN (CONST_REMARKID_TVSREQUESTIDPARLAY, CONST_REMARKID_TVSBETIDPARLAY)) THEN
+			UPDATE Temp_CustRemark AS tmp
+			SET tmp.Remark = REPLACE(tmp.Remark,'| Win loss: [Winloss] ','')
+			WHERE tmp.RemarkID IN (CONST_REMARKID_TVSREQUESTIDPARLAY, CONST_REMARKID_TVSBETIDPARLAY) AND tmp.RoleID <> 1;
+
+			UPDATE Temp_CustRemark AS tmp
+			SET tmp.Remark = REPLACE(tmp.Remark,'| Sport: [SportName] ','')
+			WHERE tmp.RemarkID IN (CONST_REMARKID_TVSREQUESTIDPARLAY, CONST_REMARKID_TVSBETIDPARLAY) AND IFNULL(tmp.SportType,0) = 0;
+
+			UPDATE Temp_CustRemark AS tmp
+			SET tmp.Remark = REPLACE(tmp.Remark,'| Parlay','')
+			WHERE tmp.RemarkID IN (CONST_REMARKID_TVSREQUESTIDPARLAY, CONST_REMARKID_TVSBETIDPARLAY) AND IFNULL(tmp.IsParlay,0) = 0;
+		END IF;
 
 		UPDATE Temp_CustRemark AS tmp
 			INNER JOIN CTS_DataCenter.CustomerClassification_Remark AS cr ON cr.RemarkID = tmp.SourceTypeID

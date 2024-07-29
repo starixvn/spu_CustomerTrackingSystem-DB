@@ -22,7 +22,9 @@ BEGIN
 		Revisions:
 			- 20231117@Victoria.Le: Initial Writing - Renovate Association Detection [Redmine ID: #192172]
 			- 20240319@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
-            
+			- 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
+            - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID and return ColorTypeID [Redmine ID: #205317]
+
 		---------------------------------------------------------------------------------------------------
 		[Before #192172]: CTS_DC_AssociationDetection_DetectGroup 
 			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
@@ -32,8 +34,6 @@ BEGIN
             - 20221107@Aries.Nguyen: Missing Agent info [RedmineID: #180181]
             - 20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
 			- 20231116@Thomas.Nguyen: Return more Log Transaction info on Association Detection  [Redmine ID: #196362]
-			- 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
-			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID and return ColorTypeID [Redmine ID: #205317]
 
 		Param's Explanation (filtered by):
 
