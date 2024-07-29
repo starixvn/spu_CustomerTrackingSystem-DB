@@ -446,6 +446,11 @@ BEGIN
 			,	WinlossStatus			TINYINT
 			,	IsLicensee				TINYINT(1)
 		); 
+		
+		/*delete: existing VVIP */
+		DELETE temp
+		FROM Temp_NewClassification AS temp
+		WHERE temp.IsExistVVIP 	= 1;
 
 		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT 
@@ -495,45 +500,6 @@ BEGIN
 			,	temp.RelevantCategoryID 		= tmpCat.CategoryGroupID
 			,	temp.RelevantIsPAProbation 		= tmpCat.IsPAProbation;   
 		
-		/*Insert cust has pin/vvip into CTSCustomerClassification*/
-		/*INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(
-				CustID, CTSCustID, SubscriberID, RoleID, ParentID, CategoryID, CategoryGroupID, RelevantCategoryID, Remark, CreatedDate
-			, 	CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva
-			, 	InsertTime, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, IsMarkedDirectly, TWRobotCounter) 
-		SELECT	temp.CustID
-			,	temp.CTSCustID
-			,	temp.SubscriberID
-			,	temp.RoleID
-			,	temp.ParentID
-			,	cc.CategoryGroupID AS CategoryID
-			,	cc.CategoryGroupID
-			,	cc.RelevantCategoryID
-			,	temp.Remark
-			,	lv_CurrentDateTime AS CreatedDate
-			,	temp.CreatedBy
-			,	lv_CurrentDateTime AS LastModifiedDate
-			,	temp.CreatedBy AS LastModifiedBy
-			,	DATE(lv_CurrentDateTime) AS LastScannedDate
-			,	temp.IsFromTVS
-			,	temp.IsFromTW
-			,	temp.IsFromCTS
-			,	temp.IsFromAI
-			,	temp.IsFromImperva
-			,	lv_CurrentDateTime AS InsertTime
-			,	temp.TVSRequestID
-			,	temp.IsTVSParlay
-			,	temp.SportType
-			,	temp.TVSIssueTypeID
-			,	temp.IsMarkedDirectly
-			,	temp.TWRobotCounter
-		FROM Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.NewCategoryID AND cc.IsActive = 1
-		WHERE temp.IsExistVVIP = 1 AND temp.ParentID = CONST_PARENTID_PA;*/
-		
-		/*clear temp for these cust*/
-		/*DELETE FROM Temp_NewClassification AS temp
-    	WHERE temp.IsExistVVIP = 1;*/
-		
 		/*Insert into CTSCustomerClassification*/
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsFromOldPA 	= 1
@@ -582,9 +548,7 @@ BEGIN
 							THEN (CASE 	WHEN ccs.IsMultiCateIDSameParentID = 0 AND ccs.IsKeepOldCateID = 1 THEN 0
 										WHEN ccs.IsMultiCateIDSameParentID = 0 AND ccs.IsKeepOldCateID = 0 THEN 1
 										WHEN ccs.IsMultiCateIDSameParentID = 1 THEN 0 END)
-					 ELSE 
-						(CASE 	WHEN ccs.IsMultiCateIDSameParentID = 1 THEN 0
-								WHEN ccs.IsMultiCateIDSameParentID = 0 THEN NULL END) END AS IsRemove
+					 ELSE NULL END AS IsRemove
 		FROM CTS_DataCenter.CTSCustomerClassification AS cls
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cls.CustID
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = cls.CategoryID 
