@@ -107,10 +107,10 @@ BEGIN
 				AND NOT EXISTS (SELECT 1 
 								FROM CTS_DataCenter.CustomerCategorySettings AS cs	
 									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID
-								WHERE cs.CategoryID = cls.CategoryID	
-									AND cs.CategoryPriority > lv_CategoryPriority 
-									AND (cs.ParentID <> lv_ParentID OR (cs.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
-									AND cs.IsKeepOldCateID = 1);	
+								WHERE cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
+									AND cc.CategoryPriority > lv_CategoryPriority 
+									AND (cc.ParentID <> lv_ParentID OR (cc.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
+									AND cs.IsKeepOldCateID = 1);
 		
 			DELETE cls							
 			FROM CTS_DataCenter.SpecialCustomerClass AS cls							
@@ -213,10 +213,10 @@ BEGIN
 			WHERE NOT EXISTS (SELECT 1 
 								FROM CTS_DataCenter.CustomerCategorySettings AS cs	
 									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID
-								WHERE cs.CategoryID = cls.CategoryID AND cc.IsActive = 1
-									AND cs.CategoryPriority > lv_CategoryPriority 
-									AND (cs.ParentID <> lv_ParentID OR (cs.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
-									AND cs.IsKeepOldCateID = 1);	
+								WHERE cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
+									AND cc.CategoryPriority > lv_CategoryPriority 
+									AND (cc.ParentID <> lv_ParentID OR (cc.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
+									AND cs.IsKeepOldCateID = 1);
 									
 		ELSE
 			UPDATE CTS_DataCenter.CTSCustomerClassification AS cls
@@ -414,13 +414,12 @@ BEGIN
 			DELETE cls							
 			FROM CTS_DataCenter.CTSCustomerClassification AS cls							
 				INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID						
-			WHERE temp.IsLicenseeVIP = 0							
-				AND NOT EXISTS (SELECT 1 
+			WHERE NOT EXISTS (SELECT 1 
 								FROM CTS_DataCenter.CustomerCategorySettings AS cs	
 									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID
-								WHERE cs.CategoryID = cls.CategoryID AND cc.IsActive = 1
-									AND cs.CategoryPriority > lv_CategoryPriority 
-									AND (cs.ParentID <> lv_ParentID OR (cs.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
+								WHERE cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
+									AND cc.CategoryPriority > lv_CategoryPriority 
+									AND (cc.ParentID <> lv_ParentID OR (cc.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
 									AND cs.IsKeepOldCateID = 1);
 		END IF;
 
@@ -596,13 +595,12 @@ BEGIN
 			DELETE cls							
 			FROM CTS_DataCenter.CTSCustomerClassification AS cls							
 				INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID						
-			WHERE temp.IsLicenseeVIP = 0							
-				AND NOT EXISTS (SELECT 1 
+			WHERE NOT EXISTS (SELECT 1 
 								FROM CTS_DataCenter.CustomerCategorySettings AS cs	
 									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID
-								WHERE cs.CategoryID = cls.CategoryID AND cc.IsActive = 1
-									AND cs.CategoryPriority > lv_CategoryPriority 
-									AND (cs.ParentID <> lv_ParentID OR (cs.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
+								WHERE cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
+									AND cc.CategoryPriority > lv_CategoryPriority 
+									AND (cc.ParentID <> lv_ParentID OR (cc.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
 									AND cs.IsKeepOldCateID = 1);
 		END IF;
 		
