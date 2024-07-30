@@ -16,12 +16,13 @@ BEGIN
 
 		Revisions: 
 				- 20240530@Thomas.Nguyen: Created [Redmine ID: #199345]
-            
+                - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryID [Redmine ID: #205317]
+
 		Example:
 			CALL CTS_DataCenter.CTS_DC_CustClassification_InitialSmart_Get(@NextScannedDateTime,@NextScannedCustID);
             SELECT @NextScannedDateTime,@NextScannedCustID
 	*/
-    DECLARE  CONST_CATEGORYID_INITIALSMART	INT DEFAULT 66;
+    DECLARE  CONST_CATEID_INITIALSMART	INT;
     
 	DECLARE lv_LastScannedDate DATETIME(3);
 	DECLARE lv_LastScannedCustID BIGINT UNSIGNED;
@@ -29,6 +30,8 @@ BEGIN
     DECLARE lv_SecondBatchSize SMALLINT;
     DECLARE lv_TotalRow SMALLINT;
 	
+    SET CONST_CATEID_INITIALSMART 		            = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMART');
+
     SELECT sys.ParameterValue
     INTO lv_LastScannedCustID
     FROM CTS_DataCenter.SystemParameter AS sys
@@ -88,8 +91,8 @@ BEGIN
         ,	cus.SubscriberID
         ,	cus.RoleID
         ,   cus.IsLicensee
-        ,	CONST_CATEGORYID_INITIALSMART AS CategoryID
-        ,	CONST_CATEGORYID_INITIALSMART AS CategoryGroup
+        ,	CONST_CATEID_INITIALSMART AS CategoryID
+        ,	CONST_CATEID_INITIALSMART AS CategoryGroup
         ,   tmp.Probability
         ,   tmp.SourceCreatedDate AS DetectedDate
 	FROM Temp_Customer AS tmp
