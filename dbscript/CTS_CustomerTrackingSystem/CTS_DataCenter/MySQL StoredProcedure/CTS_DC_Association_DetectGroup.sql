@@ -143,6 +143,16 @@ BEGIN
         ,	CountInvalidBrowserTrans		INT DEFAULT 0
 	);
     
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;
+	CREATE TEMPORARY TABLE	Temp_CustCategory (
+			CustID 			BIGINT UNSIGNED
+		,	CategoryID		INT UNSIGNED
+		,	ParentID		INT UNSIGNED
+		,	CategoryName	VARCHAR(50)
+		,	ColorTypeID		TINYINT
+		,	PRIMARY KEY(CustID, CategoryID)
+	);
+
     /*****************************Extract Data From Input**************************************************/
     INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,RoleID,CreatedDate,Processed,IsLicensee,SubscriberID)
 	SELECT 	tmp.CTSCustID
@@ -512,6 +522,22 @@ BEGIN
 
     END IF;
     
+	INSERT IGNORE INTO Temp_CustCategory(CustID, CategoryID, ParentID, CategoryName, ColorTypeID)
+	SELECT	cus.CustID
+		,	cat.CategoryID
+		,	cat.ParentID
+		,	cat.CategoryName
+		,	cat.ColorTypeID
+	FROM Temp_Cust AS cus
+	,	LATERAL (	SELECT cus.CustID, clss.ParentID
+					FROM CTS_DataCenter.CTSCustomerClassification AS clss
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
+					WHERE clss.CustID = cus.CustID AND clss.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY cat.CustomerClassPriority ASC
+					LIMIT 1	) AS tmpcls
+	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss	ON clss.CustID = tmpcls.CustID AND clss.ParentID = tmpcls.ParentID
+	INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID;
+
     /*****************************Handle CustomerClass Info**************************************************/
     SELECT GROUP_CONCAT(DISTINCT CustID) 
     INTO lv_CustIDs
@@ -547,7 +573,6 @@ BEGIN
         , 	TRIM(GROUP_CONCAT(DISTINCT ' ',cat.CategoryName)) AS CustomerCategory
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.CategoryID)) AS CategoryIDs
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.ParentID)) AS ParentIDs
-        ,   MAX(cat.IsPAProbation) AS IsPAProbation
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.ColorTypeID)) AS ColorTypeIDs
         ,	cusclss.CustomerClass
         ,	cusclss.CategoryType
@@ -560,8 +585,7 @@ BEGIN
         LEFT JOIN Temp_CustClassificationInfo AS cusclss ON cus.CustID = cusclss.CustID
         LEFT JOIN Temp_CustAssociationType AS asTy ON cus.CTSCustID = asTy.CTSCustID
         LEFT JOIN Temp_Recommend AS re ON cus.Recommend = re.CustID
-		LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cus.CustID = clss.CustID AND clss.ParentID NOT IN (CONST_PARENTID_WRAPPER)
-        LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
+		LEFT JOIN Temp_CustCategory AS cat ON cat.CustID = cus.CustID
         LEFT JOIN Temp_CustLogTransInfo AS cti ON cti.CTSCustID = cus.CTSCustID
 	GROUP BY cus.RowNumber 
 		,	grp.GroupID
