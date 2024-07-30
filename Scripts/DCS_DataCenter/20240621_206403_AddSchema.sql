@@ -13,53 +13,53 @@ CREATE TABLE `FP_LastModifiedDate` (
   `TableName` VARCHAR(255) NOT NULL,
   `RecordID` BIGINT UNSIGNED NOT NULL,
   `LastModifiedDate` DATE,
-  `InsertedTime` TIMESTAMP NOT NULL,
+  `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_FP_LastModifiedDate_TableName_RecordID` (`TableName`,`RecordID`),
+  UNIQUE KEY `UX_FP_LastModifiedDate_TableName_RecordID` (`TableName`,`RecordID`),
   KEY `IX_FP_LastModifiedDate_LastModifiedDate` (`LastModifiedDate`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `FP_Tagging` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Tagging` VARCHAR(32) NOT NULL,
-  `InsertedTime` TIMESTAMP NOT NULL,
+  `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_FP_Tagging_Tagging` (`Tagging`)
+  UNIQUE KEY `UX_FP_Tagging_Tagging` (`Tagging`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `FP_FingerPrint` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Code` VARCHAR(32) NOT NULL,
   `Attribute` JSON NOT NULL,
-  `InsertedTime` TIMESTAMP NOT NULL,
+  `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_FP_FingerPrint_Code` (`Code`)
+  UNIQUE KEY `UX_FP_FingerPrint_Code` (`Code`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `FP_FingerPrintExtra` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Code` VARCHAR(32) NOT NULL,
   `Attribute` JSON NOT NULL,
-  `InsertedTime` TIMESTAMP NOT NULL,
+  `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_FP_FingerPrintExtra_Code` (`Code`)
+  UNIQUE KEY `UX_FP_FingerPrintExtra_Code` (`Code`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `FP_EvolvedMapping` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `FP_FingerPrintID` BIGINT UNSIGNED NOT NULL,
   `FP_FingerPrintExtraID` BIGINT UNSIGNED NOT NULL,
-  `InsertedTime` TIMESTAMP NOT NULL,
+  `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_FP_EvolvedMapping_FP_FingerPrintID_FP_FingerPrintExtraID` (`FP_FingerPrintID`,`FP_FingerPrintExtraID`)
+  UNIQUE KEY `UX_FP_EvolvedMapping_FP_FingerPrintID_FP_FingerPrintExtraID` (`FP_FingerPrintID`,`FP_FingerPrintExtraID`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `FP_FingerPrintOld` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Code` VARCHAR(32) NOT NULL,
-  `InsertedTime` TIMESTAMP NOT NULL,
+  `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_FP_FingerPrintOld_Code` (`Code`)
+  UNIQUE KEY `UX_FP_FingerPrintOld_Code` (`Code`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `FP_UserAgent` (
@@ -78,7 +78,7 @@ CREATE TABLE `FP_UserAgent` (
   `Model` VARCHAR(15) DEFAULT NULL,
   `InsertedTime` DATETIME DEFAULT NULL,
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_FP_UserAgent_Code` (`Code`)
+  UNIQUE KEY `UX_FP_UserAgent_Code` (`Code`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `FP_DeviceFingerprintAccount` (
@@ -86,19 +86,20 @@ CREATE TABLE `FP_DeviceFingerprintAccount` (
   `FP_FingerPrintID` BIGINT UNSIGNED NOT NULL,
   `AccountID` BIGINT UNSIGNED NOT NULL,
   `EvolveByID` BIGINT UNSIGNED,
-  `DeviceID` BIGINT UNSIGNED,
-  `InsertedTime` TIMESTAMP NOT NULL,
+  `DeviceID` BIGINT UNSIGNED DEFAULT 0,
+  `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_FP_DeviceFingerprintAccount_FP_FingerPrintID_AccountID` (`FP_FingerPrintID`,`AccountID`)
+  UNIQUE KEY `UX_FP_DeviceFingerprintAccount_FP_FingerPrintID_AccountID` (`FP_FingerPrintID`,`AccountID`),
+  KEY `IX_FP_DeviceFingerprintAccount_DeviceID` (`DeviceID`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `FP_DeviceFingerprintAccountOld` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `FP_FingerPrintOldID` BIGINT UNSIGNED NOT NULL,
   `AccountID` BIGINT UNSIGNED NOT NULL,
-  `InsertedTime` TIMESTAMP NOT NULL,
+  `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_FP_DeviceFingerprintAccount_FP_FingerPrintOldID_AccountID` (`FP_FingerPrintOldID`,`AccountID`)
+  UNIQUE KEY `UX_FP_DeviceFingerprintAccount_FP_FingerPrintOldID_AccountID` (`FP_FingerPrintOldID`,`AccountID`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `FP_DeviceMapping` (
@@ -110,9 +111,9 @@ CREATE TABLE `FP_DeviceMapping` (
   `FP_DeviceFingerprintAccountOldID` BIGINT UNSIGNED NOT NULL,
   `FP_DeviceID` BIGINT UNSIGNED NOT NULL,
   `FirstRawTransID` BIGINT UNSIGNED NOT NULL,
-  `InsertedTime` TIMESTAMP NOT NULL,
+  `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_FP_DeviceMapping_Group` (`FP_TaggingID`,`FP_FingerPrintID`,`FP_DeviceFingerprintAccountID`,`FP_DeviceFingerprintAccount_EvolutionID`,`FP_DeviceFingerprintAccountOldID`),
+  UNIQUE KEY `UX_FP_DeviceMapping_Group` (`FP_TaggingID`,`FP_FingerPrintID`,`FP_DeviceFingerprintAccountID`,`FP_DeviceFingerprintAccount_EvolutionID`,`FP_DeviceFingerprintAccountOldID`),
   KEY `UK_FP_DeviceMapping_FP_TaggingID` (`FP_TaggingID`),
   KEY `UK_FP_DeviceMapping_FP_FingerPrintID` (`FP_FingerPrintID`),
   KEY `UK_FP_DeviceMapping_FP_DeviceFingerprintAccountID` (`FP_DeviceFingerprintAccountID`),
@@ -123,9 +124,9 @@ CREATE TABLE `FP_DeviceMapping` (
 CREATE TABLE `FP_Device` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `FirstRawTransID` BIGINT UNSIGNED NOT NULL,
-  `InsertedTime` TIMESTAMP NOT NULL,
+  `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UK_FP_Device_FirstRawTransID` (`FirstRawTransID`)
+  UNIQUE KEY `UX_FP_Device_FirstRawTransID` (`FirstRawTransID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=300000001;
 
 CREATE TABLE `FP_Association` (
