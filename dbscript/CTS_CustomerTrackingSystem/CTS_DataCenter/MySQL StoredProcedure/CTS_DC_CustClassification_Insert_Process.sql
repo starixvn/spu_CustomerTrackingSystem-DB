@@ -103,39 +103,41 @@ BEGIN
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_Old;
 	CREATE TEMPORARY TABLE Temp_CTSCustomerClassification_Old (
-			CustID					BIGINT UNSIGNED
-		,	CTSCustID				BIGINT UNSIGNED
-		,	SubscriberID			INT UNSIGNED
-		,	RoleID					INT
-		,	ParentID				INT UNSIGNED
-		,	CategoryID				INT UNSIGNED
-		,	CategoryGroupID			INT UNSIGNED
-		,	ExistCategoryID			INT UNSIGNED
-		,	RelevantCategoryID		INT UNSIGNED
-		,	Remark					VARCHAR(500)
-		,	CreatedDate				DATETIME(3)
-		,	CreatedBy				INT UNSIGNED
-		,	LastModifiedDate		DATETIME(3)
-		,	LastModifiedBy			INT UNSIGNED
-		,	LastScannedDate			DATETIME
-		,	IsFromTVS				BIT(1) 
-		,	IsFromTW				BIT(1) 
-		,	IsFromCTS				BIT(1) 
-		,	IsFromAI				BIT(1)
-		,	IsFromImperva			BIT(1)
-		,	InsertTime				DATETIME
-		,	TVSRequestID			BIGINT UNSIGNED			
-		,	IsTVSParlay				BIT(1) 
-		,	SportType				SMALLINT DEFAULT NULL 
-		,	TVSIssueTypeID			TINYINT DEFAULT NULL 
-		,	IsMarkedDirectly		BIT(1)
-		,	TWRobotCounter			INT
-		,	SpecialCC	       		SMALLINT 
-		,	CustomerClass			SMALLINT 
-		,	CategoryPriority		SMALLINT UNSIGNED
-		,	IsPAProbation			BIT(1)
-		,	IsNew					BIT(1) DEFAULT 1
-		,	IsRemove				BIT(1) DEFAULT NULL
+			CustID						BIGINT UNSIGNED
+		,	CTSCustID					BIGINT UNSIGNED
+		,	SubscriberID				INT UNSIGNED
+		,	RoleID						INT
+		,	ParentID					INT UNSIGNED
+		,	CategoryID					INT UNSIGNED
+		,	CategoryGroupID				INT UNSIGNED
+		,	ExistCategoryID				INT UNSIGNED
+		,	RelevantCategoryID			INT UNSIGNED
+		,	Remark						VARCHAR(500)
+		,	CreatedDate					DATETIME(3)
+		,	CreatedBy					INT UNSIGNED
+		,	LastModifiedDate			DATETIME(3)
+		,	LastModifiedBy				INT UNSIGNED
+		,	LastScannedDate				DATETIME
+		,	IsFromTVS					BIT(1) 
+		,	IsFromTW					BIT(1) 
+		,	IsFromCTS					BIT(1) 
+		,	IsFromAI					BIT(1)
+		,	IsFromImperva				BIT(1)
+		,	InsertTime					DATETIME
+		,	TVSRequestID				BIGINT UNSIGNED			
+		,	IsTVSParlay					BIT(1) 
+		,	SportType					SMALLINT DEFAULT NULL 
+		,	TVSIssueTypeID				TINYINT DEFAULT NULL 
+		,	IsMarkedDirectly			BIT(1)
+		,	TWRobotCounter				INT
+		,	SpecialCC	       			SMALLINT 
+		,	CustomerClass				SMALLINT 
+		,	CategoryPriority			SMALLINT UNSIGNED
+		,	IsPAProbation				BIT(1)
+		,	IsMultiCateIDSameParentID	BIT(1)
+		,	IsKeepOldCateID				BIT(1)
+		,	IsNew						BIT(1) DEFAULT 1
+		,	IsRemove					BIT(1) DEFAULT NULL
 		,	INDEX IX_Temp_CC_Old (CustID,CategoryID)
 	);
 	
@@ -513,7 +515,12 @@ BEGIN
 			, 	Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS
 			, 	IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, InsertTime, TVSRequestID, IsTVSParlay
 			, 	SportType, TVSIssueTypeID, IsMarkedDirectly, SpecialCC, CustomerClass, CategoryPriority, IsPAProbation
-			, 	IsNew, IsRemove) 
+			, 	IsNew, IsMultiCateIDSameParentID, IsKeepOldCateID) 
+		WITH CTE AS (
+			SELECT DISTINCT CustID,SpecialCC
+			FROM Temp_NewClassification
+			WHERE IsExistVVIP = 0
+		)
 		SELECT	cls.CustID
 			,	cls.CTSCustID
 			,	cls.SubscriberID
@@ -544,19 +551,33 @@ BEGIN
 			,	cc.CategoryPriority
 			,	cc.IsPAProbation
 			,	0 AS IsNew
-			,	CASE WHEN cc.CategoryPriority > temp.CategoryPriority 
+			,	ccs.IsMultiCateIDSameParentID
+			,	ccs.IsKeepOldCateID
+			/*,	CASE WHEN cc.CategoryPriority > temp.CategoryPriority 
 							THEN (CASE 	WHEN ccs.IsMultiCateIDSameParentID = 0 AND ccs.IsKeepOldCateID = 1 THEN 0
 										WHEN ccs.IsMultiCateIDSameParentID = 0 AND ccs.IsKeepOldCateID = 0 THEN 1
 										WHEN ccs.IsMultiCateIDSameParentID = 1 THEN 0 END)
-					 WHEN cc.CategoryPriority = temp.CategoryPriority
-							THEN (CASE WHEN	ccs.IsKeepOldCateID = 1 THEN 0 ELSE 1 END)
-					 ELSE NULL END AS IsRemove
+					 WHEN cc.CategoryPriority = temp.CategoryPriority THEN (CASE WHEN ccs.IsKeepOldCateID = 1 THEN 0 ELSE 1 END)
+					 ELSE (CASE WHEN ccs.IsMultiCateIDSameParentID = 1 THEN 0 ELSE NULL END) 
+					 END AS IsRemove*/
 		FROM CTS_DataCenter.CTSCustomerClassification AS cls
-			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cls.CustID
+			INNER JOIN CTE AS temp ON temp.CustID = cls.CustID
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = cls.CategoryID 
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID AND cc.IsActive = 1
-		WHERE cls.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL)
-			AND temp.IsExistVVIP = 0;
+		WHERE cls.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL);
+			
+		UPDATE Temp_NewClassification AS temp
+			INNER JOIN Temp_CTSCustomerClassification_Old AS temp_old ON temp.CustID = temp_old.CustID 
+		SET temp_old.IsRemove = CASE WHEN temp_old.CategoryPriority >= temp.CategoryPriority
+											THEN (CASE 	WHEN temp_old.IsMultiCateIDSameParentID = 0 AND temp_old.IsKeepOldCateID = 1 THEN 0
+														WHEN temp_old.IsMultiCateIDSameParentID = 0 AND temp_old.IsKeepOldCateID = 0 THEN 1
+														WHEN temp_old.IsMultiCateIDSameParentID = 1 THEN 0 END)
+									 ELSE (CASE WHEN temp_old.ParentID = temp.ParentID
+													THEN (CASE  WHEN temp_old.IsMultiCateIDSameParentID = 1 THEN 0
+																ELSE NULL END)
+											ELSE NULL END)
+									 END
+		;
 
 		/*delete: priority existing < new */
 		DELETE temp
