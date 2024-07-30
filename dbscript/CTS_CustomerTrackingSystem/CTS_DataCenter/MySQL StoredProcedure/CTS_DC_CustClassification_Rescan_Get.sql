@@ -286,17 +286,17 @@ sp: BEGIN
         ,	tmp.SubscriberID				AS SubscriberID
  		,	tmp.IsLicensee					AS IsLicensee
         ,	NULL 							AS Remark
-        ,	s.CreatedBy 					AS CreatedBy
+        ,	NULL		 					AS CreatedBy
         ,	1 								AS IsMarkedDirectly
  		,	1 								AS IsFromTVS
         ,	0 								AS IsFromTW
         ,   0 								AS IsFromCTS
         ,	0 								AS IsFromAI
 		,	0								AS IsFromImperva
-        ,	s.InsertedTime 				AS LastModifiedDate
+        ,	s.InsertedTime 					AS LastModifiedDate
         ,   CONST_INPUTFLOWID_REASON_PA 	AS InputFlowID
     FROM  Temp_CustInfo AS tmp
- 		,	LATERAL (SELECT TVSReasonID, CreatedBy, InsertedTime
+ 		,	LATERAL (SELECT TVSReasonID, InsertedTime
  					 FROM CTS_DataCenter.TVSVoidRequest 
  					 WHERE CustID = tmp.CustID
 						AND RequestTypeID = CONST_TVSREQUESTTYPE_PA
@@ -313,7 +313,7 @@ sp: BEGIN
         ,	tmp.SubscriberID				AS SubscriberID
 		,	tmp.IsLicensee					AS IsLicensee
         ,	s.Remark						AS Remark
-        ,	s.CreatedBy 					AS CreatedBy
+        ,	NULL		 					AS CreatedBy
         ,	0 								AS IsMarkedDirectly
 		,	s.IsFromTVS 					AS IsFromTVS
         ,	s.IsFromTW 						AS IsFromTW
@@ -328,7 +328,6 @@ sp: BEGIN
                     AND s.IsAffectToDownline = 1
 	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
 						,	LastModifiedDate = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END
-						,	CreatedBy = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.CreatedBy ELSE Temp_CustCategory.CreatedBy END
                         ,	IsFromCTS = CASE WHEN s.IsFromCTS = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsFromCTS ELSE Temp_CustCategory.IsFromCTS END;
 	
     /***********************Check PA from main table ****************************/   
@@ -341,7 +340,7 @@ sp: BEGIN
         ,	tmp.SubscriberID				AS SubscriberID
 		,	tmp.IsLicensee					AS IsLicensee
         ,	s.Remark						AS Remark
-        ,	s.CreatedBy 					AS CreatedBy
+        ,	NULL		 					AS CreatedBy
         ,	s.IsMarkedDirectly				AS IsMarkedDirectly
 		,	s.IsFromTVS 					AS IsFromTVS
         ,	s.IsFromTW 						AS IsFromTW
@@ -355,7 +354,6 @@ sp: BEGIN
 					AND s.ParentID = CONST_PARENTID_PA 
 	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
 						,	LastModifiedDate = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END
-						,	CreatedBy = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.CreatedBy ELSE Temp_CustCategory.CreatedBy END
                         ,	IsMarkedDirectly = CASE WHEN s.IsMarkedDirectly = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsMarkedDirectly ELSE Temp_CustCategory.IsMarkedDirectly END
                         ,	IsFromCTS = CASE WHEN s.IsFromCTS = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsFromCTS ELSE Temp_CustCategory.IsFromCTS END
                         ,	IsFromTVS = CASE WHEN s.IsFromTVS = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsFromTVS ELSE Temp_CustCategory.IsFromTVS END
