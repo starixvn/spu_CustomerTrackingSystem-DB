@@ -158,13 +158,12 @@ CREATE TABLE `FP_AssociationMapping` (
   UNIQUE KEY `UX_FP_AssociationMapping_AccountID_DeviceID_FP_DeviceID` (`AccountID`,`DeviceID`,`FP_DeviceID`)
 ) ENGINE=InnoDB;
 
-
 ALTER TABLE `DCS_DataCenter`.`RawTransaction`
 ADD COLUMN `FP_Tagging` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintCode` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintExtraCode` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintOldCode` VARCHAR(32) NULL,
-ADD COLUMN `FP_UserAgent` VARCHAR(1000) NULL,
+ADD COLUMN `FP_UserAgentCode` VARCHAR(32) NULL,
 ADD COLUMN `ChallengeCode` VARCHAR(50) NULL,
 DROP COLUMN `CookieID`,
 DROP COLUMN `RawFingerPrintID`,
@@ -177,7 +176,7 @@ ADD COLUMN `FP_Tagging` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintCode` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintExtraCode` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintOldCode` VARCHAR(32) NULL,
-ADD COLUMN `FP_UserAgent` VARCHAR(1000) NULL,
+ADD COLUMN `FP_UserAgentCode` VARCHAR(32) NULL,
 ADD COLUMN `ChallengeCode` VARCHAR(50) NULL,
 DROP COLUMN `CookieID`,
 DROP COLUMN `RawFingerPrintID`,

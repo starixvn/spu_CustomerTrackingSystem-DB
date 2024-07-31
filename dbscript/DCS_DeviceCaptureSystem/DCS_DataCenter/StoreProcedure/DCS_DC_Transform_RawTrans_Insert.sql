@@ -27,13 +27,8 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"LoginName":"testz","SubscriberName":"Alpha","TransTime":"2024-06-26T09:30:22.1678","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"464d165f74c441ee924c2c7adedba28f","FingerprintCode":"75f5834ffbb965923fa1b4e867c47beed230e081;58e4ec9612dd39a0cd99a0d7e1fe9ce4","FingerprintMoreInfo":"rGMAUmSIRW5iU9EJCzUkbsp/BtnFdh0z0sHpjkVJDY8=","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36","IP":"::1","FakeIP":"","IPId":1,"IsIPV6":true,"PluginID":0,"URL":"http://localhost:60207","Action":"Login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FPSTransId":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","FP_Tagging":"4132559cff0869c7e6958530cb914fa1","FP_FingerPrintCode":"4132559cff0869c7e6958530cb914fa2","FP_FingerPrintExtraCode":"a811b6c2f6a5d39d8e6cc9e5a807d025","FP_FingerPrintOldCode":"7a8f56652855ae80aae2e34dc5dc4e81",,"FP_UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36","ChallengeCode":"dd61a2aab50f41738effdeacc3c927ff"}]');
+			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"LoginName":"testz","SubscriberName":"Alpha","TransTime":"2024-06-26T09:30:22.1678","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"464d165f74c441ee924c2c7adedba28f","FingerprintCode":"75f5834ffbb965923fa1b4e867c47beed230e081;58e4ec9612dd39a0cd99a0d7e1fe9ce4","FingerprintMoreInfo":"rGMAUmSIRW5iU9EJCzUkbsp/BtnFdh0z0sHpjkVJDY8=","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36","IP":"::1","FakeIP":"","IPId":1,"IsIPV6":true,"PluginID":0,"URL":"http://localhost:60207","Action":"Login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FPSTransId":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","FP_Tagging":"4132559cff0869c7e6958530cb914fa1","FP_FingerPrintCode":"4132559cff0869c7e6958530cb914fa2","FP_FingerPrintExtraCode":"a811b6c2f6a5d39d8e6cc9e5a807d025","FP_FingerPrintOldCode":"7a8f56652855ae80aae2e34dc5dc4e81","FP_UserAgentCode":"a811b6c2f6a5d39d8e6cc9e5a807d025","ChallengeCode":"dd61a2aab50f41738effdeacc3c927ff"}]');
 
-		,	rt.FP_Tagging
-		,	rt.FP_FingerPrintCode
-		,	rt.FP_FingerPrintExtraCode
-		,	rt.FP_FingerPrintOldCode
-		,	rt.FP_UserAgent
 	*/
 	
     DECLARE lv_FlaggedHuman	INT UNSIGNED DEFAULT 1;
@@ -70,7 +65,7 @@ BEGIN
         ,	FP_FingerPrintCode			VARCHAR(32)					NULL
         ,	FP_FingerPrintExtraCode		VARCHAR(32)					NULL
         ,	FP_FingerPrintOldCode		VARCHAR(32)					NULL
-        ,	FP_UserAgent				VARCHAR(32)					NULL
+        ,	FP_UserAgentCode			VARCHAR(32)					NULL
         ,	ChallengeCode				VARCHAR(50)					NULL
     );
 
@@ -87,7 +82,7 @@ BEGIN
 		,	IsNewRecord					TINYINT		 				DEFAULT 1
     );
 		
-	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, CookieCode, RawFingerPrintCode, BrowserInstanceCode, RawUserAgentCode, ChallengeCode)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode, ChallengeCode)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -111,7 +106,7 @@ BEGIN
 		,	rt.FP_FingerPrintCode
 		,	rt.FP_FingerPrintExtraCode
 		,	rt.FP_FingerPrintOldCode
-		,	rt.FP_UserAgent
+		,	rt.FP_UserAgentCode
 		,	rt.ChallengeCode
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
@@ -138,7 +133,7 @@ BEGIN
                             ,	FP_FingerPrintCode		VARCHAR(32)		PATH "$.FP_FingerPrintCode"
                             ,	FP_FingerPrintExtraCode	VARCHAR(32)		PATH "$.FP_FingerPrintExtraCode"
                             ,	FP_FingerPrintOldCode	VARCHAR(32)		PATH "$.FP_FingerPrintOldCode"
-                            ,	FP_UserAgent			VARCHAR(32)		PATH "$.FP_UserAgent"
+                            ,	FP_UserAgentCode		VARCHAR(32)		PATH "$.FP_UserAgentCode"
                             ,	ChallengeCode			VARCHAR(50)		PATH "$.ChallengeCode"
 				)
 		   ) AS  rt; 
@@ -184,7 +179,7 @@ BEGIN
 	SET tmp.BotComponentID = bds.ID;
     
     /*******RawTransaction********************/
-	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieCode, RawFingerPrintCode, BrowserInstanceCode, RawUserAgentCode, ChallengeCode)
+	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode, ChallengeCode)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -205,10 +200,11 @@ BEGIN
 		,	rt.BotDetectionValue
 		,	rt.BotComponentID
 		,	rt.FakeIP
-        ,   rt.CookieCode
-        ,   rt.RawFingerPrintCode
-        ,   rt.BrowserInstanceCode
-        ,   rt.RawUserAgentCode
+        ,   rt.FP_Tagging
+        ,   rt.FP_FingerPrintCode
+        ,   rt.FP_FingerPrintExtraCode
+        ,   rt.FP_FingerPrintOldCode
+        ,   rt.FP_UserAgentCode
         ,   rt.ChallengeCode
 	FROM Temp_Transaction AS rt
 		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
