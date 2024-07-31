@@ -99,7 +99,7 @@ BEGIN
 	END IF;
 	
 	/*STEP 4: Complete*/
-	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Complete (ip_AffectDownline,ip_InputFlowID);
+	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Complete (ip_InputFlowID,ip_AffectDownline);
 	
 	/*STEP 5: User Log and More*/
 	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_VVIP THEN
