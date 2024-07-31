@@ -270,8 +270,8 @@ sp: BEGIN
 		SELECT 1 
 		INTO lv_IsHedging
 		FROM Temp_Cust AS tmpCus 
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_Original AS cla ON cla.CustID = tmpCus.CustID
-			INNER JOIN CTS_DataCenter.CustomerCategory_Original AS cc ON cc.CategoryID = cla.CategoryID
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = tmpCus.CustID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
 		WHERE cla.SportGroupID = 0
 		AND cc.IsHedgingReasonMM = 1
 		LIMIT 1;
