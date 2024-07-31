@@ -39,6 +39,7 @@ BEGIN
     ORDER BY ID ASC
     LIMIT ip_BatchSize;
     
+    
     UPDATE Temp_DeviceFingerprintAccount AS tmp
 	INNER JOIN (
 		SELECT dfa.AccountID,
@@ -47,7 +48,7 @@ BEGIN
 			SELECT AccountID, ID, FP_FingerPrintID,
 				   ROW_NUMBER() OVER (PARTITION BY AccountID ORDER BY ID DESC) AS rn
 			FROM DCS_DataCenter.FP_DeviceFingerprintAccount
-			WHERE DeviceID = 1
+			WHERE DeviceID > 0
 		) dfa
 		WHERE rn <= 10
 		GROUP BY dfa.AccountID
