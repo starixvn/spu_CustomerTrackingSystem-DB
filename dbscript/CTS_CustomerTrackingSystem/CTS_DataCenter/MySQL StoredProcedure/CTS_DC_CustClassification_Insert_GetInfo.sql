@@ -29,6 +29,7 @@ BEGIN
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
+	DECLARE CONST_CATEID_SPECIALCC 							INT;
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 					INT;
 	DECLARE CONST_PARENTID_VVIP 							INT;
 	DECLARE CONST_PARENTID_WRAPPER 							INT;
@@ -59,6 +60,7 @@ BEGIN
 	DECLARE lv_IsMarkedDirectly								TINYINT(1);   
 	
 	SET CONST_CATEID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
+	SET CONST_CATEID_SPECIALCC								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
 	SET CONST_PARENTID_VVIP 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
 	SET CONST_PARENTID_WRAPPER 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
@@ -79,49 +81,102 @@ BEGIN
 	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT');
 	SET CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL');
 	
+	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
+	CREATE TEMPORARY TABLE Temp_NewClassification(	  	
+			CustID						BIGINT UNSIGNED
+		, 	CTSCustID					BIGINT UNSIGNED
+		,	SubscriberID 				INT UNSIGNED
+		,	RoleID						INT		
+		,	IsLicensee					TINYINT(1) DEFAULT 0
+		,	IsLicenseeVIP				TINYINT(1) DEFAULT 0
+		,	IsLicenseeBA				TINYINT(1) DEFAULT 0
+		,	IsExistVVIP					TINYINT(1) DEFAULT 0
+		,	IsExistWrapper				TINYINT(1) DEFAULT 0
+		,	IsExistPA					TINYINT(1) DEFAULT 0
+		,	IsExistPotentialPA			TINYINT(1) DEFAULT 0
+		,	IsFromOldPA					TINYINT(1) DEFAULT 0
+		
+		, 	TurnoverRM					DECIMAL(20,4)
+		, 	WinlossRM					DECIMAL(20,4)
+		, 	BetCount					BIGINT
+		, 	ActiveDays					INT	
+		,	PerformanceTime				DATETIME(3)
+
+		, 	DWCategoryID		    	INT UNSIGNED
+		,	DWCategoryGroupID   		INT UNSIGNED
+		
+		, 	NewCategoryID		   		INT UNSIGNED
+		,	NewCategoryGroupID     		INT UNSIGNED
+		,	NewIsDangerProbation		TINYINT(1) DEFAULT 0
+		,	IsPAProbation	     		TINYINT(1) DEFAULT 0
+		
+		,	OldCategoryID		    	INT UNSIGNED
+		,	OldCategoryGroupID	    	INT UNSIGNED
+
+		,	ParentID					INT UNSIGNED
+		,	OldTargetCC					INT 
+		,	TargetCC					INT 
+		,	TargetDangerLevel			SMALLINT UNSIGNED
+		,	CategoryPriority			SMALLINT UNSIGNED 
+		,	CustomerClassPriority		SMALLINT UNSIGNED 
+		,	MatchID						INT
+		
+		, 	ToEvidenceID				SMALLINT
+		
+		, 	RelevantCategoryID			INT UNSIGNED
+		,	RelevantCategoryGroupID   	INT UNSIGNED
+		,	RelevantIsPAProbation	   	TINYINT(1)
+		
+		,	IsDataChanged				TINYINT(1) 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
+		,	DataChangeType				TINYINT DEFAULT 0	/* 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE */
+		,	SourceTypeID      			SMALLINT
+
+		, 	WinlossStatus				SMALLINT /*LOSING  = 0 (PROBATION), KEEPSTATE = 1 (NOT CHANGE), WINNING = 2 (NOT PROBATION);*/
+		
+		,	IsFromTVS					TINYINT(1)  DEFAULT 0
+		,	TVSRequestID				BIGINT UNSIGNED
+		, 	TVSReasonID		   			INT
+		,	TVSIssueTypeID 				TINYINT DEFAULT NULL 
+		,	IsTVSParlay					TINYINT(1) DEFAULT NULL
+		,	SportType					SMALLINT DEFAULT NULL 
+		
+		,	SourceCreatedDate			DATETIME(3)
+		,	GBTicketCount				INT
+
+		,	IsFromTW					TINYINT(1)  DEFAULT 0
+		,	TWRobotCounter				INT 
+		
+		,	TWBetCount					BIGINT
+		,	TWGroupBettingRate			DECIMAL(10,4)
+		,	TWTicketRejectRate			DECIMAL(10,4)
+		,	TWDesktopUsageRate			DECIMAL(10,4)
+		
+		,	IsFromCTS					TINYINT(1)  DEFAULT 0
+		,	IsFromAI					TINYINT(1)  DEFAULT 0
+		,	IsFromImperva				TINYINT(1) 	DEFAULT 0
+		
+		,	TaggingID					SMALLINT
+		,	TaggingType					SMALLINT	
+		,	ScanTaggingType				TINYINT DEFAULT 0
+
+		,   SpecialCC	       			SMALLINT  
+		,	SpecialCCName				VARCHAR(50)
+		,   SpecialCCCatePriority  		SMALLINT DEFAULT -1
+		,   SpecialCCDangerProbation   	TINYINT(1) DEFAULT NULL
+		
+		,	LastModifiedDate			DATETIME(3)
+		, 	ActionType					SMALLINT DEFAULT 0 
+		,	CreatedBy					INT UNSIGNED
+		,	IsMarkedDirectly			TINYINT(1) DEFAULT 0
+		,	IsReturnData				TINYINT(1) DEFAULT 1
+		,	Remark						VARCHAR(500)
+		,	GroupName					VARCHAR(100)
+		, 	PRIMARY KEY (CustID, DWCategoryID)
+	); 
+	
 	/*VVIP/SpecialCC/LicVIP/LicBA*/
 	IF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_VVIP,CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC,
 							CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP,CONST_INPUTFLOWID_GENERAL_INSERT_LICBA) THEN 
-	
-		DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;
-		CREATE TEMPORARY TABLE 	Temp_NewClassification (
-				CustID						BIGINT UNSIGNED  PRIMARY KEY
-			, 	CTSCustID					BIGINT UNSIGNED
-			,	SubscriberID 				INT UNSIGNED
-			,	RoleID						INT		
-			,	Remark						VARCHAR(500)
-			,	CreatedBy					INT UNSIGNED
-			,	IsExistVVIP					TINYINT(1) DEFAULT 0
-			,	IsLicenseeVIP				TINYINT(1) DEFAULT 0
-			,	IsLicenseeBA				TINYINT(1) DEFAULT 0
-			,	TargetCC					INT 
-			,	CategoryPriority			SMALLINT UNSIGNED
-			,	CustomerClassPriority		SMALLINT UNSIGNED
-			,	NewCategoryID				INT UNSIGNED
-			,	NewCategoryGroupID     		INT UNSIGNED
-			,	ParentID					INT UNSIGNED
-			,	IsDangerProbation			TINYINT(1) DEFAULT 0
-			,	IsMarkedDirectly			TINYINT(1)
-			,	SourceTypeID      			SMALLINT
-			,	IsFromCTS					TINYINT(1) DEFAULT 0
-			,	IsFromTW					TINYINT(1) DEFAULT 0
-			,	IsFromTVS					TINYINT(1) DEFAULT 0
-			,	TVSRequestID				BIGINT UNSIGNED
-			,	IsDataChanged				TINYINT(1) DEFAULT 0	/*0: No change category => No Action*/
-			,	IsReturnData				TINYINT(1) DEFAULT 0
-		);
-		
-		DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
-		CREATE TEMPORARY TABLE Temp_Customer (
-				CustID						BIGINT UNSIGNED PRIMARY KEY
-			, 	CTSCustID					BIGINT UNSIGNED
-			, 	SubscriberID				INT UNSIGNED
-			,	RoleID						INT	
-			,	CreatedBy 					INT UNSIGNED
-			,	IsLicenseeVIP				TINYINT(1) DEFAULT 0
-			, 	IsLicenseeBA				TINYINT(1) DEFAULT 0
-		);
-
 		/*1 - VVIP*/
 		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_VVIP THEN 
 			SET lv_SourceTypeID = CASE 	WHEN ip_FromAction = 1 THEN CONST_SOURCETYPE_VVIP_MANUAL
@@ -139,11 +194,12 @@ BEGIN
 		
 			INSERT INTO Temp_NewClassification (
 					CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsExistVVIP, ParentID
-				, 	NewCategoryID, IsMarkedDirectly, SourceTypeID, IsDataChanged, IsReturnData)
+				, 	DWCategoryID, NewCategoryID, IsMarkedDirectly, SourceTypeID, IsDataChanged, IsReturnData)
 			SELECT DISTINCT 
 					tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.RoleID, tmpJs.Remark, tmpJs.CreatedBy
 				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
 				,	CONST_PARENTID_VVIP
+				,	CONST_CATEID_VVIP
 				,	CONST_CATEID_VVIP
 				,	(CASE WHEN cls.CustID IS NULL THEN lv_IsMarkedDirectly END) AS IsMarkedDirectly
 				,	(CASE WHEN cls.CustID IS NULL THEN lv_SourceTypeID END) AS SourceTypeID
@@ -164,8 +220,12 @@ BEGIN
 		/*2 - SpecialCC*/
 		ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC THEN 
 			INSERT INTO Temp_NewClassification (
-				CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsLicenseeVIP, TargetCC, IsDataChanged, IsReturnData)
-			SELECT 	tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, cus.RoleID, tmpJs.Remark, tmpJs.CreatedBy, tmpJs.IsLicenseeVIP, tmpJs.TargetCC
+				CustID, CTSCustID, SubscriberID, RoleID, ParentID, DWCategoryID, NewCategoryID, Remark, CreatedBy, IsLicenseeVIP, TargetCC, IsDataChanged, IsReturnData)
+			SELECT 	tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, cus.RoleID
+				,	CONST_PARENTID_WRAPPER
+				,	CONST_CATEID_SPECIALCC
+				,	CONST_CATEID_SPECIALCC
+				, 	tmpJs.Remark, tmpJs.CreatedBy, tmpJs.IsLicenseeVIP, tmpJs.TargetCC
 				, 	CASE WHEN tmpJs.IsLicenseeVIP = 1 AND cls.CustID IS NOT NULL THEN 1 ELSE 0  END AS IsDataChanged
 				, 	1 AS IsReturnData
 			FROM JSON_TABLE(ip_CustInfo,
@@ -207,99 +267,6 @@ BEGIN
 		END IF;
 
 	ELSE
-
-		DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
-		CREATE TEMPORARY TABLE Temp_NewClassification(	  	
-				CustID						BIGINT UNSIGNED
-			, 	CTSCustID					BIGINT UNSIGNED
-			,	SubscriberID 				INT UNSIGNED
-			,	RoleID						INT		
-			,	IsLicensee					TINYINT(1) DEFAULT 0
-			,	IsLicenseeVIP				TINYINT(1) DEFAULT 0
-			,	IsLicenseeBA				TINYINT(1) DEFAULT 0
-			,	IsExistVVIP					TINYINT(1) DEFAULT 0
-			,	IsExistWrapper				TINYINT(1) DEFAULT 0
-			,	IsExistPA					TINYINT(1) DEFAULT 0
-			,	IsExistPotentialPA			TINYINT(1) DEFAULT 0
-			,	IsFromOldPA					TINYINT(1) DEFAULT 0
-			
-			, 	TurnoverRM					DECIMAL(20,4)
-			, 	WinlossRM					DECIMAL(20,4)
-			, 	BetCount					BIGINT
-			, 	ActiveDays					INT	
-			,	PerformanceTime				DATETIME(3)
-
-			, 	DWCategoryID		    	INT UNSIGNED
-			,	DWCategoryGroupID   		INT UNSIGNED
-			
-			, 	NewCategoryID		   		INT UNSIGNED
-			,	NewCategoryGroupID     		INT UNSIGNED
-			,	NewIsDangerProbation		TINYINT(1) DEFAULT 0
-			,	IsPAProbation	     		TINYINT(1) DEFAULT 0
-			
-			,	OldCategoryID		    	INT UNSIGNED
-			,	OldCategoryGroupID	    	INT UNSIGNED
-
-			,	ParentID					INT UNSIGNED
-			,	OldTargetCC					INT 
-			,	TargetCC					INT 
-			,	TargetDangerLevel			SMALLINT UNSIGNED
-			,	CategoryPriority			SMALLINT UNSIGNED 
-			,	CustomerClassPriority		SMALLINT UNSIGNED 
-			,	MatchID						INT
-			
-			, 	ToEvidenceID				SMALLINT
-			
-			, 	RelevantCategoryID			INT UNSIGNED
-			,	RelevantCategoryGroupID   	INT UNSIGNED
-			,	RelevantIsPAProbation	   	TINYINT(1)
-			
-			,	IsDataChanged				TINYINT(1) 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
-			,	DataChangeType				TINYINT DEFAULT 0	/* 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE */
-			,	SourceTypeID      			SMALLINT
-
-			, 	WinlossStatus				SMALLINT /*LOSING  = 0 (PROBATION), KEEPSTATE = 1 (NOT CHANGE), WINNING = 2 (NOT PROBATION);*/
-			
-			,	IsFromTVS					TINYINT(1)  DEFAULT 0
-			,	TVSRequestID				BIGINT UNSIGNED
-			, 	TVSReasonID		   			INT
-			,	TVSIssueTypeID 				TINYINT DEFAULT NULL 
-			,	IsTVSParlay					TINYINT(1) DEFAULT NULL
-			,	SportType					SMALLINT DEFAULT NULL 
-			
-			,	SourceCreatedDate			DATETIME(3)
-			,	GBTicketCount				INT
-
-			,	IsFromTW					TINYINT(1)  DEFAULT 0
-			,	TWRobotCounter				INT 
-			
-			,	TWBetCount					BIGINT
-			,	TWGroupBettingRate			DECIMAL(10,4)
-			,	TWTicketRejectRate			DECIMAL(10,4)
-			,	TWDesktopUsageRate			DECIMAL(10,4)
-			
-			,	IsFromCTS					TINYINT(1)  DEFAULT 0
-			,	IsFromAI					TINYINT(1)  DEFAULT 0
-			,	IsFromImperva				TINYINT(1) 	DEFAULT 0
-			
-			,	TaggingID					SMALLINT
-			,	TaggingType					SMALLINT	
-			,	ScanTaggingType				TINYINT DEFAULT 0
-
-			,   SpecialCC	       			SMALLINT  
-			,	SpecialCCName				VARCHAR(50)
-			,   SpecialCCCatePriority  		SMALLINT DEFAULT -1
-			,   SpecialCCDangerProbation   	TINYINT(1) DEFAULT NULL
-			
-			,	LastModifiedDate			DATETIME(3)
-			, 	ActionType					SMALLINT DEFAULT 0 
-			,	CreatedBy					INT UNSIGNED
-			,	IsMarkedDirectly			TINYINT(1) DEFAULT 0
-			,	IsReturnData				TINYINT(1) DEFAULT 1
-			,	Remark						VARCHAR(500)
-			,	GroupName					VARCHAR(100)
-			, 	PRIMARY KEY (CustID, DWCategoryID)
-		); 
 		
 		/*5 - PA-Category*/
 		IF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY,CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY) THEN 

@@ -256,8 +256,8 @@ BEGIN
 			, 	temp.CTSCustID
 			,	temp.SubscriberID
 			,	temp.RoleID
-			,	CONST_PARENTID_WRAPPER
-			,	CONST_CATEID_SPECIALCC
+			,	temp.ParentID
+			,	temp.NewCategoryID
 			, 	lv_CurrentDateTime AS CreatedDate
 			, 	temp.CreatedBy AS CreatedBy
 			, 	lv_CurrentDateTime AS LastModifiedDate
@@ -276,8 +276,8 @@ BEGIN
 			, 	IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark)
 		SELECT  temp.CustID
 			, 	temp.CTSCustID
-			,	CONST_PARENTID_WRAPPER
-			,	CONST_CATEID_SPECIALCC
+			,	temp.ParentID
+			,	temp.NewCategoryID
 			, 	lv_CurrentDateTime AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	lv_ActionType  AS ActionType 
@@ -296,8 +296,8 @@ BEGIN
 			, 	IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark)
 		SELECT  temp.CustID
 			, 	temp.CTSCustID
-			,	CONST_PARENTID_WRAPPER
-			,	CONST_CATEID_SPECIALCC
+			,	temp.ParentID
+			,	temp.NewCategoryID
 			, 	lv_CurrentDateTime AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	lv_ActionType AS ActionType 
@@ -323,7 +323,7 @@ BEGIN
 		WHERE ccs.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS;
 		
 		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, NewCategoryID
+				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, ParentID, DWCategoryID, NewCategoryID
 			, 	IsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC ) 
 		WITH CTE_LastCategory AS
 		(SELECT	temp.CustID
@@ -332,6 +332,7 @@ BEGIN
 			,	temp.RoleID
 			,	temp.CreatedBy
 			,	temp.IsLicenseeVIP
+			,	tmpLastCat.ParentID
 			,	tmpLastCat.CategoryID
 			,	tmpLastCat.IsDangerProbation
 			,	tmpLastCat.CategoryPriority
@@ -339,7 +340,7 @@ BEGIN
 			,	tmpLastCat.CustomerClass AS TargetCC
 		FROM Temp_Customer AS temp,
 		LATERAL (
-					SELECT cls.CategoryID, cat.CategoryPriority, cat.CustomerClassPriority, cat.IsDangerProbation, cat.CustomerClass 
+					SELECT cat.ParentID, cls.CategoryID, cat.CategoryPriority, cat.CustomerClassPriority, cat.IsDangerProbation, cat.CustomerClass 
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID
 																				AND cat.CategoryID <> CONST_CATEID_SPECIALCC
@@ -352,6 +353,8 @@ BEGIN
 			,	cte.RoleID
 			,	cte.CreatedBy
 			,	cte.IsLicenseeVIP
+			,	cte.ParentID
+			,	cte.CategoryID AS DWCategoryID
 			,	cte.CategoryID AS NewCategoryID
 			,	cte.IsDangerProbation
 			,	cte.CategoryPriority
@@ -360,7 +363,7 @@ BEGIN
 		FROM  CTE_LastCategory AS cte; 
 	
 		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, NewCategoryID
+				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, ParentID, DWCategoryID, NewCategoryID
 			, 	IsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC ) 
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
@@ -368,6 +371,8 @@ BEGIN
 			,	temp.RoleID
 			,	temp.CreatedBy
 			,	temp.IsLicenseeVIP
+			,	cc.ParentID
+			,	cc.CategoryID AS DWCategoryID
 			,	cc.CategoryID AS NewCategoryID
 			,	cc.IsDangerProbation
 			,	cc.CategoryPriority
@@ -503,7 +508,7 @@ BEGIN
 		WHERE ccs.CategoryID = CONST_CATEID_LICBA;
 	
 		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeBA, ParentID, NewCategoryID
+				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeBA, ParentID, DWCategoryID, NewCategoryID
 			, 	CategoryPriority, CustomerClassPriority, TargetCC, IsReturnData ) 
 		WITH CTE_LastCategory AS
 		(
@@ -537,6 +542,7 @@ BEGIN
 		,	cte.CreatedBy
 		,	cte.IsLicenseeBA
 		,	cte.ParentID
+		,	cte.CategoryID AS DWCategoryID
 		,	cte.CategoryID AS NewCategoryID
 		,	cte.CategoryPriority
 		,	cte.CustomerClassPriority
@@ -545,7 +551,7 @@ BEGIN
 		FROM  CTE_LastCategory AS cte;  
 		
 		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, NewCategoryID
+				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, ParentID, DWCategoryID, NewCategoryID
 			, 	IsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC ) 
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
@@ -553,6 +559,8 @@ BEGIN
 			,	temp.RoleID
 			,	temp.CreatedBy
 			,	temp.IsLicenseeVIP
+			,	cc.ParentID
+			,	cc.CategoryID AS DWCategoryID
 			,	cc.CategoryID AS NewCategoryID
 			,	cc.IsDangerProbation
 			,	cc.CategoryPriority
