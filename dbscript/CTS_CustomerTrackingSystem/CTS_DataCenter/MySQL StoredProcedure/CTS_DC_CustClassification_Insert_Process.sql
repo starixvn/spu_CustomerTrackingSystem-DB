@@ -11,23 +11,24 @@ BEGIN
 		Created:	20240618@Victoria.Le
 		Task:		Insert main customer categories for Customer Classification
 		DB:			CTS_DataCenter
-		
-		Revisions: 
-			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
 			
 		Param's Expanation:
-			- 
+			- ip_InputFlowID
+		
+		Example:
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Process(9);
+			
+		Revisions: 
+			-	20240618@Victoria.Le:			Initial Writing [Redmine ID: #205317]
 */
 
-	-- CALL CTS_DataCenter.CTS_DC_CustClassification_Remark_Get(ip_InputFlowID); 
-	DECLARE CONST_CATEID_VVIP 							INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL		INT;
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 				INT;
 	DECLARE CONST_CATEID_LICVIPDANGEROUS 				INT;
 	DECLARE CONST_CATEID_LICBA 							INT;
 	DECLARE CONST_CATEID_INACTIVENORMAL 				INT;
 	DECLARE CONST_CATEID_INACTIVESMART	 				INT;
-	DECLARE CONST_CATEID_NEW			 				INT;
-	
+
 	DECLARE CONST_CATEGROUPID_INACTIVE					INT;
 	DECLARE CONST_CATEGROUPID_NEW						INT;
 	DECLARE CONST_CATEGROUPID_NORMAL					INT;
@@ -35,9 +36,7 @@ BEGIN
 	DECLARE CONST_CATEGROUPID_PROBATION					INT;
 	DECLARE CONST_CATEGROUPID_SMART						INT;
 	DECLARE CONST_CATEGROUPID_RISKY						INT;
-	
-	DECLARE CONST_PARENTID_VVIP 						INT;
-	DECLARE CONST_PARENTID_WRAPPER 						INT;
+
 	DECLARE CONST_PARENTID_PA 							INT;
     DECLARE CONST_PARENTID_POTENTIALPA      			INT;
     DECLARE CONST_PARENTID_NORMAL		    			INT;
@@ -63,16 +62,14 @@ BEGIN
     DECLARE CONST_SOURCETYPE_INACTIVEPROPUNTER			INT DEFAULT 19;
 	
     DECLARE lv_LicBAPriority							SMALLINT UNSIGNED;
-	DECLARE	lv_CurrentDateTime							DATETIME DEFAULT CURRENT_TIME();
-	
-	-- --------------------------------------------
-	SET CONST_CATEID_VVIP 								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
+	DECLARE	lv_CurrentDateTime							DATETIME DEFAULT CURRENT_TIME(3);
+
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
 	SET CONST_CATEID_LICVIPDANGEROUS 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
 	SET CONST_CATEID_LICBA 								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
 	SET CONST_CATEID_INACTIVENORMAL 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INACTIVENORMAL');
 	SET CONST_CATEID_INACTIVESMART 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INACTIVESMART');
-	SET CONST_CATEID_NEW		 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_NEW');
 	
 	SET CONST_CATEGROUPID_INACTIVE						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INACTIVE');
 	SET CONST_CATEGROUPID_NEW							= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_NEW');
@@ -82,8 +79,6 @@ BEGIN
 	SET CONST_CATEGROUPID_SMART							= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SMART');
 	SET CONST_CATEGROUPID_RISKY							= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_RISKY');
 	
-	SET CONST_PARENTID_VVIP 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
-	SET CONST_PARENTID_WRAPPER 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_PARENTID_PA 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_PARENTID_POTENTIALPA						= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
 	SET CONST_PARENTID_NORMAL	 						= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
@@ -93,8 +88,6 @@ BEGIN
 	SET CONST_CC_LICVIPDANGEROUS	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICVIPDANGEROUS');
 	SET CONST_CC_LICBA				 					= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICBA');
 
-	-- -------------------------------------
-	-- SELECT CategoryPriority
 	SELECT CustomerClassPriority
     INTO lv_LicBAPriority
     FROM CTS_DataCenter.CustomerCategory 
@@ -122,7 +115,7 @@ BEGIN
 		,	IsFromCTS					BIT(1) 
 		,	IsFromAI					BIT(1)
 		,	IsFromImperva				BIT(1)
-		,	InsertTime					DATETIME
+		,	InsertTime					DATETIME(3)
 		,	TVSRequestID				BIGINT UNSIGNED			
 		,	IsTVSParlay					BIT(1) 
 		,	SportType					SMALLINT DEFAULT NULL 
@@ -140,13 +133,11 @@ BEGIN
 		,	INDEX IX_Temp_CC_Old (CustID,CategoryID)
 	);
 	
-	
 	DROP TEMPORARY TABLE IF EXISTS Temp_UpdateCustomerClass;    
 	CREATE TEMPORARY TABLE Temp_UpdateCustomerClass(	  
 			CustID					BIGINT UNSIGNED	PRIMARY KEY
 		,	CustomerClass 			SMALLINT
 	); 
-	
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_LicVIPCust;
 	CREATE TEMPORARY TABLE Temp_LicVIPCust(
@@ -162,7 +153,7 @@ BEGIN
 		,	TargetCC				INT UNSIGNED
 	);
 
-	IF ip_InputFlowID = 9 THEN
+	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL THEN
 		INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
 		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC
 		FROM Temp_NewClassification AS temp,
@@ -360,9 +351,7 @@ BEGIN
 		SET 	temp.TargetDangerLevel = CASE WHEN temp.IsLicensee = 1 THEN d.Ext_ABIDangerLevel_Licensee ELSE d.Ext_ABIDangerLevel_Credit END
 		WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE); 
 	
-	ELSEIF (ip_InputFlowID IN (5,6,7,8) OR ip_InputFlowID IN (115,116,117,118)) THEN 
-	/*ip_InputFlowID IN (5,6,7,8) - Insert
-	ip_InputFlowID IN (115,116,117,118) - Rescan*/
+	ELSE
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_PAWinlossStatus;    
 		CREATE TEMPORARY TABLE Temp_PAWinlossStatus(	
@@ -382,7 +371,7 @@ BEGIN
 			,	WinlossStatus			TINYINT
 			,	IsLicensee				TINYINT(1)
 		); 
-
+		
 		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT 
 				temp.CustID
@@ -501,8 +490,7 @@ BEGIN
 													THEN (CASE  WHEN temp_old.IsMultiCateIDSameParentID = 1 THEN 0
 																ELSE NULL END)
 											ELSE NULL END)
-									 END
-		;
+									 END;
 
 		/*delete: priority existing < new */
 		DELETE temp

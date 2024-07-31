@@ -19,171 +19,108 @@ BEGIN
 		Task:		Insert main customer categories for Customer Classification
 		DB:			CTS_DataCenter
 		
-		Revisions: 
-			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
-			
 		Param's Expanation:
-		
+			1. ip_InputFlowID: Used to identify flows: Insert/Rescan/Remove. Details of this can be found from StaticList (ListID = 24)
+			2. From CTSWeb (1), From CTS API (2), From CTS Service (3), From AFCService (4), From Manual Trigger (5)
+			3. ip_UplineRoleID: From Web (NULL), From Service (<UplineRoleID>)
+			4. ip_QueueID: From Web (NULL), From Service (<QueueID>)
+			5. ip_AffectDownline: From Web (0,1), From Service (NULL)
+			6. ip_IsToQueue: Insert SMA PA to queue PA
+			7. ip_CustInfo: 
+			8. op_ErrorMessage:
+			- Param's Input:
+				+ InputFlow = VVIP: 2 + 3 + 4 + 5 + 7
+				+ InputFlow = SpecialCC: 7
+				+ InputFlow = LicVIP: 7
+				+ InputFlow = LicBA: 7
+				+ InputFlow = PA: 6 + 7
+				+ InputFlow = Robot: 7
+				+ InputFlow = PotentialPA: 7
+				+ InputFlow = Normal: 7
+				
 		Example:
-			- CALL CTS_DC_CustClassification_Insert(8, 0, 0, 0, false, false, '[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]', @outParam7);
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert(9, 3, NULL, NULL, NULL, false, '[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]', @outParam7);
+			
+		Revisions: 
+			- 20240618@Victoria.Le:			Initial Writing [Redmine ID: #205317]
 */
-	DECLARE CONST_CATEID_VVIP 				INT;
-	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 	INT;
-	DECLARE CONST_CATEID_LICVIPDANGEROUS 	INT;
-	DECLARE CONST_CATEID_LICBA 				INT;
-	DECLARE CONST_CATEID_SPECIALCC 			INT;
-	DECLARE CONST_CC_LICVIPSUSPICIOUS		INT;
-	DECLARE CONST_CC_LICVIPDANGEROUS		INT;
-	DECLARE CONST_CC_LICBA					INT;
-	DECLARE CONST_CC_VVIP					INT;
+	DECLARE CONST_CATEID_VVIP 								INT;
+	DECLARE CONST_CC_VVIP	 								INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_VVIP			INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP			INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_LICBA			INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL			INT;
+	
+	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON		INT;
+	
+	DECLARE lv_MaxCTSCustID									BIGINT;
+	DECLARE lv_LogTypeID									INT;
+	DECLARE lv_SPName 										VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
+	DECLARE lv_LogInfo 										VARCHAR(500);
+	DECLARE lv_CreatedBy									INT;
+	DECLARE	lv_CurrentDateTime								DATETIME(3) DEFAULT CURRENT_TIME(3);
+	DECLARE lv_Ext_CateGroupID_VVIP							INT;
 
-	DECLARE CONST_PARENTID_WRAPPER 			INT;
+	SET CONST_CATEID_VVIP									= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
+	SET CONST_CC_VVIP										= CTS_DC_CategoryTypeParent_Get ('CONST_CC_VVIP');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_VVIP');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_LICBA				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_LICBA');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL');
 	
-	DECLARE lv_MaxCTSCustID					BIGINT;
-	
-	DECLARE lv_IsParallelParentID			TINYINT(1);  
-	DECLARE lv_ParentID						INT UNSIGNED;  
-	DECLARE lv_SourceTypeID					INT;  
-	DECLARE lv_ActionType					INT;  
-	DECLARE lv_IsAuto						TINYINT(1);  
-	DECLARE lv_IsMarkedDirectly				TINYINT(1);  
-	DECLARE lv_Ext_CateGroupID_VVIP			INT;
-
-	DECLARE lv_CustomerClass				SMALLINT UNSIGNED;  
-	DECLARE lv_CategoryPriority				SMALLINT UNSIGNED;  
-	DECLARE lv_BACatePriority				SMALLINT;
-    DECLARE lv_BA_CC						SMALLINT;
-	
-	DECLARE lv_LogTypeID					INT;
-	DECLARE lv_CreatedBy					INT;
-	DECLARE	lv_CurrentDateTime				DATETIME(3) DEFAULT CURRENT_TIME();
-	DECLARE lv_SPName 						VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
-	DECLARE lv_LogInfo 						VARCHAR(500);
-	
-	
-	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
-	SET CONST_CATEID_LICVIPSUSPICIOUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
-	SET CONST_CATEID_LICVIPDANGEROUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
-	SET CONST_CATEID_LICBA 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
-	SET CONST_CATEID_SPECIALCC				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
-	SET CONST_CC_LICVIPSUSPICIOUS			= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICVIPSUSPICIOUS');
-	SET CONST_CC_LICVIPDANGEROUS			= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICVIPDANGEROUS');
-	SET CONST_CC_LICBA						= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICBA');
-	SET CONST_CC_VVIP						= CTS_DC_CategoryTypeParent_Get ('CONST_CC_VVIP');
-
-	SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
+	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON');
 	
 	/*STEP 1: Parse raw data and get custinfo*/
-	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_GetInfo (ip_InputFlowID,ip_CustInfo);
+	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_GetInfo (ip_InputFlowID,ip_FromAction,ip_CustInfo);
 	
-	IF ip_InputFlowID = 1 THEN /*VVIP*/
-		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CategoryPriority, cc.Ext_CategoryGroupID
-		INTO lv_IsParallelParentID, lv_ParentID, lv_CategoryPriority, lv_Ext_CateGroupID_VVIP
-		FROM CTS_DataCenter.CustomerCategorySettings AS ccs
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID
-		WHERE ccs.CategoryID = CONST_CATEID_VVIP;
+	/*STEP 2: Preprocess*/
+	IF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL,CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON,CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT) THEN
+		
+		CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_PreProcess (ip_InputFlowID);
+		
+	END IF;
 	
-		SET lv_SourceTypeID = CASE 	WHEN ip_FromAction = 1 THEN 13
-									WHEN ip_FromAction = 2 AND ip_UplineRoleID = 4 THEN 24
-									WHEN ip_FromAction = 2 AND ip_UplineRoleID = 3 THEN 25
-									WHEN ip_FromAction = 2 AND ip_UplineRoleID = 2 THEN 26
-									WHEN ip_FromAction = 3 THEN 30
-							  END;
-							  
-		SET lv_IsAuto = 0;
+	/*STEP 3: Process*/
+	IF ip_InputFlowID NOT IN (CONST_INPUTFLOWID_GENERAL_INSERT_VVIP,CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC,
+								CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP,CONST_INPUTFLOWID_GENERAL_INSERT_LICBA) THEN
+		
+		CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Process (ip_InputFlowID);
+		
+	END IF;
+	
+	/*STEP 4: Complete*/
+	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Complete (ip_AffectDownline,ip_InputFlowID);
+	
+	/*STEP 5: User Log and More*/
+	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_VVIP THEN
+		
+		SELECT 	cc.Ext_CategoryGroupID
+		INTO 	lv_Ext_CateGroupID_VVIP
+		FROM 	CTS_DataCenter.CustomerCategory AS cc 
+		WHERE 	cc.CategoryID = CONST_CATEID_VVIP;
 		
 		IF ip_FromAction = 1 THEN
-			SET lv_IsMarkedDirectly = 1;
-		ELSE
-			SET lv_IsMarkedDirectly = 0;
-		END IF;
+			SET lv_LogTypeID = 10;
 		
-		IF lv_IsParallelParentID = 0 THEN
-			/*Remove all categories which IsKeepOldCateID = 0*/							
-			DELETE cls							
-			FROM CTS_DataCenter.CTSCustomerClassification AS cls							
-				INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID						
-			WHERE temp.IsExistVVIP = 0							
-				AND NOT EXISTS (SELECT 1 
-								FROM CTS_DataCenter.CustomerCategorySettings AS cs	
-									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID
-								WHERE cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
-									AND cc.CategoryPriority > lv_CategoryPriority 
-									AND (cc.ParentID <> lv_ParentID OR (cc.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
-									AND cs.IsKeepOldCateID = 1);
+			INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
+			SELECT  lv_LogTypeID
+				, 	lv_SPName
+				, 	CONCAT('Insert VVIP: CTSCustID_', temp.CTSCustID,'; CustID_', temp.CustID,'; RoleID_', temp.RoleID, '; AffectDownline_', ip_AffectDownline,'; SubscriberID_', temp.SubscriberID, '; CategoryID_', temp.NewCategoryID, '; Remark_', temp.Remark)
+				,	lv_CurrentDateTime AS CreatedDate
+				, 	temp.CreatedBy
+			FROM Temp_NewClassification AS temp;
 		
-			DELETE cls							
-			FROM CTS_DataCenter.SpecialCustomerClass AS cls							
-				INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID						
-			WHERE temp.IsExistVVIP = 0							
-				AND cls.CreatedFromFunction = 1;
-		END IF;
-
-		/*Insert VVIP*/
-		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification (
-				CustID, CTSCustID, SubscriberID, RoleID, ParentID, CategoryID
-			, 	Remark, CreatedBy, LastModifiedBy, CreatedDate, LastModifiedDate
-			, 	LastScannedDate, IsAffectToDownline, IsMarkedDirectly)
-		SELECT 	temp.CustID
-			, 	temp.CTSCustID
-			, 	temp.SubscriberID
-			,	temp.RoleID
-			,	temp.ParentID
-			,	temp.NewCategoryID
-			,	temp.Remark
-			,   temp.CreatedBy AS CreatedBy
-			,   temp.CreatedBy AS LastModifiedBy
-			, 	lv_CurrentDateTime AS CreatedDate
-			,   lv_CurrentDateTime AS LastModifiedDate 
-			,   DATE(lv_CurrentDateTime) AS LastScannedDate 
-			,	ip_AffectDownline AS IsAffectToDownline
-			,	lv_IsMarkedDirectly AS IsMarkedDirectly
-		FROM Temp_NewClassification AS temp
-		WHERE temp.IsExistVVIP = 0;
-		
-		/*Insert VVIP history*/
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(
-				CustID, CTSCustID, ParentID, CategoryID, LastModifiedDate
-			, 	InsertDate, LastModifiedBy, Remark, IsAuto, TargetCC, SourceTypeID
-			, 	IsDataChanged, IsMarkedDirectly)
-		SELECT 	temp.CustID
-			, 	temp.CTSCustID
-			,	temp.ParentID
-			,	temp.NewCategoryID
-			, 	lv_CurrentDateTime AS LastModifiedDate
-			,   DATE(lv_CurrentDateTime) AS InsertDate  
-			, 	temp.CreatedBy AS LastModifiedBy
-			,	temp.Remark
-			,	lv_IsAuto AS IsAuto
-			,   cat.CustomerClass AS TargetCC
-			,   lv_SourceTypeID AS SourceTypeID
-			,	1 AS IsDataChanged
-			,	lv_IsMarkedDirectly AS IsMarkedDirectly
-		FROM Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
-		WHERE temp.IsExistVVIP = 0;
-		
-		/*Insert VVIP log*/
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
-				CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, InsertDate, LastModifiedBy
-			, 	IsAuto, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
-		SELECT 	temp.CustID
-			, 	temp.CTSCustID
-			,	temp.ParentID
-			,	temp.NewCategoryID
-			, 	lv_CurrentDateTime AS LastModifiedDate
-			,   DATE(lv_CurrentDateTime) AS InsertDate
-			, 	temp.CreatedBy AS LastModifiedBy
-			,	lv_IsAuto AS IsAuto
-			,   cat.CustomerClass AS TargetCC
-			,   lv_SourceTypeID AS SourceTypeID
-			,	1 AS IsDataChanged
-			,	lv_IsMarkedDirectly AS IsMarkedDirectly
-		FROM Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
-		WHERE temp.IsExistVVIP = 0;
-		
-		IF ip_FromAction = 2 AND ip_QueueID IS NOT NULL THEN
+		ELSEIF ip_FromAction = 3 AND ip_QueueID IS NOT NULL THEN
 			SELECT MAX(tmpCus.CTSCustID)
 			INTO lv_MaxCTSCustID
 			FROM Temp_NewClassification AS tmpCus;
@@ -192,526 +129,8 @@ BEGIN
 			SET que.LastDownlineCTSCustID = lv_MaxCTSCustID
 			WHERE que.ID = ip_QueueID;
 		END IF;
-
-	ELSEIF ip_InputFlowID = 2 THEN /*SpecialCC*/
-		
-		SET lv_SourceTypeID = 10;
-		SET lv_ActionType 	= 0;
-		SET lv_IsAuto 		= 0;
-		
-		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CategoryPriority
-		INTO lv_IsParallelParentID, lv_ParentID, lv_CategoryPriority
-		FROM CTS_DataCenter.CustomerCategorySettings AS ccs
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID
-		WHERE ccs.CategoryID = CONST_CATEID_SPECIALCC;
-		
-		IF lv_IsParallelParentID = 0 THEN
-			/*Remove all categories which IsKeepOldCateID = 0*/							
-			DELETE cls							
-			FROM CTS_DataCenter.CTSCustomerClassification AS cls							
-				INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID						
-			WHERE NOT EXISTS (SELECT 1 
-								FROM CTS_DataCenter.CustomerCategorySettings AS cs	
-									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID
-								WHERE cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
-									AND cc.CategoryPriority > lv_CategoryPriority 
-									AND (cc.ParentID <> lv_ParentID OR (cc.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
-									AND cs.IsKeepOldCateID = 1);
-									
-		ELSE
-			UPDATE CTS_DataCenter.CTSCustomerClassification AS cls
-				INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cls.CustID
-				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID 
-																	AND cc.IsActive = 1 AND cc.RelevantCategoryID IS NOT NULL
-																	AND cc.IsPAProbation = 1
-			SET 	cls.CategoryID 		= cc.RelevantCategoryID
-				,	cls.LastModifiedBy	= temp.CreatedBy
-			WHERE 	temp.IsDataChanged 	= 1;
-			
-		END IF;
-		
-		/*	INSERT VALID SPECIAL CUSTOMER CLASS	*/
-		INSERT INTO CTS_DataCenter.SpecialCustomerClass(
-				CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy, CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction)
-		SELECT 	temp.CTSCustID
-			,	temp.CustID
-			,	temp.CTSCustID AS RootCTSCustID
-			,	temp.SubscriberID
-			,	temp.TargetCC AS CustomerClass
-			,	temp.CreatedBy
-			,	lv_CurrentDateTime AS CreatedDate
-			,	temp.CreatedBy AS LastModifiedBy
-			,	lv_CurrentDateTime AS LastModifiedDate
-			,   1 AS CreatedFromFunction -- for Special Customer
-		FROM Temp_NewClassification AS temp;
-		
-		/*	INSERT LOG FOR SPECIAL CUSTOMER CLASS	*/
-		INSERT INTO CTS_DataCenter.SpecialCustomerClass_History(
-				CTSCustID, CustID, RootCTSCustID, SubscriberID, CustomerClass, CreatedBy
-			, 	CreatedDate, LastModifiedBy, LastModifiedDate, CreatedFromFunction, Remark, ActionType)
-		SELECT 	temp.CTSCustID
-			,	temp.CustID
-			,	temp.CTSCustID
-			,	temp.SubscriberID
-			,	temp.TargetCC AS CustomerClass
-			,	temp.CreatedBy
-			,	lv_CurrentDateTime AS CreatedDate
-			,	temp.CreatedBy AS LastModifiedBy
-			,	lv_CurrentDateTime AS LastModifiedDate
-			,   1 AS CreatedFromFunction -- for Special Customer
-			,	temp.Remark
-			,	lv_ActionType AS ActionType -- insert
-		FROM Temp_NewClassification AS temp;
-		
-		/*	INSERT */
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification (
-				CustID, CTSCustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy
-			, 	LastModifiedDate, LastModifiedBy, LastScannedDate, Remark)
-		SELECT  temp.CustID
-			, 	temp.CTSCustID
-			,	temp.SubscriberID
-			,	temp.RoleID
-			,	CONST_PARENTID_WRAPPER
-			,	CONST_CATEID_SPECIALCC
-			, 	lv_CurrentDateTime AS CreatedDate
-			, 	temp.CreatedBy AS CreatedBy
-			, 	lv_CurrentDateTime AS LastModifiedDate
-			, 	temp.CreatedBy AS LastModifiedBy
-			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
-			, 	temp.Remark
-		FROM Temp_NewClassification AS temp
-		WHERE NOT EXISTS (SELECT 1
-							FROM CTS_DataCenter.CTSCustomerClassification AS cls
-							WHERE cls.CustID = temp.CustID
-								AND cls.CategoryID = CONST_CATEID_SPECIALCC);
-		
-		/*	INSERT HISTORY	*/
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History (
-				CustID, CTSCustID, ParentID, CategoryID, LastModifiedDate, LastModifiedBy, ActionType
-			, 	IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark)
-		SELECT  temp.CustID
-			, 	temp.CTSCustID
-			,	CONST_PARENTID_WRAPPER
-			,	CONST_CATEID_SPECIALCC
-			, 	lv_CurrentDateTime AS LastModifiedDate
-			, 	temp.CreatedBy AS LastModifiedBy
-			, 	lv_ActionType  AS ActionType 
-			, 	lv_IsAuto AS IsAuto
-			, 	DATE(lv_CurrentDateTime) AS InsertDate
-			,	temp.TargetCC AS TargetCC
-			, 	lv_SourceTypeID AS SourceTypeID
-			, 	temp.IsDataChanged
-			, 	temp.Remark
-		FROM Temp_NewClassification AS temp
-		WHERE temp.IsDataChanged = 1;
-		
-		/*	INSERT LOG*/
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log (
-				CustID, CTSCustID, ParentID, CategoryID, LastModifiedDate, LastModifiedBy, ActionType
-			, 	IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, Remark)
-		SELECT  temp.CustID
-			, 	temp.CTSCustID
-			,	CONST_PARENTID_WRAPPER
-			,	CONST_CATEID_SPECIALCC
-			, 	lv_CurrentDateTime AS LastModifiedDate
-			, 	temp.CreatedBy AS LastModifiedBy
-			, 	lv_ActionType AS ActionType 
-			, 	lv_IsAuto AS IsAuto
-			, 	DATE(lv_CurrentDateTime) AS InsertDate
-			,	temp.TargetCC AS TargetCC
-			, 	lv_SourceTypeID AS SourceTypeID
-			, 	temp.IsDataChanged
-			, 	temp.Remark
-		FROM Temp_NewClassification AS temp;
-
-	ELSEIF ip_InputFlowID = 3 THEN /*LicVIP*/
-		SET lv_SourceTypeID 			= 28;
-		SET lv_ActionType 				= 0;
-		SET lv_IsAuto 					= 0;
-		SET lv_IsMarkedDirectly 		= 1;
-		
-		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CategoryPriority
-		INTO lv_IsParallelParentID, lv_ParentID, lv_CategoryPriority
-		FROM CTS_DataCenter.CustomerCategorySettings AS ccs
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID
-		WHERE ccs.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS;
-		
-		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, NewCategoryID
-			, 	IsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC ) 
-		WITH CTE_LastCategory AS
-		(SELECT	temp.CustID
-			,	temp.CTSCustID
-			,	temp.SubscriberID
-			,	temp.RoleID
-			,	temp.CreatedBy
-			,	temp.IsLicenseeVIP
-			,	tmpLastCat.CategoryID
-			,	tmpLastCat.IsDangerProbation
-			,	tmpLastCat.CategoryPriority
-			,	tmpLastCat.CustomerClassPriority
-			,	tmpLastCat.CustomerClass AS TargetCC
-		FROM Temp_Customer AS temp,
-		LATERAL (
-					SELECT cls.CategoryID, cat.CategoryPriority, cat.CustomerClassPriority, cat.IsDangerProbation, cat.CustomerClass 
-					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID
-																				AND cat.CategoryID <> CONST_CATEID_SPECIALCC
-																				-- AND cat.CategoryPriority < lv_CategoryPriority
-					WHERE cls.CustID = temp.CustID
-					ORDER BY cls.CustID, cls.LastModifiedDate DESC
-					LIMIT 1) AS tmpLastCat) 
-		SELECT 	cte.CustID
-			,	cte.CTSCustID
-			,	cte.SubscriberID
-			,	cte.RoleID
-			,	cte.CreatedBy
-			,	cte.IsLicenseeVIP
-			,	cte.CategoryID AS NewCategoryID
-			,	cte.IsDangerProbation
-			,	cte.CategoryPriority
-			,	cte.CustomerClassPriority
-			,	cte.TargetCC
-		FROM  CTE_LastCategory AS cte; 
 	
-		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, NewCategoryID
-			, 	IsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC ) 
-		SELECT 	temp.CustID
-			,	temp.CTSCustID
-			,	temp.SubscriberID
-			,	temp.RoleID
-			,	temp.CreatedBy
-			,	temp.IsLicenseeVIP
-			,	cc.CategoryID AS NewCategoryID
-			,	cc.IsDangerProbation
-			,	cc.CategoryPriority
-			,	cc.CustomerClassPriority
-			,	cc.CustomerClass
-		FROM Temp_Customer AS temp
-			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON sc.CustomerClass = cc.CustomerClass;
-	
-		UPDATE Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
-		SET temp.CategoryPriority = -1
-		WHERE temp.CategoryPriority IS NULL;
-	
-		UPDATE Temp_NewClassification AS temp
-		SET 	temp.IsDataChanged 	= 1
-			, 	temp.ParentID 		= CONST_PARENTID_WRAPPER
-			, 	temp.NewCategoryID 	= (CASE WHEN temp.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS 
-											ELSE CONST_CATEID_LICVIPDANGEROUS END) 
-			, 	temp.TargetCC 		= (CASE WHEN temp.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS 
-											ELSE CONST_CC_LICVIPDANGEROUS END)
-			, 	temp.IsReturnData	= 1
-		WHERE temp.IsLicenseeVIP = 0 
-			AND ( temp.CategoryPriority IS NULL 
-					OR temp.CategoryPriority > lv_CategoryPriority);
-
-		IF lv_IsParallelParentID = 0 THEN
-			/*Remove all categories which IsKeepOldCateID = 0*/							
-			DELETE cls							
-			FROM CTS_DataCenter.CTSCustomerClassification AS cls							
-				INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID						
-			WHERE NOT EXISTS (SELECT 1 
-								FROM CTS_DataCenter.CustomerCategorySettings AS cs	
-									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID
-								WHERE cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
-									AND cc.CategoryPriority > lv_CategoryPriority 
-									AND (cc.ParentID <> lv_ParentID OR (cc.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
-									AND cs.IsKeepOldCateID = 1);
-		END IF;
-
-		UPDATE CTS_DataCenter.CTSCustomer AS cus
-			INNER JOIN Temp_Customer AS temp ON cus.CTSCustID = temp.CTSCustID
-		SET 	cus.IsLicenseeVIP = 1
-			, 	cus.ModifiedTime = lv_CurrentDateTime
-		WHERE cus.IsLicenseeVIP = 0;   
-		
-		IF EXISTS (SELECT 1 FROM Temp_NewClassification AS temp) THEN
-			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-				CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly) 
-			SELECT	temp.CTSCustID
-				,	temp.CustID
-				,	temp.SubscriberID
-				,	temp.RoleID
-				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	temp.NewCategoryID
-				,	lv_CurrentDateTime AS CreatedDate
-				,	temp.CreatedBy
-				,	lv_CurrentDateTime AS LastModifiedDate
-				,	temp.CreatedBy AS LastModifiedBy
-				,	DATE(lv_CurrentDateTime) LastScannedDate
-				,	lv_IsMarkedDirectly AS IsMarkedDirectly
-			FROM Temp_NewClassification AS temp;
-		
-			/*Insert history*/
-			INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(
-					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
-			SELECT 	temp.CustID
-				, 	temp.CTSCustID
-				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	temp.NewCategoryID
-				, 	lv_CurrentDateTime AS LastModifiedDate
-				, 	temp.CreatedBy AS LastModifiedBy
-				,	lv_ActionType AS ActionType
-				,	lv_IsAuto AS IsAuto
-				,   DATE(lv_CurrentDateTime) AS InsertDate
-				,   temp.TargetCC
-				,   lv_SourceTypeID AS SourceTypeID
-				,	1 AS IsDataChanged
-				,	lv_IsMarkedDirectly AS IsMarkedDirectly
-			FROM Temp_NewClassification AS temp
-			WHERE temp.IsDataChanged = 1;
-			
-			/*Insert log*/
-			INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
-					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
-			SELECT 	temp.CustID
-				, 	temp.CTSCustID
-				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	temp.NewCategoryID
-				, 	lv_CurrentDateTime AS LastModifiedDate
-				, 	temp.CreatedBy AS LastModifiedBy
-				,	lv_ActionType AS ActionType
-				,	lv_IsAuto AS IsAuto
-				,   DATE(lv_CurrentDateTime) AS InsertDate
-				,   temp.TargetCC
-				,   lv_SourceTypeID AS SourceTypeID
-				,	temp.IsDataChanged
-				,	lv_IsMarkedDirectly AS IsMarkedDirectly
-			FROM Temp_NewClassification AS temp;
-			
-		ELSE
-			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-					CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly) 
-			SELECT	temp.CTSCustID
-				,	temp.CustID
-				,	temp.SubscriberID
-				,	temp.RoleID
-				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	CONST_CATEID_LICVIPDANGEROUS AS CategoryID 
-				,	lv_CurrentDateTime AS CreatedDate
-				,	temp.CreatedBy
-				,	lv_CurrentDateTime AS LastModifiedDate
-				,	temp.CreatedBy AS LastModifiedBy
-				,	DATE(lv_CurrentDateTime) LastScannedDate
-				,	lv_IsMarkedDirectly AS IsMarkedDirectly
-			FROM Temp_Customer AS temp
-				LEFT JOIN Temp_NewClassification AS tmpCat ON tmpCat.CustID = temp.CustID
-			WHERE tmpCat.CustID IS NULL;
-
-		END IF;
-	
-	ELSEIF ip_InputFlowID = 4 THEN /*LicBA*/
-		SET lv_SourceTypeID 		= 38;
-		SET lv_ActionType 			= 0;
-		SET lv_IsAuto 				= 0; 
-		SET lv_IsMarkedDirectly 	= 1;
-	
-		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CategoryPriority
-		INTO lv_IsParallelParentID, lv_ParentID, lv_CategoryPriority
-		FROM CTS_DataCenter.CustomerCategorySettings AS ccs
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID
-		WHERE ccs.CategoryID = CONST_CATEID_LICBA;
-	
-		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeBA, ParentID, NewCategoryID
-			, 	CategoryPriority, CustomerClassPriority, TargetCC, IsReturnData ) 
-		WITH CTE_LastCategory AS
-		(
-		 SELECT	temp.CustID
-			,	temp.CTSCustID
-			,	temp.SubscriberID
-			,	temp.RoleID
-			,	temp.CreatedBy
-			,	temp.IsLicenseeBA
-			,	tmpLastCat.ParentID
-			,	tmpLastCat.CategoryID
-			,	tmpLastCat.CategoryPriority
-			,	tmpLastCat.CustomerClassPriority
-			,	tmpLastCat.CustomerClass AS TargetCC
-		 FROM Temp_Customer AS temp,
-		 LATERAL (
-					SELECT cls.ParentID, cls.CategoryID, cat.CategoryPriority, cat.CustomerClassPriority, cat.CustomerClass 
-					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID 
-																			AND cat.CategoryID <> CONST_CATEID_SPECIALCC
-																			AND cat.CategoryPriority < lv_CategoryPriority
-					WHERE cls.CustID = temp.CustID
-					ORDER BY cls.CustID, cls.LastModifiedDate DESC
-					LIMIT 1
-				  ) AS tmpLastCat
-		) 
-		SELECT cte.CustID
-		,	cte.CTSCustID
-		,	cte.SubscriberID
-		,	cte.RoleID
-		,	cte.CreatedBy
-		,	cte.IsLicenseeBA
-		,	cte.ParentID
-		,	cte.CategoryID AS NewCategoryID
-		,	cte.CategoryPriority
-		,	cte.CustomerClassPriority
-		,	cte.TargetCC
-		,	1 AS IsReturnData
-		FROM  CTE_LastCategory AS cte;  
-		
-		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, NewCategoryID
-			, 	IsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC ) 
-		SELECT 	temp.CustID
-			,	temp.CTSCustID
-			,	temp.SubscriberID
-			,	temp.RoleID
-			,	temp.CreatedBy
-			,	temp.IsLicenseeVIP
-			,	cc.CategoryID AS NewCategoryID
-			,	cc.IsDangerProbation
-			,	cc.CategoryPriority
-			,	cc.CustomerClassPriority
-			,	cc.CustomerClass
-		FROM Temp_Customer AS temp
-			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON sc.CustomerClass = cc.CustomerClass;
-
-		UPDATE Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
-		SET temp.CategoryPriority = -1
-		WHERE temp.CategoryPriority IS NULL;
-		
-		UPDATE Temp_NewClassification AS temp
-		SET 	temp.IsDataChanged 		= 1
-			, 	temp.ParentID 			= CONST_PARENTID_WRAPPER
-			, 	temp.NewCategoryID		= CONST_CATEID_LICBA
-			, 	temp.TargetCC 			= CONST_CC_LICBA
-			, 	temp.IsReturnData		= 1
-		WHERE temp.IsLicenseeBA = 0
-			AND ( temp.CategoryPriority IS NULL OR temp.CategoryPriority > lv_CategoryPriority); 
-		
-		IF lv_IsParallelParentID = 0 THEN
-			/*Remove all categories which IsKeepOldCateID = 0*/							
-			DELETE cls							
-			FROM CTS_DataCenter.CTSCustomerClassification AS cls							
-				INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID						
-			WHERE NOT EXISTS (SELECT 1 
-								FROM CTS_DataCenter.CustomerCategorySettings AS cs	
-									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID
-								WHERE cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
-									AND cc.CategoryPriority > lv_CategoryPriority 
-									AND (cc.ParentID <> lv_ParentID OR (cc.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
-									AND cs.IsKeepOldCateID = 1);
-		END IF;
-		
-		UPDATE CTS_DataCenter.CTSCustomer AS cus
-			INNER JOIN Temp_Customer AS temp ON cus.CTSCustID = temp.CTSCustID
-		SET 	cus.IsLicenseeBA = 1
-			, 	cus.ModifiedTime = lv_CurrentDateTime
-		WHERE cus.IsLicenseeBA = 0; 
-
-		IF EXISTS (SELECT 1 FROM Temp_NewClassification AS temp) THEN		
-			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-				CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly) 
-			SELECT	temp.CTSCustID
-				,	temp.CustID
-				,	temp.SubscriberID
-				,	temp.RoleID
-				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	temp.NewCategoryID 
-				,	lv_CurrentDateTime AS CreatedDate
-				,	temp.CreatedBy
-				,	lv_CurrentDateTime AS LastModifiedDate
-				,	temp.CreatedBy AS LastModifiedBy
-				,	DATE(lv_CurrentDateTime) LastScannedDate
-				,	lv_IsMarkedDirectly AS IsMarkedDirectly
-			FROM Temp_NewClassification AS temp;
-		
-			/*Insert history*/
-			INSERT INTO CTS_DataCenter.CTSCustomerClassification_History(
-					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
-			SELECT 	temp.CustID
-				, 	temp.CTSCustID
-				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	temp.NewCategoryID 
-				, 	lv_CurrentDateTime AS LastModifiedDate
-				, 	temp.CreatedBy AS LastModifiedBy
-				,	lv_ActionType  AS ActionType
-				,	lv_IsAuto  AS IsAuto
-				,   DATE(lv_CurrentDateTime) AS InsertDate
-				,   temp.TargetCC
-				,   lv_SourceTypeID AS SourceTypeID
-				,	1 AS IsDataChanged
-				,	lv_IsMarkedDirectly AS IsMarkedDirectly
-			FROM Temp_NewClassification AS temp
-			WHERE temp.IsDataChanged = 1;
-			
-			/*Insert log*/
-			INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
-					CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
-			SELECT 	temp.CustID
-				, 	temp.CTSCustID
-				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	temp.NewCategoryID 
-				, 	lv_CurrentDateTime AS LastModifiedDate
-				, 	temp.CreatedBy AS LastModifiedBy
-				,	lv_ActionType  AS ActionType
-				,	lv_IsAuto  AS IsAuto
-				,   DATE(lv_CurrentDateTime) AS InsertDate
-				,   temp.TargetCC
-				,   lv_SourceTypeID AS SourceTypeID
-				,	temp.IsDataChanged
-				,	lv_IsMarkedDirectly AS IsMarkedDirectly
-			FROM Temp_NewClassification AS temp;
-			
-		ELSE
-			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-					CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly) 
-			SELECT	temp.CTSCustID
-				,	temp.CustID
-				,	temp.SubscriberID
-				,	temp.RoleID
-				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	CONST_CATEID_LICBA AS CategoryID 
-				,	lv_CurrentDateTime AS CreatedDate
-				,	temp.CreatedBy
-				,	lv_CurrentDateTime AS LastModifiedDate
-				,	temp.CreatedBy AS LastModifiedBy
-				,	DATE(lv_CurrentDateTime) LastScannedDate
-				,	lv_IsMarkedDirectly AS IsMarkedDirectly
-			FROM Temp_Customer AS temp
-				LEFT JOIN Temp_NewClassification AS tmpCat ON tmpCat.CustID = temp.CustID
-			WHERE tmpCat.CustID IS NULL;
-		
-		END IF;
-		
-	ELSE
-		/*STEP 2: Preprocess*/
-		CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_PreProcess (ip_InputFlowID);
-		
-		
-		/*STEP 3: Process*/
-		CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Process (ip_InputFlowID);
-		
-		
-		/*STEP 4: Complete*/
-		CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Complete (ip_InputFlowID);
-	
-	END IF;
-
-	/*STEP 5: User Log*/
-	IF ip_FromAction = 1 THEN /*VVIP*/
-		SET lv_LogTypeID = 10;
-		
-		INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
-		SELECT  lv_LogTypeID
-			, 	lv_SPName
-			, 	CONCAT('Insert VVIP: CTSCustID_', temp.CTSCustID,'; CustID_', temp.CustID,'; RoleID_', temp.RoleID, '; AffectDownline_', ip_AffectDownline,'; SubscriberID_', temp.SubscriberID, '; CategoryID_', temp.NewCategoryID, '; Remark_', temp.Remark)
-            ,	lv_CurrentDateTime AS CreatedDate
-            , 	temp.CreatedBy
-        FROM Temp_NewClassification AS temp;
-	
-	ELSEIF ip_InputFlowID = 2 THEN /*Special*/
+	ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC THEN 
 		SET lv_LogTypeID = 19;
 		
 		SELECT CreatedBy
@@ -755,12 +174,13 @@ BEGIN
 	END IF;
 	
 	/*STEP 6: AffectedDownline*/
-	IF (ip_IsToQueue = 1 OR (ip_FromAction = 2 AND ip_AffectDownline = 1)) THEN
-		CALL CTS_DC_CustClassification_AffectedDownline_Insert ('Temp_NewClassification',ip_InputFlowID);
+	IF (ip_IsToQueue = 1 OR (ip_FromAction = 3 AND ip_AffectDownline = 1)) THEN
+		CALL CTS_DataCenter.CTS_DC_CustClassification_AffectedDownline_Insert ('Temp_NewClassification',ip_InputFlowID);
 	END IF;
 	
 	/*STEP 7: Insert Evidence*/
-	IF ip_InputFlowID IN (5,115,6,116) THEN /*PA*/
+	IF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY,CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON,
+							CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY,CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON) THEN /*PA*/
 		/*For Root*/
 		INSERT IGNORE INTO CTS_DataCenter.CustEvidence(CTSCustID, EvidenceID, Remark, `Level`, FromCustID,  CreatedDate, CreatedBy)
 		SELECT 	temp.CTSCustID
@@ -790,7 +210,7 @@ BEGIN
 			CTSCustID
 		,  	CustID
 		,	CASE WHEN NewCategoryID = CONST_CATEID_VVIP THEN CONST_CC_VVIP ELSE TargetCC END AS CustomerClass
-		,  	CASE WHEN NewCategoryID = CONST_CATEID_VVIP THEN lv_Ext_CateGroupID_VVIP ELSE NewCategoryID END AS CategoryID /*-1 AS Category; SpecialCC4x*/
+		,  	CASE WHEN NewCategoryID = CONST_CATEID_VVIP THEN lv_Ext_CateGroupID_VVIP ELSE NewCategoryID END AS CategoryID
 		,	lv_CurrentDateTime AS ScannedTime 
 	FROM Temp_NewClassification AS temp
 	WHERE temp.IsReturnData = 1;

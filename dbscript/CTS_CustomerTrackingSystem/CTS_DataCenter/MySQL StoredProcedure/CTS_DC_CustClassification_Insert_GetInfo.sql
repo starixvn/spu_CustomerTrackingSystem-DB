@@ -4,6 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Insert_GetInfo`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert_GetInfo`(
 		IN	ip_InputFlowID			INT 
+	,	IN	ip_FromAction			TINYINT
 	,	IN	ip_CustInfo				JSON
 )
 SQL SECURITY INVOKER
@@ -13,30 +14,71 @@ BEGIN
 		Task:		Insert main customer categories for Customer Classification
 		DB:			CTS_DataCenter
 		
-		Revisions: 
-			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
-			
 		Param's Expanation:
-			- 
+			- ip_InputFlowID
+			- ip_CustInfo
+			
+		Example:
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_GetInfo (9,3,'[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]');
+			
+		Revisions: 
+			- 20240618@Victoria.Le:			Initial Writing [Redmine ID: #205317]
 */
 
-	DECLARE CONST_CATEID_VVIP 				INT;
-	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 	INT;
-	DECLARE CONST_CATEID_LICVIPDANGEROUS 	INT;
-	DECLARE CONST_PARENTID_VVIP 			INT;
-	DECLARE CONST_PARENTID_WRAPPER 			INT;
-	DECLARE CONST_PARENTID_PA 				INT;
-	DECLARE CONST_PARENTID_POTENTIALPA		INT;
+	DECLARE CONST_CATEID_VVIP 								INT;
+	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 					INT;
+	DECLARE CONST_PARENTID_VVIP 							INT;
+	DECLARE CONST_PARENTID_WRAPPER 							INT;
+	DECLARE CONST_PARENTID_PA 								INT;
+	DECLARE CONST_PARENTID_POTENTIALPA						INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_VVIP			INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP			INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_LICBA			INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL			INT;
 	
-	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
-	SET CONST_CATEID_LICVIPSUSPICIOUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
-	SET CONST_CATEID_LICVIPDANGEROUS 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
-	SET CONST_PARENTID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
-	SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
-	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
-	SET CONST_PARENTID_POTENTIALPA			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
+	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL		INT;
 	
-	IF ip_InputFlowID IN (1,2,3,4) THEN /*ip_InputFlowID: VVIP/SpecialCC/LicVIP/LicBA*/
+	DECLARE CONST_SOURCETYPE_VVIP_MANUAL 					INT DEFAULT 13;
+	DECLARE CONST_SOURCETYPE_VVIP_AFFECTED_SUPER			INT DEFAULT 24;
+	DECLARE CONST_SOURCETYPE_VVIP_AFFECTED_MASTER			INT DEFAULT 25;
+	DECLARE CONST_SOURCETYPE_VVIP_AFFECTED_AGENT			INT DEFAULT 26;
+	DECLARE CONST_SOURCETYPE_VVIP_AFFECTED_DIRECTUPLINE		INT DEFAULT 30;
+	
+	DECLARE lv_SourceTypeID									INT; 
+	DECLARE lv_IsMarkedDirectly								TINYINT(1);   
+	
+	SET CONST_CATEID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
+	SET CONST_CATEID_LICVIPSUSPICIOUS 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
+	SET CONST_PARENTID_VVIP 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+	SET CONST_PARENTID_WRAPPER 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+	SET CONST_PARENTID_PA 									= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+	SET CONST_PARENTID_POTENTIALPA							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_VVIP');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_LICBA				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_LICBA');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL');
+	SET CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL');
+	
+	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
+	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON');
+	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT');
+	SET CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL');
+	
+	/*VVIP/SpecialCC/LicVIP/LicBA*/
+	IF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_VVIP,CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC,
+							CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP,CONST_INPUTFLOWID_GENERAL_INSERT_LICBA) THEN 
 	
 		DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;
 		CREATE TEMPORARY TABLE 	Temp_NewClassification (
@@ -49,13 +91,15 @@ BEGIN
 			,	IsExistVVIP					TINYINT(1) DEFAULT 0
 			,	IsLicenseeVIP				TINYINT(1) DEFAULT 0
 			,	IsLicenseeBA				TINYINT(1) DEFAULT 0
-			,	TargetCC					SMALLINT UNSIGNED
+			,	TargetCC					INT 
 			,	CategoryPriority			SMALLINT UNSIGNED
 			,	CustomerClassPriority		SMALLINT UNSIGNED
 			,	NewCategoryID				INT UNSIGNED
 			,	NewCategoryGroupID     		INT UNSIGNED
 			,	ParentID					INT UNSIGNED
 			,	IsDangerProbation			TINYINT(1) DEFAULT 0
+			,	IsMarkedDirectly			TINYINT(1)
+			,	SourceTypeID      			SMALLINT
 			,	IsFromCTS					TINYINT(1) DEFAULT 0
 			,	IsFromTW					TINYINT(1) DEFAULT 0
 			,	IsFromTVS					TINYINT(1) DEFAULT 0
@@ -75,14 +119,32 @@ BEGIN
 			, 	IsLicenseeBA				TINYINT(1) DEFAULT 0
 		);
 
-		IF ip_InputFlowID = 1 THEN /*VVIP*/
+		/*1 - VVIP*/
+		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_VVIP THEN 
+			SET lv_SourceTypeID = CASE 	WHEN ip_FromAction = 1 THEN CONST_SOURCETYPE_VVIP_MANUAL
+										WHEN ip_FromAction = 3 AND ip_UplineRoleID = 4 THEN CONST_SOURCETYPE_VVIP_AFFECTED_SUPER
+										WHEN ip_FromAction = 3 AND ip_UplineRoleID = 3 THEN CONST_SOURCETYPE_VVIP_AFFECTED_MASTER
+										WHEN ip_FromAction = 3 AND ip_UplineRoleID = 2 THEN CONST_SOURCETYPE_VVIP_AFFECTED_AGENT
+										WHEN ip_FromAction = 3 AND ip_UplineRoleID IS NULL THEN CONST_SOURCETYPE_VVIP_AFFECTED_DIRECTUPLINE
+								  END;
+								  
+			IF ip_FromAction = 1 THEN
+				SET lv_IsMarkedDirectly = 1;
+			ELSE
+				SET lv_IsMarkedDirectly = 0;
+			END IF;
+		
 			INSERT INTO Temp_NewClassification (
-					CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsExistVVIP, ParentID, NewCategoryID, IsReturnData)
+					CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsExistVVIP, ParentID
+				, 	NewCategoryID, IsMarkedDirectly, SourceTypeID, IsDataChanged, IsReturnData)
 			SELECT DISTINCT 
 					tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.RoleID, tmpJs.Remark, tmpJs.CreatedBy
 				,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
 				,	CONST_PARENTID_VVIP
 				,	CONST_CATEID_VVIP
+				,	(CASE WHEN cls.CustID IS NULL THEN lv_IsMarkedDirectly END) AS IsMarkedDirectly
+				,	(CASE WHEN cls.CustID IS NULL THEN lv_SourceTypeID END) AS SourceTypeID
+				,	(CASE WHEN cls.CustID IS NULL THEN 1 ELSE 0 END) AS IsDataChanged
 				,	(CASE WHEN cls.CustID IS NOT NULL THEN 0 ELSE 1 END) AS IsReturnData
 			FROM JSON_TABLE(ip_CustInfo,
 							 "$[*]" COLUMNS(
@@ -96,7 +158,8 @@ BEGIN
 				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpJs.CustID = cls.CustID 
 																				AND cls.CategoryID = CONST_CATEID_VVIP;
 																				
-		ELSEIF ip_InputFlowID = 2 THEN /*SpecialCC*/
+		/*2 - SpecialCC*/
+		ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC THEN 
 			INSERT INTO Temp_NewClassification (
 				CustID, CTSCustID, SubscriberID, RoleID, Remark, CreatedBy, IsLicenseeVIP, TargetCC, IsDataChanged, IsReturnData)
 			SELECT 	tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, cus.RoleID, tmpJs.Remark, tmpJs.CreatedBy, tmpJs.IsLicenseeVIP, tmpJs.TargetCC
@@ -108,7 +171,7 @@ BEGIN
 												,	CTSCustID 		BIGINT UNSIGNED		PATH "$.CTSCustID"
 												,	SubscriberID 	INT UNSIGNED		PATH "$.SubscriberID"
 												,	IsLicenseeVIP	TINYINT(1)			PATH "$.IsLicenseeVIP"            
-												,	TargetCC		SMALLINT			PATH "$.CustomerClass"            
+												,	TargetCC		INT 				PATH "$.CustomerClass"            
 												,	CreatedBy 		INT UNSIGNED		PATH "$.CreatedBy"          
 												,	Remark			VARCHAR(500)		PATH "$.Remark"
 											 )) AS tmpJs
@@ -116,7 +179,8 @@ BEGIN
 				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpJs.CustID
 																				AND cls.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS;
 			
-		ELSEIF ip_InputFlowID = 3 THEN	/*LicVIP*/
+		/*3 - LicVIP*/
+		ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP THEN	
 			INSERT INTO Temp_Customer (CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP)
 			SELECT tmpJs.CustID, cus.CTSCustID, cus.SubscriberID, cus.RoleID, tmpJs.CreatedBy, cus.IsLicenseeVIP
 			FROM JSON_TABLE(ip_CustInfo,
@@ -126,7 +190,8 @@ BEGIN
 											 )) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0;
 			
-		ELSEIF ip_InputFlowID = 4 THEN /*LicBA*/
+		/*4 - LicBA*/
+		ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_LICBA THEN 
 			INSERT INTO Temp_Customer (CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeBA)
 			SELECT tmpJs.CustID, cus.CTSCustID, cus.SubscriberID, cus.RoleID, tmpJs.CreatedBy, cus.IsLicenseeBA
 			FROM JSON_TABLE(ip_CustInfo,
@@ -138,7 +203,7 @@ BEGIN
 		
 		END IF;
 
-	ELSE /*IF ip_InputFlowID IN (5,6,7,8,9): PA-2/Robot/PotentialPA/Normal*/
+	ELSE
 
 		DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 		CREATE TEMPORARY TABLE Temp_NewClassification(	  	
@@ -153,8 +218,6 @@ BEGIN
 			,	IsExistWrapper				TINYINT(1) DEFAULT 0
 			,	IsExistPA					TINYINT(1) DEFAULT 0
 			,	IsExistPotentialPA			TINYINT(1) DEFAULT 0
-			-- ,	IsExistRobot				BIT(1) DEFAULT 0 
-			-- ,	IsExistKeepOldCateID		BIT(1) DEFAULT 0 
 			,	IsFromOldPA					TINYINT(1) DEFAULT 0
 			
 			, 	TurnoverRM					DECIMAL(20,4)
@@ -163,21 +226,20 @@ BEGIN
 			, 	ActiveDays					INT	
 			,	PerformanceTime				DATETIME(3)
 
-			, 	DWCategoryID		    	INT UNSIGNED -- InputCategoryID
-			,	DWCategoryGroupID   		INT UNSIGNED -- InputCategoryGroupID
+			, 	DWCategoryID		    	INT UNSIGNED
+			,	DWCategoryGroupID   		INT UNSIGNED
 			
 			, 	NewCategoryID		   		INT UNSIGNED
-			,	NewCategoryGroupID     		INT UNSIGNED -- CategoryGroup
+			,	NewCategoryGroupID     		INT UNSIGNED
 			,	NewIsDangerProbation		TINYINT(1) DEFAULT 0
-			,	IsPAProbation	     		TINYINT(1) DEFAULT 0-- IsProbation
+			,	IsPAProbation	     		TINYINT(1) DEFAULT 0
 			
 			,	OldCategoryID		    	INT UNSIGNED
 			,	OldCategoryGroupID	    	INT UNSIGNED
-			-- ,	OldIsDangerProbation		BIT(1) DEFAULT 0
 
 			,	ParentID					INT UNSIGNED
-			,	OldTargetCC					SMALLINT
-			,	TargetCC					SMALLINT
+			,	OldTargetCC					INT 
+			,	TargetCC					INT 
 			,	TargetDangerLevel			SMALLINT UNSIGNED
 			,	CategoryPriority			SMALLINT UNSIGNED 
 			,	CustomerClassPriority		SMALLINT UNSIGNED 
@@ -187,7 +249,7 @@ BEGIN
 			
 			, 	RelevantCategoryID			INT UNSIGNED
 			,	RelevantCategoryGroupID   	INT UNSIGNED
-			,	RelevantIsPAProbation	   	TINYINT(1) -- RelevantIsProbation
+			,	RelevantIsPAProbation	   	TINYINT(1)
 			
 			,	IsDataChanged				TINYINT(1) 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
 			,	DataChangeType				TINYINT DEFAULT 0	/* 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE */
@@ -206,7 +268,7 @@ BEGIN
 			,	GBTicketCount				INT
 
 			,	IsFromTW					TINYINT(1)  DEFAULT 0
-			,	TWRobotCounter				INT -- RobotCounter
+			,	TWRobotCounter				INT 
 			
 			,	TWBetCount					BIGINT
 			,	TWGroupBettingRate			DECIMAL(10,4)
@@ -227,7 +289,7 @@ BEGIN
 			,   SpecialCCDangerProbation   	TINYINT(1) DEFAULT NULL
 			
 			,	LastModifiedDate			DATETIME(3)
-			, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
+			, 	ActionType					SMALLINT DEFAULT 0 
 			,	CreatedBy					INT UNSIGNED
 			,	IsMarkedDirectly			TINYINT(1) DEFAULT 0
 			,	IsReturnData				TINYINT(1) DEFAULT 1
@@ -236,12 +298,14 @@ BEGIN
 			, 	PRIMARY KEY (CustID, DWCategoryID)
 		); 
 		
-		IF ip_InputFlowID IN (5,115) THEN /*PA - ip_InputType = 'Category'*/
+		/*5 - PA-Category*/
+		IF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY,CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY) THEN 
+			
 			INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
-			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI
-			, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, MatchID, TVSRequestID, IsTVSParlay, SportType
-			, 	TVSIssueTypeID, CategoryPriority, CustomerClassPriority, ParentID, IsReturnData, IsDataChanged, PerformanceTime, GroupName)
+					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
+				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI
+				, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, MatchID, TVSRequestID, IsTVSParlay, SportType
+				, 	TVSIssueTypeID, CategoryPriority, CustomerClassPriority, ParentID, IsReturnData, IsDataChanged, PerformanceTime, GroupName)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				,	tmpJs.RoleID
@@ -342,12 +406,12 @@ BEGIN
 															THEN tmpJs.TVSRequestID 
 														ELSE Temp_NewClassification.TVSRequestID END
 								;
-
-		ELSEIF ip_InputFlowID IN (6,116) THEN /*PA - ip_InputType = 'Reason'*/
 			
-			IF ip_InputFlowID = 6 THEN
-				INSERT INTO CTS_DataCenter.TVSVoidRequest_Log(
-					TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,CreatedTime,IsParlay,SportType,IssueTypeID)
+		/*6 - PA-Reason*/
+		ELSEIF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON,CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON) THEN 
+			
+			IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON THEN
+				INSERT INTO CTS_DataCenter.TVSVoidRequest_Log(TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,CreatedTime,IsParlay,SportType,IssueTypeID)
 				WITH CTECustInfo AS (
 					SELECT	tmpJs.TVSRequestID AS TVSRequestID
 						,	tmpJs.CustID AS CustID
@@ -361,9 +425,9 @@ BEGIN
 								CustID 			BIGINT UNSIGNED		PATH "$.CustID"
 							,	TVSReasonID		INT 				PATH "$.TVSReasonID"
 							, 	CreatedBy		INT UNSIGNED		PATH "$.CreatedBy"
-							, 	IsFromTVS		BOOLEAN 			PATH "$.IsFromTVS"
+							, 	IsFromTVS		TINYINT(1) 			PATH "$.IsFromTVS"
 							, 	TVSRequestID	BIGINT UNSIGNED		PATH "$.TVSRequestID"
-							,	IsTVSParlay		BOOLEAN 			PATH "$.IsParlay"
+							,	IsTVSParlay		TINYINT(1) 			PATH "$.IsParlay"
 							,	SportType		SMALLINT 			PATH "$.SportType"
 							,	TVSIssueTypeID	TINYINT 			PATH "$.IssueTypeID"
 						)) AS tmpJs
@@ -385,10 +449,10 @@ BEGIN
 			END IF;
 		
 			INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, IsMarkedDirectly
-			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, SpecialCC, IsPAProbation
-			, 	RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority, CustomerClassPriority
-			, 	ParentID, IsReturnData, IsDataChanged, PerformanceTime)
+					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, IsMarkedDirectly
+				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, SpecialCC, IsPAProbation
+				, 	RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority, CustomerClassPriority
+				, 	ParentID, IsReturnData, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
 				,	cus.CTSCustID
 				,	cus.RoleID
@@ -444,7 +508,6 @@ BEGIN
 										)) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
-				-- LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.TVSReasonID = tmpJs.TVSReasonID
 				,	LATERAL (
 						SELECT cate.CategoryGroupID, cate.RelevantCategoryID, cate.CategoryPriority, cate.CustomerClassPriority,cate.ParentID
 						FROM CTS_DataCenter.CustomerCategory AS cate 
@@ -481,9 +544,17 @@ BEGIN
 															THEN tmpJs.TVSRequestID 
 														ELSE Temp_NewClassification.TVSRequestID END
 								;
-								
-		/*INSERT INTO TABLE TVS_LOG*/
-		ELSEIF ip_InputFlowID IN (7,117) THEN /*Robot*/
+			
+			UPDATE Temp_NewClassification AS temp
+			SET 	temp.IsExistWrapper = 1
+				,	IsDataChanged = 1
+			WHERE EXISTS (	SELECT 1
+							FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							WHERE temp.CustID = cls.CustID
+								AND cls.ParentID = CONST_PARENTID_WRAPPER
+						 );
+		/*7 - Robot*/
+		ELSEIF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT,CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT) THEN 
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, DWCategoryID, DWCategoryGroupID, IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI
@@ -588,13 +659,22 @@ BEGIN
 															THEN tmpJs.TVSRequestID 
 														ELSE Temp_NewClassification.TVSRequestID END
 								;
-					
-		ELSEIF ip_InputFlowID IN (8,118) THEN /*ip_InputType = PotentialPA*/
+			
+			UPDATE Temp_NewClassification AS temp
+			SET 	temp.IsExistWrapper = 1
+				,	IsDataChanged = 1
+			WHERE EXISTS (	SELECT 1
+							FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							WHERE temp.CustID = cls.CustID
+								AND cls.ParentID = CONST_PARENTID_WRAPPER
+						 );
+		/*8 - PotentialPA*/
+		ELSEIF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL,CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL) THEN 
 			INSERT IGNORE INTO Temp_NewClassification(
-				CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
-			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW, IsFromCTS, IsFromAI
-			, 	SpecialCC, IsPAProbation, RelevantCategoryID, CategoryPriority, CustomerClassPriority
-			, 	ParentID, IsReturnData, IsDataChanged, PerformanceTime, SportType, SourceCreatedDate, GBTicketCount)
+					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
+				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW, IsFromCTS, IsFromAI
+				, 	SpecialCC, IsPAProbation, RelevantCategoryID, CategoryPriority, CustomerClassPriority
+				, 	ParentID, IsReturnData, IsDataChanged, PerformanceTime, SportType, SourceCreatedDate, GBTicketCount)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				,	tmpJs.RoleID
@@ -655,12 +735,12 @@ BEGIN
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID;
                 
-		
-		ELSEIF ip_InputFlowID = 9 THEN /*Normal*/
+		/*9 - Normal*/
+		ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL THEN 
 			INSERT INTO Temp_NewClassification(
-				CustID,CTSCustID,DWCategoryID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate
-				,TWTicketRejectRate,TWDesktopUsageRate,TaggingID,TaggingType,PerformanceTime,ScanTaggingType
-				,SubscriberID,RoleID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,SpecialCC,IsReturnData,IsDataChanged)
+					CustID,CTSCustID,DWCategoryID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate
+				,	TWTicketRejectRate,TWDesktopUsageRate,TaggingID,TaggingType,PerformanceTime,ScanTaggingType
+				,	SubscriberID,RoleID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,SpecialCC,IsReturnData,IsDataChanged)
 			SELECT DISTINCT
 					tmpJs.CustID
 				,	cus.CTSCustID
@@ -706,7 +786,22 @@ BEGIN
 										)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID;
-			-- WHERE tmpJs.DWCategoryGroupID <> 0;
+				
+			UPDATE Temp_NewClassification AS temp
+			SET temp.IsExistPA = 1
+			WHERE EXISTS (	SELECT 1
+							FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							WHERE temp.CustID = cls.CustID
+								AND cls.ParentID = CONST_PARENTID_PA
+						 );
+			
+			UPDATE Temp_NewClassification AS temp
+			SET temp.IsExistPotentialPA = 1
+			WHERE EXISTS (	SELECT 1
+							FROM CTS_DataCenter.CTSCustomerClassification AS cls
+							WHERE temp.CustID = cls.CustID
+								AND cls.ParentID = CONST_PARENTID_POTENTIALPA
+						 );
 		END IF;
 		
 		UPDATE Temp_NewClassification AS temp
@@ -717,61 +812,13 @@ BEGIN
 		
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsExistVVIP = 1
-			-- ,	IsFromOldPA = 1
 			,	IsDataChanged = 1
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						WHERE temp.CustID = cls.CustID
 							AND cls.CategoryID = CONST_CATEID_VVIP
 					 );
-		
-		
-		UPDATE Temp_NewClassification AS temp
-		SET 	temp.IsExistWrapper = 1
-			-- ,	IsFromOldPA = 1
-			,	IsDataChanged = 1
-		WHERE EXISTS (	SELECT 1
-						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						WHERE temp.CustID = cls.CustID
-							AND cls.ParentID = CONST_PARENTID_WRAPPER
-					 );
-					 
-					 
-		UPDATE Temp_NewClassification AS temp
-		SET temp.IsExistPA = 1
-		WHERE EXISTS (	SELECT 1
-						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						WHERE temp.CustID = cls.CustID
-							AND cls.ParentID = CONST_PARENTID_PA
-					 );
-					 
-		UPDATE Temp_NewClassification AS temp
-		SET temp.IsExistPotentialPA = 1
-		WHERE EXISTS (	SELECT 1
-						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						WHERE temp.CustID = cls.CustID
-							AND cls.ParentID = CONST_PARENTID_POTENTIALPA
-					 );
-	
-		/*UPDATE Temp_NewClassification AS temp
-		SET temp.IsExistRobot = 1
-		WHERE EXISTS (	SELECT 1
-						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-							INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID 
-						WHERE temp.CustID = cls.CustID
-							AND cat.IsActive = 1 AND cat.CustomerClassName = 'Robot'
-					 );
-					 
-		UPDATE Temp_NewClassification AS temp
-		SET temp.IsExistKeepOldCateID = 1
-		WHERE (temp.IsExistVVIP = 1 OR temp.IsExistWrapper = 1 OR temp.IsExistPA = 1)
-			AND EXISTS (SELECT 1
-						FROM CTS_DataCenter.CTSCustomerClassification AS cls
-							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID
-						WHERE temp.CustID = cls.CustID
-							AND cs.IsKeepOldCateID = 1
-						);*/
-    
+
     END IF;
     
 END$$
