@@ -93,7 +93,7 @@ sp: BEGIN
         ,   LastModifiedDate        DATETIME(3) 
 		,	InputFlowID	 			INT
         ,	CategoryPriority		SMALLINT
-		,	PRIMARY KEY(CustID)
+		,	PRIMARY KEY(CustID,CategoryID)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;    
