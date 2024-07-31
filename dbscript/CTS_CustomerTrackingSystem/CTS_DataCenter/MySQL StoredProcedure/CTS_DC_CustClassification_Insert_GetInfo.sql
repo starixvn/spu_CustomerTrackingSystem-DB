@@ -159,7 +159,7 @@ BEGIN
 		,	TaggingType					SMALLINT	
 		,	ScanTaggingType				TINYINT DEFAULT 0
 
-		,   SpecialCC	       			SMALLINT  
+		,   SpecialCC	       			INT  
 		,	SpecialCCName				VARCHAR(50)
 		,   SpecialCCCatePriority  		SMALLINT DEFAULT -1
 		,   SpecialCCDangerProbation   	TINYINT(1) DEFAULT NULL
@@ -202,34 +202,34 @@ BEGIN
 		,	LastModifiedDate			DATETIME(3)
 		,	LastModifiedBy				INT UNSIGNED
 		,	LastScannedDate				DATETIME
-		,	IsFromTVS					BIT(1) 
-		,	IsFromTW					BIT(1) 
-		,	IsFromCTS					BIT(1) 
-		,	IsFromAI					BIT(1)
-		,	IsFromImperva				BIT(1)
+		,	IsFromTVS					TINYINT(1) 
+		,	IsFromTW					TINYINT(1) 
+		,	IsFromCTS					TINYINT(1) 
+		,	IsFromAI					TINYINT(1)
+		,	IsFromImperva				TINYINT(1)
 		,	InsertTime					DATETIME(3)
 		,	TVSRequestID				BIGINT UNSIGNED			
-		,	IsTVSParlay					BIT(1) 
+		,	IsTVSParlay					TINYINT(1) 
 		,	SportType					SMALLINT DEFAULT NULL 
 		,	TVSIssueTypeID				TINYINT DEFAULT NULL 
-		,	IsMarkedDirectly			BIT(1)
+		,	IsMarkedDirectly			TINYINT(1)
 		,	TWRobotCounter				INT
-		,	SpecialCC	       			SMALLINT 
-		,	CustomerClass				SMALLINT 
+		,	SpecialCC	       			INT 
+		,	CustomerClass				INT 
 		,	CategoryPriority			SMALLINT UNSIGNED
-		,	IsPAProbation				BIT(1)
-		,	IsMultiCateIDSameParentID	BIT(1)
-		,	IsKeepOldCateID				BIT(1)
-		,	IsNew						BIT(1) DEFAULT 1
-		,	IsRemove					BIT(1) DEFAULT NULL
+		,	IsPAProbation				TINYINT(1)
+		,	IsMultiCateIDSameParentID	TINYINT(1)
+		,	IsKeepOldCateID				TINYINT(1)
+		,	IsNew						TINYINT(1) DEFAULT 1
+		,	IsRemove					TINYINT(1) DEFAULT NULL
 		,	INDEX IX_Temp_CC_Old (CustID,CategoryID)
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_LicVIPCust;
 	CREATE TEMPORARY TABLE Temp_LicVIPCust(
-			CustID					BIGINT UNSIGNED PRIMARY KEY
-		,	CategoryID 				INT UNSIGNED
-		,	CustomerClass 			INT UNSIGNED
+			CustID						BIGINT UNSIGNED PRIMARY KEY
+		,	CategoryID 					INT UNSIGNED
+		,	CustomerClass 				INT 
 	); 
 	
 	/*VVIP/SpecialCC/LicVIP/LicBA*/

@@ -96,14 +96,14 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_UpdateCustomerClass;    
 	CREATE TEMPORARY TABLE Temp_UpdateCustomerClass(	  
 			CustID					BIGINT UNSIGNED	PRIMARY KEY
-		,	CustomerClass 			SMALLINT
+		,	CustomerClass 			INT
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;
 	CREATE TEMPORARY TABLE Temp_LastHistory(
 			CustID					BIGINT UNSIGNED PRIMARY KEY
 		,	CategoryID				INT UNSIGNED
-		,	TargetCC				INT UNSIGNED
+		,	TargetCC				INT
 	);
 
 	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL THEN
@@ -376,8 +376,9 @@ BEGIN
 		/*Insert into CTSCustomerClassification*/
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsFromOldPA 	= 1
-			,	temp.DataChangeType	= 1
-		WHERE 	temp.IsExistVVIP 	= 1 
+			-- ,	temp.DataChangeType	= 1
+			,	temp.IsReturnData	= 0
+		WHERE 	temp.IsExistVVIP 	= 1
 			AND temp.ParentID = CONST_PARENTID_PA;
 			
 		/*delete: existing VVIP */
@@ -564,7 +565,8 @@ BEGIN
 			,	CASE WHEN cat.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS ELSE CONST_CC_LICVIPDANGEROUS END
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
-		WHERE temp.IsLicenseeVIP = 1;
+		WHERE temp.IsExistVVIP 	= 0
+			AND temp.IsLicenseeVIP = 1;
 
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_LicVIPCust AS tmpVip ON temp.CustID = tmpVip.CustID
@@ -578,7 +580,8 @@ BEGIN
 					FROM CTS_DataCenter.CTSCustomerClassification_History AS h
 					WHERE h.CustID = temp.CustID 
 					ORDER BY ID DESC
-					LIMIT 1) AS tmpHis;
+					LIMIT 1) AS tmpHis
+		WHERE temp.IsExistVVIP 	= 0;
 					
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_LastHistory AS tmpHis ON temp.CustID = tmpHis.CustID
