@@ -185,6 +185,53 @@ BEGIN
 		, 	IsLicenseeBA				TINYINT(1) DEFAULT 0
 	);
 	
+	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_Old;
+	CREATE TEMPORARY TABLE Temp_CTSCustomerClassification_Old (
+			CustID						BIGINT UNSIGNED
+		,	CTSCustID					BIGINT UNSIGNED
+		,	SubscriberID				INT UNSIGNED
+		,	RoleID						INT
+		,	ParentID					INT UNSIGNED
+		,	CategoryID					INT UNSIGNED
+		,	CategoryGroupID				INT UNSIGNED
+		,	ExistCategoryID				INT UNSIGNED
+		,	RelevantCategoryID			INT UNSIGNED
+		,	Remark						VARCHAR(500)
+		,	CreatedDate					DATETIME(3)
+		,	CreatedBy					INT UNSIGNED
+		,	LastModifiedDate			DATETIME(3)
+		,	LastModifiedBy				INT UNSIGNED
+		,	LastScannedDate				DATETIME
+		,	IsFromTVS					BIT(1) 
+		,	IsFromTW					BIT(1) 
+		,	IsFromCTS					BIT(1) 
+		,	IsFromAI					BIT(1)
+		,	IsFromImperva				BIT(1)
+		,	InsertTime					DATETIME(3)
+		,	TVSRequestID				BIGINT UNSIGNED			
+		,	IsTVSParlay					BIT(1) 
+		,	SportType					SMALLINT DEFAULT NULL 
+		,	TVSIssueTypeID				TINYINT DEFAULT NULL 
+		,	IsMarkedDirectly			BIT(1)
+		,	TWRobotCounter				INT
+		,	SpecialCC	       			SMALLINT 
+		,	CustomerClass				SMALLINT 
+		,	CategoryPriority			SMALLINT UNSIGNED
+		,	IsPAProbation				BIT(1)
+		,	IsMultiCateIDSameParentID	BIT(1)
+		,	IsKeepOldCateID				BIT(1)
+		,	IsNew						BIT(1) DEFAULT 1
+		,	IsRemove					BIT(1) DEFAULT NULL
+		,	INDEX IX_Temp_CC_Old (CustID,CategoryID)
+	);
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_LicVIPCust;
+	CREATE TEMPORARY TABLE Temp_LicVIPCust(
+			CustID					BIGINT UNSIGNED PRIMARY KEY
+		,	CategoryID 				INT UNSIGNED
+		,	CustomerClass 			INT UNSIGNED
+	); 
+	
 	/*VVIP/SpecialCC/LicVIP/LicBA*/
 	IF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_VVIP,CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC,
 							CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP,CONST_INPUTFLOWID_GENERAL_INSERT_LICBA) THEN 
