@@ -376,7 +376,7 @@ BEGIN
 		/*Insert into CTSCustomerClassification*/
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsFromOldPA 	= 1
-			-- ,	temp.DataChangeType	= 1
+			,	temp.IsDataChanged 	= 0
 			,	temp.IsReturnData	= 0
 		WHERE 	temp.IsExistVVIP 	= 1
 			AND temp.ParentID = CONST_PARENTID_PA;
@@ -467,6 +467,7 @@ BEGIN
 																			AND temp.NewCategoryGroupID = temp_old.CategoryGroupID
 		SET 	temp.IsDataChanged 		= 1
 		WHERE 	temp.IsDataChanged 		= 0
+			AND temp.IsExistVVIP 		= 0
 			AND temp_old.CustID IS NULL;
 		
 		/*existing PotentialPA + PA - existing and new: the same CateGroup*/

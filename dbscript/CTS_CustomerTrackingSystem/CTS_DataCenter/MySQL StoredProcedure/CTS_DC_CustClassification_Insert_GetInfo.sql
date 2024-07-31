@@ -278,14 +278,13 @@ BEGIN
 		/*2 - SpecialCC*/
 		ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC THEN 
 			INSERT INTO Temp_NewClassification (
-				CustID, CTSCustID, SubscriberID, RoleID, ParentID, DWCategoryID, NewCategoryID, Remark, CreatedBy, IsLicenseeVIP, TargetCC, IsDataChanged, IsReturnData)
+				CustID, CTSCustID, SubscriberID, RoleID, ParentID, DWCategoryID, NewCategoryID, Remark, CreatedBy, IsLicenseeVIP, TargetCC, IsDataChanged)
 			SELECT 	tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, cus.RoleID
 				,	CONST_PARENTID_WRAPPER
 				,	CONST_CATEID_SPECIALCC
 				,	CONST_CATEID_SPECIALCC
 				, 	tmpJs.Remark, tmpJs.CreatedBy, tmpJs.IsLicenseeVIP, tmpJs.TargetCC
 				, 	CASE WHEN tmpJs.IsLicenseeVIP = 1 AND cls.CustID IS NOT NULL THEN 1 ELSE 0  END AS IsDataChanged
-				, 	1 AS IsReturnData
 			FROM JSON_TABLE(ip_CustInfo,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -333,7 +332,7 @@ BEGIN
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI
 				, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, MatchID, TVSRequestID, IsTVSParlay, SportType
-				, 	TVSIssueTypeID, CategoryPriority, CustomerClassPriority, ParentID, IsReturnData, IsDataChanged, PerformanceTime, GroupName)
+				, 	TVSIssueTypeID, CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, GroupName)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				,	tmpJs.RoleID
@@ -368,7 +367,6 @@ BEGIN
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
-				,	1 AS IsReturnData
 				,	0 AS IsDataChanged
 				,	tmpJs.PerformanceTime
 				,	tmpJs.GroupName
@@ -480,7 +478,7 @@ BEGIN
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, SpecialCC, IsPAProbation
 				, 	RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority, CustomerClassPriority
-				, 	ParentID, IsReturnData, IsDataChanged, PerformanceTime)
+				, 	ParentID, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
 				,	cus.CTSCustID
 				,	cus.RoleID
@@ -509,7 +507,6 @@ BEGIN
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
-				,	1 AS IsReturnData
 				,	0 AS IsDataChanged
 				,	tmpJs.PerformanceTime
 			FROM JSON_TABLE(ip_CustInfo,
@@ -587,7 +584,7 @@ BEGIN
 				CustID, CTSCustID, SubscriberID, RoleID, DWCategoryID, DWCategoryGroupID, IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI
 			, 	SpecialCC, IsPAProbation, RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority
-			, 	CustomerClassPriority, ParentID, TWRobotCounter, IsFromImperva, IsReturnData, IsDataChanged, PerformanceTime)
+			, 	CustomerClassPriority, ParentID, TWRobotCounter, IsFromImperva, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
 				,	cus.CTSCustID
 				, 	cus.SubscriberID
@@ -622,7 +619,6 @@ BEGIN
 				,	cat.ParentID
 				,	tmpJs.TWRobotCounter
 				,	tmpJs.IsFromImperva
-				,	1 AS IsReturnData
 				,	0 AS IsDataChanged
 				,	tmpJs.PerformanceTime
 			FROM JSON_TABLE(ip_CustInfo,
@@ -702,7 +698,7 @@ BEGIN
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW, IsFromCTS, IsFromAI
 				, 	SpecialCC, IsPAProbation, RelevantCategoryID, CategoryPriority, CustomerClassPriority
-				, 	ParentID, IsReturnData, IsDataChanged, PerformanceTime, SportType, SourceCreatedDate, GBTicketCount)
+				, 	ParentID, IsDataChanged, PerformanceTime, SportType, SourceCreatedDate, GBTicketCount)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				,	tmpJs.RoleID
@@ -729,7 +725,6 @@ BEGIN
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
-				,	1 AS IsReturnData
 				,	0 AS IsDataChanged
 				,	tmpJs.PerformanceTime
 				,	tmpJs.SportType
@@ -768,7 +763,7 @@ BEGIN
 			INSERT INTO Temp_NewClassification(
 					CustID,CTSCustID,DWCategoryID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate
 				,	TWTicketRejectRate,TWDesktopUsageRate,TaggingID,TaggingType,PerformanceTime,ScanTaggingType
-				,	SubscriberID,RoleID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,SpecialCC,IsReturnData,IsDataChanged)
+				,	SubscriberID,RoleID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,SpecialCC,IsDataChanged)
 			SELECT DISTINCT
 					tmpJs.CustID
 				,	cus.CTSCustID
@@ -792,7 +787,6 @@ BEGIN
 				,	cus.IsLicenseeVIP
 				,	cus.IsLicenseeBA
 				,	sp.CustomerClass AS SpecialCC
-				,	1 AS IsReturnData
 				,	1 AS IsDataChanged
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
@@ -839,8 +833,8 @@ BEGIN
 			AND temp.DWCategoryGroupID IS NULL;
 		
 		UPDATE Temp_NewClassification AS temp
-		SET 	temp.IsExistVVIP = 1
-			,	IsDataChanged = 1
+		SET 	temp.IsExistVVIP 	= 1
+			,	temp.IsDataChanged 	= 1
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						WHERE temp.CustID = cls.CustID

@@ -332,7 +332,7 @@ BEGIN
 		
 		INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, ParentID, DWCategoryID, NewCategoryID
-			, 	IsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC ) 
+			, 	NewIsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC, IsDataChanged ) 
 		WITH CTE_LastCategory AS
 		(SELECT	temp.CustID
 			,	temp.CTSCustID
@@ -368,11 +368,12 @@ BEGIN
 			,	cte.CategoryPriority
 			,	cte.CustomerClassPriority
 			,	cte.TargetCC
+			,	0 AS IsDataChanged
 		FROM  CTE_LastCategory AS cte; 
 	
 		INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, ParentID, DWCategoryID, NewCategoryID
-			, 	IsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC ) 
+			, 	NewIsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC, IsDataChanged ) 
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			,	temp.SubscriberID
@@ -386,6 +387,7 @@ BEGIN
 			,	cc.CategoryPriority
 			,	cc.CustomerClassPriority
 			,	cc.CustomerClass
+			,	0 AS IsDataChanged
 		FROM Temp_Customer AS temp
 			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON sc.CustomerClass = cc.CustomerClass;
@@ -398,14 +400,17 @@ BEGIN
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsDataChanged 	= 1
 			, 	temp.ParentID 		= CONST_PARENTID_WRAPPER
-			, 	temp.NewCategoryID 	= (CASE WHEN temp.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS 
+			, 	temp.NewCategoryID 	= (CASE WHEN temp.NewIsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS 
 											ELSE CONST_CATEID_LICVIPDANGEROUS END) 
-			, 	temp.TargetCC 		= (CASE WHEN temp.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS 
+			, 	temp.TargetCC 		= (CASE WHEN temp.NewIsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS 
 											ELSE CONST_CC_LICVIPDANGEROUS END)
-			, 	temp.IsReturnData	= 1
 		WHERE temp.IsLicenseeVIP = 0 
 			AND ( temp.CategoryPriority IS NULL 
 					OR temp.CategoryPriority > lv_CategoryPriority);
+					
+		UPDATE Temp_NewClassification AS temp
+		SET 	temp.IsReturnData = 0
+		WHERE 	temp.IsDataChanged <> 1;
 
 		IF lv_IsParallelParentID = 0 THEN
 			/*Remove all categories which IsKeepOldCateID = 0*/							
@@ -517,7 +522,7 @@ BEGIN
 	
 		INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeBA, ParentID, DWCategoryID, NewCategoryID
-			, 	CategoryPriority, CustomerClassPriority, TargetCC, IsReturnData ) 
+			, 	CategoryPriority, CustomerClassPriority, TargetCC, IsDataChanged ) 
 		WITH CTE_LastCategory AS
 		(
 		 SELECT	temp.CustID
@@ -555,25 +560,25 @@ BEGIN
 		,	cte.CategoryPriority
 		,	cte.CustomerClassPriority
 		,	cte.TargetCC
-		,	1 AS IsReturnData
+		,	0 AS IsDataChanged
 		FROM  CTE_LastCategory AS cte;  
 		
 		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, ParentID, DWCategoryID, NewCategoryID
-			, 	IsDangerProbation, CategoryPriority, CustomerClassPriority, TargetCC ) 
+				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeBA, ParentID, DWCategoryID, NewCategoryID
+			, 	CategoryPriority, CustomerClassPriority, TargetCC, IsDataChanged ) 
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			,	temp.SubscriberID
 			,	temp.RoleID
 			,	temp.CreatedBy
-			,	temp.IsLicenseeVIP
+			,	temp.IsLicenseeBA
 			,	cc.ParentID
 			,	cc.CategoryID AS DWCategoryID
 			,	cc.CategoryID AS NewCategoryID
-			,	cc.IsDangerProbation
 			,	cc.CategoryPriority
 			,	cc.CustomerClassPriority
 			,	cc.CustomerClass
+			,	0 AS IsDataChanged
 		FROM Temp_Customer AS temp
 			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON sc.CustomerClass = cc.CustomerClass;
@@ -588,9 +593,12 @@ BEGIN
 			, 	temp.ParentID 			= CONST_PARENTID_WRAPPER
 			, 	temp.NewCategoryID		= CONST_CATEID_LICBA
 			, 	temp.TargetCC 			= CONST_CC_LICBA
-			, 	temp.IsReturnData		= 1
 		WHERE temp.IsLicenseeBA = 0
 			AND ( temp.CategoryPriority IS NULL OR temp.CategoryPriority > lv_CategoryPriority); 
+			
+		UPDATE Temp_NewClassification AS temp
+		SET 	temp.IsReturnData = 0
+		WHERE 	temp.IsDataChanged <> 1;
 		
 		IF lv_IsParallelParentID = 0 THEN
 			/*Remove all categories which IsKeepOldCateID = 0*/							
