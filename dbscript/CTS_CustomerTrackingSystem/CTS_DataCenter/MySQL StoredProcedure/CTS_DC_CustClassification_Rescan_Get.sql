@@ -73,7 +73,30 @@ sp: BEGIN
         ,	CategoryGroup   SMALLINT
      ); 
      
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;    
+	DROP TEMPORARY TABLE IF EXISTS Temp_PotentialCategory;    
+	CREATE TEMPORARY TABLE Temp_PotentialCategory (	  
+			CTSCustID				BIGINT UNSIGNED
+        ,   CustID					BIGINT UNSIGNED 
+        ,	CategoryID              INT UNSIGNED  
+        ,	TVSReasonID             INT 
+        ,	RoleID 					TINYINT 
+		, 	SubscriberID			INT UNSIGNED
+        ,	IsLicensee				BIT
+		,	Remark				    VARCHAR(500)
+        ,   CreatedBy               INT UNSIGNED
+        ,	IsMarkedDirectly	    BIT        
+        ,	IsFromTVS 				BIT DEFAULT 0
+        ,	IsFromTW 				BIT DEFAULT 0
+        ,	IsFromCTS 				BIT DEFAULT 0
+        ,	IsFromAI 				BIT DEFAULT 0
+		,	IsFromImperva			BIT DEFAULT 0
+        ,   LastModifiedDate        DATETIME(3) 
+		,	InputFlowID	 			INT
+        ,	CategoryPriority		SMALLINT
+		,	PRIMARY KEY(CustID)
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;    
 	CREATE TEMPORARY TABLE Temp_CustCategory (	  
 			CTSCustID				BIGINT UNSIGNED
         ,   CustID					BIGINT UNSIGNED 
@@ -94,16 +117,7 @@ sp: BEGIN
 		,	InputFlowID	 			INT
 		,	PRIMARY KEY(CustID,CategoryID)
 	);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustCategoryDuplicate; 
-	CREATE TEMPORARY TABLE Temp_CustCategoryDuplicate (	  
-			CustID          BIGINT UNSIGNED 	
-		,	CategoryID      INT UNSIGNED  
-        ,	TVSReasonID     INT 
-        ,	InputFlowID	 	INT
-		,	PRIMARY KEY(CustID,CategoryID)
-     );
-    
+        
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CustID (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;    
@@ -359,14 +373,9 @@ sp: BEGIN
                         ,	IsFromTVS = CASE WHEN s.IsFromTVS = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsFromTVS ELSE Temp_CustCategory.IsFromTVS END
                         ,	IsFromAI = CASE WHEN s.IsFromAI = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsFromAI ELSE Temp_CustCategory.IsFromAI END
                         ,	IsFromImperva = CASE WHEN s.IsFromImperva = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsFromImperva ELSE Temp_CustCategory.IsFromImperva END;
-						
-    /*********************** Get completely PA Rescan  ****************************/
-	INSERT INTO Temp_CustCategoryDuplicate (CustID, CategoryID, TVSReasonID, InputFlowID)
-	SELECT CustID, CategoryID, TVSReasonID, InputFlowID
-    FROM Temp_CustCategory;
-     
+					
 	/***********************Check Early Warning****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)
+    INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
         ,	CONST_CATEID_EARLYWARNING 		AS CategoryID
@@ -392,12 +401,12 @@ sp: BEGIN
 				 ORDER BY cd.ID ASC
 				 LIMIT 1) AS s
 	WHERE NOT EXISTS (SELECT 1 
-					  FROM Temp_CustCategoryDuplicate AS cc 
+					  FROM Temp_CustCategory AS cc 
                       WHERE cc.CustID = tmp.CustID 
 						AND cc.InputFlowID IN (CONST_INPUTFLOWID_ROBOT, CONST_INPUTFLOWID_CATEGORY_PA, CONST_INPUTFLOWID_REASON_PA));
-
+    
     /***********************Check Initial GroupBetting****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)
+    INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)
 	SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
         ,	CONST_CATEID_INITIALGB 			AS CategoryID
@@ -418,12 +427,12 @@ sp: BEGIN
     FROM  Temp_CustInfo AS tmp
 		INNER JOIN CTS_DataCenter.Customer_InitialGroupBetting AS s ON s.CustID = tmp.CustID
 	WHERE NOT EXISTS (SELECT 1 
-					  FROM Temp_CustCategoryDuplicate AS cc 
+					  FROM Temp_CustCategory AS cc 
 					  WHERE cc.CustID = tmp.CustID 
 						AND cc.InputFlowID IN (CONST_INPUTFLOWID_ROBOT, CONST_INPUTFLOWID_CATEGORY_PA, CONST_INPUTFLOWID_REASON_PA));
-        
-	/***********************Check Initial Smart****************************/
-	INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)
+	
+    /***********************Check Initial Smart****************************/
+	INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
         ,	CONST_CATEID_INITIALSMART 		AS CategoryID
@@ -444,10 +453,28 @@ sp: BEGIN
     FROM  Temp_CustInfo AS tmp
 		INNER JOIN CTS_DataCenter.Customer_InitialSmart AS s ON s.CustID = tmp.CustID
 	WHERE NOT EXISTS (SELECT 1 
-					  FROM Temp_CustCategoryDuplicate AS cc 
+					  FROM Temp_CustCategory AS cc 
 					  WHERE cc.CustID = tmp.CustID 
 						AND cc.InputFlowID IN (CONST_INPUTFLOWID_ROBOT, CONST_INPUTFLOWID_CATEGORY_PA, CONST_INPUTFLOWID_REASON_PA));
-                        
+
+    /***********************Rescan Potential Category****************************/        
+    DROP TEMPORARY TABLE IF EXISTS Temp_PotentialCategory2;    
+    CREATE TEMPORARY TABLE Temp_PotentialCategory2 LIKE Temp_PotentialCategory;
+    
+    INSERT INTO Temp_PotentialCategory2 
+    SELECT * 
+    FROM Temp_PotentialCategory;
+
+    INSERT IGNORE INTO Temp_CustCategory (CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)       
+    SELECT tmppc.CTSCustID, tmppc.CustID, tmppc.CategoryID, tmppc.TVSReasonID, tmppc.RoleID, tmppc.SubscriberID, tmppc.IsLicensee, tmppc.Remark, tmppc.CreatedBy, tmppc.IsMarkedDirectly, tmppc.IsFromTVS, tmppc.IsFromTW, tmppc.IsFromCTS, tmppc.IsFromAI, tmppc.IsFromImperva, tmppc.LastModifiedDate, tmppc.InputFlowID
+    FROM Temp_PotentialCategory2 AS pc
+	,	LATERAL (SELECT ppc.*
+				 FROM Temp_PotentialCategory AS ppc
+					 INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ppc.CategoryID
+				 WHERE ppc.CustID = pc.CustID
+				 ORDER BY cc.CategoryPriority ASC
+				 LIMIT 1) AS tmppc;
+    
 	/***********************Return****************************/ 
 	SELECT cust.CTSCustID
 		,	cust.CustID
