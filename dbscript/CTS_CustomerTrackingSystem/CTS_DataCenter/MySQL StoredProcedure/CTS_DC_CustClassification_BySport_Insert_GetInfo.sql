@@ -19,7 +19,12 @@ BEGIN
 		Param's Expanation:
 			- 
 */
-
+	DECLARE	CONST_CATEID_LICVIPSUSPICIOUS		INT;
+	DECLARE	CONST_CATEID_LICVIPDANGEROUS		INT;
+	
+	SET CONST_CATEID_LICVIPSUSPICIOUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
+	SET CONST_CATEID_LICVIPDANGEROUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
+	
 	IF ip_InputFlowID = 332 THEN /*SpecialCC*/
 		DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;
 		CREATE TEMPORARY TABLE 	Temp_NewClassification (
@@ -31,7 +36,7 @@ BEGIN
 			,	Remark						VARCHAR(500)
 			,	CreatedBy					INT UNSIGNED
 			,	IsLicenseeVIP				TINYINT(1) DEFAULT 0
-			,	TargetCC					SMALLINT UNSIGNED
+			,	TargetCC					INT
 			,	CategoryPriority			SMALLINT UNSIGNED
 			,	CustomerClassPriority		SMALLINT UNSIGNED
 			,	NewCategoryID				INT
@@ -54,7 +59,7 @@ BEGIN
 											,	SubscriberID 	INT UNSIGNED		PATH "$.SubscriberID"
 											,	IsLicenseeVIP	TINYINT(1)			PATH "$.IsLicenseeVIP"            
 											,	SportID			SMALLINT UNSIGNED	PATH "$.SportID"            
-											,	TargetCC		SMALLINT			PATH "$.CustomerClass"            
+											,	TargetCC		INT					PATH "$.CustomerClass"            
 											,	CreatedBy 		INT UNSIGNED		PATH "$.CreatedBy"          
 											,	Remark			VARCHAR(500)		PATH "$.Remark"
 										 )) AS tmpJs
@@ -79,8 +84,8 @@ BEGIN
 			,	NewCategoryID				INT UNSIGNED
 			, 	NewCategoryGroupID			INT UNSIGNED
 			,	IsDataChanged				TINYINT(1) DEFAULT 1 /*0: No change category => No Action*/
-			,	OldTargetCC					SMALLINT
-			,	TargetCC					SMALLINT
+			,	OldTargetCC					INT
+			,	TargetCC					INT
 			, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
 			,	PerformanceTime				DATETIME(3)
 			,	SpecialCC					INT

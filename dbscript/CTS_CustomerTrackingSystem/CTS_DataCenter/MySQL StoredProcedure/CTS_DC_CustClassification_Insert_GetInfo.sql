@@ -5,6 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert_GetInfo`(
 		IN	ip_InputFlowID			INT 
 	,	IN	ip_FromAction			TINYINT
+    ,	IN	ip_UplineRoleID			INT
 	,	IN	ip_CustInfo				JSON
 )
 SQL SECURITY INVOKER
@@ -16,6 +17,8 @@ BEGIN
 		
 		Param's Expanation:
 			- ip_InputFlowID
+            - ip_FromAction
+            - ip_UplineRoleID
 			- ip_CustInfo
 			
 		Example:

@@ -81,7 +81,7 @@ BEGIN
 	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON');
 	
 	/*STEP 1: Parse raw data and get custinfo*/
-	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_GetInfo (ip_InputFlowID,ip_FromAction,ip_CustInfo);
+	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_GetInfo (ip_InputFlowID,ip_FromAction,ip_UplineRoleID,ip_CustInfo);
 	
 	/*STEP 2: Preprocess*/
 	IF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL,CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON,CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT) THEN
