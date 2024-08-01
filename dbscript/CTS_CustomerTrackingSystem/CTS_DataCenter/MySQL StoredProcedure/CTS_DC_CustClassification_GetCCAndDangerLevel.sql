@@ -18,8 +18,7 @@ BEGIN
 			- 20220705@Long.Luu: Support Licensee VIP & BA Categories [Redmine ID: #174219]            
 			- 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
             - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
-            - 20240628@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
-
+            
         Param's Explanation:     
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetCCAndDangerLevel('1,2,1277,555555');
@@ -32,9 +31,8 @@ BEGIN
 		,	CustomerClass
         ,	CustomerClassName  
         ,	DangerLevel
-        ,	DangerLevelType
-		,	Ext_CategoryGroupID
-    FROM Temp_CustClassificationInfo ;
+        ,	DangerLevelType 
+    FROM Temp_CustClassificationInfo;
 END$$
 
 DELIMITER ;
