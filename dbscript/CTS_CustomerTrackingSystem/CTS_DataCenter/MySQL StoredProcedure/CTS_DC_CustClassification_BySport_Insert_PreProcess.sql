@@ -10,25 +10,24 @@ BEGIN
 		Task:		Insert main customer categories for Customer Classification
 		DB:			CTS_DataCenter
 		
-		Revisions: 
-			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
-			
 		Param's Expanation:
 			- 
+		
+		Example:
+			- CALL CTS_DC_CustClassification_BySport_Insert(332, '[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]', @outParam7);
+		
+		Revisions: 
+			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
 */
-	-- DECLARE CONST_CATEGROUPID_PROBATION     	INT;
-	
 	DECLARE CONST_PARENTID_NORMAL		      	INT;
-	
 	DECLARE CONST_CATEID_PROBATION		      	INT;
+	DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 	INT DEFAULT 5;
+	DECLARE CONST_LIST_BYSPORT				 	INT DEFAULT 23;
 	
 	DECLARE lv_CurrentDate						DATE DEFAULT CURRENT_DATE();
 	DECLARE lv_ToProbationLastDay 				DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 2 DAY);
 	DECLARE lv_ProbationCatePriority			SMALLINT;
-	
-	DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 	INT DEFAULT 5;
-	
-	-- SET CONST_CATEGROUPID_PROBATION				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
+
 	SET CONST_PARENTID_NORMAL	 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 	SET CONST_CATEID_PROBATION	 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_PROBATION');
 
@@ -53,7 +52,7 @@ BEGIN
 	);
 
 	/* SETP 0: EXCLUDE INTERNAL CUSTOMERS */      
-	CALL CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
+	CALL CTS_DataCenter.CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
 	
 	SELECT cat.CategoryPriority
 	INTO lv_ProbationCatePriority
@@ -65,9 +64,8 @@ BEGIN
 		, 	DATE(cls.CreatedDate) AS ProbationDate
 		, 	DATE_SUB(lv_CurrentDate, INTERVAL CAST(s.ItemValue AS UNSIGNED) DAY) AS LastProbationDay
     FROM Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cls ON temp.CustID = cls.CustID 
-																				AND temp.SportID = cls.SportID
-        INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 23 AND s.ItemID = temp.SportID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cls ON temp.CustID = cls.CustID AND temp.SportID = cls.SportID
+        INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = CONST_LIST_BYSPORT AND s.ItemID = temp.SportID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
 	WHERE cate.CategoryID = CONST_CATEID_PROBATION;
 	

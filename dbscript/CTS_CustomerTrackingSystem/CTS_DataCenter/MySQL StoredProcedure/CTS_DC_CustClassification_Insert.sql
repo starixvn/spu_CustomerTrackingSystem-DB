@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert`(
 	,	IN	ip_FromAction			TINYINT
 	,	IN	ip_UplineRoleID			INT
 	,	IN	ip_QueueID				BIGINT
-	,	IN	ip_AffectDownline		TINYINT(1)
+	,	IN	ip_IsAffectDownline		TINYINT(1)
 	,	IN	ip_IsToQueue			TINYINT(1)
 	,	IN	ip_CustInfo				JSON
 	,	OUT op_ErrorMessage 		VARCHAR(2000)
@@ -24,7 +24,7 @@ BEGIN
 			2. From CTSWeb (1), From CTS API (2), From CTS Service (3), From Manual Trigger (4)
 			3. ip_UplineRoleID: From Web (NULL), From Service (<UplineRoleID>)
 			4. ip_QueueID: From Web (NULL), From Service (<QueueID>)
-			5. ip_AffectDownline: From Web (0,1), From Service (NULL)
+			5. ip_IsAffectDownline: From Web (0,1), From Service (NULL)
 			6. ip_IsToQueue: Insert SMA PA to queue PA
 			7. ip_CustInfo: 
 			8. op_ErrorMessage:
@@ -99,7 +99,7 @@ BEGIN
 	END IF;
 	
 	/*STEP 4: Complete*/
-	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Complete (ip_InputFlowID,ip_AffectDownline);
+	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Complete (ip_InputFlowID,ip_IsAffectDownline);
 	
 	/*STEP 5: User Log and More*/
 	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_VVIP THEN
@@ -115,7 +115,7 @@ BEGIN
 			INSERT INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
 			SELECT  lv_LogTypeID
 				, 	lv_SPName
-				, 	CONCAT('Insert VVIP: CTSCustID_', temp.CTSCustID,'; CustID_', temp.CustID,'; RoleID_', temp.RoleID, '; AffectDownline_', ip_AffectDownline,'; SubscriberID_', temp.SubscriberID, '; CategoryID_', temp.NewCategoryID, '; Remark_', temp.Remark)
+				, 	CONCAT('Insert VVIP: CTSCustID_', temp.CTSCustID,'; CustID_', temp.CustID,'; RoleID_', temp.RoleID, '; AffectDownline_', ip_IsAffectDownline,'; SubscriberID_', temp.SubscriberID, '; CategoryID_', temp.NewCategoryID, '; Remark_', temp.Remark)
 				,	lv_CurrentDateTime AS CreatedDate
 				, 	temp.CreatedBy
 			FROM Temp_NewClassification AS temp;
@@ -174,7 +174,7 @@ BEGIN
 	END IF;
 	
 	/*STEP 6: AffectedDownline*/
-	IF (ip_IsToQueue = 1 OR (ip_FromAction = 3 AND ip_AffectDownline = 1)) THEN
+	IF (ip_IsToQueue = 1 OR (ip_FromAction = 3 AND ip_IsAffectDownline = 1)) THEN
 		CALL CTS_DataCenter.CTS_DC_CustClassification_AffectedDownline_Insert ('Temp_NewClassification',ip_InputFlowID);
 	END IF;
 	

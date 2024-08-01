@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Insert_Complete`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert_Complete`(
 		IN	ip_InputFlowID			INT
-	,	IN	ip_AffectDownline		TINYINT(1)
+	,	IN	ip_IsAffectDownline		TINYINT(1)
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -15,7 +15,7 @@ BEGIN
 
 		Param's Expanation:
 			- ip_InputFlowID
-			- ip_AffectDownline
+			- ip_IsAffectDownline
 		
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Complete(9);
@@ -139,7 +139,7 @@ BEGIN
 			, 	lv_CurrentDateTime AS CreatedDate
 			,   lv_CurrentDateTime AS LastModifiedDate 
 			,   DATE(lv_CurrentDateTime) AS LastScannedDate 
-			,	ip_AffectDownline AS IsAffectToDownline
+			,	ip_IsAffectDownline AS IsAffectToDownline
 			,	temp.IsMarkedDirectly
 		FROM Temp_NewClassification AS temp
 		WHERE temp.IsExistVVIP = 0;

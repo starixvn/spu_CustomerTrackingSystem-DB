@@ -12,46 +12,68 @@ BEGIN
 		Created:	20240618@Victoria.Le
 		Task:		Insert main customer categories for Customer Classification
 		DB:			CTS_DataCenter
-		
-		Revisions: 
-			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
 			
 		Param's Expanation:
-			- 
+			- ip_InputFlowID:
+			- ip_CustInfo:
+		
+		Revisions: 
+			- 20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
+			
 */
-	DECLARE	CONST_CATEID_LICVIPSUSPICIOUS		INT;
-	DECLARE	CONST_CATEID_LICVIPDANGEROUS		INT;
+	DECLARE CONST_CATEID_SPECIALCC 							INT;
+	DECLARE CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL			INT;
+	DECLARE CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC		INT;
 	
-	SET CONST_CATEID_LICVIPSUSPICIOUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
-	SET CONST_CATEID_LICVIPDANGEROUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
-	
-	IF ip_InputFlowID = 332 THEN /*SpecialCC*/
-		DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;
-		CREATE TEMPORARY TABLE 	Temp_NewClassification (
-				CustID						BIGINT UNSIGNED  
-			, 	CTSCustID					BIGINT UNSIGNED
-			,	SubscriberID 				INT UNSIGNED
-			,	RoleID						INT		
-			,	SportID						SMALLINT UNSIGNED
-			,	Remark						VARCHAR(500)
-			,	CreatedBy					INT UNSIGNED
-			,	IsLicenseeVIP				TINYINT(1) DEFAULT 0
-			,	TargetCC					INT
-			,	CategoryPriority			SMALLINT UNSIGNED
-			,	CustomerClassPriority		SMALLINT UNSIGNED
-			,	NewCategoryID				INT
-			,	IsDataChanged				TINYINT(1) DEFAULT 0	/*0: No change category => No Action*/
-			,	IsReturnData				TINYINT(1) DEFAULT 0
-			,	PRIMARY KEY (CustID, SportID)
-		);
+	SET CONST_CATEID_SPECIALCC								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
+	SET CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL');
+	SET CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC');
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
+	CREATE TEMPORARY TABLE Temp_NewClassification(	  	
+			CustID						BIGINT UNSIGNED
+		, 	CTSCustID					BIGINT 
+		,	SubscriberID 				INT UNSIGNED
+		,	RoleID						INT	
+		,	IsLicenseeVIP				TINYINT(1) DEFAULT 0
+		,	SportID						SMALLINT UNSIGNED
+		,	Remark						VARCHAR(500)
+		,	CreatedBy					INT UNSIGNED
+		, 	TurnoverRM					DECIMAL(20,4)
+		, 	WinlossRM					DECIMAL(20,4)
+		, 	BetCount					BIGINT
+		, 	ActiveDays					INT	
+		,	DWCategoryID				INT UNSIGNED
+		,	DWCategoryGroupID			INT UNSIGNED
+		,	OldCategoryID 				INT UNSIGNED
+		,	OldCategoryGroupID			INT UNSIGNED
+		,	NewCategoryID				INT UNSIGNED
+		, 	NewCategoryGroupID			INT UNSIGNED
+		,	CategoryPriority			SMALLINT UNSIGNED
+		,	CustomerClassPriority		SMALLINT UNSIGNED
+		,	IsDataChanged				TINYINT(1) DEFAULT 1 /*0: No change category => No Action*/
+		,	OldTargetCC					INT
+		,	TargetCC					INT
+		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
+		,	PerformanceTime				DATETIME(3)
+		,	SpecialCC					INT
+		,	SourceTypeID      			SMALLINT
+		,	IsReturnData				TINYINT(1) DEFAULT 1			
+		, 	INDEX IX_Temp_NewCC_BySport_CustID_DWCategoryID (CustID, DWCategoryID)  
+		,	PRIMARY KEY (CustID, SportID)
+	); 
+
+	IF ip_InputFlowID = CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC THEN 
 		
 		INSERT INTO Temp_NewClassification (
-				CustID, CTSCustID, SubscriberID, RoleID, Remark, SportID, CreatedBy
+				CustID, CTSCustID, SubscriberID, RoleID, Remark, DWCategoryID, NewCategoryID, SportID, CreatedBy
 			, 	IsLicenseeVIP, TargetCC, IsDataChanged, IsReturnData)
 		SELECT 	tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, cus.RoleID, tmpJs.Remark
+			,	CONST_CATEID_SPECIALCC AS DWCategoryID
+			,	CONST_CATEID_SPECIALCC AS NewCategoryID
 			, 	tmpJs.SportID, tmpJs.CreatedBy, tmpJs.IsLicenseeVIP, tmpJs.TargetCC
-			, 	CASE WHEN tmpJs.IsLicenseeVIP = 1 AND cls.CustID IS NOT NULL THEN 1 ELSE 0  END AS IsDataChanged
-			, 	1 AS IsReturnData
+			,	(CASE WHEN cls.CustID IS NULL THEN 1 ELSE 0 END) AS IsDataChanged
+			,	(CASE WHEN cls.CustID IS NOT NULL THEN 0 ELSE 1 END) AS IsReturnData
 		FROM JSON_TABLE(ip_CustInfo,
 						 "$[*]" COLUMNS(
 												CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -64,40 +86,13 @@ BEGIN
 											,	Remark			VARCHAR(500)		PATH "$.Remark"
 										 )) AS tmpJs
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
-			LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpJs.CustID
-																			AND cls.CategoryID IN (CONST_CATEID_LICVIPSUSPICIOUS,CONST_CATEID_LICVIPDANGEROUS);
+			LEFT JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cls ON cls.CustID = tmpJs.CustID AND cls.CategoryID = CONST_CATEID_SPECIALCC;
 
-	ELSEIF ip_InputFlowID = 239 THEN /*Normal*/
-		DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
-		CREATE TEMPORARY TABLE Temp_NewClassification(	  	
-				CustID						BIGINT UNSIGNED
-			, 	CTSCustID					BIGINT DEFAULT 0
-			,	SportID						SMALLINT UNSIGNED
-			, 	TurnoverRM					DECIMAL(20,4)
-			, 	WinlossRM					DECIMAL(20,4)
-			, 	BetCount					BIGINT
-			, 	ActiveDays					INT	
-			,	DWCategoryID				INT UNSIGNED
-			,	DWCategoryGroupID			INT UNSIGNED
-			,	OldCategoryID 				INT UNSIGNED
-			,	OldCategoryGroupID			INT UNSIGNED
-			,	NewCategoryID				INT UNSIGNED
-			, 	NewCategoryGroupID			INT UNSIGNED
-			,	IsDataChanged				TINYINT(1) DEFAULT 1 /*0: No change category => No Action*/
-			,	OldTargetCC					INT
-			,	TargetCC					INT
-			, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
-			,	PerformanceTime				DATETIME(3)
-			,	SpecialCC					INT
-			,	SourceTypeID      			SMALLINT
-			,	IsReturnData				TINYINT(1) DEFAULT 1			
-			, 	INDEX IX_Temp_NewClassification(CustID, DWCategoryID)  
-			,	PRIMARY KEY (CustID, SportID)
-		); 
+	ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL THEN 
 	
 		INSERT IGNORE INTO Temp_NewClassification(
 				CTSCustID, CustID, SportID, DWCategoryID, TurnoverRM, WinlossRM, BetCount
-			, 	ActiveDays, PerformanceTime, SpecialCC, IsReturnData)
+			, 	ActiveDays, PerformanceTime, SpecialCC)
 		SELECT DISTINCT cus.CTSCustID
 					,	tmpJs.CustID
 					, 	tmpJs.SportID
@@ -108,7 +103,6 @@ BEGIN
 					, 	tmpJs.ActiveDays
 					,	tmpJs.PerformanceTime
 					,	sp.CustomerClass AS SpecialCC
-					,	1 AS IsReturnData
 		FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 					BIGINT UNSIGNED		PATH "$.CustId"
