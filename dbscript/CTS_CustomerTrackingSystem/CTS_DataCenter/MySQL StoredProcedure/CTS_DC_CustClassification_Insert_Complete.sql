@@ -273,10 +273,7 @@ BEGIN
 			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
 			, 	temp.Remark
 		FROM Temp_NewClassification AS temp
-		WHERE NOT EXISTS (SELECT 1
-							FROM CTS_DataCenter.CTSCustomerClassification AS cls
-							WHERE cls.CustID = temp.CustID
-								AND cls.CategoryID = CONST_CATEID_SPECIALCC);
+		WHERE temp.IsDataChanged = 1;
 		
 		/*	INSERT HISTORY	*/
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_History (

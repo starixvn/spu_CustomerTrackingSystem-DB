@@ -279,14 +279,15 @@ BEGIN
 																				
 		/*2 - SpecialCC*/
 		ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC THEN 
-			INSERT INTO Temp_NewClassification (
-				CustID, CTSCustID, SubscriberID, RoleID, ParentID, DWCategoryID, NewCategoryID, Remark, CreatedBy, IsLicenseeVIP, TargetCC, IsDataChanged)
+			INSERT INTO Temp_NewClassification (CustID, CTSCustID, SubscriberID, RoleID, ParentID, DWCategoryID, NewCategoryID, Remark, CreatedBy
+				, 	IsLicenseeVIP, TargetCC, IsDataChanged, IsReturnData)
 			SELECT 	tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, cus.RoleID
 				,	CONST_PARENTID_WRAPPER
 				,	CONST_CATEID_SPECIALCC
 				,	CONST_CATEID_SPECIALCC
 				, 	tmpJs.Remark, tmpJs.CreatedBy, tmpJs.IsLicenseeVIP, tmpJs.TargetCC
-				, 	CASE WHEN tmpJs.IsLicenseeVIP = 1 AND cls.CustID IS NOT NULL THEN 1 ELSE 0  END AS IsDataChanged
+				,	(CASE WHEN cls.CustID IS NULL THEN 1 ELSE 0 END) AS IsDataChanged
+				,	(CASE WHEN cls.CustID IS NOT NULL THEN 0 ELSE 1 END) AS IsReturnData
 			FROM JSON_TABLE(ip_CustInfo,
 							 "$[*]" COLUMNS(
 													CustID 			BIGINT UNSIGNED		PATH "$.CustID"
@@ -299,7 +300,7 @@ BEGIN
 											 )) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpJs.CustID
-																				AND cls.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS;
+																				AND cls.CategoryID = CONST_CATEID_SPECIALCC;
 			
 		/*3 - LicVIP*/
 		ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP THEN	
