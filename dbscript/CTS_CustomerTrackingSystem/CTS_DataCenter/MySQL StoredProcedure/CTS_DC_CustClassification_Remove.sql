@@ -59,7 +59,7 @@ BEGIN
 	CALL CTS_DataCenter.CTS_DC_CustClassification_Remove_GetInfo (ip_InputFlowID,ip_CustInfo);
 	
 	/*STEP 2: Process and Complete*/
-	CALL CTS_DataCenter.CTS_DC_CustClassification_Remove_GetInfo (ip_InputFlowID,ip_FromAction,ip_UplineRoleID,ip_IsFromQueue,ip_CustInfo);
+	CALL CTS_DataCenter.CTS_DC_CustClassification_Remove_Complete (ip_InputFlowID,ip_FromAction,ip_UplineRoleID,ip_IsFromQueue,ip_CustInfo);
 
 	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_REMOVE_VVIP AND ip_FromAction = 3 AND ip_QueueID IS NOT NULL THEN
 		SELECT MAX(temp.CTSCustID)
