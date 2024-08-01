@@ -56,6 +56,7 @@ BEGIN
 
     DECLARE lv_CreatedBy 									INT DEFAULT 10278938;
 	DECLARE	lv_CurrentDateTime								DATETIME DEFAULT CURRENT_TIME(3);
+	DECLARE	lv_InsertedCount								INT DEFAULT 0;
 	DECLARE lv_IsParallelParentID							TINYINT(1);  
 	DECLARE lv_ParentID										INT UNSIGNED;  
 	DECLARE lv_CategoryPriority								SMALLINT UNSIGNED;  
@@ -811,53 +812,8 @@ BEGIN
 		FROM 	Temp_NewClassification AS temp;
 
 	ELSE
+		SET lv_InsertedCount = 0;
 		SET lv_IsAuto = 1;
-		
-		/*Insert into source tables*/
-		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON AND EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTVS = 1) THEN
-			INSERT INTO CTS_DataCenter.TVSVoidRequest (
-					TVSRequestID,CustID,TVSReasonID,IssueTypeID,CreatedBy,IsParlay,SportType
-				,	RequestTypeID,CreatedDate,InsertedTime)
-			SELECT 	temp.TVSRequestID,temp.CustID,temp.TVSReasonID,temp.TVSIssueTypeID,temp.CreatedBy,temp.IsTVSParlay,temp.SportType
-				,	CASE WHEN cc.CustomerClassName = 'Robot' THEN CONST_TVSREQUESTTYPEID_ROBOT ELSE CONST_TVSREQUESTTYPEID_PA END AS RequestTypeID
-				,	lv_CurrentDateTime AS CreatedDate
-				,	CURRENT_TIMESTAMP(3) AS InsertedTime
-			FROM Temp_NewClassification AS temp
-				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.NewCategoryID
-			WHERE temp.IsFromTVS = 1;
-		END IF;
-		
-		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT THEN
-			IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1) THEN
-				INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate)
-				SELECT temp.CustID,temp.NewCategoryID,temp.TWRobotCounter,lv_CurrentDateTime AS CreatedDate
-				FROM Temp_NewClassification AS temp
-				WHERE temp.IsFromTW = 1
-				ON DUPLICATE KEY UPDATE CategoryID = temp.NewCategoryID
-									,	RobotCounter = temp.TWRobotCounter
-									,	IsDisabled = 0
-									,	CreatedDate = lv_CurrentDateTime;
-			END IF;
-			
-			IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromCTS = 1) THEN
-				INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate)
-				SELECT temp.CustID,temp.NewCategoryID,temp.Remark,lv_CurrentDateTime AS CreatedDate
-				FROM Temp_NewClassification AS temp
-				WHERE temp.IsFromCTS = 1
-				ON DUPLICATE KEY UPDATE CreatedDate = lv_CurrentDateTime
-									,	IsDisabled = 0
-									,	Remark = temp.Remark
-									,	CategoryID = temp.NewCategoryID;
-			END IF;	
-		END IF;	
-
-		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL AND EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1) THEN
-			INSERT INTO CTS_DataCenter.Customer_InitialGroupBetting (CustID,GBTicketCount,SportType,SourceCreatedDate,CreatedDate)
-			SELECT temp.CustID,temp.GBTicketCount,temp.SportType,temp.SourceCreatedDate,lv_CurrentDateTime AS CreatedDate
-			FROM Temp_NewClassification AS temp
-			WHERE temp.NewCategoryID IN (CONST_CATEID_INITIALGB,CONST_CATEID_INITIALGBLOSING)
-				AND temp.IsFromTW = 1;
-		END IF;
 
 		/*delete Normal/PotentialPA - IsKeepOldCateID = 0*/
 		DELETE cls
@@ -917,6 +873,8 @@ BEGIN
 		WHERE 	temp.DataChangeType = 0 
 			OR 	temp.IsFromOldPA 	= 1;
 		
+		SET lv_InsertedCount = FOUND_ROWS();
+
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType
 			, 	InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays
@@ -1006,7 +964,50 @@ BEGIN
 		FROM Temp_NewClassification AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID ;
 		
+	/*Insert into source tables*/
+	IF (IFNULL(lv_InsertedCount,0) > 0) THEN
+
+		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON AND EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTVS = 1) THEN
+			INSERT INTO CTS_DataCenter.TVSVoidRequest (
+					TVSRequestID,CustID,TVSReasonID,IssueTypeID,CreatedBy,IsParlay,SportType
+				,	RequestTypeID,CreatedDate,InsertedTime)
+			SELECT 	temp.TVSRequestID,temp.CustID,temp.TVSReasonID,temp.TVSIssueTypeID,temp.CreatedBy,temp.IsTVSParlay,temp.SportType
+				,	CASE WHEN cc.CustomerClassName = 'Robot' THEN CONST_TVSREQUESTTYPEID_ROBOT ELSE CONST_TVSREQUESTTYPEID_PA END AS RequestTypeID
+				,	lv_CurrentDateTime AS CreatedDate
+				,	CURRENT_TIMESTAMP(3) AS InsertedTime
+			FROM Temp_NewClassification AS temp
+				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.NewCategoryID
+			WHERE temp.IsFromTVS = 1;
+		END IF;
+		
+		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT THEN
+			IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1) THEN
+				INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate)
+				SELECT temp.CustID,temp.NewCategoryID,temp.TWRobotCounter,lv_CurrentDateTime AS CreatedDate
+				FROM Temp_NewClassification AS temp
+				WHERE temp.IsFromTW = 1
+				ON DUPLICATE KEY UPDATE CategoryID = temp.NewCategoryID
+									,	RobotCounter = temp.TWRobotCounter
+									,	IsDisabled = 0
+									,	CreatedDate = lv_CurrentDateTime;
+			END IF;
+			
+			IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromCTS = 1) THEN
+				INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate)
+				SELECT temp.CustID,temp.NewCategoryID,temp.Remark,lv_CurrentDateTime AS CreatedDate
+				FROM Temp_NewClassification AS temp
+				WHERE temp.IsFromCTS = 1
+				ON DUPLICATE KEY UPDATE CreatedDate = lv_CurrentDateTime
+									,	IsDisabled = 0
+									,	Remark = temp.Remark
+									,	CategoryID = temp.NewCategoryID;
+			END IF;	
+
+		END IF;	
+		
 	END IF;
+
+END IF;
 	
 END$$
 DELIMITER ;

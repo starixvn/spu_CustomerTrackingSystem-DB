@@ -380,7 +380,16 @@ BEGIN
 			,	temp.IsReturnData	= 0
 		WHERE 	temp.IsExistVVIP 	= 1
 			AND temp.ParentID = CONST_PARENTID_PA;
-			
+
+		/*Insert into source table for Initial Group Betting*/
+		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL AND EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1) THEN
+			INSERT INTO CTS_DataCenter.Customer_InitialGroupBetting (CustID,GBTicketCount,SportType,SourceCreatedDate,CreatedDate)
+			SELECT temp.CustID,temp.GBTicketCount,temp.SportType,temp.SourceCreatedDate,lv_CurrentDateTime AS CreatedDate
+			FROM Temp_NewClassification AS temp
+			WHERE temp.NewCategoryID IN (CONST_CATEID_INITIALGB,CONST_CATEID_INITIALGBLOSING)
+				AND temp.IsFromTW = 1;
+		END IF;
+
 		/*delete: existing VVIP */
 		DELETE temp
 		FROM Temp_NewClassification AS temp
