@@ -1,7 +1,0 @@
-exec sp_rename 'CustomerClassification','CustomerClassification_Original'
-go
-exec sp_rename 'CustomerClassification_bysport','CustomerClassification_bysport_Original'
-go
-exec sp_rename 'CustomerClassification_BySport_Rule','CustomerClassification_BySport_Rule_Original'
-go
-exec sp_rename 'CustomerClassification_Rule','CustomerClassification_Rule_Original'
