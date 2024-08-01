@@ -21,7 +21,7 @@ BEGIN
 		
 		Param's Expanation:
 			1. ip_InputFlowID: Used to identify flows: Insert/Rescan/Remove. Details of this can be found from StaticList (ListID = 24)
-			2. From CTSWeb (1), From CTS API (2), From CTS Service (3), From AFCService (4), From Manual Trigger (5)
+			2. From CTSWeb (1), From CTS API (2), From CTS Service (3), From Manual Trigger (4)
 			3. ip_UplineRoleID: From Web (NULL), From Service (<UplineRoleID>)
 			4. ip_QueueID: From Web (NULL), From Service (<QueueID>)
 			5. ip_AffectDownline: From Web (0,1), From Service (NULL)

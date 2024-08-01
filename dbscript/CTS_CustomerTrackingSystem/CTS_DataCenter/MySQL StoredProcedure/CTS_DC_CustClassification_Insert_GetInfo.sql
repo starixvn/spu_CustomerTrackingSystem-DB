@@ -477,7 +477,7 @@ BEGIN
 			INSERT INTO Temp_NewClassification(
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, SpecialCC, IsPAProbation
-				, 	RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority, CustomerClassPriority
+				, 	RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, TVSReasonID, CategoryPriority, CustomerClassPriority
 				, 	ParentID, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
 				,	cus.CTSCustID
@@ -504,6 +504,7 @@ BEGIN
 				,	tmpJs.IsTVSParlay
 				,	tmpJs.SportType
 				,	tmpJs.TVSIssueTypeID
+				,	tmpJs.TVSReasonID
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
