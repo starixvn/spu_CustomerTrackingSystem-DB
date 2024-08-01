@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transform_FP_UserAgent_Insert('[{"Code":"123","UserAgent":"Chrome v1","ClientType":"ClientType v1","ClientName":"ClientName v1","ClientVersion":"v1","OSName":"OSName v1","OSShortName":"OSShortName v1","OSVersion":"OSVersion v1","OSPlatform":"OSPlatform v1","Device":"Device v1","Brand":"Brand v1","Model":"Model v1"},{"Code":"223","UserAgent":"Chrome v2","ClientType":"ClientType v2","ClientName":"ClientName v2","ClientVersion":"v2","OSName":"OSName v2","OSShortName":"OSShortName v2","OSVersion":"OSVersion v2","OSPlatform":"OSPlatform v2","Device":"Device v2","Brand":"Brand v2","Model":"Model v2"}]');
+			CALL DCS_DC_Transform_FP_UserAgent_Insert('[{"FPUserAgentCode":"123","UserAgent":"Chrome v1","ClientType":"ClientType v1","ClientName":"ClientName v1","ClientVersion":"v1","OSName":"OSName v1","OSShortName":"OSShortName v1","OSVersion":"OSVersion v1","OSPlatform":"OSPlatform v1","Device":"Device v1","Brand":"Brand v1","Model":"Model v1"},{"Code":"223","UserAgent":"Chrome v2","ClientType":"ClientType v2","ClientName":"ClientName v2","ClientVersion":"v2","OSName":"OSName v2","OSShortName":"OSShortName v2","OSVersion":"OSVersion v2","OSPlatform":"OSPlatform v2","Device":"Device v2","Brand":"Brand v2","Model":"Model v2"}]');
 
 	*/
     DECLARE lv_CurrentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
@@ -46,7 +46,7 @@ BEGIN
     
     
     INSERT IGNORE INTO Temp_UserAgent(Code, UserAgent, ClientType, ClientName, ClientVersion, OSName, OSShortName, OSVersion, OSPlatform, Device, Brand, Model)
-    SELECT	rt.Code
+    SELECT	rt.FP_UserAgentCode AS Code
 		,	rt.UserAgent
 		,	rt.ClientType
 		,	rt.ClientName
@@ -61,7 +61,7 @@ BEGIN
 	FROM JSON_TABLE(
 			ip_UserAgentJson,
 			 "$[*]" COLUMNS(
-						Code				VARCHAR(32) 	PATH "$.Code"
+						FP_UserAgentCode	VARCHAR(32) 	PATH "$.FPUserAgentCode"
 					,	UserAgent			VARCHAR(1000) 	PATH "$.UserAgent"
 					,	ClientType			VARCHAR(15) 	PATH "$.ClientType"
 					,	ClientName			VARCHAR(100) 	PATH "$.ClientName"

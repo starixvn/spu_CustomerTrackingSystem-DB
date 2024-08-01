@@ -31,12 +31,13 @@ BEGIN
 			- 20230426@Jonathan.Doan: Get BotDetectionValue from RawTransaction [Redmine ID: #186644]
 			- 20230807@Terry.Nguyen: Add Fake IP [Redmine: 191829]
 			- 20231123@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
-			- 20240627@Jonathan.Doan: Change data flow v5.1 [Redmine ID: #206403]
+			- 20240627@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_Transaction_Insert(1,200);
     */
 	DECLARE		lv_SysMinCreatedDate	DATETIME;
+    DECLARE 	lv_CurrentDate 			TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
     
 
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
@@ -63,15 +64,19 @@ BEGIN
         ,   BotDetectionValue		BIT(20)
         ,   BotComponentID			BIGINT UNSIGNED
         ,	FakeIP					VARCHAR(100)
-        ,	CookieID				BIGINT UNSIGNED
-        ,	BrowserInstanceID		BIGINT UNSIGNED
-        ,	RawFingerPrintID		BIGINT UNSIGNED
-        ,	RawUserAgentID			BIGINT UNSIGNED
-        ,	CookieCode				VARCHAR(64)
-        ,	RawFingerPrintCode		VARCHAR(64)
-        ,	BrowserInstanceCode		VARCHAR(64)
-        ,	RawUserAgentCode		VARCHAR(64)
         ,	ChallengeCode			VARCHAR(50)
+        ,	FP_Tagging				VARCHAR(32)
+        ,	FP_FingerPrintCode		VARCHAR(32)
+        ,	FP_FingerPrintExtraCode	VARCHAR(32)
+        ,	FP_FingerPrintOldCode	VARCHAR(32)
+        ,	FP_UserAgentCode		VARCHAR(32)
+        ,	IsIncognitoMode			BIT
+        ,	JSChallengeInfoID		BIGINT UNSIGNED
+        ,	FP_TaggingID			BIGINT UNSIGNED
+        ,	FP_FingerPrintID		BIGINT UNSIGNED
+        ,	FP_FingerPrintExtraID	BIGINT UNSIGNED
+        ,	FP_FingerPrintOldID		BIGINT UNSIGNED
+        ,	FP_UserAgentID			BIGINT UNSIGNED
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransactionInfo;
@@ -102,13 +107,31 @@ BEGIN
         ,   LastLoginTime	TIMESTAMP(4)
     );
    
+    DROP TEMPORARY TABLE IF EXISTS Temp_FP_DeviceFingerprintAccount;
+    CREATE TEMPORARY TABLE Temp_FP_DeviceFingerprintAccount(
+		    FP_FingerPrintID	BIGINT UNSIGNED
+        ,   AccountID			BIGINT UNSIGNED
+		,	IsNewRecord			TINYINT			DEFAULT 1
+        
+        ,	PRIMARY KEY (`FP_FingerPrintID`,`AccountID`)
+    );
+   
+    DROP TEMPORARY TABLE IF EXISTS Temp_FP_DeviceFingerprintAccountOld;
+    CREATE TEMPORARY TABLE Temp_FP_DeviceFingerprintAccountOld(
+		    FP_FingerPrintOldID	BIGINT UNSIGNED
+        ,   AccountID			BIGINT UNSIGNED
+		,	IsNewRecord			TINYINT			DEFAULT 1
+        
+        ,	PRIMARY KEY (`FP_FingerPrintOldID`,`AccountID`)
+    );
+   
     SELECT DATE(VValue)
     INTO lv_SysMinCreatedDate
     FROM DCS_DataCenter.SystemSetting 
     WHERE VGroup = "DCS_Device_Transform" 
         AND VName = "MinCreatedDate";
         
-	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, CookieCode, RawFingerPrintCode, BrowserInstanceCode, RawUserAgentCode, ChallengeCode)
+	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode)
 	SELECT  rt.TransID
 	    ,   rt.LoginName
         ,   rt.TransTime
@@ -128,11 +151,13 @@ BEGIN
         ,   rt.BotDetectionValue
         ,   rt.BotComponentID
         ,   rt.FakeIP
-        ,   rt.CookieCode
-        ,   rt.RawFingerPrintCode
-        ,   rt.BrowserInstanceCode
-        ,   rt.RawUserAgentCode
+        ,   rt.IsIncognitoMode
         ,   rt.ChallengeCode
+        ,   rt.FP_Tagging
+        ,   rt.FP_FingerPrintCode
+        ,   rt.FP_FingerPrintExtraCode
+        ,   rt.FP_FingerPrintOldCode
+        ,   rt.FP_UserAgentCode
 	FROM DCS_DataCenter.RawTransaction AS rt
         INNER JOIN CTS_Admin.Subscriber AS su ON rt.SubscriberName = su.SubscriberName
 	    LEFT JOIN DCS_DataCenter.ActionResult AS ar ON rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
@@ -143,10 +168,11 @@ BEGIN
 	
     /* === Add index for Temp_RawTransaction === */
 	ALTER TABLE Temp_RawTransaction
-	ADD INDEX IX_Temp_RawTransaction_CookieCode (CookieCode),
-	ADD INDEX IX_Temp_RawTransaction_RawFingerPrintCode (RawFingerPrintCode),
-	ADD INDEX IX_Temp_RawTransaction_BrowserInstanceCode (BrowserInstanceCode),
-	ADD INDEX IX_Temp_RawTransaction_RawUserAgentCode (RawUserAgentCode);
+	ADD INDEX IX_Temp_RawTransaction_ChallengeCode (ChallengeCode),
+	ADD INDEX IX_Temp_RawTransaction_FP_Tagging (FP_Tagging),
+	ADD INDEX IX_Temp_RawTransaction_FP_FingerPrintCode (FP_FingerPrintCode),
+	ADD INDEX IX_Temp_RawTransaction_FP_FingerPrintExtraCode (FP_FingerPrintExtraCode),
+	ADD INDEX IX_Temp_RawTransaction_FP_FingerPrintOldCode (FP_FingerPrintOldCode);
 
     #===INSERT SUBCRIBERURL    
     INSERT IGNORE INTO DCS_DataCenter.URL(URLDetails, SubscriberID, CreatedDate)
@@ -163,7 +189,7 @@ BEGIN
 	    ,   trt.SubscriberID
 	    ,   trt.SubscriberType
 	    ,   MIN(trt.CreatedDate)
-	    ,   CURRENT_TIMESTAMP(4) AS InsertTime
+	    ,   lv_CurrentDate AS InsertTime
         ,   MIN(trt.TransTime) AS CreatedTime
         ,   MAX(trt.TransTime) AS LastLoginTime
     FROM Temp_RawTransaction AS trt
@@ -224,23 +250,65 @@ BEGIN
 
 	/* ======= UPDATE ID ========= */
 	UPDATE Temp_RawTransaction AS tmp
-		LEFT JOIN DCS_DataCenter.Cookie AS ck ON ck.CookieCode = tmp.CookieCode
-	SET tmp.CookieID = CASE WHEN tmp.CookieCode IS NULL THEN NULL ELSE IFNULL(ck.ID, 0) END;
+		LEFT JOIN DCS_DataCenter.FP_Tagging AS tg ON tg.Tagging = tmp.FP_Tagging
+	SET tmp.FP_TaggingID = CASE WHEN tmp.FP_Tagging IS NULL THEN NULL ELSE IFNULL(tg.ID, 0) END;
 
 	UPDATE Temp_RawTransaction AS tmp
-		LEFT JOIN DCS_DataCenter.RawFingerPrint AS fp ON fp.FingerPrintCode = tmp.RawFingerPrintCode
-	SET tmp.RawFingerPrintID = CASE WHEN tmp.RawFingerPrintCode IS NULL THEN NULL ELSE IFNULL(fp.ID, 0) END;
+		LEFT JOIN DCS_DataCenter.FP_FingerPrint AS fp ON fp.Code = tmp.FP_FingerPrintCode
+	SET tmp.FP_FingerPrintID = CASE WHEN tmp.FP_FingerPrintCode IS NULL THEN NULL ELSE IFNULL(fp.ID, 0) END;
 
 	UPDATE Temp_RawTransaction AS tmp
-		LEFT JOIN DCS_DataCenter.BrowserInstance AS bi ON bi.BrowserInstanceCode = tmp.BrowserInstanceCode
-	SET tmp.BrowserInstanceID = CASE WHEN tmp.BrowserInstanceCode IS NULL THEN NULL ELSE IFNULL(bi.ID, 0) END;
+		LEFT JOIN DCS_DataCenter.FP_FingerPrintExtra AS fpe ON fpe.Code = tmp.FP_FingerPrintExtraCode
+	SET tmp.FP_FingerPrintExtraID = CASE WHEN tmp.FP_FingerPrintExtraCode IS NULL THEN NULL ELSE IFNULL(fpe.ID, 0) END;
 
 	UPDATE Temp_RawTransaction AS tmp
-		LEFT JOIN DCS_DataCenter.RawUserAgent AS ua ON ua.RawUserAgentCode = tmp.RawUserAgentCode
-	SET tmp.RawUserAgentID = CASE WHEN tmp.RawUserAgentCode IS NULL THEN NULL ELSE IFNULL(ua.ID, 0) END;
+		LEFT JOIN DCS_DataCenter.FP_FingerPrintOld AS fpo ON fpo.Code = tmp.FP_FingerPrintOldCode
+	SET tmp.FP_FingerPrintOldID = CASE WHEN tmp.FP_FingerPrintOldCode IS NULL THEN NULL ELSE IFNULL(fpo.ID, 0) END;
 
+	UPDATE Temp_RawTransaction AS tmp
+		LEFT JOIN DCS_DataCenter.FP_UserAgent AS ua ON ua.Code = tmp.FP_UserAgentCode
+	SET tmp.FP_UserAgentID = CASE WHEN tmp.FP_UserAgentCode IS NULL THEN NULL ELSE IFNULL(ua.ID, 0) END;
+
+	UPDATE Temp_RawTransaction AS tmp
+		LEFT JOIN DCS_DataCenter.JSChallengeInfo AS jsc ON jsc.ChallengeCode = tmp.ChallengeCode
+	SET tmp.JSChallengeInfoID = CASE WHEN tmp.ChallengeCode IS NULL THEN NULL ELSE IFNULL(jsc.ID, 0) END;
+    
+	/* ======= INSERT FP_DeviceFingerprintAccount ========= */
+    INSERT INTO Temp_FP_DeviceFingerprintAccount(FP_FingerPrintID, AccountID)
+    SELECT 	DISTINCT
+			FP_FingerPrintID
+		,	AccountID
+    FROM Temp_RawTransaction;
+
+    UPDATE Temp_FP_DeviceFingerprintAccount AS tmp
+		INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa ON dfa.FP_FingerPrintID = tmp.FP_FingerPrintID AND dfa.AccountID = tmp.AccountID
+    SET tmp.IsNewRecord = 0;
+    
+    INSERT IGNORE INTO DCS_DataCenter.FP_DeviceFingerprintAccount(FP_FingerPrintID, AccountID)
+    SELECT	FP_FingerPrintID
+		,	AccountID
+    FROM Temp_FP_DeviceFingerprintAccount
+    WHERE IsNewRecord = 1;
+    
+	/* ======= INSERT FP_DeviceFingerprintAccountOld ========= */
+    INSERT INTO Temp_FP_DeviceFingerprintAccountOld(FP_FingerPrintOldID, AccountID)
+    SELECT 	DISTINCT
+			FP_FingerPrintOldID
+		,	AccountID
+    FROM Temp_RawTransaction;
+
+    UPDATE Temp_FP_DeviceFingerprintAccountOld AS tmp
+		INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccountOld AS dfa ON dfa.FP_FingerPrintOldID = tmp.FP_FingerPrintOldID AND dfa.AccountID = tmp.AccountID
+    SET tmp.IsNewRecord = 0;
+    
+    INSERT IGNORE INTO DCS_DataCenter.FP_DeviceFingerprintAccountOld(FP_FingerPrintOldID, AccountID)
+    SELECT	FP_FingerPrintOldID
+		,	AccountID
+    FROM Temp_FP_DeviceFingerprintAccountOld
+    WHERE IsNewRecord = 1;
+	
 	/* ======= INSERT Transaction ========= */
-    INSERT IGNORE INTO  DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, CookieID, BrowserInstanceID, RawFingerPrintID, RawUserAgentID)
+    INSERT IGNORE INTO  DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FP_TaggingID, FP_FingerPrintID, FP_FingerPrintExtraID, FP_FingerPrintOldID, FP_UserAgentID)
    	SELECT  trt.TransID
 	    ,   trt.LoginName
         ,   trt.TransTime                
@@ -255,21 +323,23 @@ BEGIN
         ,   trt.PluginID
         ,   trt.TransStatus				
 	    ,   trt.CreatedDate                
-        ,   CURRENT_TIMESTAMP(4) AS InsertTime
+        ,   lv_CurrentDate AS InsertTime
         ,   trt.DeviceCode
         ,   trt.FingerprintCode
         ,   trt.BotDetectionValue
         ,   trt.BotComponentID
         ,   trt.FakeIP
-        ,   trt.CookieID
-        ,   trt.BrowserInstanceID
-        ,   trt.RawFingerPrintID
-        ,   trt.RawUserAgentID
+        ,   trt.IsIncognitoMode
+        ,   trt.JSChallengeInfoID
+        ,   trt.FP_TaggingID
+        ,   trt.FP_FingerPrintID
+        ,   trt.FP_FingerPrintExtraID
+        ,   trt.FP_FingerPrintOldID
+        ,   trt.FP_UserAgentID
 	FROM Temp_RawTransaction AS trt;	
 
     #================================================================
-    
-	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, FakeIP, CookieCode, RawFingerPrintCode, BrowserInstanceCode, RawUserAgentCode, ChallengeCode)
+	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode)
 	SELECT  rt.LoginName
         ,   rt.SubscriberName
         ,   rt.TransTime
@@ -292,11 +362,13 @@ BEGIN
 		,	rt.BotDetectionValue
 		,	rt.BotComponentID
 		,	rt.FakeIP
-        ,   rt.CookieCode
-        ,   rt.RawFingerPrintCode
-        ,   rt.BrowserInstanceCode
-        ,   rt.RawUserAgentCode
+        ,   rt.IsIncognitoMode
         ,   rt.ChallengeCode
+        ,   rt.FP_Tagging
+        ,   rt.FP_FingerPrintCode
+        ,   rt.FP_FingerPrintExtraCode
+        ,   rt.FP_FingerPrintOldCode
+        ,   rt.FP_UserAgentCode
 	FROM DCS_DataCenter.RawTransaction AS rt
 	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON	rt.TransID = tmp_rm.TransID AND rt.CreatedDate = tmp_rm.CreatedDate;
         

@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transform_FP_FingerPrint_Insert('[{"FingerPrintCode":"123","FingerPrintAttribute":{"Name":"ABC"},"FingerPrintExtraCode":"123","FingerPrintExtraAttribute":{"Name":"Extra"}},{"FingerPrintCode":"222","FingerPrintAttribute":{"Name":"ABC2"},"FingerPrintExtraCode":"2222","FingerPrintExtraAttribute":{"Name":"Extra2"}}]');
+			CALL DCS_DC_Transform_FP_FingerPrint_Insert('[{"FPFingerPrintCode":"123","FPFingerPrintAttribute":{"Name":"ABC"},"FPFingerPrintExtraCode":"123","FingerPrintExtraAttribute":{"Name":"Extra"},"FPFingerPrintOldCode":"123"}]');
 
 	*/
     DECLARE lv_CurrentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
@@ -27,6 +27,7 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Input;
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputFingerPrint;
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputFingerPrintExtra;
+	DROP TEMPORARY TABLE IF EXISTS Temp_InputFingerPrintOld;
         
 	CREATE TEMPORARY TABLE Temp_Input(
 			ID							INT UNSIGNED AUTO_INCREMENT		PRIMARY KEY
@@ -34,6 +35,7 @@ BEGIN
         ,	FingerPrintAttribute		JSON
         ,	FingerPrintExtraCode		VARCHAR(32) 					NOT NULL
         ,	FingerPrintExtraAttribute	JSON
+        ,	FingerPrintOldCode			VARCHAR(32) 					NOT NULL
     );
         
 	CREATE TEMPORARY TABLE Temp_InputFingerPrint(
@@ -49,22 +51,30 @@ BEGIN
         
 		,	IsNewRecord					TINYINT		 					DEFAULT 1
     );
+        
+	CREATE TEMPORARY TABLE Temp_InputFingerPrintOld(
+        	FingerPrintOldCode			VARCHAR(32) NOT NULL			PRIMARY KEY
+        
+		,	IsNewRecord					TINYINT		 					DEFAULT 1
+    );
     
-    INSERT IGNORE INTO Temp_Input(FingerPrintCode, FingerPrintAttribute, FingerPrintExtraCode, FingerPrintExtraAttribute)
+    INSERT IGNORE INTO Temp_Input(FingerPrintCode, FingerPrintAttribute, FingerPrintExtraCode, FingerPrintExtraAttribute, FingerPrintOldCode)
     SELECT	input.FingerPrintCode
 		,	input.FingerPrintAttribute
 		,	input.FingerPrintExtraCode
 		,	input.FingerPrintExtraAttribute
+		,	input.FingerPrintOldCode
 	FROM JSON_TABLE(
 			ip_FingerPrintJson,
 			 "$[*]" COLUMNS(
-						FingerPrintCode					VARCHAR(32) 	PATH "$.FingerPrintCode"
-					,	FingerPrintAttribute			JSON 			PATH "$.FingerPrintAttribute"
-					,	FingerPrintExtraCode			VARCHAR(32) 	PATH "$.FingerPrintExtraCode"
-					,	FingerPrintExtraAttribute		JSON 			PATH "$.FingerPrintExtraAttribute"
+						FingerPrintCode					VARCHAR(32) 	PATH "$.FPFingerPrintCode"
+					,	FingerPrintAttribute			JSON 			PATH "$.FPFingerPrintAttribute"
+					,	FingerPrintExtraCode			VARCHAR(32) 	PATH "$.FPFingerPrintExtraCode"
+					,	FingerPrintExtraAttribute		JSON 			PATH "$.FPFingerPrintExtraAttribute"
+					,	FingerPrintOldCode				VARCHAR(32) 	PATH "$.FPFingerPrintOldCode"
 				)
 		   ) AS input;
-
+	
     INSERT IGNORE INTO Temp_InputFingerPrint(FingerPrintCode, FingerPrintAttribute)
     SELECT 	FingerPrintCode
 		,	FingerPrintAttribute
@@ -76,6 +86,11 @@ BEGIN
 		,	FingerPrintExtraAttribute
     FROM Temp_Input
     WHERE IFNULL(FingerPrintExtraCode, '') <> '';
+
+    INSERT IGNORE INTO Temp_InputFingerPrintOld(FingerPrintOldCode)
+    SELECT 	FingerPrintOldCode
+    FROM Temp_Input
+    WHERE IFNULL(FingerPrintOldCode, '') <> '';
     
     /* ==== Insert Fingerprint ==== */
     UPDATE Temp_InputFingerPrint AS tmp
@@ -91,7 +106,7 @@ BEGIN
     
     /* ==== Insert FingerprintExtra ==== */
     UPDATE Temp_InputFingerPrintExtra AS tmp
-		INNER JOIN DCS_DataCenter.FP_FingerPrintExtra AS fp ON fp.Code = tmp.FingerPrintExtraCode
+		INNER JOIN DCS_DataCenter.FP_FingerPrintExtra AS fpe ON fpe.Code = tmp.FingerPrintExtraCode
     SET tmp.IsNewRecord = 0;
     
 	INSERT IGNORE INTO DCS_DataCenter.FP_FingerPrintExtra(Code, Attribute, InsertedTime)
@@ -99,6 +114,17 @@ BEGIN
 		,	FingerPrintExtraAttribute
 		,	lv_CurrentDate AS InsertedTime
 	FROM Temp_InputFingerPrintExtra
+    WHERE IsNewRecord = 1;
+    
+    /* ==== Insert FingerprintOld ==== */
+    UPDATE Temp_InputFingerPrintOld AS tmp
+		INNER JOIN DCS_DataCenter.FP_FingerPrintOld AS fpo ON fpo.Code = tmp.FingerPrintOldCode
+    SET tmp.IsNewRecord = 0;
+    
+	INSERT IGNORE INTO DCS_DataCenter.FP_FingerPrintOld(Code, InsertedTime)
+	SELECT	FingerPrintOldCode
+		,	lv_CurrentDate AS InsertedTime
+	FROM Temp_InputFingerPrintOld
     WHERE IsNewRecord = 1;
 END$$
 

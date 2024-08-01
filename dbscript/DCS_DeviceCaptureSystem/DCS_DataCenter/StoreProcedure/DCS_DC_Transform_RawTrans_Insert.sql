@@ -27,7 +27,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"LoginName":"testz","SubscriberName":"Alpha","TransTime":"2024-06-26T09:30:22.1678","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"464d165f74c441ee924c2c7adedba28f","FingerprintCode":"75f5834ffbb965923fa1b4e867c47beed230e081;58e4ec9612dd39a0cd99a0d7e1fe9ce4","FingerprintMoreInfo":"rGMAUmSIRW5iU9EJCzUkbsp/BtnFdh0z0sHpjkVJDY8=","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36","IP":"::1","FakeIP":"","IPId":1,"IsIPV6":true,"PluginID":0,"URL":"http://localhost:60207","Action":"Login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FPSTransId":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","FP_Tagging":"4132559cff0869c7e6958530cb914fa1","FP_FingerPrintCode":"4132559cff0869c7e6958530cb914fa2","FP_FingerPrintExtraCode":"a811b6c2f6a5d39d8e6cc9e5a807d025","FP_FingerPrintOldCode":"7a8f56652855ae80aae2e34dc5dc4e81","FP_UserAgentCode":"a811b6c2f6a5d39d8e6cc9e5a807d025","ChallengeCode":"dd61a2aab50f41738effdeacc3c927ff"}]');
+			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"LoginName":"testz","SubscriberName":"Alpha","TransTime":"2024-06-26T09:30:22.1678","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"464d165f74c441ee924c2c7adedba28f","FingerprintCode":"75f5834ffbb965923fa1b4e867c47beed230e081;58e4ec9612dd39a0cd99a0d7e1fe9ce4","FingerprintMoreInfo":"rGMAUmSIRW5iU9EJCzUkbsp/BtnFdh0z0sHpjkVJDY8=","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36","IP":"::1","FakeIP":"","IPId":1,"IsIPV6":true,"PluginID":0,"URL":"http://localhost:60207","Action":"Login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FPSTransId":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","FPTagging":"4132559cff0869c7e6958530cb914fa1","FPFingerPrintCode":"4132559cff0869c7e6958530cb914fa2","FPFingerPrintExtraCode":"a811b6c2f6a5d39d8e6cc9e5a807d025","FPFingerPrintOldCode":"7a8f56652855ae80aae2e34dc5dc4e81","FPUserAgentCode":"a811b6c2f6a5d39d8e6cc9e5a807d025","ChallengeCode":"dd61a2aab50f41738effdeacc3c927ff"}]');
 
 	*/
 	
@@ -129,11 +129,11 @@ BEGIN
                             ,	BotDetection			LONGTEXT		PATH "$.BotDetection"
                             ,	BotComponent			LONGTEXT		PATH "$.BotComponent"
                             ,	FakeIP					VARCHAR(100)	PATH "$.FakeIP"
-                            ,	FP_Tagging				VARCHAR(32)		PATH "$.FP_Tagging"
-                            ,	FP_FingerPrintCode		VARCHAR(32)		PATH "$.FP_FingerPrintCode"
-                            ,	FP_FingerPrintExtraCode	VARCHAR(32)		PATH "$.FP_FingerPrintExtraCode"
-                            ,	FP_FingerPrintOldCode	VARCHAR(32)		PATH "$.FP_FingerPrintOldCode"
-                            ,	FP_UserAgentCode		VARCHAR(32)		PATH "$.FP_UserAgentCode"
+                            ,	FP_Tagging				VARCHAR(32)		PATH "$.FPTagging"
+                            ,	FP_FingerPrintCode		VARCHAR(32)		PATH "$.FPFingerPrintCode"
+                            ,	FP_FingerPrintExtraCode	VARCHAR(32)		PATH "$.FPFingerPrintExtraCode"
+                            ,	FP_FingerPrintOldCode	VARCHAR(32)		PATH "$.FPFingerPrintOldCode"
+                            ,	FP_UserAgentCode		VARCHAR(32)		PATH "$.FPUserAgentCode"
                             ,	ChallengeCode			VARCHAR(50)		PATH "$.ChallengeCode"
 				)
 		   ) AS  rt; 

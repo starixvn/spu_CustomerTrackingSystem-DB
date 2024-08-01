@@ -55,8 +55,8 @@ BEGIN
 	) AS subquery ON tmp.AccountID = subquery.AccountID
 	SET tmp.FP_FingerPrintIDRef = subquery.FP_FingerPrintIDRef;
     
-    
 	select 	tmp.ID
+		,	fp.Attribute->>'$.Canvas'
 		,	tmp.FP_FingerPrintID
 		,	tmp.FP_FingerPrintIDRef
 		,	fp.Attribute
@@ -68,17 +68,16 @@ BEGIN
 		,	fpe.Attribute->>'$.Accept'
 		,	fpe.Attribute->>'$.Encoding'
 		,	fpe.Attribute->>'$.Headers'
-		,	fp.Attribute->>'$.localStorage'
-		,	fp.Attribute->>'$.doNotTrack'
-		,	fp.Attribute->>'$.cookies'
-		,	fp.Attribute->>'$.canvas'
-		,	fp.Attribute->>'$.fonts'
-		,	fp.Attribute->>'$.vendor'
-		,	fp.Attribute->>'$.webGlBasics'
-		,	fp.Attribute->>'$.plugins'
-		,	fp.Attribute->>'$.languages'
-		,	fp.Attribute->>'$.screenResolution'
-		,	fp.Attribute->>'$.timezone'
+		,	fp.Attribute->>'$.LocalStorage'
+		,	fp.Attribute->>'$.DoNotTrack'
+		,	fp.Attribute->>'$.Cookies'
+		,	fp.Attribute->>'$.Fonts'
+		,	fp.Attribute->>'$.Vendor'
+		,	fp.Attribute->>'$.WebGlBasics'
+		,	fp.Attribute->>'$.Plugins'
+		,	fp.Attribute->>'$.Languages'
+		,	fp.Attribute->>'$.ScreenResolution'
+		,	fp.Attribute->>'$.Timezone'
 	FROM Temp_DeviceFingerprintAccount AS tmp
 		LEFT JOIN DCS_DataCenter.FP_FingerPrint AS fp ON fp.ID = tmp.FP_FingerprintID
 		LEFT JOIN DCS_DataCenter.FP_EvolvedMapping AS em ON em.FP_FingerprintID = tmp.FP_FingerprintID
