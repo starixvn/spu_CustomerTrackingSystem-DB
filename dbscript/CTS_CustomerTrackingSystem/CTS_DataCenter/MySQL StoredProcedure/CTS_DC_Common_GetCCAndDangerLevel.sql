@@ -140,7 +140,8 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
-					AND clss.ParentID IN (CONST_PARENTID_VVIP, CONST_PARENTID_PA, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)
+					AND clss.ParentID <> CONST_PARENTID_WRAPPER
+					/*AND clss.ParentID IN (CONST_PARENTID_VVIP, CONST_PARENTID_PA, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)*/
                 ORDER BY  cate.CustomerClassPriority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss
