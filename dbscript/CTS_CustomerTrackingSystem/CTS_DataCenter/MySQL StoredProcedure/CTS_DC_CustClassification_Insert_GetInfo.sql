@@ -31,6 +31,8 @@ BEGIN
 	DECLARE CONST_CATEID_VVIP 								INT;
 	DECLARE CONST_CATEID_SPECIALCC 							INT;
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 					INT;
+	DECLARE CONST_CATEID_INITIALGB							INT;
+	DECLARE CONST_CATEID_INITIALGBLOSING					INT;
 	DECLARE CONST_PARENTID_VVIP 							INT;
 	DECLARE CONST_PARENTID_WRAPPER 							INT;
 	DECLARE CONST_PARENTID_PA 								INT;
@@ -57,11 +59,14 @@ BEGIN
 	DECLARE CONST_SOURCETYPE_VVIP_AFFECTED_DIRECTUPLINE		INT DEFAULT 30;
 	
 	DECLARE lv_SourceTypeID									INT; 
-	DECLARE lv_IsMarkedDirectly								TINYINT(1);   
+	DECLARE lv_IsMarkedDirectly								TINYINT(1);
+	DECLARE	lv_CurrentDateTime								DATETIME DEFAULT CURRENT_TIME(3); 
 	
 	SET CONST_CATEID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_SPECIALCC								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
+	SET CONST_CATEID_INITIALGB								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALGB');
+	SET CONST_CATEID_INITIALGBLOSING						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALGBLOSING');
 	SET CONST_PARENTID_VVIP 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
 	SET CONST_PARENTID_WRAPPER 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_PARENTID_PA 									= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
@@ -761,7 +766,16 @@ BEGIN
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID;
-                
+
+			/*Insert into source table for Initial Group Betting*/
+			IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL AND EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1) THEN
+				INSERT INTO CTS_DataCenter.Customer_InitialGroupBetting (CustID,GBTicketCount,SportType,SourceCreatedDate,CreatedDate)
+				SELECT temp.CustID,temp.GBTicketCount,temp.SportType,temp.SourceCreatedDate,lv_CurrentDateTime AS CreatedDate
+				FROM Temp_NewClassification AS temp
+				WHERE temp.NewCategoryID IN (CONST_CATEID_INITIALGB,CONST_CATEID_INITIALGBLOSING)
+					AND temp.IsFromTW = 1;
+			END IF;
+
 		/*9 - Normal*/
 		ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL THEN 
 			INSERT INTO Temp_NewClassification(
