@@ -213,7 +213,7 @@ BEGIN
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;
                 
-	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, ParentID, CategoryType, TaggingType, DangerLevel, DangerLevelType, Ext_CategoryGroupID)	
+	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, ParentID, CategoryType, TaggingType, DangerLevel, DangerLevelType)	
 	SELECT 	tmp.CustID
 		,	cate.CategoryID        
 		,	IFNULL(cate.CustomerClass,-1) AS CustomerClass
