@@ -23,10 +23,10 @@ BEGIN
         Example:
 			- CALL CTS_DataCenter.CTS_DC_Common_GetCCAndDangerLevel('1,2,1277,555555');
 	*/ 
-	DECLARE CONST_PARENTID_VVIP      			INT;
+	/*DECLARE CONST_PARENTID_VVIP      			INT;*/
 	DECLARE	CONST_PARENTID_PA 					INT;
 	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
-	DECLARE	CONST_PARENTID_NORMAL 				INT;
+	/*DECLARE	CONST_PARENTID_NORMAL 				INT;*/
 	DECLARE	CONST_PARENTID_WRAPPER				INT;
     
 	DECLARE	CONST_CATEID_VVIP					INT;
@@ -43,10 +43,10 @@ BEGIN
     DECLARE lv_LicVIPCC_Suspicious				SMALLINT UNSIGNED;
     DECLARE lv_VVIPCC							SMALLINT UNSIGNED;
     
-	SET CONST_PARENTID_VVIP 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+	/*SET CONST_PARENTID_VVIP 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');*/
 	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
-	SET CONST_PARENTID_NORMAL 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	/*SET CONST_PARENTID_NORMAL 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');*/
 	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_CATEID_VVIP 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_LICBA 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
@@ -79,7 +79,6 @@ BEGIN
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
 		,	DangerLevelType		SMALLINT 
-		,	Ext_CategoryGroupID	INT 
     );  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustLatestCate;
@@ -99,8 +98,7 @@ BEGIN
         ,	CategoryType		TINYINT
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
-		,	DangerLevelType		SMALLINT 
-		,	Ext_CategoryGroupID	INT       
+		,	DangerLevelType		SMALLINT     
         ,	INDEX 				IX_Temp_CustClassificationInfo_CustID(CustID)
     );  
      
@@ -148,7 +146,7 @@ BEGIN
                 LIMIT 1) AS clss
 	GROUP BY tmp.CustID;
         
-    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType,Ext_CategoryGroupID)
+    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
 		,	clss.CategoryID
 		,	clss.CustomerClass
@@ -160,10 +158,9 @@ BEGIN
 				WHEN dangerlvl.DangerLevel IS NULL THEN 0
 				ELSE dangerlvl.Ext_DangerLevelType 
 			END AS DangerLevelType
-		,	clss.Ext_CategoryGroupID
     FROM Temp_CustInfo AS tmp
 		INNER JOIN Temp_CustLatestCate AS t ON tmp.CustID = t.CustID,
-		LATERAL(SELECT 	CASE WHEN clss.ParentID = CONST_PARENTID_PA AND tmp.SpecialCC IS NULL THEN cate.CategoryGroupID 
+		LATERAL(SELECT 	CASE WHEN clss.ParentID = CONST_PARENTID_PA AND tmp.SpecialCC IS NULL THEN cate.Ext_CategoryGroupID 
 							 ELSE NULL END AS CategoryID
 					,	CASE  
 							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)
@@ -195,11 +192,10 @@ BEGIN
 						END AS CustomerClassName
 					,	cate.ParentID
 					,	cate.TaggingType
-					,	cate.Ext_CategoryGroupID
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
-					AND clss.ParentID IN (CONST_PARENTID_VVIP, CONST_PARENTID_PA, CONST_PARENTID_WRAPPER, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)
+					/*AND clss.ParentID IN (CONST_PARENTID_VVIP, CONST_PARENTID_PA, CONST_PARENTID_WRAPPER, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)*/
                 ORDER BY  cate.CustomerClassPriority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss,
@@ -210,7 +206,8 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassification AS c
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
                 WHERE c.CustID = tmp.CustID
-					AND c.ParentID IN (CONST_PARENTID_VVIP, CONST_PARENTID_PA, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)
+					AND c.ParentID <> CONST_PARENTID_WRAPPER
+					/*AND c.ParentID IN (CONST_PARENTID_VVIP, CONST_PARENTID_PA, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)*/
                 ORDER BY  cc.CustomerClassPriority ASC  
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;
@@ -226,8 +223,7 @@ BEGIN
                     ELSE 3 END ) AS CategoryType
 		,	cate.TaggingType
         ,	cate.DangerLevel
-        ,	cate.DangerLevelType 
-		,	cate.Ext_CategoryGroupID
+        ,	cate.DangerLevelType
     FROM Temp_CustInfo AS tmp
 		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID;
 END$$
