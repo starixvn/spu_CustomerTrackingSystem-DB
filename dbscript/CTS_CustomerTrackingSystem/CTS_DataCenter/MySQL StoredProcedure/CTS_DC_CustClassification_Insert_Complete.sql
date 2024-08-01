@@ -1005,8 +1005,6 @@ BEGIN
 			,	temp.PerformanceTime
 		FROM Temp_NewClassification AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID ;
-			
-		END IF;
 		
 	END IF;
 	
