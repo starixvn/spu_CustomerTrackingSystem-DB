@@ -20,11 +20,12 @@ sp: BEGIN
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
             -	20240109@Casey.Huynh: Enhance Hedging Rule [Redmine ID: #192172]
             -	20240509@Casey.Huynh: HF Hedging StepTime [Redmine ID: #204338]
+            -	20240724@Casey.Huynh: Enhance Rule [Redmine ID: #207523]
             
 		Param's Explanation (filtered by):	
 
 		Example:
-			CALL  CTS_DC_MatchMonitor_RuleHedging_Get(@ip_LiveIndicator:=1,@op_MaxSequenceID);
+			CALL  CTS_DC_MatchMonitor_RuleHedging_Get_xtest(@ip_LiveIndicator:=1,@op_MaxSequenceID);
 	*/
     DECLARE CONST_LOG					TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
 	DECLARE CONST_SUBSCRIBERID_ALPHA	INT DEFAULT 168;
@@ -36,6 +37,7 @@ sp: BEGIN
     DECLARE lv_MaxSequenceID	BIGINT UNSIGNED DEFAULT 0;
 	DECLARE lv_MaxTime			BIGINT;
     DECLARE lv_Rule_TimeStep	SMALLINT;
+    DECLARE lv_Rule_TotalStake	DECIMAL(20,2);
     DECLARE lv_NoOfRow			INT DEFAULT 5000;
     
     #==================LOG=======================================================
@@ -45,16 +47,6 @@ sp: BEGIN
 		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator);
     END IF;
     #==================LOG======================================================= 
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
-	CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
-			SportType	INT
-		,	TotalStake	DECIMAL(20,4)
-        ,	HighStake	DECIMAL(20,4)
-		
-		,	PRIMARY KEY PK_Temp_MatchMonitorRuleSetting(SportType)
-	);
-    
     #===============================================================================================
 	DROP TEMPORARY TABLE IF EXISTS Temp_OldGroup;
 	CREATE TEMPORARY TABLE Temp_OldGroup(
@@ -67,17 +59,11 @@ sp: BEGIN
 		
 		,	PRIMARY KEY PK_Temp_OldGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam, GroupID)
 	);
-    
+
     #===============================================================================================
-    INSERT INTO Temp_MatchMonitorRuleSetting(SportType, TotalStake, HighStake)
-    SELECT	s.SportType
-        ,	s.TotalStake
-        ,	s.HighStake
-    FROM CTS_DataCenter.MatchMonitorRuleSetting AS s
-    WHERE s.RuleGroupID = CONST_MMRULEGROUP_HEDGING AND s.RuleStatus=1;
-    
-	SELECT	s.TimeStep
-    INTO	lv_Rule_TimeStep
+
+	SELECT	s.TimeStep, s.TotalStake
+    INTO	lv_Rule_TimeStep, lv_Rule_TotalStake
     FROM	CTS_DataCenter.MatchMonitorRuleSetting AS s
     WHERE	s.RuleGroupID = CONST_MMRULEGROUP_HEDGING AND s.Reason = CONST_MMREASON_HEDGING AND s.RuleStatus=1 
     LIMIT	1;
@@ -141,7 +127,7 @@ sp: BEGIN
 													AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 			WHERE mms.SequenceID <= lv_MaxSequenceID 
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
-			HAVING COUNT(DISTINCT mms.CustID) > 1
+			HAVING COUNT(DISTINCT mms.CustID) > 1 AND SUM(mms.Stake) >= lv_Rule_TotalStake
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
 			
             SET op_MaxSequenceID = lv_MaxSequenceID ;
@@ -208,7 +194,7 @@ sp: BEGIN
 													AND (mms.GroupID = tmpOg.GroupID OR mms.GroupID = 0)
 			WHERE mms.SequenceID <= lv_MaxSequenceID 
 			GROUP BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID
-			HAVING COUNT(DISTINCT mms.CustID) > 1
+			HAVING COUNT(DISTINCT mms.CustID) > 1  AND SUM(mms.Stake) >= lv_Rule_TotalStake
 			ORDER BY mms.MatchID, mms.ScoreDiff, mms.BettypeID, mms.BetID, mms.Betteam, tmpOg.GroupID;
 			
             SET op_MaxSequenceID = lv_MaxSequenceID ;
