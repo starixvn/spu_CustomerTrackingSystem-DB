@@ -172,6 +172,8 @@ BEGIN
 		,	Remark						VARCHAR(500)
 		,	GroupName					VARCHAR(100)
 		, 	PRIMARY KEY (CustID, DWCategoryID)
+		,	KEY IX_Temp_NewCC_NewCateID (NewCategoryID)
+		,	KEY IX_Temp_NewCC_CTSCustID (CTSCustID)
 	); 
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
@@ -222,7 +224,7 @@ BEGIN
 		,	IsKeepOldCateID				TINYINT(1)
 		,	IsNew						TINYINT(1) DEFAULT 1
 		,	IsRemove					TINYINT(1) DEFAULT NULL
-		,	INDEX IX_Temp_CC_Old (CustID,CategoryID)
+		,	INDEX IX_Temp_CCOld_CustID_ParentID_CategoryGroupID (CustID,ParentID,IsNew,IsRemove)
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_LicVIPCust;

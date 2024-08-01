@@ -823,7 +823,7 @@ BEGIN
 				,	lv_CurrentDateTime AS CreatedDate
 				,	CURRENT_TIMESTAMP(3) AS InsertedTime
 			FROM Temp_NewClassification AS temp
-				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON temp.TVSReasonID = cc.TVSReasonID AND cc.IsActive = 1
+				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.NewCategoryID
 			WHERE temp.IsFromTVS = 1;
 		END IF;
 		
