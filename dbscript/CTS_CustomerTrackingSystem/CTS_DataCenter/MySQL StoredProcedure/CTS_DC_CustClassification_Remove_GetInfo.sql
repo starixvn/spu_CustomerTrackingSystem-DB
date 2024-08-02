@@ -53,7 +53,7 @@ BEGIN
 		,	Ext_EvidenceID_Credit				SMALLINT UNSIGNED
 		,	IsCleanPA							TINYINT(1) DEFAULT 1
 		,	IsDangerProbation					TINYINT(1)
-		,	CategoryPriority					SMALLINT UNSIGNED
+		,	CustomerClassPriority				SMALLINT UNSIGNED
 		,	CustomerClass						SMALLINT UNSIGNED
 		,	IsReturnData						TINYINT(1) DEFAULT 0
 		,	IsExistRobot						TINYINT(1) DEFAULT 0
