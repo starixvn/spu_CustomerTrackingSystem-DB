@@ -9,19 +9,20 @@ BEGIN
 		Created:	20240618@Victoria.Le
 		Task:		Insert main customer categories for Customer Classification
 		DB:			CTS_DataCenter
-		
-		Revisions: 
-			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
 			
 		Param's Expanation:
 			- 
+		
+		Example:
+			- CALL CTS_DC_CustClassification_BySport_Insert_Process();
+				
+		Revisions: 
+			- 20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
 */
 	DECLARE CONST_CATEID_NEW			 				INT;
-
 	DECLARE CONST_ACTIONTYPE_INSERT 					INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 					INT DEFAULT 1;
 	DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 			INT DEFAULT 5;
-	
 	DECLARE CONST_SOURCETYPE_SAMECATEGORY 				INT DEFAULT 0;
 	DECLARE CONST_SOURCETYPE_LESSTHAN10TICKETS			INT DEFAULT 1;
 
@@ -40,15 +41,14 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_UpdateCustomerClass(	  
 			CustID										BIGINT UNSIGNED	
 		,	SportID										SMALLINT UNSIGNED
-		,	CustomerClass 								SMALLINT
+		,	CustomerClass 								INT
 		,	PRIMARY KEY (CustID, SportID)
 	); 
 	
 	INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(CustID, SportID, OldCategoryGroupID, OldCategoryID)
     SELECT DISTINCT temp.CustID, temp.SportID, cc.CategoryGroupID, cate.CategoryID
     FROM Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cate ON temp.CustID = cate.CustID 
-																				AND temp.SportID = cate.SportID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cate ON temp.CustID = cate.CustID AND temp.SportID = cate.SportID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
 	

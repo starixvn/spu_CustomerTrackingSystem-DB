@@ -12,25 +12,36 @@ BEGIN
 		Task:		Insert main customer categories for Customer Classification
 		DB:			CTS_DataCenter
 		
-		Revisions: 
-			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
-			
 		Param's Expanation:
 			- 
+			
+		Example:
+			- CALL CTS_DC_CustClassification_BySport_Insert_Complete(332);
+			
+		Revisions: 
+			- 20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
+			
 */
-	DECLARE CONST_CATEID_SPECIALCC 			INT;
-	DECLARE CONST_ACTIONTYPE_INSERT 		INT DEFAULT 0;
-	DECLARE	CONST_ACTIONTYPE_UPDATE 		INT DEFAULT 1;
+	DECLARE CONST_CATEID_SPECIALCC 							INT;
+	DECLARE CONST_PARENTID_WRAPPER 							INT;
+	DECLARE CONST_PARENTID_NORMAL							INT;
+	DECLARE CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL			INT;
+	DECLARE CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC		INT;
+	DECLARE CONST_ACTIONTYPE_INSERT 						INT DEFAULT 0;
+	DECLARE	CONST_ACTIONTYPE_UPDATE 						INT DEFAULT 1;
+	DECLARE CONST_SOURCETYPE_CUSTOMERCLASS_ADD_MANUAL		INT DEFAULT 10;
 
-	DECLARE	lv_CurrentDateTime				DATETIME(3) DEFAULT CURRENT_TIME();
-	DECLARE lv_ActionType					INT;
-	DECLARE lv_SourceTypeID					INT;
+	DECLARE	lv_CurrentDateTime								DATETIME(3) DEFAULT CURRENT_TIME(3);
+	DECLARE lv_ActionType									INT;
 	
-	SET CONST_CATEID_SPECIALCC				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
-
-	IF ip_InputFlowID = 332 THEN /*SpecialCC*/
+	SET CONST_CATEID_SPECIALCC								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
+	SET CONST_PARENTID_WRAPPER								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+	SET CONST_PARENTID_NORMAL								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL');
+	SET CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC');
+	
+	IF ip_InputFlowID = CONST_CATEID_SPECIALCC THEN
 		SET lv_ActionType 		= 0;
-		SET lv_SourceTypeID 	= 10;
 		
 		/*	INSERT VALID SPECIAL CUSTOMER CLASS	*/
 		INSERT INTO CTS_DataCenter.SpecialCustomerClass_BySport(
@@ -45,7 +56,8 @@ BEGIN
 			,	lv_CurrentDateTime AS CreatedDate
 			,	temp.CreatedBy AS LastModifiedBy
 			,	lv_CurrentDateTime AS LastModifiedDate
-		FROM Temp_NewClassification AS temp;
+		FROM Temp_NewClassification AS temp
+		WHERE temp.IsDataChanged = 1;
 		
 		/*	INSERT LOG FOR SPECIAL CUSTOMER CLASS	*/
 		INSERT INTO CTS_DataCenter.SpecialCustomerClass_BySport_History(
@@ -62,69 +74,68 @@ BEGIN
 			,	lv_CurrentDateTime AS LastModifiedDate
 			,	temp.Remark
 			,	lv_ActionType AS ActionType
-		FROM Temp_NewClassification AS temp;
+		FROM Temp_NewClassification AS temp
+		WHERE temp.IsDataChanged = 1;
 		
 		/*	INSERT */
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport (
-				CustID, CTSCustID, SportID, CategoryID, CreatedDate, CreatedBy
+				CustID, CTSCustID, SportID, ParentID, CategoryID, CreatedDate, CreatedBy
 			, 	LastModifiedDate, LastModifiedBy, LastScannedDate)
 		SELECT DISTINCT 
 				temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.SportID
-			, 	CONST_CATEID_SPECIALCC AS CategoryID
+			,	CONST_PARENTID_WRAPPER
+			, 	temp.CategoryID
 			, 	lv_CurrentDateTime AS CreatedDate
 			, 	temp.CreatedBy AS CreatedBy
 			, 	lv_CurrentDateTime AS LastModifiedDate
 			, 	lv_CreatedBy AS LastModifiedBy
 			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
 		FROM Temp_NewClassification AS temp
-		WHERE NOT EXISTS (SELECT 1
-							FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cls
-							WHERE cls.CustID = temp.CustID
-								AND cls.SportID = temp.SportID
-								AND cls.CategoryID = CONST_CATEID_SPECIALCC);
+		WHERE temp.IsDataChanged = 1;
 		
 		/*	INSERT HISTORY	*/
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_History (
-				CustID, CTSCustID, SportID, CategoryID, LastModifiedDate, LastModifiedBy
+				CustID, CTSCustID, SportID, ParentID, CategoryID, LastModifiedDate, LastModifiedBy
 			, 	ActionType, InsertDate, TargetCC, Remark, SourceTypeID)
 		SELECT	temp.CustID
 			,	temp.CTSCustID
 			,	temp.SportID
-			, 	CONST_CATEID_SPECIALCC AS CategoryID
+			,	CONST_PARENTID_WRAPPER
+			, 	temp.CategoryID
 			,	lv_CurrentDateTime AS LastModifiedDate
 			,	temp.CreatedBy AS LastModifiedBy
 			,	lv_ActionType AS ActionType
 			,	DATE(lv_CurrentDateTime) AS InsertDate
 			, 	temp.TargetCC
 			,	temp.Remark
-			,	lv_SourceTypeID AS SourceTypeID
-		FROM Temp_NewClassification AS temp;
+			,	CONST_SOURCETYPE_CUSTOMERCLASS_ADD_MANUAL
+		FROM Temp_NewClassification AS temp
+		WHERE temp.IsDataChanged = 1;
 		
 		/*	INSERT LOG	*/
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log (
-				CustID, CTSCustID, SportID, CategoryID, LastModifiedDate, LastModifiedBy
+				CustID, CTSCustID, SportID, ParentID, CategoryID, LastModifiedDate, LastModifiedBy
 			, 	ActionType, InsertDate, TargetCC, Remark, SourceTypeID)
 		SELECT	temp.CustID
 			,	temp.CTSCustID
 			,	temp.SportID
-			, 	CONST_CATEID_SPECIALCC AS CategoryID
+			,	CONST_PARENTID_WRAPPER
+			, 	temp.CategoryID
 			,	lv_CurrentDateTime AS LastModifiedDate
 			,	temp.CreatedBy AS LastModifiedBy
 			,	lv_ActionType AS ActionType
 			,	DATE(lv_CurrentDateTime) AS InsertDate
 			, 	temp.TargetCC
 			,	temp.Remark
-			,	lv_SourceTypeID AS SourceTypeID
+			,	CONST_SOURCETYPE_CUSTOMERCLASS_ADD_MANUAL
 		FROM Temp_NewClassification AS temp;
 		
-	ELSEIF ip_InputFlowID = 339 THEN /*Normal*/
+	ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL THEN
 		
-	
 		UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS cate
-			INNER JOIN Temp_NewClassification AS temp ON cate.CustID = temp.CustID
-															AND cate.SportID = temp.SportID
+			INNER JOIN Temp_NewClassification AS temp ON cate.CustID = temp.CustID AND cate.SportID = temp.SportID
 		SET   	cate.CTSCustID 			= temp.CTSCustID
 			, 	cate.CategoryID 		= temp.NewCategoryID
 			, 	cate.LastModifiedDate 	= lv_CurrentDateTime
@@ -132,12 +143,13 @@ BEGIN
 		WHERE temp.ActionType 			= CONST_ACTIONTYPE_UPDATE;
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport (
-				CustID, CTSCustID, SportID, CategoryID, CreatedDate, CreatedBy
+				CustID, CTSCustID, SportID, ParentID, CategoryID, CreatedDate, CreatedBy
 			, 	LastModifiedDate, LastModifiedBy, LastScannedDate)
 		SELECT DISTINCT 
 				temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.SportID
+			,	CONST_PARENTID_NORMAL
 			, 	temp.NewCategoryID AS CategoryID
 			, 	lv_CurrentDateTime AS CreatedDate
 			, 	lv_CreatedBy AS CreatedBy
@@ -148,12 +160,13 @@ BEGIN
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_History (
-				CustID, CTSCustID, CategoryID, SportID, LastModifiedDate, LastModifiedBy
+				CustID, CTSCustID, ParentID, CategoryID, SportID, LastModifiedDate, LastModifiedBy
 			, 	TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, InsertDate, TargetCC
 			, 	PerformanceTime, SourceTypeID, IsDataChanged)
 		SELECT DISTINCT	
 				temp.CustID
 			, 	temp.CTSCustID
+			,	CONST_PARENTID_NORMAL
 			, 	temp.NewCategoryID AS CategoryID
 			, 	temp.SportID
 			, 	lv_CurrentDateTime AS LastModifiedDate
@@ -172,12 +185,13 @@ BEGIN
 		WHERE temp.IsDataChanged  = 1;
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log (
-				CustID, CTSCustID, CategoryID, SportID, LastModifiedDate, LastModifiedBy
+				CustID, CTSCustID, ParentID, CategoryID, SportID, LastModifiedDate, LastModifiedBy
 			, 	TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, InsertDate, TargetCC
 			, 	PerformanceTime, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged)
 		SELECT DISTINCT	
 				temp.CustID
 			, 	temp.CTSCustID
+			,	CONST_PARENTID_NORMAL
 			, 	temp.NewCategoryID AS CategoryID
 			, 	temp.SportID
 			, 	lv_CurrentDateTime AS LastModifiedDate

@@ -14,10 +14,10 @@ BEGIN
 			- 
 		
 		Example:
-			- CALL CTS_DC_CustClassification_BySport_Insert(332, '[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]', @outParam7);
+			- CALL CTS_DC_CustClassification_BySport_Insert_PreProcess();
 		
 		Revisions: 
-			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
+			- 20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
 */
 	DECLARE CONST_PARENTID_NORMAL		      	INT;
 	DECLARE CONST_CATEID_PROBATION		      	INT;
@@ -51,7 +51,7 @@ BEGIN
         ,	PRIMARY KEY (CustID, SportID)
 	);
 
-	/* SETP 0: EXCLUDE INTERNAL CUSTOMERS */      
+	/* EXCLUDE INTERNAL CUSTOMERS */
 	CALL CTS_DataCenter.CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
 	
 	SELECT cat.CategoryPriority
@@ -83,20 +83,17 @@ BEGIN
 	INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, SportID, ActionType, IsReturnData)
     SELECT DISTINCT	temp.CustID, temp.SportID, CONST_ACTIONTYPE_IGNOREPROBATION, 0 AS IsReturnData
 	FROM Temp_NewClassification AS temp 
-		INNER JOIN Temp_ProbationCustomers AS pro ON temp.CustID = pro.CustID 
-														AND temp.SportID = pro.SportID
+		INNER JOIN Temp_ProbationCustomers AS pro ON temp.CustID = pro.CustID AND temp.SportID = pro.SportID
     WHERE temp.IsPassProbationRule = 0;
 	
 	UPDATE Temp_NewClassification AS temp
-		INNER JOIN Temp_ProbationCustomers AS pro ON pro.CustID = temp.CustID 
-														AND pro.SportID = temp.SportID
+		INNER JOIN Temp_ProbationCustomers AS pro ON pro.CustID = temp.CustID AND pro.SportID = temp.SportID
 	SET 	temp.IsDataChanged = 0
     WHERE 	temp.DWCategoryID = CONST_CATEID_PROBATION 
 		AND pro.ProbationDate < pro.LastProbationDay;
 		
 	UPDATE Temp_NewClassification AS temp 
-		INNER JOIN Temp_CustIgnoranceAction AS ig ON temp.CustID = ig.CustID 
-														AND temp.SportID = ig.SportID
+		INNER JOIN Temp_CustIgnoranceAction AS ig ON temp.CustID = ig.CustID AND temp.SportID = ig.SportID
     SET 	temp.ActionType = ig.ActionType
 		, 	temp.IsDataChanged = 0
 		, 	temp.IsReturnData = ig.IsReturnData;

@@ -50,6 +50,8 @@ BEGIN
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL			INT;
 	DECLARE CONST_ACTIONTYPE_INSERT 						INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 						INT DEFAULT 1;
+	DECLARE CONST_SOURCETYPE_CUSTOMERCLASS_ADD_MANUAL		INT DEFAULT 10;
+	DECLARE CONST_SOURCETYPE_NOREASON_DETAILS				INT DEFAULT 38;
 	DECLARE CONST_TVSREQUESTTYPEID_PA						TINYINT DEFAULT 1;
 	DECLARE CONST_TVSREQUESTTYPEID_ROBOT					TINYINT DEFAULT 2;
 	DECLARE	CONST_SCANTAGGINGTYPE_EXISTONLY 				TINYINT DEFAULT 2;
@@ -188,7 +190,7 @@ BEGIN
 	
 	/*2 - SpecialCC*/
 	ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_SPECIALCC THEN 
-		SET lv_SourceTypeID = 10;
+		SET lv_SourceTypeID = CONST_SOURCETYPE_CUSTOMERCLASS_ADD_MANUAL;
 		SET lv_ActionType 	= 0;
 		SET lv_IsAuto 		= 0;
 		
@@ -236,7 +238,8 @@ BEGIN
 			,	temp.CreatedBy AS LastModifiedBy
 			,	lv_CurrentDateTime AS LastModifiedDate
 			,   1 AS CreatedFromFunction -- for Special Customer
-		FROM Temp_NewClassification AS temp;
+		FROM Temp_NewClassification AS temp
+		WHERE temp.IsDataChanged = 1;
 		
 		/*	INSERT LOG FOR SPECIAL CUSTOMER CLASS	*/
 		INSERT INTO CTS_DataCenter.SpecialCustomerClass_History(
@@ -254,7 +257,8 @@ BEGIN
 			,   1 AS CreatedFromFunction -- for Special Customer
 			,	temp.Remark
 			,	lv_ActionType AS ActionType -- insert
-		FROM Temp_NewClassification AS temp;
+		FROM Temp_NewClassification AS temp
+		WHERE temp.IsDataChanged = 1;
 		
 		/*	INSERT */
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification (
@@ -316,7 +320,7 @@ BEGIN
 	
 	/*3 - LicVIP*/
 	ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_LICVIP THEN 
-		SET lv_SourceTypeID 			= 28;
+		SET lv_SourceTypeID 			= CONST_SOURCETYPE_NOREASON_DETAILS;
 		SET lv_ActionType 				= 0;
 		SET lv_IsAuto 					= 0;
 		SET lv_IsMarkedDirectly 		= 1;
@@ -506,7 +510,7 @@ BEGIN
 	
 	/*4 - LicBA*/
 	ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_LICBA THEN 
-		SET lv_SourceTypeID 		= 38;
+		SET lv_SourceTypeID 		= CONST_SOURCETYPE_NOREASON_DETAILS;
 		SET lv_ActionType 			= 0;
 		SET lv_IsAuto 				= 0; 
 		SET lv_IsMarkedDirectly 	= 1;
