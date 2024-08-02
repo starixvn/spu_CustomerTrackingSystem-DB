@@ -122,7 +122,7 @@ BEGIN
 				,	RoleID				TINYINT
 				,	SportType			SMALLINT
 				,	IsParlay			BIT(1)
-				,	KEY IX_Temp_CustRemark_CustID_CateID(CustID, CategoryID)	
+				,	KEY IX_Temp_CustRemark_CateID(CategoryID)	
 		);
 
 		INSERT IGNORE INTO Temp_CustRemark(HistoryID, CustID, CategoryID, SourceTypeID, RoleID, SportType, IsParlay)

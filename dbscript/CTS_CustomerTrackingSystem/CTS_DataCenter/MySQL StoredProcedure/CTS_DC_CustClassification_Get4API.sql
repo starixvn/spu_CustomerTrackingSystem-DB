@@ -53,7 +53,7 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ParentID;
     CREATE TEMPORARY TABLE Temp_ParentID (
-		ParentID 		SMALLINT UNSIGNED PRIMARY KEY
+		ParentID 		INT UNSIGNED PRIMARY KEY
     );
     
     IF IFNULL(ip_CustIDs, '') <> '' THEN
@@ -71,7 +71,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory (
 		CustID				BIGINT UNSIGNED
-	,	CategoryID			SMALLINT UNSIGNED
+	,	CategoryID			INT UNSIGNED
     , 	LastModifiedDate	DATETIME
     );
     

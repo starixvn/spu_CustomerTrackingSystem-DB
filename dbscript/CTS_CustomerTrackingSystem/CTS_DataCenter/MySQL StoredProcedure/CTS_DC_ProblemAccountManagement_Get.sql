@@ -31,11 +31,13 @@ sp :BEGIN
 			CALL CTS_DC_ProblemAccountManagement_Get('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,null,null,0); 
             CALL CTS_DC_ProblemAccountManagement_Get('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,'52,92,63',null,0); 
 	*/	
+	DECLARE CONST_PARENTID_VVIP     INT;
 	DECLARE	CONST_PARENTID_PA 		INT;
 
     DECLARE lv_CTSCustID 			BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_CustID 				BIGINT UNSIGNED DEFAULT 0;
 
+	SET CONST_PARENTID_VVIP 		= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
 	SET CONST_PARENTID_PA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 
     DROP TEMPORARY TABLE IF EXISTS Temp_SiteID;
@@ -130,6 +132,7 @@ sp :BEGIN
 									AND (cus.SRecommend = lv_CustID 
 										OR cus.MRecommend = lv_CustID 
 										OR cus.Recommend = lv_CustID)))
+		AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS vv WHERE vv.CustID = class.CustID AND vv.ParentID = CONST_PARENTID_VVIP)
 	GROUP BY cus.CTSCustID
 		, 	cus.CustID
 		, 	cus.UserName
