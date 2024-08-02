@@ -35,7 +35,7 @@ BEGIN
 	DECLARE CONST_INPUTFLOWID_GENERAL_REMOVE_LICVIP			INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_REMOVE_LICBA 			INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_REMOVE_PA 			INT;
-	
+
 	DECLARE CONST_ACTIONTYPE_REMOVE 						INT DEFAULT 2;
 	DECLARE CONST_ACTIONTYPE_UNMARKPA 						INT DEFAULT 4;
 	DECLARE CONST_SOURCETYPE_CUSTOMERCLASS_REMOVE_MANUAL	INT DEFAULT 12;
@@ -52,8 +52,8 @@ BEGIN
 	DECLARE lv_IsAuto										TINYINT(1);
 	DECLARE lv_IsDataChanged								TINYINT(1);
 	DECLARE lv_TargetCC										INT;
-	DECLARE lv_CategoryPriority								SMALLINT UNSIGNED;  
-	
+	DECLARE lv_CCPriority									SMALLINT UNSIGNED;  
+
 	SET CONST_PARENTID_VVIP 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
 	SET CONST_PARENTID_WRAPPER 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_PARENTID_PA	 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
@@ -66,7 +66,7 @@ BEGIN
 	SET CONST_INPUTFLOWID_GENERAL_REMOVE_LICVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_REMOVE_LICVIP');
 	SET CONST_INPUTFLOWID_GENERAL_REMOVE_LICBA				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_REMOVE_LICBA');
 	SET CONST_INPUTFLOWID_GENERAL_REMOVE_PA					= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_REMOVE_PA');
-	
+
 	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_REMOVE_VVIP THEN
 		SET lv_IsAuto 				= 0;
 		SET lv_TargetCC				= -1;
@@ -195,14 +195,14 @@ BEGIN
 		SET lv_IsDataChanged		= 0;
 		SET lv_SourceTypeID			= CONST_SOURCETYPE_NOREASON_DETAILS;
 		
-		SELECT  cc.CategoryPriority
-		INTO lv_CategoryPriority
+		SELECT  cc.CustomerClassPriority
+		INTO lv_CCPriority
 		FROM CTS_DataCenter.CustomerCategory AS cc
-		WHERE cc.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS;
+		WHERE cc.CategoryID = CONST_CATEID_LICVIPDANGEROUS;
 		
 		INSERT INTO Temp_CustomerClassification (
 				CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP
-			, 	CategoryID, IsDangerProbation, CategoryPriority, CustomerClass)
+			, 	CategoryID, IsDangerProbation, CustomerClassPriority, CustomerClass)
 		WITH CTE_LastCategory AS (
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
@@ -210,16 +210,16 @@ BEGIN
 			,	temp.CreatedBy
 			,	temp.IsLicenseeVIP
 			,	tmpLastCat.CategoryID
-			,	tmpLastCat.CategoryPriority
+			,	tmpLastCat.CustomerClassPriority
 			,	tmpLastCat.IsDangerProbation
 			,	tmpLastCat.CustomerClass
 		FROM Temp_Customer AS temp,
 			LATERAL (
-						SELECT cls.CategoryID, cc.CategoryPriority, cc.IsDangerProbation, cc.CustomerClass 
+						SELECT cls.CategoryID, cc.CustomerClassPriority, cc.IsDangerProbation, cc.CustomerClass 
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
 							LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID
 																				AND cc.CategoryID <> CONST_CATEID_SPECIALCC
-																				AND cc.CategoryPriority < lv_CategoryPriority
+																				AND cc.CustomerClassPriority < lv_CCPriority
 						WHERE cls.CustID = temp.CustID
 						ORDER BY cls.CustID, cls.LastModifiedDate DESC
 						LIMIT 1) AS tmpLastCat)
@@ -230,13 +230,13 @@ BEGIN
 			,	cte.IsLicenseeVIP
 			,	cte.CategoryID
 			,	cte.IsDangerProbation
-			,	cte.CategoryPriority
+			,	cte.CustomerClassPriority
 			,	cte.CustomerClass
 		FROM CTE_LastCategory AS cte;  
 
 		INSERT IGNORE INTO Temp_CustomerClassification (
 				CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP
-			, 	CategoryID, IsDangerProbation, CategoryPriority, CustomerClass)
+			, 	CategoryID, IsDangerProbation, CustomerClassPriority, CustomerClass)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			,	temp.SubscriberID
@@ -244,7 +244,7 @@ BEGIN
 			,	temp.IsLicenseeVIP
 			,	cc.CategoryID
 			,	cc.IsDangerProbation
-			,	cc.CategoryPriority
+			,	cc.CustomerClassPriority
 			,	cc.CustomerClass
 		FROM Temp_Customer AS temp
 			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
@@ -252,13 +252,13 @@ BEGIN
 		
 		UPDATE Temp_CustomerClassification AS temp
 			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
-		SET temp.CategoryPriority = -1
-		WHERE temp.CategoryPriority IS NULL;
+		SET temp.CustomerClassPriority = -1
+		WHERE temp.CustomerClassPriority IS NULL;
 		
 		UPDATE Temp_CustomerClassification AS temp
 		SET temp.IsReturnData = 1
-		WHERE temp.CategoryPriority > lv_CategoryPriority 
-			OR temp.CategoryPriority IS NULL;
+		WHERE temp.CustomerClassPriority > lv_CCPriority 
+			OR temp.CustomerClassPriority IS NULL;
 		
 		UPDATE CTS_DataCenter.CTSCustomer AS cus
 			INNER JOIN Temp_Customer AS temp ON cus.CTSCustID = temp.CTSCustID
@@ -295,14 +295,14 @@ BEGIN
 		SET lv_IsDataChanged		= 0;
 		SET lv_SourceTypeID			= CONST_SOURCETYPE_NOREASON_DETAILS;
 		
-		SELECT cc.CategoryPriority
-		INTO lv_CategoryPriority
+		SELECT cc.CustomerClassPriority
+		INTO lv_CCPriority
 		FROM CTS_DataCenter.CustomerCategory AS cc
 		WHERE cc.CategoryID = CONST_CATEID_LICBA;
 
 		INSERT INTO Temp_CustomerClassification (
 				CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP
-			, 	CategoryID, IsDangerProbation, CategoryPriority, CustomerClass)
+			, 	CategoryID, IsDangerProbation, CustomerClassPriority, CustomerClass)
 		WITH CTE_LastCategory AS (
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
@@ -310,16 +310,16 @@ BEGIN
 			,	temp.CreatedBy
 			,	temp.IsLicenseeVIP
 			,	tmpLastCat.CategoryID
-			,	tmpLastCat.CategoryPriority
+			,	tmpLastCat.CustomerClassPriority
 			,	tmpLastCat.IsDangerProbation
 			,	tmpLastCat.CustomerClass
 		FROM Temp_Customer AS temp,
 			LATERAL (
-						SELECT cls.CategoryID, cc.CategoryPriority, cc.IsDangerProbation, cc.CustomerClass 
+						SELECT cls.CategoryID, cc.CustomerClassPriority, cc.IsDangerProbation, cc.CustomerClass 
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
 							LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID
 																				AND cc.CategoryID <> CONST_CATEID_SPECIALCC
-																				AND cc.CategoryPriority < lv_CategoryPriority
+																				AND cc.CustomerClassPriority < lv_CCPriority
 						WHERE cls.CustID = temp.CustID
 						ORDER BY cls.CustID, cls.LastModifiedDate DESC
 						LIMIT 1) AS tmpLastCat)
@@ -330,13 +330,13 @@ BEGIN
 			,	cte.IsLicenseeVIP
 			,	cte.CategoryID
 			,	cte.IsDangerProbation
-			,	cte.CategoryPriority
+			,	cte.CustomerClassPriority
 			,	cte.CustomerClass
 		FROM CTE_LastCategory AS cte;  
 		
 		INSERT IGNORE INTO Temp_CustomerClassification (
 				CustID, CTSCustID, SubscriberID, CreatedBy, IsLicenseeVIP
-			, 	CategoryID, IsDangerProbation, CategoryPriority, CustomerClass)
+			, 	CategoryID, IsDangerProbation, CustomerClassPriority, CustomerClass)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			,	temp.SubscriberID
@@ -344,7 +344,7 @@ BEGIN
 			,	temp.IsLicenseeVIP
 			,	cc.CategoryID
 			,	cc.IsDangerProbation
-			,	cc.CategoryPriority
+			,	cc.CustomerClassPriority
 			,	cc.CustomerClass
 		FROM Temp_Customer AS temp
 			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
@@ -352,13 +352,13 @@ BEGIN
 		
 		UPDATE Temp_CustomerClassification AS temp
 			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
-		SET temp.CategoryPriority = -1
-		WHERE temp.CategoryPriority IS NULL;
+		SET temp.CustomerClassPriority = -1
+		WHERE temp.CustomerClassPriority IS NULL;
 		
 		UPDATE Temp_CustomerClassification AS temp
 		SET temp.IsReturnData = 1
-		WHERE temp.CategoryPriority > lv_CategoryPriority 
-			OR temp.CategoryPriority IS NULL;
+		WHERE temp.CustomerClassPriority > lv_CCPriority 
+			OR temp.CustomerClassPriority IS NULL;
 		
 		UPDATE CTS_DataCenter.CTSCustomer AS cus
 			INNER JOIN Temp_Customer AS temp ON cus.CTSCustID = temp.CTSCustID
