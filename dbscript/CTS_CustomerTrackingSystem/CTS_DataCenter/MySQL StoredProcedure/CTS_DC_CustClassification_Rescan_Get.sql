@@ -77,7 +77,7 @@ sp: BEGIN
 	CREATE TEMPORARY TABLE Temp_PotentialCategory (	  
 			CTSCustID				BIGINT UNSIGNED
         ,   CustID					BIGINT UNSIGNED 
-        ,	CategoryID              INT UNSIGNED  
+        ,	CategoryID              INT  
         ,	TVSReasonID             INT 
         ,	RoleID 					TINYINT 
 		, 	SubscriberID			INT UNSIGNED
@@ -100,7 +100,7 @@ sp: BEGIN
 	CREATE TEMPORARY TABLE Temp_CustCategory (	  
 			CTSCustID				BIGINT UNSIGNED
         ,   CustID					BIGINT UNSIGNED 
-        ,	CategoryID              INT UNSIGNED  
+        ,	CategoryID              INT  
         ,	TVSReasonID             INT 
         ,	RoleID 					TINYINT 
 		, 	SubscriberID			INT UNSIGNED
@@ -314,6 +314,7 @@ sp: BEGIN
  					 FROM CTS_DataCenter.TVSVoidRequest 
  					 WHERE CustID = tmp.CustID
 						AND RequestTypeID = CONST_TVSREQUESTTYPE_PA
+                        AND IsDisabled = 0
 					 ORDER BY ID DESC
 					 LIMIT 1) AS s;
     
