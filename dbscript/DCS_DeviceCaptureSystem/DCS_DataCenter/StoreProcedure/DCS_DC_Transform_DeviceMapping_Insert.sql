@@ -64,7 +64,7 @@ BEGIN
 	);
     
     /********************** Get Data ***********************************/
-    INSERT IGNORE INTO Temp_DeviceMapping(RawTransID, FP_DeviceID, FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccountOldID)
+    INSERT IGNORE INTO Temp_DeviceMapping(RawTransID, FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccountOldID)
     SELECT 	trans.RawTransID
 		,	trans.FP_TaggingID
 		,	trans.FP_FingerPrintID
@@ -72,8 +72,8 @@ BEGIN
 		,	dfa.DeviceID AS FP_DeviceFingerprintAccount_EvolutionID
 		,	dfao.ID AS FP_DeviceFingerprintAccountOldID
     FROM DCS_DataCenter.Transaction AS trans
-		INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa ON dfa.FP_FingerPrintID = trans.FP_FingerPrintID AND dfa.AccountID = trans.AccountID
-		INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccountOld AS dfao ON dfao.FP_FingerPrintOldID = trans.FP_FingerPrintOldID AND dfao.AccountID = trans.AccountID
+		LEFT JOIN DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa ON dfa.FP_FingerPrintID = trans.FP_FingerPrintID AND dfa.AccountID = trans.AccountID
+		LEFT JOIN DCS_DataCenter.FP_DeviceFingerprintAccountOld AS dfao ON dfao.FP_FingerPrintOldID = trans.FP_FingerPrintOldID AND dfao.AccountID = trans.AccountID
     WHERE trans.TransID > lv_Min_FP_DeviceMappingID
     LIMIT ip_BatchSize;
     
@@ -125,7 +125,30 @@ BEGIN
     FROM Temp_DeviceMapping
     WHERE FP_DeviceID = 0;
     
+    CALL DCS_DataCenter.DCS_DC_Transform_DeviceMapping_UpdateTheSameDevice('Temp_NewDevice');
+    
+    INSERT IGNORE INTO DCS_DataCenter.FP_Device(FirstRawTransID)
+    SELECT DISTINCT SameDeviceWithRawTransID
+    FROM Temp_NewDevice;
+    
+    UPDATE Temp_NewDevice AS tmp
+		INNER JOIN DCS_DataCenter.FP_Device AS dv ON dv.FirstRawTransID = tmp.SameDeviceWithRawTransID
+	SET tmp.FP_DeviceID = dv.ID;
+    
+    SELECT *
+    FROM Temp_NewDevice;
+    
+    UPDATE Temp_DeviceMapping AS tmp
+		INNER JOIN Temp_NewDevice AS tmpNd ON tmpNd.RawTransID = tmp.RawTransID
+	SET tmp.FP_DeviceID = tmpNd.FP_DeviceID
+    WHERE tmp.FP_DeviceID = 0;
+    
+    SELECT *
+    FROM Temp_DeviceMapping;
     
 END$$
 
 DELIMITER ;
+
+
+			CALL DCS_DC_Transform_DeviceMapping_Insert('50');
