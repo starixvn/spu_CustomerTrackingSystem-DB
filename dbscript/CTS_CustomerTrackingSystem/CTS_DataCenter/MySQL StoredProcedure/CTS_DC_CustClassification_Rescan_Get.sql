@@ -158,12 +158,12 @@ sp: BEGIN
         ,	1 							AS IsFromImperva
         ,	s.CreateTime 				AS LastModifiedDate
         ,   CONST_INPUTFLOWID_ROBOT		AS InputFlowID
-    FROM  Temp_CustInfo AS tmp,
-    LATERAL (SELECT CreateTime
-			 FROM CTS_DataCenter.RobotImperva
-			 WHERE CustID = tmp.CustID 
-			 ORDER BY CreateTime DESC
-			 LIMIT 1) AS s;
+    FROM  Temp_CustInfo AS tmp
+		,	LATERAL (SELECT CreateTime
+					 FROM CTS_DataCenter.RobotImperva
+					 WHERE CustID = tmp.CustID 
+					 ORDER BY CreateTime DESC
+					 LIMIT 1) AS s;
 	
     /***********************Check Robot Betting****************************/
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)
@@ -184,15 +184,15 @@ sp: BEGIN
         ,	0 							AS IsFromImperva
         ,	s.CreatedDate 				AS LastModifiedDate
         ,   CONST_INPUTFLOWID_ROBOT		AS InputFlowID
-    FROM  Temp_CustInfo AS tmp,
-    LATERAL (SELECT CreatedDate
-			 FROM CTS_DataCenter.RobotDetection 
-			 WHERE CustID = tmp.CustID
-				AND  PeriodRangeType = 200
-				AND  IsDisabled = 0
-			 ORDER BY CreatedDate DESC
-			 LIMIT 1) AS s;
-			
+    FROM  Temp_CustInfo AS tmp
+		,	LATERAL (SELECT CreatedDate
+					 FROM CTS_DataCenter.RobotDetection 
+					 WHERE CustID = tmp.CustID
+						AND  PeriodRangeType = 200
+						AND  IsDisabled = 0
+					 ORDER BY CreatedDate DESC
+					 LIMIT 1) AS s;
+
 	INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)
     SELECT 	tmp.CTSCustID				AS CTSCustID
 		,	tmp.CustID					AS CustID
@@ -211,14 +211,14 @@ sp: BEGIN
         ,	0 							AS IsFromImperva
         ,	s.CreatedDate  				AS LastModifiedDate
         ,   CONST_INPUTFLOWID_ROBOT		AS InputFlowID
-    FROM  Temp_CustInfo AS tmp,
-    LATERAL (SELECT CreatedDate
-			 FROM CTS_DataCenter.RobotDetection 
-             WHERE CustID = tmp.CustID
-				AND  PeriodRangeType <> 200
-				AND  IsDisabled = 0
-			 ORDER BY CreatedDate DESC
-			 LIMIT 1) AS s
+    FROM  Temp_CustInfo AS tmp
+		,	LATERAL (SELECT CreatedDate
+					 FROM CTS_DataCenter.RobotDetection 
+					 WHERE CustID = tmp.CustID
+						AND  PeriodRangeType <> 200
+						AND  IsDisabled = 0
+					 ORDER BY CreatedDate DESC
+					 LIMIT 1) AS s
 	ON DUPLICATE KEY UPDATE IsFromAI = 1
 						,	LastModifiedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.LastModifiedDate THEN s.CreatedDate ELSE Temp_CustCategory.LastModifiedDate END;
 	
@@ -331,7 +331,7 @@ sp: BEGIN
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
-        ,	s.CategoryID					AS CategoryID
+        ,	CASE WHEN cate.IsPAProbation THEN cate.RelevantCategoryID ELSE s.CategoryID END AS CategoryID
         , 	NULL 							AS TVSReasonID
         ,	tmp.RoleID 						AS RoleID
         ,	tmp.SubscriberID				AS SubscriberID
@@ -350,6 +350,7 @@ sp: BEGIN
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS s USE INDEX (PRIMARY) ON s.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) 
 					AND s.ParentID = CONST_PARENTID_PA 
                     AND s.IsAffectToDownline = 1
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = s.CategoryID
 	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
 						,	LastModifiedDate = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END
                         ,	IsFromCTS = CASE WHEN s.IsFromCTS = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsFromCTS ELSE Temp_CustCategory.IsFromCTS END;
@@ -358,7 +359,7 @@ sp: BEGIN
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
-        ,	s.CategoryID					AS CategoryID
+        ,	CASE WHEN cate.IsPAProbation THEN cate.RelevantCategoryID ELSE s.CategoryID END AS CategoryID
         , 	NULL 							AS TVSReasonID
         ,	tmp.RoleID 						AS RoleID
         ,	tmp.SubscriberID				AS SubscriberID
@@ -376,6 +377,7 @@ sp: BEGIN
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS s USE INDEX (PRIMARY) ON s.CustID = tmp.CustID
 					AND s.ParentID = CONST_PARENTID_PA 
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = s.CategoryID
 	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
 						,	LastModifiedDate = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END
                         ,	IsMarkedDirectly = CASE WHEN s.IsMarkedDirectly = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsMarkedDirectly ELSE Temp_CustCategory.IsMarkedDirectly END
@@ -403,13 +405,13 @@ sp: BEGIN
         ,	0 								AS IsFromImperva
         ,	s.CreatedDate 					AS LastModifiedDate
         ,   CONST_INPUTFLOWID_POTENTIALPA	AS InputFlowID
-    FROM  Temp_CustInfo AS tmp,
-		LATERAL (SELECT cd.CreatedDate
-				 FROM CTS_DataCenter.Customer_DangerousScore AS cd
-				 WHERE cd.CustID = tmp.CustID 
-					AND cd.ClassifiedScore IS NOT NULL
-				 ORDER BY cd.ID ASC
-				 LIMIT 1) AS s
+    FROM  Temp_CustInfo AS tmp
+		,	LATERAL (SELECT cd.CreatedDate
+					 FROM CTS_DataCenter.Customer_DangerousScore AS cd
+					 WHERE cd.CustID = tmp.CustID 
+						AND cd.ClassifiedScore IS NOT NULL
+					 ORDER BY cd.ID ASC
+					 LIMIT 1) AS s
 	WHERE NOT EXISTS (SELECT 1 
 					  FROM Temp_CustCategory AS cc 
                       WHERE cc.CustID = tmp.CustID 
@@ -479,12 +481,12 @@ sp: BEGIN
     INSERT IGNORE INTO Temp_CustCategory (CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, SportType, LastModifiedDate, InputFlowID)       
     SELECT tmppc.CTSCustID, tmppc.CustID, tmppc.CategoryID, tmppc.TVSReasonID, tmppc.RoleID, tmppc.SubscriberID, tmppc.IsLicensee, tmppc.Remark, tmppc.CreatedBy, tmppc.IsMarkedDirectly, tmppc.IsFromTVS, tmppc.IsFromTW, tmppc.IsFromCTS, tmppc.IsFromAI, tmppc.IsFromImperva, tmppc.SportType, tmppc.LastModifiedDate, tmppc.InputFlowID
     FROM Temp_PotentialCategory2 AS pc
-	,	LATERAL (SELECT ppc.*
-				 FROM Temp_PotentialCategory AS ppc
-					 INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ppc.CategoryID
-				 WHERE ppc.CustID = pc.CustID
-				 ORDER BY cc.CategoryPriority ASC
-				 LIMIT 1) AS tmppc;
+		,	LATERAL (SELECT ppc.*
+					 FROM Temp_PotentialCategory AS ppc
+						 INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ppc.CategoryID
+					 WHERE ppc.CustID = pc.CustID
+					 ORDER BY cc.CategoryPriority ASC
+					 LIMIT 1) AS tmppc;
     
 	/***********************Return****************************/ 
 	SELECT cust.CTSCustID
