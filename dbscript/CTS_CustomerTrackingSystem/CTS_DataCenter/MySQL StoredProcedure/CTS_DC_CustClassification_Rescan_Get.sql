@@ -119,6 +119,7 @@ sp: BEGIN
         ,   TVSRequestID            BIGINT UNSIGNED
         ,   IsTVSParlay             TINYINT(1)
         ,   SportType               SMALLINT
+        ,   TVSIssueTypeID          TINYINT
 		,	InputFlowID	 			INT
 		,	PRIMARY KEY(CustID,CategoryID)
 	);
@@ -297,7 +298,7 @@ sp: BEGIN
     INNER JOIN CTS_DataCenter.CustomerLoginInfoDetection AS s ON s.CustID = tmp.CustID;
     
     /***********************Check TVS Void****************************/
-	INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, TVSRequestID, IsTVSParlay, SportType, InputFlowID)
+	INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
         ,	NULL 							AS CategoryID
@@ -317,9 +318,10 @@ sp: BEGIN
         ,   s.TVSRequestID                  AS TVSRequestID
         ,   s.IsParlay                      AS IsTVSParlay
         ,   s.SportType                     AS SportType
+        ,   s.IssueTypeID                   AS TVSIssueTypeID
         ,   CONST_INPUTFLOWID_REASON_PA 	AS InputFlowID
     FROM  Temp_CustInfo AS tmp
- 		,	LATERAL (SELECT TVSReasonID, InsertedTime, TVSRequestID, IsParlay, SportType
+ 		,	LATERAL (SELECT TVSReasonID, InsertedTime, TVSRequestID, IsParlay, SportType, IssueTypeID
  					 FROM CTS_DataCenter.TVSVoidRequest 
  					 WHERE CustID = tmp.CustID
 						AND RequestTypeID = CONST_TVSREQUESTTYPE_PA
@@ -509,6 +511,7 @@ sp: BEGIN
         ,   cc.TVSRequestID
         ,   cc.IsTVSParlay
         ,   cc.SportType
+        ,   cc.TVSIssueTypeID
 		, 	CASE WHEN cc.CategoryID IS NULL THEN CONST_INPUTFLOWID_NORMAL ELSE cc.InputFlowID END AS InputFlowID
 	FROM Temp_CustInfo AS cust
 		LEFT JOIN Temp_CustCategory AS cc ON cc.CustID = cust.CustID
