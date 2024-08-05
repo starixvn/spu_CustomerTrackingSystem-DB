@@ -20,6 +20,10 @@ BEGIN
         Example:
             CALL DCS_DataCenter.DCS_DC_Transform_DeviceEvolution_Get(50);
 	*/
+    DECLARE CONST_MINID_FP_DEVICEEVOLUTION	INT DEFAULT 23;
+	DECLARE lv_Min_FP_DeviceEvolutionID  	BIGINT UNSIGNED;
+    
+	SET lv_Min_FP_DeviceEvolutionID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_MINID_FP_DEVICEEVOLUTION);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceFingerprintAccount;
     
@@ -31,11 +35,12 @@ BEGIN
 	);
     
     INSERT INTO Temp_DeviceFingerprintAccount(ID, FP_FingerPrintID, AccountID)
-	SELECT 	dfa.ID
-		,	dfa.FP_FingerPrintID
-		,	dfa.AccountID
-    FROM DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa
-    WHERE DeviceID = 0
+	SELECT 	ID
+		,	FP_FingerPrintID
+		,	AccountID
+    FROM DCS_DataCenter.FP_DeviceFingerprintAccount
+    WHERE ID > lv_Min_FP_DeviceEvolutionID
+		AND DeviceID = 0
     ORDER BY ID ASC
     LIMIT ip_BatchSize;
     
@@ -56,28 +61,27 @@ BEGIN
 	SET tmp.FP_FingerPrintIDRef = subquery.FP_FingerPrintIDRef;
     
 	select 	tmp.ID
-		,	fp.Attribute->>'$.Canvas'
 		,	tmp.FP_FingerPrintID
 		,	tmp.FP_FingerPrintIDRef
-		,	fp.Attribute
-		,	fpe.Attribute->>'$.UserAgent'
-		,	fpe.Attribute->>'$.OSName'
-		,	fpe.Attribute->>'$.BrowserName'
-		,	fpe.Attribute->>'$.BrowserVersion'
-		,	fpe.Attribute->>'$.Platform'
-		,	fpe.Attribute->>'$.Accept'
-		,	fpe.Attribute->>'$.Encoding'
-		,	fpe.Attribute->>'$.Headers'
-		,	fp.Attribute->>'$.LocalStorage'
-		,	fp.Attribute->>'$.DoNotTrack'
-		,	fp.Attribute->>'$.Cookies'
-		,	fp.Attribute->>'$.Fonts'
-		,	fp.Attribute->>'$.Vendor'
-		,	fp.Attribute->>'$.WebGlBasics'
-		,	fp.Attribute->>'$.Plugins'
-		,	fp.Attribute->>'$.Languages'
-		,	fp.Attribute->>'$.ScreenResolution'
-		,	fp.Attribute->>'$.Timezone'
+		,	fpe.Attribute->>'$.UserAgent' AS UserAgent
+		,	fpe.Attribute->>'$.OSName' AS OSName
+		,	fpe.Attribute->>'$.BrowserName' AS BrowserName
+		,	fpe.Attribute->>'$.BrowserVersion' AS BrowserVersion
+		,	fpe.Attribute->>'$.Platform' AS Platform
+		,	fpe.Attribute->>'$.Accept' AS Accept
+		,	fpe.Attribute->>'$.Encoding' AS Encoding
+		,	fpe.Attribute->>'$.Headers' AS Headers
+		,	fp.Attribute->>'$.LocalStorage' AS LocalStorage
+		,	fp.Attribute->>'$.DoNotTrack' AS DoNotTrack
+		,	fp.Attribute->>'$.CookiesEnabled' AS Cookies
+		,	fp.Attribute->>'$.Canvas' AS Canvas
+		,	fp.Attribute->>'$.Fonts' AS Fonts
+		,	fp.Attribute->>'$.Vendor' AS Vendor
+		,	fp.Attribute->>'$.WebGlBasics' AS GLRenderer
+		,	fp.Attribute->>'$.Plugins' AS Plugins
+		,	fp.Attribute->>'$.Languages' AS Languages
+		,	fp.Attribute->>'$.ScreenResolution' AS Resolution
+		,	fp.Attribute->>'$.Timezone' AS Timezone
 	FROM Temp_DeviceFingerprintAccount AS tmp
 		LEFT JOIN DCS_DataCenter.FP_FingerPrint AS fp ON fp.ID = tmp.FP_FingerprintID
 		LEFT JOIN DCS_DataCenter.FP_EvolvedMapping AS em ON em.FP_FingerprintID = tmp.FP_FingerprintID

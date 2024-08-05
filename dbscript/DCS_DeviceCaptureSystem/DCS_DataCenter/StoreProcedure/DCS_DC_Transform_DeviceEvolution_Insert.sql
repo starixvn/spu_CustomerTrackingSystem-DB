@@ -18,10 +18,51 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_DeviceEvolution_Insert('[{"ID":2,"EvolveByID":1,"DeviceID":1}]');
+			CALL DCS_DC_Transform_DeviceEvolution_Insert('[{"ID":9,"EvolveByID":null,"DeviceID":1}]');
 	*/
+    DECLARE CONST_MINID_FP_DEVICEEVOLUTION	INT DEFAULT 23;
+    
+    DECLARE lv_CurrentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+	DECLARE lv_Max_FP_DeviceEvolutionID  	BIGINT UNSIGNED;
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceEvolution;
+    
+	CREATE TEMPORARY TABLE Temp_DeviceEvolution(
+			ID				 			BIGINT UNSIGNED    				NOT NULL
+		,	EvolveByID		 			BIGINT UNSIGNED    				NULL
+		,	DeviceID 					BIGINT UNSIGNED 				NOT NULL
+        
+        ,	PRIMARY KEY (ID)
+    );
     
     
+    INSERT IGNORE INTO Temp_DeviceEvolution(ID, EvolveByID, DeviceID)
+    SELECT	rt.ID
+		,	rt.EvolveByID
+		,	rt.DeviceID
+	FROM JSON_TABLE(
+			ip_DeviceEvolutionJson,
+			 "$[*]" COLUMNS(
+						ID					BIGINT UNSIGNED 	PATH "$.ID"
+					,	EvolveByID			BIGINT UNSIGNED 	PATH "$.EvolveByID"
+					,	DeviceID			BIGINT UNSIGNED 	PATH "$.DeviceID"
+				)
+		   ) AS  rt;
+	
+    UPDATE DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa
+		INNER JOIN Temp_DeviceEvolution AS tmp ON tmp.ID = dfa.ID
+	SET dfa.EvolveByID = tmp.EvolveByID,
+		dfa.DeviceID = tmp.DeviceID;
+    
+    /*****UPDATE MaxTransID in SystemSetting****************************************************/
+    SET lv_Max_FP_DeviceEvolutionID = (SELECT MAX(ID) FROM Temp_DeviceEvolution);
+    
+    IF lv_Max_FP_DeviceEvolutionID IS NOT NULL AND lv_Max_FP_DeviceEvolutionID > 0 THEN
+		UPDATE DCS_DataCenter.SystemSetting AS sys
+		SET sys.VValue 	= CONCAT('', lv_Max_FP_DeviceEvolutionID),
+		    sys.UpdatedTime = lv_CurrentDate
+		WHERE ID = CONST_MINID_FP_DEVICEEVOLUTION;
+    END IF;
     
 END$$
 
