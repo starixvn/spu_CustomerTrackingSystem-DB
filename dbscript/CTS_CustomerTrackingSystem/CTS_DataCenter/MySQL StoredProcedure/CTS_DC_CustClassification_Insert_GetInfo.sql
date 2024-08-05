@@ -122,8 +122,8 @@ BEGIN
 		,	OldTargetCC					INT 
 		,	TargetCC					INT 
 		,	TargetDangerLevel			SMALLINT UNSIGNED
-		,	CategoryPriority			SMALLINT UNSIGNED 
-		,	CustomerClassPriority		SMALLINT UNSIGNED 
+		,	CategoryPriority			SMALLINT  
+		,	CustomerClassPriority		SMALLINT  
 		,	MatchID						INT
 		
 		, 	ToEvidenceID				SMALLINT
@@ -169,6 +169,7 @@ BEGIN
 		,   SpecialCCCatePriority  		SMALLINT DEFAULT -1
 		,   SpecialCCDangerProbation   	TINYINT(1) DEFAULT NULL
 		
+		,	CreatedDate					DATETIME(3)
 		,	LastModifiedDate			DATETIME(3)
 		, 	ActionType					SMALLINT DEFAULT 0 
 		,	CreatedBy					INT UNSIGNED
@@ -223,7 +224,8 @@ BEGIN
 		,	TWRobotCounter				INT
 		,	SpecialCC	       			INT 
 		,	CustomerClass				INT 
-		,	CategoryPriority			SMALLINT UNSIGNED
+		,	CategoryPriority			SMALLINT
+		,	CustomerClassPriority		SMALLINT
 		,	IsPAProbation				TINYINT(1)
 		,	IsMultiCateIDSameParentID	TINYINT(1)
 		,	IsKeepOldCateID				TINYINT(1)
@@ -338,9 +340,9 @@ BEGIN
 			
 			INSERT INTO Temp_NewClassification(
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
-				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI
-				, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, MatchID, TVSRequestID, IsTVSParlay, SportType
-				, 	TVSIssueTypeID, CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, GroupName)
+				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromCTS
+				, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, CreatedDate, MatchID
+				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, GroupName)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				,	tmpJs.RoleID
@@ -358,20 +360,13 @@ BEGIN
 				, 	tmpJs.WinlossRM 
 				, 	tmpJs.BetCount 
 				, 	tmpJs.ActiveDays
-				,	tmpJs.IsFromTVS
-				,	tmpJs.IsFromTW
 				,	tmpJs.IsFromCTS
-				,	tmpJs.IsFromAI
 				,	sp.CustomerClass AS SpecialCC
 				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
 				,	cat.RelevantCategoryID
 				,	tmpJs.LastModifiedDate
+				,	tmpJs.CreatedDate
 				,	tmpJs.MatchID
-				,	CASE WHEN IFNULL(tmpJs.TVSRequestID,0) = 0 AND tmpJs.IsFromTVS = 0 THEN NULL
-						 ELSE tmpJs.TVSRequestID END AS TVSRequestID
-				,	tmpJs.IsTVSParlay
-				,	tmpJs.SportType
-				,	tmpJs.TVSIssueTypeID
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
@@ -394,16 +389,10 @@ BEGIN
 											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
 											, 	BetCount					BIGINT 				PATH "$.BetCount"
 											, 	ActiveDays					INT 				PATH "$.ActiveDays"
-											, 	IsFromTVS					TINYINT(1) 			PATH "$.IsFromTVS"
-											, 	IsFromTW					TINYINT(1)			PATH "$.IsFromTW"
 											, 	IsFromCTS					TINYINT(1) 			PATH "$.IsFromCTS"
-											, 	IsFromAI					TINYINT(1) 			PATH "$.IsFromAI"
 											, 	LastModifiedDate			DATETIME(3)			PATH "$.LastModifiedDate"
+											, 	CreatedDate					DATETIME(3)			PATH "$.CreatedDate"
 											, 	MatchID						INT 				PATH "$.MatchID"	
-											, 	TVSRequestID				BIGINT UNSIGNED		PATH "$.TVSRequestID"
-											,	IsTVSParlay					TINYINT(1)  		PATH "$.IsParlay"
-											,	TVSIssueTypeID				TINYINT 			PATH "$.IssueTypeID"
-											,	SportType					SMALLINT 			PATH "$.SportType"
 											, 	PerformanceTime				DATETIME(3)			PATH "$.PerformanceTime"
 											,	GroupName					VARCHAR(100)		PATH "$.GroupName"
 											)) AS tmpJs
@@ -414,31 +403,9 @@ BEGIN
 								,	WinlossRM = IFNULL(Temp_NewClassification.WinlossRM, tmpJs.WinlossRM)  
 								,	BetCount = IFNULL(Temp_NewClassification.BetCount, tmpJs.BetCount)  
 								,	ActiveDays = IFNULL(Temp_NewClassification.ActiveDays, tmpJs.ActiveDays)
-								,	IsFromTW = CASE WHEN tmpJs.IsFromTW = 1 THEN 1 ELSE Temp_NewClassification.IsFromTW END
 								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_NewClassification.IsFromCTS END
-								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_NewClassification.IsFromAI END
-								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_NewClassification.IsFromTVS END
 								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_NewClassification.IsMarkedDirectly END
-								,	IsTVSParlay = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
-																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
-															THEN tmpJs.IsTVSParlay 
-														ELSE Temp_NewClassification.IsTVSParlay END
-								,	SportType = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
-																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
-															THEN tmpJs.SportType 
-														ELSE Temp_NewClassification.SportType END
-								,	CreatedBy = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
-																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
-															THEN tmpJs.CreatedBy 
-														ELSE Temp_NewClassification.CreatedBy END
-								,	TVSIssueTypeID = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
-																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
-															THEN tmpJs.TVSIssueTypeID 
-														ELSE Temp_NewClassification.TVSIssueTypeID END
-								,	TVSRequestID = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
-																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
-															THEN tmpJs.TVSRequestID 
-														ELSE Temp_NewClassification.TVSRequestID END
+								,	CreatedBy = IFNULL(Temp_NewClassification.CreatedBy, tmpJs.CreatedBy)
 								;
 			
 		/*6 - PA-Reason*/
@@ -486,7 +453,7 @@ BEGIN
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,  IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, SpecialCC, IsPAProbation
 				, 	RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, TVSReasonID, CategoryPriority, CustomerClassPriority
-				, 	ParentID, IsDataChanged, PerformanceTime)
+				, 	ParentID, IsDataChanged, PerformanceTime, LastModifiedDate, CreatedDate)
 			SELECT 	tmpJs.CustID
 				,	cus.CTSCustID
 				,	cus.RoleID
@@ -518,6 +485,8 @@ BEGIN
 				,	cat.ParentID
 				,	0 AS IsDataChanged
 				,	tmpJs.PerformanceTime
+				,	tmpJs.LastModifiedDate
+				,	tmpJs.CreatedDate
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
@@ -530,15 +499,14 @@ BEGIN
 											, 	BetCount					BIGINT 				PATH "$.BetCount"
 											, 	ActiveDays					INT 				PATH "$.ActiveDays"
 											, 	IsFromTVS					TINYINT(1) 			PATH "$.IsFromTVS"
-											, 	IsFromTW					TINYINT(1) 			PATH "$.IsFromTW"
-											, 	IsFromCTS					TINYINT(1) 			PATH "$.IsFromCTS"
-											, 	IsFromAI					TINYINT(1) 			PATH "$.IsFromAI"
 											, 	TVSRequestID				BIGINT UNSIGNED		PATH "$.TVSRequestID"
 											, 	Remark						VARCHAR(500) 		PATH "$.Remark"
 											,	IsTVSParlay					TINYINT(1) 			PATH "$.IsParlay"
 											,	SportType					SMALLINT 			PATH "$.SportType"
 											,	TVSIssueTypeID				TINYINT 			PATH "$.IssueTypeID"
 											, 	PerformanceTime				DATETIME(3)			PATH "$.PerformanceTime"
+											, 	LastModifiedDate			DATETIME(3)			PATH "$.LastModifiedDate"
+											, 	CreatedDate					DATETIME(3)			PATH "$.CreatedDate"
 										)) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
@@ -552,9 +520,6 @@ BEGIN
 								,	WinlossRM = IFNULL(Temp_NewClassification.WinlossRM, tmpJs.WinlossRM)  
 								,	BetCount = IFNULL(Temp_NewClassification.BetCount, tmpJs.BetCount)  
 								,	ActiveDays = IFNULL(Temp_NewClassification.ActiveDays, tmpJs.ActiveDays)
-								,	IsFromTW = CASE WHEN tmpJs.IsFromTW = 1 THEN 1 ELSE Temp_NewClassification.IsFromTW END
-								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_NewClassification.IsFromCTS END
-								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_NewClassification.IsFromAI END
 								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_NewClassification.IsFromTVS END
 								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_NewClassification.IsMarkedDirectly END
 								,	IsTVSParlay = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
@@ -591,9 +556,9 @@ BEGIN
 		ELSEIF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT,CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT) THEN 
 			INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, DWCategoryID, DWCategoryGroupID, IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
-			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI
-			, 	SpecialCC, IsPAProbation, RelevantCategoryID, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, CategoryPriority
-			, 	CustomerClassPriority, ParentID, TWRobotCounter, IsFromImperva, IsDataChanged, PerformanceTime)
+			, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW, IsFromCTS, IsFromAI
+			, 	SpecialCC, IsPAProbation, RelevantCategoryID, CategoryPriority
+			, 	CustomerClassPriority, ParentID, TWRobotCounter, IsFromImperva, IsDataChanged, PerformanceTime, LastModifiedDate, CreatedDate)
 			SELECT 	tmpJs.CustID
 				,	cus.CTSCustID
 				, 	cus.SubscriberID
@@ -611,18 +576,12 @@ BEGIN
 				, 	tmpJs.WinlossRM 
 				, 	tmpJs.BetCount 
 				, 	tmpJs.ActiveDays
-				,	tmpJs.IsFromTVS
 				,	tmpJs.IsFromTW
 				,	tmpJs.IsFromCTS
 				,	tmpJs.IsFromAI
 				,	sp.CustomerClass AS SpecialCC
 				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
 				,	cat.RelevantCategoryID
-				,	CASE WHEN IFNULL(tmpJs.TVSRequestID,0) = 0 AND tmpJs.IsFromTVS = 0 THEN NULL
-						 ELSE tmpJs.TVSRequestID END AS TVSRequestID
-				,	tmpJs.IsTVSParlay
-				,	tmpJs.SportType
-				,	tmpJs.TVSIssueTypeID
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
@@ -630,32 +589,28 @@ BEGIN
 				,	tmpJs.IsFromImperva
 				,	0 AS IsDataChanged
 				,	tmpJs.PerformanceTime
+				,	tmpJs.LastModifiedDate
+				,	tmpJs.CreatedDate
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 					BIGINT UNSIGNED		PATH "$.CustID"                
 											,	TWRobotCounter			INT 				PATH "$.RobotCounter"
 											,	DWCategoryID    		INT UNSIGNED		PATH "$.CategoryID"
-											
 											,	WinlossStatus			SMALLINT 			PATH "$.WinlossStatus"	
 											,	TurnoverRM				DECIMAL(20,4)		PATH "$.TurnoverRM"
 											,	WinlossRM				DECIMAL(20,4) 		PATH "$.WinlossRM"
 											, 	BetCount				BIGINT 				PATH "$.BetCount"
 											, 	ActiveDays				INT 				PATH "$.ActiveDays"
-
 											, 	IsFromTW				TINYINT(1) 			PATH "$.IsFromTW"
 											, 	IsFromCTS				TINYINT(1) 			PATH "$.IsFromCTS"
 											, 	IsFromAI				TINYINT(1) 			PATH "$.IsFromAI"
-											, 	IsFromTVS				TINYINT(1)  		PATH "$.IsFromTVS"
 											,	IsFromImperva			TINYINT(1) 			PATH "$.IsFromImperva"
-											, 	TVSRequestID			BIGINT UNSIGNED 	PATH "$.TVSRequestID"
 											, 	IsMarkedDirectly		TINYINT(1) 			PATH "$.IsMarkedDirectly"
-
 											, 	Remark					VARCHAR(500)		PATH "$.Remark"
 											, 	CreatedBy				INT UNSIGNED		PATH "$.CreatedBy"
-											,	IsTVSParlay				TINYINT(1) 			PATH "$.IsParlay"
-											,	SportType				SMALLINT			PATH "$.SportType"
-											,	TVSIssueTypeID			TINYINT				PATH "$.IssueTypeID"
 											, 	PerformanceTime			DATETIME(3)			PATH "$.PerformanceTime"
+											, 	LastModifiedDate		DATETIME(3)			PATH "$.LastModifiedDate"
+											, 	CreatedDate				DATETIME(3)			PATH "$.CreatedDate"
 										)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID 
@@ -668,29 +623,9 @@ BEGIN
 								,	IsFromTW = CASE WHEN tmpJs.IsFromTW = 1 THEN 1 ELSE Temp_NewClassification.IsFromTW END
 								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_NewClassification.IsFromCTS END
 								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_NewClassification.IsFromAI END
-								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_NewClassification.IsFromTVS END
 								,	IsFromImperva = CASE WHEN tmpJs.IsFromImperva = 1 THEN 1 ELSE Temp_NewClassification.IsFromImperva END
 								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_NewClassification.IsMarkedDirectly END
-								,	IsTVSParlay = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
-																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
-															THEN tmpJs.IsTVSParlay 
-														ELSE Temp_NewClassification.IsTVSParlay END
-								,	SportType = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
-																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
-															THEN tmpJs.SportType 
-														ELSE Temp_NewClassification.SportType END
-								,	CreatedBy = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
-																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
-															THEN tmpJs.CreatedBy 
-														ELSE Temp_NewClassification.CreatedBy END
-								,	TVSIssueTypeID = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
-																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
-															THEN tmpJs.TVSIssueTypeID 
-														ELSE Temp_NewClassification.TVSIssueTypeID END
-								,	TVSRequestID = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
-																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
-															THEN tmpJs.TVSRequestID 
-														ELSE Temp_NewClassification.TVSRequestID END
+								,	CreatedBy = IFNULL(Temp_NewClassification.CreatedBy, tmpJs.CreatedBy)
 								;
 			
 			UPDATE Temp_NewClassification AS temp

@@ -23,6 +23,7 @@ BEGIN
 */
 
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL		INT;
+	DECLARE CONST_CATEID_VVIP			 				INT;
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 				INT;
 	DECLARE CONST_CATEID_LICVIPDANGEROUS 				INT;
 	DECLARE CONST_CATEID_LICBA 							INT;
@@ -65,6 +66,7 @@ BEGIN
 	DECLARE	lv_CurrentDateTime							DATETIME DEFAULT CURRENT_TIME(3);
 
 	SET CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL');
+	SET CONST_CATEID_VVIP			 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
 	SET CONST_CATEID_LICVIPDANGEROUS 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
 	SET CONST_CATEID_LICBA 								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
@@ -88,11 +90,6 @@ BEGIN
 	SET CONST_CC_LICVIPDANGEROUS	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICVIPDANGEROUS');
 	SET CONST_CC_LICBA				 					= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICBA');
 
-	SELECT CustomerClassPriority
-    INTO lv_LicBAPriority
-    FROM CTS_DataCenter.CustomerCategory 
-	WHERE CategoryID = CONST_CATEID_LICBA;
-	
 	DROP TEMPORARY TABLE IF EXISTS Temp_UpdateCustomerClass;    
 	CREATE TEMPORARY TABLE Temp_UpdateCustomerClass(	  
 			CustID					BIGINT UNSIGNED	PRIMARY KEY
@@ -102,15 +99,20 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;
 	CREATE TEMPORARY TABLE Temp_LastHistory(
 			CustID					BIGINT UNSIGNED PRIMARY KEY
-		,	CategoryID				INT UNSIGNED
+		,	CategoryID				INT 
 		,	TargetCC				INT
 	);
 
 	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL THEN
+		SELECT CustomerClassPriority
+		INTO lv_LicBAPriority
+		FROM CTS_DataCenter.CustomerCategory 
+		WHERE CategoryID = CONST_CATEID_LICBA;
+	
 		INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
 		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC
 		FROM Temp_NewClassification AS temp,
-		LATERAL (	SELECT h.CategoryID, h.TargetCC
+		LATERAL (	SELECT h.CategoryID, IFNULL(h.TargetCC,-1) AS TargetCC
 					FROM CTS_DataCenter.CTSCustomerClassification_History AS h
 					WHERE h.CustID = temp.CustID 
 					ORDER BY ID DESC
@@ -118,22 +120,32 @@ BEGIN
 		;
 	
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old (
-				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID, IsNew)
+				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID, IsNew, IsKeepOldCateID)
 		SELECT 	temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, ccs.CategoryID, ccs.CategoryGroupID
 			, 	0 AS IsNew
+			,	ccs.IsKeepOldCateID
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID 
 																			AND cls.ParentID = CONST_PARENTID_NORMAL
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = cls.CategoryID
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
+		
+		UPDATE Temp_NewClassification AS temp
+			INNER JOIN Temp_LastHistory AS h ON temp.CustID = h.CustID
+		SET 	temp.IsFromOldPA = 1
+		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT
+			AND h.TargetCC = -1
+			AND (h.CategoryID IS NULL OR h.CategoryID = CONST_CATEID_VVIP);
 
 		UPDATE Temp_NewClassification AS temp
 			LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID
 		SET 	temp.OldCategoryGroupID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryGroupID END
 			,	temp.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryID END
-			,	temp.ActionType = CASE 	WHEN o.CustID IS NULL 
+			,	temp.ActionType = CASE 	WHEN (o.CustID IS NULL AND temp.IsFromOldPA = 0)
+												OR (o.CustID IS NULL AND temp.IsFromOldPA = 1)
+												OR (o.CustID IS NOT NULL AND temp.IsFromOldPA = 0)
 											THEN CONST_ACTIONTYPE_INSERT 
-										ELSE CONST_ACTIONTYPE_UPDATE END
+										ELSE CONST_ACTIONTYPE_UPDATE END /*o.CustID IS NOT NULL AND temp.IsFromOldPA = 1*/
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
 		
 		UPDATE Temp_NewClassification AS temp
@@ -167,12 +179,8 @@ BEGIN
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsDataChanged = 0
 		WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE
-			AND (temp.NewCategoryID = temp.OldCategoryID) 
-			AND NOT EXISTS (SELECT 1 
-							FROM Temp_LastHistory AS h 
-							WHERE h.CustID = temp.CustID 
-								AND h.CategoryID IS NULL 
-								AND h.TargetCC IS NULL); /*Unmark PA*/
+			AND temp.NewCategoryID = temp.OldCategoryID
+			AND temp.IsFromOldPA = 0;
 								
 		UPDATE Temp_NewClassification AS temp 
 		SET temp.SourceTypeID = (CASE	WHEN (temp.OldCategoryGroupID IS NULL 
@@ -305,7 +313,7 @@ BEGIN
 		WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE); 
 	
 	ELSE
-		
+	
 		DROP TEMPORARY TABLE IF EXISTS Temp_PAWinlossStatus;    
 		CREATE TEMPORARY TABLE Temp_PAWinlossStatus(	
 				CustID					BIGINT UNSIGNED PRIMARY KEY
@@ -324,6 +332,16 @@ BEGIN
 			,	WinlossStatus			TINYINT
 			,	IsLicensee				TINYINT(1)
 		); 
+		
+		INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
+		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC
+		FROM Temp_NewClassification AS temp,
+		LATERAL (	SELECT h.CategoryID, IFNULL(h.TargetCC,-1) AS TargetCC
+					FROM CTS_DataCenter.CTSCustomerClassification_History AS h
+					WHERE h.CustID = temp.CustID 
+					ORDER BY ID DESC
+					LIMIT 1) AS tmpHis
+		;
 		
 		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT 
@@ -380,6 +398,13 @@ BEGIN
 			,	temp.IsReturnData	= 0
 		WHERE 	temp.IsExistVVIP 	= 1
 			AND temp.ParentID = CONST_PARENTID_PA;
+			
+		UPDATE Temp_NewClassification AS temp
+			INNER JOIN Temp_LastHistory AS h ON temp.CustID = h.CustID
+		SET 	temp.IsFromOldPA 	= 1 
+		WHERE 	temp.IsExistVVIP 	= 0
+			AND temp.ParentID = CONST_PARENTID_PA
+			AND h.TargetCC = -1 AND h.CategoryID = CONST_CATEID_VVIP;
 
 		/*delete: existing VVIP */
 		DELETE temp
@@ -390,8 +415,8 @@ BEGIN
 				CustID, CTSCustID, SubscriberID, ParentID, CategoryID, CategoryGroupID, ExistCategoryID, RelevantCategoryID
 			, 	Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS
 			, 	IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, InsertTime, TVSRequestID, IsTVSParlay
-			, 	SportType, TVSIssueTypeID, IsMarkedDirectly, SpecialCC, CustomerClass, CategoryPriority, IsPAProbation
-			, 	IsNew, IsMultiCateIDSameParentID, IsKeepOldCateID) 
+			, 	SportType, TVSIssueTypeID, IsMarkedDirectly, SpecialCC, CustomerClass, CategoryPriority, CustomerClassPriority
+			,	IsPAProbation, IsNew, IsMultiCateIDSameParentID, IsKeepOldCateID) 
 		WITH CTE AS (
 			SELECT DISTINCT CustID,SpecialCC
 			FROM Temp_NewClassification
@@ -424,6 +449,7 @@ BEGIN
 			,	temp.SpecialCC
 			,	IFNULL(temp.SpecialCC,cc.CustomerClass)
 			,	cc.CategoryPriority
+			,	cc.CustomerClassPriority
 			,	cc.IsPAProbation
 			,	0 AS IsNew
 			,	ccs.IsMultiCateIDSameParentID
@@ -436,7 +462,7 @@ BEGIN
 			
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_CTSCustomerClassification_Old AS temp_old ON temp.CustID = temp_old.CustID 
-		SET temp_old.IsRemove = CASE WHEN temp_old.CategoryPriority >= temp.CategoryPriority
+		SET temp_old.IsRemove = CASE WHEN temp_old.CustomerClassPriority >= temp.CustomerClassPriority
 											THEN (CASE 	WHEN temp_old.IsMultiCateIDSameParentID = 0 AND temp_old.IsKeepOldCateID = 1 THEN 0
 														WHEN temp_old.IsMultiCateIDSameParentID = 0 AND temp_old.IsKeepOldCateID = 0 THEN 1
 														WHEN temp_old.IsMultiCateIDSameParentID = 1 THEN 0 END)
@@ -469,6 +495,20 @@ BEGIN
 		WHERE 	temp.IsDataChanged 		= 0
 			AND temp.IsExistVVIP 		= 0
 			AND temp_old.CustID IS NULL;
+			
+		/*existing PA - existing and new: the same CateGroup*/
+		UPDATE Temp_NewClassification AS temp 
+			INNER JOIN Temp_CTSCustomerClassification_Old AS temp_old ON temp.CustID = temp_old.CustID	
+																			AND temp_old.ParentID IS NOT NULL
+																			AND temp_old.IsNew = 0
+																			AND temp.NewCategoryGroupID = temp_old.CategoryGroupID
+		SET 	temp.DataChangeType		= 1
+			,	temp.IsDataChanged 		= 1 
+			,	temp.OldCategoryID 		= temp_old.ExistCategoryID			
+			,	temp.ActionType 		= CONST_ACTIONTYPE_UPDATE
+			,	temp.CreatedBy 			= temp_old.CreatedBy
+		WHERE 	temp.IsDataChanged 		= 0
+			AND temp.IsFromOldPA = 1 AND temp.IsExistVVIP = 0;
 		
 		/*existing PotentialPA + PA - existing and new: the same CateGroup*/
 		UPDATE Temp_NewClassification AS temp 
@@ -478,8 +518,7 @@ BEGIN
 																			AND temp.RelevantCategoryGroupID = temp_old.CategoryGroupID
 		SET 	temp.DataChangeType 	= 1 
 			,	temp.IsDataChanged 		= 1 
-			,	temp.OldCategoryID 		= temp_old.ExistCategoryID
-			,	temp.LastModifiedDate 	= IFNULL(temp.LastModifiedDate, temp_old.LastModifiedDate)
+			,	temp.OldCategoryID 		= temp_old.ExistCategoryID			
 			,	temp.ActionType 		= CONST_ACTIONTYPE_UPDATE
 			,	temp.CreatedBy 			= temp_old.CreatedBy;  
 		
@@ -574,10 +613,12 @@ BEGIN
 		SET temp.TargetCC = IFNULL(temp.SpecialCC, tmpVip.CustomerClass)
 		WHERE temp.SpecialCC IS NULL; 
 		
+		DELETE FROM Temp_LastHistory;
+		
 		INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
-		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC
+		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC 
 		FROM Temp_NewClassification AS temp,
-		LATERAL (	SELECT h.CategoryID, h.TargetCC
+		LATERAL (	SELECT h.CategoryID, IFNULL(h.TargetCC,-1) AS TargetCC
 					FROM CTS_DataCenter.CTSCustomerClassification_History AS h
 					WHERE h.CustID = temp.CustID 
 					ORDER BY ID DESC

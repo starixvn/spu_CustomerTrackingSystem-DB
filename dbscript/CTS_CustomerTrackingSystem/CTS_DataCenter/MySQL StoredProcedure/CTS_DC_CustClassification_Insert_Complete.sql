@@ -61,7 +61,7 @@ BEGIN
 	DECLARE	lv_InsertedCount								INT DEFAULT 0;
 	DECLARE lv_IsParallelParentID							TINYINT(1);  
 	DECLARE lv_ParentID										INT UNSIGNED;  
-	DECLARE lv_CategoryPriority								SMALLINT UNSIGNED;  
+	DECLARE lv_CustomerClassPriority						SMALLINT;  
 	DECLARE lv_IsAuto										TINYINT(1);  
 	DECLARE lv_SourceTypeID									INT;  
 	DECLARE lv_ActionType									INT;
@@ -97,8 +97,8 @@ BEGIN
 		
 		SET lv_IsAuto = 0;
 	
-		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CategoryPriority
-		INTO lv_IsParallelParentID, lv_ParentID, lv_CategoryPriority
+		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CustomerClassPriority
+		INTO lv_IsParallelParentID, lv_ParentID, lv_CustomerClassPriority
 		FROM CTS_DataCenter.CustomerCategorySettings AS ccs
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID
 		WHERE ccs.CategoryID = CONST_CATEID_VVIP;
@@ -113,7 +113,7 @@ BEGIN
 								FROM CTS_DataCenter.CustomerCategorySettings AS cs	
 									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID
 								WHERE cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
-									AND cc.CategoryPriority > lv_CategoryPriority 
+									AND cc.CustomerClassPriority > lv_CustomerClassPriority 
 									AND (cc.ParentID <> lv_ParentID OR (cc.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
 									AND cs.IsKeepOldCateID = 1);
 		
@@ -194,8 +194,8 @@ BEGIN
 		SET lv_ActionType 	= 0;
 		SET lv_IsAuto 		= 0;
 		
-		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CategoryPriority
-		INTO lv_IsParallelParentID, lv_ParentID, lv_CategoryPriority
+		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CustomerClassPriority
+		INTO lv_IsParallelParentID, lv_ParentID, lv_CustomerClassPriority
 		FROM CTS_DataCenter.CustomerCategorySettings AS ccs
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID
 		WHERE ccs.CategoryID = CONST_CATEID_SPECIALCC;
@@ -209,7 +209,7 @@ BEGIN
 								FROM CTS_DataCenter.CustomerCategorySettings AS cs	
 									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID
 								WHERE cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
-									AND cc.CategoryPriority > lv_CategoryPriority 
+									AND cc.CustomerClassPriority > lv_CustomerClassPriority
 									AND (cc.ParentID <> lv_ParentID OR (cc.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
 									AND cs.IsKeepOldCateID = 1);
 									
@@ -325,11 +325,11 @@ BEGIN
 		SET lv_IsAuto 					= 0;
 		SET lv_IsMarkedDirectly 		= 1;
 		
-		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CategoryPriority
-		INTO lv_IsParallelParentID, lv_ParentID, lv_CategoryPriority
+		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CustomerClassPriority
+		INTO lv_IsParallelParentID, lv_ParentID, lv_CustomerClassPriority
 		FROM CTS_DataCenter.CustomerCategorySettings AS ccs
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID
-		WHERE ccs.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS;
+		WHERE ccs.CategoryID = CONST_CATEID_LICVIPDANGEROUS;
 		
 		INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, IsLicenseeVIP, ParentID, DWCategoryID, NewCategoryID
@@ -395,8 +395,8 @@ BEGIN
 	
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
-		SET temp.CategoryPriority = -1
-		WHERE temp.CategoryPriority IS NULL;
+		SET temp.CustomerClassPriority = -1
+		WHERE temp.CustomerClassPriority IS NULL;
 	
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsDataChanged 	= 1
@@ -406,8 +406,8 @@ BEGIN
 			, 	temp.TargetCC 		= (CASE WHEN temp.NewIsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS 
 											ELSE CONST_CC_LICVIPDANGEROUS END)
 		WHERE temp.IsLicenseeVIP = 0 
-			AND ( temp.CategoryPriority IS NULL 
-					OR temp.CategoryPriority > lv_CategoryPriority);
+			AND ( temp.CustomerClassPriority IS NULL 
+					OR temp.CustomerClassPriority > lv_CustomerClassPriority);
 					
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsReturnData = 0
@@ -422,7 +422,7 @@ BEGIN
 								FROM CTS_DataCenter.CustomerCategorySettings AS cs	
 									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID
 								WHERE cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
-									AND cc.CategoryPriority > lv_CategoryPriority 
+									AND cc.CustomerClassPriority > lv_CustomerClassPriority
 									AND (cc.ParentID <> lv_ParentID OR (cc.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
 									AND cs.IsKeepOldCateID = 1);
 		END IF;
@@ -515,8 +515,8 @@ BEGIN
 		SET lv_IsAuto 				= 0; 
 		SET lv_IsMarkedDirectly 	= 1;
 	
-		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CategoryPriority
-		INTO lv_IsParallelParentID, lv_ParentID, lv_CategoryPriority
+		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CustomerClassPriority
+		INTO lv_IsParallelParentID, lv_ParentID, lv_CustomerClassPriority
 		FROM CTS_DataCenter.CustomerCategorySettings AS ccs
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID
 		WHERE ccs.CategoryID = CONST_CATEID_LICBA;
@@ -543,7 +543,7 @@ BEGIN
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID 
 																			AND cat.CategoryID <> CONST_CATEID_SPECIALCC
-																			AND cat.CategoryPriority < lv_CategoryPriority
+																			AND cat.CustomerClassPriority < lv_CustomerClassPriority
 					WHERE cls.CustID = temp.CustID
 					ORDER BY cls.CustID, cls.LastModifiedDate DESC
 					LIMIT 1
@@ -586,8 +586,8 @@ BEGIN
 
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.SpecialCustomerClass AS sc ON sc.CustID = temp.CustID
-		SET temp.CategoryPriority = -1
-		WHERE temp.CategoryPriority IS NULL;
+		SET temp.CustomerClassPriority = -1
+		WHERE temp.CustomerClassPriority IS NULL;
 		
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsDataChanged 		= 1
@@ -595,7 +595,7 @@ BEGIN
 			, 	temp.NewCategoryID		= CONST_CATEID_LICBA
 			, 	temp.TargetCC 			= CONST_CC_LICBA
 		WHERE temp.IsLicenseeBA = 0
-			AND ( temp.CategoryPriority IS NULL OR temp.CategoryPriority > lv_CategoryPriority); 
+			AND ( temp.CustomerClassPriority IS NULL OR temp.CustomerClassPriority > lv_CustomerClassPriority); 
 			
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsReturnData = 0
@@ -610,7 +610,7 @@ BEGIN
 								FROM CTS_DataCenter.CustomerCategorySettings AS cs	
 									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID
 								WHERE cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
-									AND cc.CategoryPriority > lv_CategoryPriority 
+									AND cc.CustomerClassPriority > lv_CustomerClassPriority
 									AND (cc.ParentID <> lv_ParentID OR (cc.ParentID = lv_ParentID AND cs.IsMultiCateIDSameParentID = 1))
 									AND cs.IsKeepOldCateID = 1);
 		END IF;
@@ -705,9 +705,9 @@ BEGIN
 		SET   	cate.CTSCustID 			= temp.CTSCustID
 			, 	cate.SubscriberID 		= temp.SubscriberID
 			, 	cate.CategoryID 		= temp.NewCategoryID
-			, 	cate.LastModifiedDate 	= lv_CurrentDateTime
-			, 	cate.LastScannedDate 	= CASE WHEN temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY 
-														THEN cate.LastScannedDate 
+			, 	cate.LastModifiedDate 	= CASE WHEN temp.IsFromOldPA = 0 THEN lv_CurrentDateTime ELSE cate.LastModifiedDate END
+			, 	cate.LastScannedDate 	= CASE WHEN temp.IsFromOldPA = 0 AND temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY 
+													THEN cate.LastScannedDate
 												ELSE DATE(lv_CurrentDateTime) END
 		WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE;
 	
@@ -854,9 +854,9 @@ BEGIN
 			, 	temp.RoleID
 			, 	temp.NewCategoryGroupID AS CategoryID
 			, 	temp.ParentID
-			, 	lv_CurrentDateTime AS CreatedDate
+			, 	CASE WHEN (temp.IsFromOldPA = 1 AND temp.IsExistVVIP = 0) THEN temp.CreatedDate ELSE lv_CurrentDateTime END AS CreatedDate
 			, 	temp.CreatedBy
-			, 	IFNULL(temp.LastModifiedDate, lv_CurrentDateTime) AS LastModifiedDate
+			, 	CASE WHEN (temp.IsFromOldPA = 1 AND temp.IsExistVVIP = 0) THEN temp.LastModifiedDate ELSE lv_CurrentDateTime END AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
 			,	temp.IsMarkedDirectly
@@ -872,7 +872,7 @@ BEGIN
 			,	temp.TVSIssueTypeID AS IssueTypeID
 		FROM Temp_NewClassification AS temp 
 		WHERE 	temp.DataChangeType = 0 
-			OR 	temp.IsFromOldPA 	= 1;
+			OR 	(temp.IsFromOldPA 	= 1 AND temp.IsExistVVIP = 1);
 		
 		SET lv_InsertedCount = FOUND_ROWS();
 
@@ -930,7 +930,7 @@ BEGIN
 			,	temp.CTSCustID
 			,	temp.NewCategoryID
 			,	temp.ParentID
-			,	IFNULL(temp.LastModifiedDate,lv_CurrentDateTime)
+			,	lv_CurrentDateTime AS LastModifiedDate
 			,	temp.CreatedBy AS LastModifiedBy
 			,	temp.ActionType
 			,	lv_IsAuto
@@ -968,7 +968,7 @@ BEGIN
 	/*Insert into source tables*/
 	IF (IFNULL(lv_InsertedCount,0) > 0) THEN
 
-		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON AND EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTVS = 1) THEN
+		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON AND EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTVS = 1 AND IsDataChanged = 1) THEN
 			INSERT INTO CTS_DataCenter.TVSVoidRequest (
 					TVSRequestID,CustID,TVSReasonID,IssueTypeID,CreatedBy,IsParlay,SportType
 				,	RequestTypeID,CreatedDate,InsertedTime)
@@ -982,7 +982,7 @@ BEGIN
 		END IF;
 		
 		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT THEN
-			IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1) THEN
+			IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1 AND IsDataChanged = 1) THEN
 				INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate)
 				SELECT temp.CustID,temp.NewCategoryID,temp.TWRobotCounter,lv_CurrentDateTime AS CreatedDate
 				FROM Temp_NewClassification AS temp
@@ -993,7 +993,7 @@ BEGIN
 									,	CreatedDate = lv_CurrentDateTime;
 			END IF;
 			
-			IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromCTS = 1) THEN
+			IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromCTS = 1 AND IsDataChanged = 1) THEN
 				INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate)
 				SELECT temp.CustID,temp.NewCategoryID,temp.Remark,lv_CurrentDateTime AS CreatedDate
 				FROM Temp_NewClassification AS temp
