@@ -159,7 +159,7 @@ CREATE TABLE `FP_AssociationMapping` (
 ) ENGINE=InnoDB;
 
 ALTER TABLE `DCS_DataCenter`.`RawTransaction`
-ADD COLUMN `IsIncognitoMode` BIT,
+ADD COLUMN `IsIncognitoMode` BOOLEAN,
 ADD COLUMN `ChallengeCode` VARCHAR(50) NULL,
 ADD COLUMN `FP_Tagging` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintCode` VARCHAR(32) NULL,
@@ -173,7 +173,7 @@ DROP COLUMN `RawUserAgentID`,
 DROP COLUMN `JsChallengeID`;
 
 ALTER TABLE `DCS_DataCenter`.`ProcessedTransaction`
-ADD COLUMN `IsIncognitoMode` BIT,
+ADD COLUMN `IsIncognitoMode` BOOLEAN,
 ADD COLUMN `ChallengeCode` VARCHAR(50) NULL,
 ADD COLUMN `FP_Tagging` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintCode` VARCHAR(32) NULL,
@@ -188,7 +188,7 @@ DROP COLUMN `JsChallengeID`;
 
 
 ALTER TABLE `DCS_DataCenter`.`Transaction`
-ADD COLUMN `IsIncognitoMode` BIT,
+ADD COLUMN `IsIncognitoMode` BOOLEAN,
 ADD COLUMN `JSChallengeInfoID` BIGINT UNSIGNED,
 ADD COLUMN `FP_TaggingID` BIGINT UNSIGNED,
 ADD COLUMN `FP_FingerPrintID` BIGINT UNSIGNED,
@@ -201,7 +201,7 @@ DROP COLUMN `RawFingerPrintID`,
 DROP COLUMN `BrowserInstanceID`;
 
 ALTER TABLE `DCS_DataCenter`.`Transaction07`
-ADD COLUMN `IsIncognitoMode` BIT,
+ADD COLUMN `IsIncognitoMode` BOOLEAN,
 ADD COLUMN `JSChallengeInfoID` BIGINT UNSIGNED,
 ADD COLUMN `FP_TaggingID` BIGINT UNSIGNED,
 ADD COLUMN `FP_FingerPrintID` BIGINT UNSIGNED,
