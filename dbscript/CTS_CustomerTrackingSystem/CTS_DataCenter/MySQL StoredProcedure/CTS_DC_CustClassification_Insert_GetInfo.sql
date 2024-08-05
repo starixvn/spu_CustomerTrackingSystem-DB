@@ -340,7 +340,7 @@ BEGIN
 			
 			INSERT INTO Temp_NewClassification(
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
-				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromCTS
+				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, TVSRequestID, IsTVSParlay, TVSIssueTypeID, SportType, IsFromCTS
 				, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, CreatedDate, MatchID
 				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, GroupName)
 			SELECT 	tmpJs.CustID
@@ -360,6 +360,11 @@ BEGIN
 				, 	tmpJs.WinlossRM 
 				, 	tmpJs.BetCount 
 				, 	tmpJs.ActiveDays
+				,	tmpJs.IsFromTVS
+				,	tmpJs.TVSRequestID
+				,	tmpJs.IsTVSParlay
+				,	tmpJs.TVSIssueTypeID
+				,	tmpJs.SportType
 				,	tmpJs.IsFromCTS
 				,	sp.CustomerClass AS SpecialCC
 				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
@@ -395,6 +400,11 @@ BEGIN
 											, 	MatchID						INT 				PATH "$.MatchID"	
 											, 	PerformanceTime				DATETIME(3)			PATH "$.PerformanceTime"
 											,	GroupName					VARCHAR(100)		PATH "$.GroupName"
+											,	IsFromTVS					TINYINT(1)			PATH "$.IsFromTVS"
+											,	TVSRequestID				BIGINT UNSIGNED		PATH "$.TVSRequestID"
+											,	IsTVSParlay					TINYINT(1)			PATH "$.IsTVSParlay"
+											,	TVSIssueTypeID				TINYINT				PATH "$.TVSIssueTypeID"
+											,	SportType					SMALLINT			PATH "$.SportType"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID

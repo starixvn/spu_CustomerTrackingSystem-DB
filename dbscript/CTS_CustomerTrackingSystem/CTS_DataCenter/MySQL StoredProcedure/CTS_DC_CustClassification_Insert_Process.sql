@@ -143,7 +143,7 @@ BEGIN
 			,	temp.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryID END
 			,	temp.ActionType = CASE 	WHEN (o.CustID IS NULL AND temp.IsFromOldPA = 0)
 												OR (o.CustID IS NULL AND temp.IsFromOldPA = 1)
-												OR (o.CustID IS NOT NULL AND temp.IsFromOldPA = 0)
+												OR (o.CustID IS NOT NULL AND temp.IsFromOldPA = 0 AND temp.IsKeepOldCateID = 0)
 											THEN CONST_ACTIONTYPE_INSERT 
 										ELSE CONST_ACTIONTYPE_UPDATE END /*o.CustID IS NOT NULL AND temp.IsFromOldPA = 1*/
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
