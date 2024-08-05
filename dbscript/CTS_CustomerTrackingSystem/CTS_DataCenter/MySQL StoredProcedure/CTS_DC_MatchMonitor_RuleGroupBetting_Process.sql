@@ -49,6 +49,7 @@ sp: BEGIN
             -	20240627@Casey.Huynh:	EuroCup Exclude AssociationByIP [RedmineID: #207117]
             -	20240716@Casey.Huynh:	After EuroCup, Rollback AssociationByIP [RedmineID: #207117]
             - 	20240417@Casey.Huynh: 	Renovate GroupBetting Rule [Redmine ID: #203319]
+            - 	20240801@Casey.Huynh: 	Fix Issue Insert LicCustList [Redmine ID: #208911]
             
 		Param's Explanation (filtered by):	
 		Example:
@@ -201,7 +202,7 @@ sp: BEGIN
 			LEFT JOIN Temp_Trans2 AS t2 ON t.GroupID = t2.GroupID AND t.OrderNum = t2.OrderNum  +1 AND t.TransDateToSecond - t2.TransDateToSecond <= lv_RuleTimeStep
 		SET t.TimeGroupID = (CASE WHEN t2.OrderNum IS NOT NULL THEN @n ELSE @n:=@n+1  END);
 		
-        INSERT INTO Temp_Group(GroupID, TimeGroupID, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, SequenceIDList, LicCustTotalStake, LicCustTotal, IsValidGroup)        
+        INSERT INTO Temp_Group(GroupID, TimeGroupID, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, SequenceIDList, LicCustList, LicCustTotalStake, LicCustTotal, IsValidGroup)        
         SELECT	MIN(tmp.GroupID) AS GroupID
 			,	tmp.TimeGroupID
             ,	GROUP_CONCAT(tmp.TransID ORDER BY tmp.TransID) AS TransIDList
@@ -209,9 +210,10 @@ sp: BEGIN
             ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
 			,	GROUP_CONCAT(tmp.SequenceID)
-            ,	SUM((CASE WHEN tmp.IsLicensee = 1 THEN tmp.Stake ELSE 0 END)) AS LicCustTotalStake
+            ,	GROUP_CONCAT(DISTINCT (CASE WHEN tmp.IsLicensee = 1 THEN tmp.CustID ELSE NULL END)) AS LicCustList
+			,	SUM((CASE WHEN tmp.IsLicensee = 1 THEN tmp.Stake ELSE 0 END)) AS LicCustTotalStake
 			,	COUNT(DISTINCT (CASE WHEN tmp.IsLicensee = 1 THEN tmp.CustID ELSE NULL END)) AS LicCustTotal
-            ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= lv_RuleTotalStake THEN 1 ELSE 0 END) AS IsValidGroup
+            ,	(CASE WHEN COUNT(DISTINCT tmp.CustID) > 1 AND SUM(tmp.Stake) >= lv_RuleTotalStake THEN 1 ELSE 0 END) AS IsValidGroup
         FROM Temp_Trans AS tmp
         GROUP BY TimeGroupID;
 
@@ -244,7 +246,7 @@ sp: BEGIN
 			LEFT JOIN Temp_Trans2 AS t2 ON t.GroupID = t2.GroupID AND t.OrderNum = t2.OrderNum + 1 AND t.TransDateToSecond - t2.TransDateToSecond <= lv_RuleTimeStep
 		SET t.TimeGroupID = (CASE WHEN t2.OrderNum IS NOT NULL THEN @n ELSE @n:=@n+1  END);
 		
-        INSERT INTO Temp_Group(GroupID, TimeGroupID, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, SequenceIDList, LicCustTotalStake, LicCustTotal, IsValidGroup)        
+        INSERT INTO Temp_Group(GroupID, TimeGroupID, TransIDList, OldGroupIDList, CustIDList, CTSCustIDList, SequenceIDList, LicCustList, LicCustTotalStake, LicCustTotal, IsValidGroup)        
         SELECT	MIN(tmp.GroupID) AS GroupID
 			,	tmp.TimeGroupID
             ,	GROUP_CONCAT(tmp.TransID ORDER BY tmp.TransID) AS TransIDList
@@ -252,9 +254,10 @@ sp: BEGIN
             ,	GROUP_CONCAT(DISTINCT tmp.CustID) AS CustIDList
             ,	GROUP_CONCAT(DISTINCT tmp.CTSCustID) AS CTSCustIDList
 			,	GROUP_CONCAT(tmp.SequenceID)
+            ,	GROUP_CONCAT(DISTINCT (CASE WHEN tmp.IsLicensee = 1 THEN tmp.CustID ELSE NULL END)) AS LicCustList
 			,	SUM((CASE WHEN tmp.IsLicensee = 1 THEN tmp.Stake ELSE 0 END)) AS LicCustTotalStake
 			,	COUNT(DISTINCT (CASE WHEN tmp.IsLicensee = 1 THEN tmp.CustID ELSE NULL END)) AS LicCustTotal
-            ,	(CASE WHEN COUNT(DISTINCT CustID) > 1 AND SUM(Stake) >= lv_RuleTotalStake THEN 1 ELSE 0 END) AS IsValidGroup
+            ,	(CASE WHEN COUNT(DISTINCT tmp.CustID) > 1 AND SUM(tmp.Stake) >= lv_RuleTotalStake THEN 1 ELSE 0 END) AS IsValidGroup
         FROM Temp_Trans AS tmp
         GROUP BY TimeGroupID;
     END IF;
