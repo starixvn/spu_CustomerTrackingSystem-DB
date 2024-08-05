@@ -115,11 +115,11 @@ sp: BEGIN
         ,	IsFromAI 				BIT DEFAULT 0
 		,	IsFromImperva			BIT DEFAULT 0
         ,   LastModifiedDate        DATETIME(3)
-        ,   TWRobotCounter          INT
+        ,   RobotCounter          INT
         ,   TVSRequestID            BIGINT UNSIGNED
-        ,   IsTVSParlay             TINYINT(1)
+        ,   IsParlay                TINYINT(1)
         ,   SportType               SMALLINT
-        ,   TVSIssueTypeID          TINYINT
+        ,   IssueTypeID             TINYINT
 		,	InputFlowID	 			INT
 		,	PRIMARY KEY(CustID,CategoryID)
 	);
@@ -250,7 +250,7 @@ sp: BEGIN
                         ,	Remark = CASE WHEN s.CreatedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END;
         
 	/***********************Check TWRobotUser****************************/
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, TWRobotCounter, InputFlowID)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, RobotCounter, InputFlowID)
     SELECT tmp.CTSCustID				AS CTSCustID
 		,	tmp.CustID					AS CustID
         ,	s.CategoryID 				AS CategoryID
@@ -267,7 +267,7 @@ sp: BEGIN
         ,	0 							AS IsFromAI
         ,	0							AS IsFromImperva
         ,	s.CreatedDate 				AS LastModifiedDate
-        ,   s.RobotCounter              AS TWRobotCounter
+        ,   s.RobotCounter              AS RobotCounter
         ,   CONST_INPUTFLOWID_ROBOT		AS InputFlowID
     FROM  Temp_CustInfo AS tmp
 		INNER JOIN CTS_DataCenter.TWRobotUser AS s ON s.CustID = tmp.CustID
@@ -298,7 +298,7 @@ sp: BEGIN
     INNER JOIN CTS_DataCenter.CustomerLoginInfoDetection AS s ON s.CustID = tmp.CustID;
     
     /***********************Check TVS Void****************************/
-	INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID, InputFlowID)
+	INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, LastModifiedDate, TVSRequestID, IsParlay, SportType, IssueTypeID, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
         ,	NULL 							AS CategoryID
@@ -316,9 +316,9 @@ sp: BEGIN
 		,	0								AS IsFromImperva
         ,	s.InsertedTime 					AS LastModifiedDate
         ,   s.TVSRequestID                  AS TVSRequestID
-        ,   s.IsParlay                      AS IsTVSParlay
+        ,   s.IsParlay                      AS IsParlay
         ,   s.SportType                     AS SportType
-        ,   s.IssueTypeID                   AS TVSIssueTypeID
+        ,   s.IssueTypeID                   AS IssueTypeID
         ,   CONST_INPUTFLOWID_REASON_PA 	AS InputFlowID
     FROM  Temp_CustInfo AS tmp
  		,	LATERAL (SELECT TVSReasonID, InsertedTime, TVSRequestID, IsParlay, SportType, IssueTypeID
@@ -507,11 +507,11 @@ sp: BEGIN
 		, 	cc.IsFromAI
 		, 	cc.IsFromImperva
 		, 	cc.LastModifiedDate
-        ,   cc.TWRobotCounter
+        ,   cc.RobotCounter
         ,   cc.TVSRequestID
-        ,   cc.IsTVSParlay
+        ,   cc.IsParlay
         ,   cc.SportType
-        ,   cc.TVSIssueTypeID
+        ,   cc.IssueTypeID
 		, 	CASE WHEN cc.CategoryID IS NULL THEN CONST_INPUTFLOWID_NORMAL ELSE cc.InputFlowID END AS InputFlowID
 	FROM Temp_CustInfo AS cust
 		LEFT JOIN Temp_CustCategory AS cc ON cc.CustID = cust.CustID
