@@ -17,6 +17,7 @@ BEGIN
         
 		Revisions:
 			- 20240415@Casey.Huynh: Created [Redmine ID: #203319]
+			- 20240801@John.Ngo: 	Tuning performance: force index Ass by AI, IP  [Redmine ID: #208465]
 		
         Param's Explanation (filtered by):	
             
@@ -147,7 +148,7 @@ BEGIN
 				,	GREATEST(tmpCd.CustID,ltr.CustID)
 			FROM Temp_CustNode AS tmpCd
 				,	LATERAL (	SELECT tmpCd2.CTSCustID, tmpCd2.CustID
-								FROM CTS_DataCenter.AssociationByAI AS ai
+								FROM CTS_DataCenter.AssociationByAI AS ai FORCE INDEX (IX_AssociationByAI_ToCustID_FromCustID)
 									INNER JOIN Temp_CustNode2 AS tmpCd2 ON ai.ToCustID = tmpCd2.CustID
                                 WHERE ai.FromCustID = tmpCd.CustID AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_GraphByAI_AssType AS tmpAt)
 							) AS ltr;
@@ -157,7 +158,7 @@ BEGIN
 				,	GREATEST(tmpCd.CustID,ltr.CustID)
 			FROM Temp_CustNode AS tmpCd
 				,	LATERAL (	SELECT tmpCd2.CTSCustID, tmpCd2.CustID
-								FROM CTS_DataCenter.AssociationByAI AS ai
+								FROM CTS_DataCenter.AssociationByAI AS ai FORCE INDEX (UN_AssociationByAI_FromCustID_ToCustID)
 									INNER JOIN Temp_CustNode2 AS tmpCd2 ON ai.FromCustID = tmpCd2.CustID
                                 WHERE ai.ToCustID = tmpCd.CustID AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_GraphByAI_AssType AS tmpAt)
 							) AS ltr;
@@ -180,7 +181,7 @@ BEGIN
 				,	GREATEST(tmpCd.CustID,ltr.CustID)
 			FROM Temp_CustNode AS tmpCd
 				,	LATERAL (	SELECT tmpCd2.CTSCustID, tmpCd2.CustID
-								FROM CTS_DataCenter.AssociationByIP AS ip
+								FROM CTS_DataCenter.AssociationByIP AS ip FORCE INDEX (IX_AssociationByIP_ToCustIDFromCustID)
 									INNER JOIN Temp_CustNode2 AS tmpCd2 ON ip.ToCustID = tmpCd2.CustID
                                 WHERE ip.FromCustID = tmpCd.CustID AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_GraphByIP_AssType AS tmpAt)
 							) AS ltr;
@@ -190,7 +191,7 @@ BEGIN
 				,	GREATEST(tmpCd.CustID,ltr.CustID)
 			FROM Temp_CustNode AS tmpCd
 				,	LATERAL (	SELECT tmpCd2.CTSCustID, tmpCd2.CustID
-								FROM CTS_DataCenter.AssociationByIP AS ip
+								FROM CTS_DataCenter.AssociationByIP AS ip FORCE INDEX (UX_AssociationByIP_FromCustIDToCustIDAssType)
 									INNER JOIN Temp_CustNode2 AS tmpCd2 ON ip.FromCustID = tmpCd2.CustID
                                 WHERE ip.ToCustID = tmpCd.CustID AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_GraphByIP_AssType AS tmpAt)
 							) AS ltr;            

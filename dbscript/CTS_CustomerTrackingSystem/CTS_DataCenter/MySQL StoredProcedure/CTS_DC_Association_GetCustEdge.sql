@@ -27,6 +27,7 @@ BEGIN
 			- 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
             - 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
 			- 20240704@John.Ngo:		Tuning performance: force index Ass by AI, IP  [Redmine ID: #207635]
+			- 20240801@John.Ngo: 		Tuning performance: force index Ass by AI, IP  [Redmine ID: #208465]
 		
 
 		Param's Explanation (filtered by):
@@ -118,7 +119,7 @@ BEGIN
 			, 	cus.CTSCustID AS DestID
 			,	3 AS AssociationType
 		FROM Temp_CustNode AS tmp 
-			INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON ai.FromCustID = tmp.CustID 
+			INNER JOIN CTS_DataCenter.AssociationByAI AS ai FORCE INDEX (UN_AssociationByAI_FromCustID_ToCustID) ON ai.FromCustID = tmp.CustID 
 																AND ai.AssType IN (SELECT tmpAt.AssTypeItemValue 
 																					FROM Temp_AssociationByAI_AssType AS tmpAt)
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
@@ -162,7 +163,7 @@ BEGIN
 			, 	cus.CTSCustID AS DestID
 			,	5 AS AssociationType
 		FROM Temp_CustNode AS tmp 
-			INNER JOIN CTS_DataCenter.AssociationByIP AS ip ON ip.FromCustID = tmp.CustID 
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ip FORCE INDEX (UX_AssociationByIP_FromCustIDToCustIDAssType) ON ip.FromCustID = tmp.CustID 
 																AND ip.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = ip.ToCustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
 			
