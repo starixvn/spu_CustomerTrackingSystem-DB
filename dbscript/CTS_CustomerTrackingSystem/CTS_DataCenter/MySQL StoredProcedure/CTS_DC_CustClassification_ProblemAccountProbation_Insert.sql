@@ -177,8 +177,8 @@ BEGIN
 		, 	1 AS IsAuto
 		, 	DATE(lv_CurrentDateTime) AS InsertDate
 		, 	TargetCC
-		, 	CASE WHEN ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID 
-				 WHEN ccs.CategoryID IS NULL AND tmp.IsMarkedDirectly = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
+		, 	CASE WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID 
+				 WHEN ccs.RemarkTemplateID IS NULL AND tmp.IsMarkedDirectly = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
 				 ELSE CONST_SOURCETYPE_PROBLEMAFFECT END AS SourceTypeID
 		,   tmp.IsDataChanged
         ,	tmp.TargetDangerLevel1
@@ -203,8 +203,8 @@ BEGIN
 		, 	1 AS IsAuto
 		, 	DATE(lv_CurrentDateTime) AS InsertDate
 		, 	TargetCC
-		, 	CASE WHEN ccs.CategoryID IS NOT NULL THEN ccs.RemarkTemplateID 
-				 WHEN ccs.CategoryID IS NULL AND tmp.IsMarkedDirectly = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
+		, 	CASE WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID 
+				 WHEN ccs.RemarkTemplateID IS NULL AND tmp.IsMarkedDirectly = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
 				 ELSE CONST_SOURCETYPE_PROBLEMAFFECT END AS SourceTypeID
 		,   tmp.IsDataChanged
         ,	tmp.TargetDangerLevel1
