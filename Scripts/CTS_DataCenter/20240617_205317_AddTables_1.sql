@@ -49,6 +49,7 @@ CREATE TABLE TVSVoidRequest
 	ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     TVSRequestID BIGINT UNSIGNED,
     CustID BIGINT UNSIGNED NOT NULL,
+	CategoryID INT UNSIGNED NOT NULL,
     TVSReasonID INT,
 	IssueTypeID TINYINT,
     CreatedBy INT,
@@ -59,28 +60,35 @@ CREATE TABLE TVSVoidRequest
 	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
 	IsDisabled BIT(1) DEFAULT 0,
     PRIMARY KEY (ID),
-    KEY IX_TVSVoidRequest_CustID_CreatedDate (CustID, CreatedDate),
-	KEY IX_TVSVoidRequest_TVSReasonID (TVSReasonID)
+    KEY IX_TVSVoidRequest_CustID_CateID_IsDisabled (CustID, CategoryID, IsDisabled),
+	KEY IX_TVSVoidRequest_TVSReasonID (TVSReasonID),
+	KEY IX_TVSVoidRequest_IssueTypeID_CreatedDate (IssueTypeID, CreatedDate)
 );
 
 CREATE TABLE CTSRobotUser
 (
+	ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 	CustID BIGINT UNSIGNED NOT NULL,
 	CategoryID INT UNSIGNED NOT NULL,
 	Remark VARCHAR(500),
 	IsDisabled BIT(1) DEFAULT 0,
 	CreatedDate DATETIME,
-	PRIMARY KEY (CustID, CategoryID)
+	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
+	PRIMARY KEY (ID),
+	KEY IX_CTSRobotUser_CustID_CateID_IsDisabled (CustID, CategoryID, IsDisabled)
 );
 
 CREATE TABLE TWRobotUser
 (
+	ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 	CustID BIGINT UNSIGNED NOT NULL,
 	CategoryID INT UNSIGNED NOT NULL,
 	RobotCounter SMALLINT,
 	IsDisabled BIT(1) DEFAULT 0,
 	CreatedDate DATETIME,	
-	PRIMARY KEY (CustID, CategoryID)
+	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
+	PRIMARY KEY (ID),
+	KEY IX_TWRobotUser_CustID_CateID_IsDisabled (CustID, CategoryID, IsDisabled)
 );
 
 
