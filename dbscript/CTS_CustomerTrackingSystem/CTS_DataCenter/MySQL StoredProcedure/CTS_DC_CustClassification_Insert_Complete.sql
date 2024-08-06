@@ -216,11 +216,8 @@ BEGIN
 									
 		ELSE
 			UPDATE CTS_DataCenter.CTSCustomerClassification AS cls
-				INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cls.CustID
-				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID 
-																	AND cc.IsActive = 1 AND cc.RelevantCategoryID IS NOT NULL
-																	AND cc.IsPAProbation = 1
-			SET 	cls.CategoryID 		= cc.RelevantCategoryID
+				INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cls.CustID AND cls.ParentID = CONST_PARENTID_WRAPPER AND cls.CategoryID = CONST_CATEID_LICVIPSUSPICIOUS
+			SET 	cls.CategoryID 		= CONST_CATEID_LICVIPDANGEROUS
 				,	cls.LastModifiedBy	= temp.CreatedBy
 			WHERE 	temp.IsDataChanged 	= 1;
 			
@@ -973,8 +970,10 @@ BEGIN
 	IF (IFNULL(lv_InsertedCount,0) > 0 OR IFNULL(lv_UpdatedCount,0) > 0) THEN
 
 		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON 
-			AND (EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTVS = 1 AND IsDataChanged = 1 AND lv_InsertedCount > 0) 
-					OR EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTVS = 1 AND DataChangeType = 1 AND lv_UpdatedCount > 0)) THEN
+			AND (EXISTS (SELECT 1 
+						FROM Temp_NewClassification 
+						WHERE IsFromTVS = 1 
+							AND ((IsDataChanged = 1 AND lv_InsertedCount > 0) OR (DataChangeType = 1 AND lv_UpdatedCount > 0)))) THEN
 			
 			INSERT INTO CTS_DataCenter.TVSVoidRequest (
 					TVSRequestID,CustID,CategoryID,TVSReasonID,IssueTypeID,CreatedBy,IsParlay,SportType
@@ -991,8 +990,10 @@ BEGIN
 		END IF;
 		
 		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT THEN
-			IF (EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1 AND IsDataChanged = 1 AND lv_InsertedCount > 0) 
-				OR EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1 AND DataChangeType = 1 AND lv_UpdatedCount > 0)) THEN
+			IF EXISTS (SELECT 1 
+						FROM Temp_NewClassification 
+						WHERE IsFromTW = 1 
+							AND ((IsDataChanged = 1 AND lv_InsertedCount > 0) OR (DataChangeType = 1 AND lv_UpdatedCount > 0))) THEN
 				
 				INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate,InsertedTime)
 				SELECT 	temp.CustID
@@ -1006,8 +1007,10 @@ BEGIN
 					AND h.CustID IS NULL;
 			END IF;
 			
-			IF (EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromCTS = 1 AND IsDataChanged = 1  AND lv_InsertedCount > 0) 
-					OR EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromCTS = 1 AND DataChangeType = 1 AND lv_UpdatedCount > 0)) THEN
+			IF EXISTS (SELECT 1 
+						FROM Temp_NewClassification 
+						WHERE IsFromCTS = 1 
+							AND ((IsDataChanged = 1 AND lv_InsertedCount > 0) OR (DataChangeType = 1 AND lv_UpdatedCount > 0))) THEN
 					
 				INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate,InsertedTime)
 				SELECT 	temp.CustID
