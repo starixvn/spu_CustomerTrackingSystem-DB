@@ -526,7 +526,9 @@ BEGIN
 			,	temp.IsDataChanged 		= 1 
 			,	temp.OldCategoryID 		= temp_old.ExistCategoryID			
 			,	temp.ActionType 		= CONST_ACTIONTYPE_UPDATE
-			,	temp.CreatedBy 			= temp_old.CreatedBy;  
+			,	temp.CreatedBy 			= CASE WHEN (temp.IsFromOldPA = 1 AND temp.IsExistVVIP = 0) 
+												THEN IFNULL(temp.CreatedBy,temp_old.CreatedBy) 
+											ELSE temp_old.CreatedBy END;
 		
 		/*existing PotentialPA + PA - existing and new: the same CateGroup - not change WinlossStatus (KEEP)*/
 		DELETE temp_old

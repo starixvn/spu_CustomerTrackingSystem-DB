@@ -973,7 +973,7 @@ BEGIN
 			AND (EXISTS (SELECT 1 
 						FROM Temp_NewClassification 
 						WHERE IsFromTVS = 1 
-							AND ((IsDataChanged = 1 AND lv_InsertedCount > 0) OR (DataChangeType = 1 AND lv_UpdatedCount > 0)))) THEN
+							AND ((IsDataChanged = 1 AND lv_InsertedCount > 0) OR (IsFromOldPA = 1 AND IsExistVVIP = 0 AND lv_UpdatedCount > 0)))) THEN
 			
 			INSERT INTO CTS_DataCenter.TVSVoidRequest (
 					TVSRequestID,CustID,CategoryID,TVSReasonID,IssueTypeID,CreatedBy,IsParlay,SportType
@@ -985,7 +985,7 @@ BEGIN
 			FROM Temp_NewClassification AS temp
 				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.NewCategoryID
 				LEFT JOIN CTS_DataCenter.TVSVoidRequest AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
-			WHERE temp.IsFromTVS = 1
+			WHERE temp.IsFromTVS = 1 AND temp.IsDataChanged = 1
 				AND h.CustID IS NULL;
 		END IF;
 		
@@ -993,7 +993,7 @@ BEGIN
 			IF EXISTS (SELECT 1 
 						FROM Temp_NewClassification 
 						WHERE IsFromTW = 1 
-							AND ((IsDataChanged = 1 AND lv_InsertedCount > 0) OR (DataChangeType = 1 AND lv_UpdatedCount > 0))) THEN
+							AND ((IsDataChanged = 1 AND lv_InsertedCount > 0) OR (IsFromOldPA = 1 AND IsExistVVIP = 0 AND lv_UpdatedCount > 0))) THEN
 				
 				INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate,InsertedTime)
 				SELECT 	temp.CustID
@@ -1003,14 +1003,14 @@ BEGIN
 					,	CURRENT_TIMESTAMP(3) AS InsertedTime
 				FROM Temp_NewClassification AS temp
 					LEFT JOIN CTS_DataCenter.TWRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
-				WHERE temp.IsFromTW = 1
+				WHERE temp.IsFromTW = 1 AND temp.IsDataChanged = 1
 					AND h.CustID IS NULL;
 			END IF;
 			
 			IF EXISTS (SELECT 1 
 						FROM Temp_NewClassification 
 						WHERE IsFromCTS = 1 
-							AND ((IsDataChanged = 1 AND lv_InsertedCount > 0) OR (DataChangeType = 1 AND lv_UpdatedCount > 0))) THEN
+							AND ((IsDataChanged = 1 AND lv_InsertedCount > 0) OR (IsFromOldPA = 1 AND IsExistVVIP = 0 AND lv_UpdatedCount > 0))) THEN
 					
 				INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate,InsertedTime)
 				SELECT 	temp.CustID
@@ -1020,7 +1020,7 @@ BEGIN
 					,	CURRENT_TIMESTAMP(3) AS InsertedTime
 				FROM Temp_NewClassification AS temp
 					LEFT JOIN CTS_DataCenter.CTSRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
-				WHERE temp.IsFromCTS = 1
+				WHERE temp.IsFromCTS = 1 AND temp.IsDataChanged = 1
 					AND h.CustID IS NULL;
 					
 			END IF;	
