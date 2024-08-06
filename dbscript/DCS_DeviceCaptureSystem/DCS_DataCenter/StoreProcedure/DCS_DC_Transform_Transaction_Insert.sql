@@ -278,7 +278,9 @@ BEGIN
     SELECT 	DISTINCT
 			FP_FingerPrintID
 		,	AccountID
-    FROM Temp_RawTransaction;
+    FROM Temp_RawTransaction
+    WHERE FP_FingerPrintID IS NOT NULL
+		AND AccountID IS NOT NULL;
 
     UPDATE Temp_FP_DeviceFingerprintAccount AS tmp
 		INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa ON dfa.FP_FingerPrintID = tmp.FP_FingerPrintID AND dfa.AccountID = tmp.AccountID
@@ -295,7 +297,9 @@ BEGIN
     SELECT 	DISTINCT
 			FP_FingerPrintOldID
 		,	AccountID
-    FROM Temp_RawTransaction;
+    FROM Temp_RawTransaction
+    WHERE FP_FingerPrintOldID IS NOT NULL
+		AND AccountID IS NOT NULL;
 
     UPDATE Temp_FP_DeviceFingerprintAccountOld AS tmp
 		INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccountOld AS dfa ON dfa.FP_FingerPrintOldID = tmp.FP_FingerPrintOldID AND dfa.AccountID = tmp.AccountID

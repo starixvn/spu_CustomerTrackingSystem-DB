@@ -18,7 +18,15 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_DeviceMapping_UpdateTheSameDevice('Temp_ABC');
+			CREATE TEMPORARY TABLE Temp_NewDevice(
+					RawTransID									BIGINT UNSIGNED NOT NULL PRIMARY KEY
+				,	SameDeviceWithRawTransID					BIGINT UNSIGNED DEFAULT 0
+				,	FP_DeviceID									BIGINT UNSIGNED DEFAULT 0
+				
+				,	FP_TaggingID								BIGINT UNSIGNED
+				,	FP_DeviceFingerprintAccountID				BIGINT UNSIGNED
+			);
+			CALL DCS_DC_Transform_DeviceMapping_UpdateTheSameDevice('Temp_NewDevice');
 	*/
     
     DECLARE lv_CurrentID 				INT DEFAULT 0;
@@ -41,11 +49,11 @@ BEGIN
     
 	SET @sql = CONCAT('INSERT INTO Temp_SameDevice(ID, FirstDeviceID, SecondDeviceID) 
 						SELECT 	RawTransID 						AS ID
-							,	FP_FirstDeviceIDID 					AS FirstDeviceID
-							,	FP_DeviceFingerprintSecondDeviceIDID 	AS SecondDeviceID
+							,	FP_TaggingID 					AS FirstDeviceID
+							,	FP_DeviceFingerprintAccountID 	AS SecondDeviceID
                         FROM ', ip_TableName, 
-					' WHERE FP_FirstDeviceIDID IS NOT NULL
-						OR FP_DeviceFingerprintSecondDeviceIDID IS NOT NULL');
+					' 	WHERE FP_TaggingID IS NOT NULL
+							OR FP_DeviceFingerprintAccountID IS NOT NULL');
     PREPARE stmt FROM @sql;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
@@ -86,8 +94,8 @@ BEGIN
         WHERE ID = lv_CurrentID;
         
 		SET @sql = CONCAT('UPDATE ', ip_TableName,' AS tmp
-								INNER JOIN Temp_SameDevice AS tmpNd ON tmpNd.ID = tmp.ID
-							SET tmp.SameDeviceWithID = tmpNd.SameDeviceWithID');
+								INNER JOIN Temp_SameDevice AS tmpNd ON tmpNd.ID = tmp.RawTransID
+							SET tmp.SameDeviceWithRawTransID = IFNULL(tmpNd.SameDeviceWithID, 0)');
 		PREPARE stmt FROM @sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;

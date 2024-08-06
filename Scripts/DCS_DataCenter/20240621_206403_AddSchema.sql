@@ -121,6 +121,14 @@ CREATE TABLE `FP_DeviceMapping` (
   KEY `UK_FP_DeviceMapping_FP_DeviceFingerprintAccountOldID` (`FP_DeviceFingerprintAccountOldID`)
 ) ENGINE=InnoDB;
 
+CREATE TABLE `FP_TransactionDeviceMapping` (
+  `RawTransID` BIGINT UNSIGNED NOT NULL,
+  `FP_DeviceMappingID` BIGINT UNSIGNED NOT NULL,
+  `FP_DeviceID` BIGINT UNSIGNED NOT NULL,
+  `InsertedTime` TIMESTAMP DEFAULT NOW(),
+  PRIMARY KEY (`RawTransID`)
+) ENGINE=InnoDB;
+
 CREATE TABLE `FP_Device` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `FirstRawTransID` BIGINT UNSIGNED NOT NULL,
@@ -146,13 +154,14 @@ CREATE TABLE `FP_Association` (
   KEY `IX_FP_Association_DeviceID_AccountID_CreatedDate` (`DeviceID`,`AccountID`)
 ) ENGINE=InnoDB;
 
+
 CREATE TABLE `FP_AssociationMapping` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `AccountID` BIGINT UNSIGNED NOT NULL,
   `DeviceID` BIGINT UNSIGNED NOT NULL,
   `FP_DeviceID` BIGINT UNSIGNED NOT NULL,
   `SubscriberID` INT NOT NULL,
-  `InsertedTime` TIMESTAMP(4) NOT NULL,
+  `InsertedTime` TIMESTAMP DEFAULT NOW(),
   
   PRIMARY KEY (`ID`),
   UNIQUE KEY `UX_FP_AssociationMapping_AccountID_DeviceID_FP_DeviceID` (`AccountID`,`DeviceID`,`FP_DeviceID`)
@@ -237,8 +246,8 @@ DROP TABLE `DCS_DataCenter`.`AssociationNew`;
 
 
 INSERT INTO `DCS_DataCenter`.`SystemSetting`(`ID`, `VGroup`, `VName`, `VValue`, `UpdatedTime`)
-VALUES 	(23, 'DeviceRule', 'MinID_FP_DeviceEvolution', 0, NOW()),
-		(24, 'DeviceRule', 'MinID_FP_DeviceMapping', 0, NOW());
+VALUES 	(23, 'DeviceEvolution', 'Min_FP_DeviceFingerprintAccountID', 0, NOW()),
+		(24, 'DeviceMapping', 'Min_Transaction_TransID', 0, NOW());
 
 INSERT INTO `DCS_DataCenter`.`StaticList`(`ListID`, `ItemID`, `ListCode`, `ListName`, `ItemCode`, `ItemName`, `Status`, `Description`, `CreatedDate`)
 VALUES 	(4, 1, 'DeviceMapping', 'DeviceMapping', 'Tagging', 'Tagging', 1, 'Rule 1', NOW()),
