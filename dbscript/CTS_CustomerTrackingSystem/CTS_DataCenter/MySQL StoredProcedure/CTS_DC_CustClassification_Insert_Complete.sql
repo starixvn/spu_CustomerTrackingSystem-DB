@@ -48,6 +48,8 @@ BEGIN
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT		INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL		INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL			INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT		INT;
 	DECLARE CONST_ACTIONTYPE_INSERT 						INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 						INT DEFAULT 1;
 	DECLARE CONST_SOURCETYPE_CUSTOMERCLASS_ADD_MANUAL		INT DEFAULT 10;
@@ -67,6 +69,7 @@ BEGIN
 	DECLARE lv_SourceTypeID									INT;  
 	DECLARE lv_ActionType									INT;
 	DECLARE lv_IsMarkedDirectly								TINYINT(1);  
+	DECLARE lv_IsRescan										TINYINT(1) DEFAULT 0;  
 
 	SET CONST_CATEID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_SPECIALCC								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
@@ -92,6 +95,8 @@ BEGIN
 	SET CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT');
 	SET CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL');
 	SET CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL');
+	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON');
+	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT');
 
 	/*1 - VVIP*/
 	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_VVIP THEN
@@ -815,6 +820,10 @@ BEGIN
 		SET lv_UpdatedCount = 0;
 		SET lv_IsAuto = 1;
 
+		IF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON,CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT) THEN
+			SET lv_IsRescan = 1;
+		END IF;
+		
 		/*delete Normal/PotentialPA - IsKeepOldCateID = 0*/
 		DELETE cls
 		FROM CTS_DataCenter.CTSCustomerClassification AS cls
@@ -855,9 +864,9 @@ BEGIN
 			, 	temp.RoleID
 			, 	temp.NewCategoryGroupID AS CategoryID
 			, 	temp.ParentID
-			, 	CASE WHEN (temp.IsFromOldPA = 1 AND temp.IsExistVVIP = 0) THEN temp.CreatedDate ELSE lv_CurrentDateTime END AS CreatedDate
+			, 	CASE WHEN lv_IsRescan = 1 THEN temp.CreatedDate ELSE lv_CurrentDateTime END AS CreatedDate
 			, 	temp.CreatedBy
-			, 	CASE WHEN (temp.IsFromOldPA = 1 AND temp.IsExistVVIP = 0) THEN temp.LastModifiedDate ELSE lv_CurrentDateTime END AS LastModifiedDate
+			, 	CASE WHEN lv_IsRescan = 1 THEN temp.LastModifiedDate ELSE lv_CurrentDateTime END AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
 			,	temp.IsMarkedDirectly
@@ -872,8 +881,8 @@ BEGIN
 			,	temp.SportType
 			,	temp.TVSIssueTypeID AS IssueTypeID
 		FROM Temp_NewClassification AS temp 
-		WHERE 	(temp.DataChangeType = 0 AND temp.IsDataChanged = 1)
-			OR 	(temp.IsFromOldPA 	= 1 AND temp.IsExistVVIP = 1);
+		WHERE 	(temp.DataChangeType = 0 AND temp.IsDataChanged = 1) 
+			OR 	(temp.IsFromOldPA 	= 1 AND lv_IsRescan = 0); /*temp.IsDataChanged = 0*/
 		
 		SET lv_InsertedCount = FOUND_ROWS();
 
@@ -972,8 +981,7 @@ BEGIN
 		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON 
 			AND (EXISTS (SELECT 1 
 						FROM Temp_NewClassification 
-						WHERE IsFromTVS = 1 
-							AND ((IsDataChanged = 1 AND lv_InsertedCount > 0) OR (IsFromOldPA = 1 AND IsExistVVIP = 0 AND lv_UpdatedCount > 0)))) THEN
+						WHERE IsFromTVS = 1 AND (lv_InsertedCount > 0 OR lv_UpdatedCount > 0)))THEN
 			
 			INSERT INTO CTS_DataCenter.TVSVoidRequest (
 					TVSRequestID,CustID,CategoryID,TVSReasonID,IssueTypeID,CreatedBy,IsParlay,SportType
@@ -985,7 +993,10 @@ BEGIN
 			FROM Temp_NewClassification AS temp
 				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.NewCategoryID
 				LEFT JOIN CTS_DataCenter.TVSVoidRequest AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
-			WHERE temp.IsFromTVS = 1 AND temp.IsDataChanged = 1
+			WHERE temp.IsFromTVS = 1 
+				AND ((temp.IsFromOldPA = 1 AND lv_IsRescan = 0 AND lv_InsertedCount > 0)
+					OR (temp.IsDataChanged = 1 AND lv_InsertedCount > 0)
+					OR (temp.IsDataChanged = 1 AND lv_IsRescan = 1 AND lv_UpdatedCount > 0))
 				AND h.CustID IS NULL;
 		END IF;
 		
@@ -993,7 +1004,7 @@ BEGIN
 			IF EXISTS (SELECT 1 
 						FROM Temp_NewClassification 
 						WHERE IsFromTW = 1 
-							AND ((IsDataChanged = 1 AND lv_InsertedCount > 0) OR (IsFromOldPA = 1 AND IsExistVVIP = 0 AND lv_UpdatedCount > 0))) THEN
+							AND ( lv_InsertedCount > 0 OR lv_UpdatedCount > 0)) THEN
 				
 				INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate,InsertedTime)
 				SELECT 	temp.CustID
@@ -1003,14 +1014,17 @@ BEGIN
 					,	CURRENT_TIMESTAMP(3) AS InsertedTime
 				FROM Temp_NewClassification AS temp
 					LEFT JOIN CTS_DataCenter.TWRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
-				WHERE temp.IsFromTW = 1 AND temp.IsDataChanged = 1
+				WHERE temp.IsFromTW = 1 
+					AND ((temp.IsFromOldPA = 1 AND lv_IsRescan = 0 AND lv_InsertedCount > 0)
+						OR (temp.IsDataChanged = 1 AND lv_InsertedCount > 0)
+						OR (temp.IsDataChanged = 1 AND lv_IsRescan = 1 AND lv_UpdatedCount > 0))
 					AND h.CustID IS NULL;
 			END IF;
 			
 			IF EXISTS (SELECT 1 
 						FROM Temp_NewClassification 
 						WHERE IsFromCTS = 1 
-							AND ((IsDataChanged = 1 AND lv_InsertedCount > 0) OR (IsFromOldPA = 1 AND IsExistVVIP = 0 AND lv_UpdatedCount > 0))) THEN
+							AND ( lv_InsertedCount > 0 OR lv_UpdatedCount > 0)) THEN
 					
 				INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate,InsertedTime)
 				SELECT 	temp.CustID
@@ -1020,7 +1034,9 @@ BEGIN
 					,	CURRENT_TIMESTAMP(3) AS InsertedTime
 				FROM Temp_NewClassification AS temp
 					LEFT JOIN CTS_DataCenter.CTSRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
-				WHERE temp.IsFromCTS = 1 AND temp.IsDataChanged = 1
+				WHERE temp.IsFromCTS = 1 
+					AND ((temp.IsDataChanged = 1 AND lv_InsertedCount > 0)
+						OR (temp.IsDataChanged = 1 AND lv_IsRescan = 1 AND lv_UpdatedCount > 0))
 					AND h.CustID IS NULL;
 					
 			END IF;	

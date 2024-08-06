@@ -23,6 +23,8 @@ BEGIN
 */
 
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON	INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT	INT;
 	DECLARE CONST_CATEID_VVIP			 				INT;
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 				INT;
 	DECLARE CONST_CATEID_LICVIPDANGEROUS 				INT;
@@ -64,8 +66,11 @@ BEGIN
 	
     DECLARE lv_LicBAPriority							SMALLINT UNSIGNED;
 	DECLARE	lv_CurrentDateTime							DATETIME DEFAULT CURRENT_TIME(3);
+	DECLARE lv_IsRescan									TINYINT(1) DEFAULT 0; 
 
 	SET CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL');
+	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON		= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON');
+	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT		= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT');
 	SET CONST_CATEID_VVIP			 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
 	SET CONST_CATEID_LICVIPDANGEROUS 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
@@ -339,15 +344,9 @@ BEGIN
 			,	IsLicensee				TINYINT(1)
 		); 
 		
-		INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
-		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC
-		FROM Temp_NewClassification AS temp,
-		LATERAL (	SELECT h.CategoryID, IFNULL(h.TargetCC,-1) AS TargetCC
-					FROM CTS_DataCenter.CTSCustomerClassification_History AS h
-					WHERE h.CustID = temp.CustID 
-					ORDER BY ID DESC
-					LIMIT 1) AS tmpHis
-		;
+		IF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON,CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT) THEN
+			SET lv_IsRescan = 1;
+		END IF;
 		
 		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 		SELECT DISTINCT 
@@ -406,11 +405,10 @@ BEGIN
 			AND temp.ParentID = CONST_PARENTID_PA;
 			
 		UPDATE Temp_NewClassification AS temp
-			INNER JOIN Temp_LastHistory AS h ON temp.CustID = h.CustID
 		SET 	temp.IsFromOldPA 	= 1 
 		WHERE 	temp.IsExistVVIP 	= 0
 			AND temp.ParentID = CONST_PARENTID_PA
-			AND h.TargetCC = -1 AND h.CategoryID = CONST_CATEID_VVIP;
+			AND lv_IsRescan = 1;
 
 		/*delete: existing VVIP */
 		DELETE temp
@@ -514,7 +512,7 @@ BEGIN
 			,	temp.ActionType 		= CONST_ACTIONTYPE_UPDATE
 			,	temp.CreatedBy 			= IFNULL(temp.CreatedBy,temp_old.CreatedBy)
 		WHERE 	temp.IsDataChanged 		= 0
-			AND temp.IsFromOldPA = 1 AND temp.IsExistVVIP = 0;
+			AND lv_IsRescan = 1;
 		
 		/*existing PotentialPA + PA - existing and new: the same CateGroup*/
 		UPDATE Temp_NewClassification AS temp 
@@ -526,9 +524,7 @@ BEGIN
 			,	temp.IsDataChanged 		= 1 
 			,	temp.OldCategoryID 		= temp_old.ExistCategoryID			
 			,	temp.ActionType 		= CONST_ACTIONTYPE_UPDATE
-			,	temp.CreatedBy 			= CASE WHEN (temp.IsFromOldPA = 1 AND temp.IsExistVVIP = 0) 
-												THEN IFNULL(temp.CreatedBy,temp_old.CreatedBy) 
-											ELSE temp_old.CreatedBy END;
+			,	temp.CreatedBy 			= CASE WHEN lv_IsRescan = 1 THEN temp.CreatedBy ELSE temp_old.CreatedBy END;
 		
 		/*existing PotentialPA + PA - existing and new: the same CateGroup - not change WinlossStatus (KEEP)*/
 		DELETE temp_old
@@ -620,8 +616,6 @@ BEGIN
 			INNER JOIN Temp_LicVIPCust AS tmpVip ON temp.CustID = tmpVip.CustID
 		SET temp.TargetCC = IFNULL(temp.SpecialCC, tmpVip.CustomerClass)
 		WHERE temp.SpecialCC IS NULL; 
-		
-		DELETE FROM Temp_LastHistory;
 		
 		INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
 		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC 
