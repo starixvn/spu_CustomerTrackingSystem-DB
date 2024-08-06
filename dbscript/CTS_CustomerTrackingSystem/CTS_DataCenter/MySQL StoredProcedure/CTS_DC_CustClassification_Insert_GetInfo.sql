@@ -402,8 +402,8 @@ BEGIN
 											,	GroupName					VARCHAR(100)		PATH "$.GroupName"
 											,	IsFromTVS					TINYINT(1)			PATH "$.IsFromTVS"
 											,	TVSRequestID				BIGINT UNSIGNED		PATH "$.TVSRequestID"
-											,	IsTVSParlay					TINYINT(1)			PATH "$.IsTVSParlay"
-											,	TVSIssueTypeID				TINYINT				PATH "$.TVSIssueTypeID"
+											,	IsTVSParlay					TINYINT(1)			PATH "$.IsParlay"
+											,	TVSIssueTypeID				TINYINT				PATH "$.IssueTypeID"
 											,	SportType					SMALLINT			PATH "$.SportType"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
@@ -414,8 +414,28 @@ BEGIN
 								,	BetCount = IFNULL(Temp_NewClassification.BetCount, tmpJs.BetCount)  
 								,	ActiveDays = IFNULL(Temp_NewClassification.ActiveDays, tmpJs.ActiveDays)
 								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_NewClassification.IsFromCTS END
+								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_NewClassification.IsFromTVS END
 								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_NewClassification.IsMarkedDirectly END
-								,	CreatedBy = IFNULL(Temp_NewClassification.CreatedBy, tmpJs.CreatedBy)
+								,	IsTVSParlay = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
+																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
+															THEN tmpJs.IsTVSParlay 
+														ELSE Temp_NewClassification.IsTVSParlay END
+								,	SportType = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
+																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
+															THEN tmpJs.SportType 
+														ELSE Temp_NewClassification.SportType END
+								,	CreatedBy = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
+																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
+															THEN tmpJs.CreatedBy 
+														ELSE Temp_NewClassification.CreatedBy END
+								,	TVSIssueTypeID = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
+																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
+															THEN tmpJs.TVSIssueTypeID 
+														ELSE Temp_NewClassification.TVSIssueTypeID END
+								,	TVSRequestID = CASE WHEN Temp_NewClassification.TVSRequestID IS NULL 
+																AND (tmpJs.TVSRequestID > 0 OR (tmpJs.TVSRequestID IS NULL AND tmpJs.TVSIssueTypeID = 11))
+															THEN tmpJs.TVSRequestID 
+														ELSE Temp_NewClassification.TVSRequestID END
 								;
 			
 		/*6 - PA-Reason*/
