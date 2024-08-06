@@ -504,28 +504,28 @@ BEGIN
 		
 		UPDATE CTS_DataCenter.RobotDetection AS rd
 			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID
-																AND temp.IsExistRobot = 1 AND temp.IsFromAI = 1
+																AND temp.IsExistRobot = 1 AND temp.IsFromAI = 1 AND rd.IsDisabled = 0
 		SET rd.IsDisabled = 1
 		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
 		
 		-- ROBOT TW
 		UPDATE CTS_DataCenter.TWRobotUser AS rd
 			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID 
-																AND temp.IsExistRobot = 1 AND temp.IsFromTW = 1
+																AND temp.IsExistRobot = 1 AND temp.IsFromTW = 1 AND rd.IsDisabled = 0
 		SET rd.IsDisabled = 1
 		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
 		
 		-- ROBOT CTS
 		UPDATE CTS_DataCenter.CTSRobotUser AS rd
 			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID 
-																AND temp.IsExistRobot = 1 AND temp.IsFromCTS = 1
+																AND temp.IsExistRobot = 1 AND temp.IsFromCTS = 1 AND rd.IsDisabled = 0
 		SET rd.IsDisabled = 1
 		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
 		
 		-- PA/ROBOT TVS <ADD INSERT PA - SOURCETYPEID>
 		UPDATE CTS_DataCenter.TVSVoidRequest AS rd
 			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID 
-																AND temp.IsFromTVS = 1
+																AND temp.IsFromTVS = 1 AND rd.IsDisabled = 0
 		SET rd.IsDisabled = 1
 		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
 		

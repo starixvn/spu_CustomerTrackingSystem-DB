@@ -59,6 +59,7 @@ BEGIN
     DECLARE lv_CreatedBy 									INT DEFAULT 10278938;
 	DECLARE	lv_CurrentDateTime								DATETIME DEFAULT CURRENT_TIME(3);
 	DECLARE	lv_InsertedCount								INT DEFAULT 0;
+	DECLARE	lv_UpdatedCount									INT DEFAULT 0;
 	DECLARE lv_IsParallelParentID							TINYINT(1);  
 	DECLARE lv_ParentID										INT UNSIGNED;  
 	DECLARE lv_CustomerClassPriority						SMALLINT;  
@@ -814,6 +815,7 @@ BEGIN
 
 	ELSE
 		SET lv_InsertedCount = 0;
+		SET lv_UpdatedCount = 0;
 		SET lv_IsAuto = 1;
 
 		/*delete Normal/PotentialPA - IsKeepOldCateID = 0*/
@@ -837,6 +839,8 @@ BEGIN
 			,	cls.IsFromImperva		=   CASE WHEN temp.IsFromImperva	= 1 THEN temp.IsFromImperva 	ELSE cls.IsFromImperva 		END
 			,	cls.IsMarkedDirectly	=   CASE WHEN temp.IsMarkedDirectly	= 1 THEN temp.IsMarkedDirectly 	ELSE cls.IsMarkedDirectly 	END
 			; 
+			
+		SET lv_UpdatedCount = FOUND_ROWS();
 		
 		/*update LicVIP*/
 		UPDATE IGNORE CTS_DataCenter.CTSCustomerClassification AS cls
@@ -966,9 +970,12 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID ;
 		
 	/*Insert into source tables*/
-	IF (IFNULL(lv_InsertedCount,0) > 0) THEN
+	IF (IFNULL(lv_InsertedCount,0) > 0 OR IFNULL(lv_UpdatedCount,0) > 0) THEN
 
-		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON AND EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTVS = 1 AND IsDataChanged = 1) THEN
+		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON 
+			AND (EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTVS = 1 AND IsDataChanged = 1 AND lv_InsertedCount > 0) 
+					OR EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTVS = 1 AND DataChangeType = 1 AND lv_UpdatedCount > 0)) THEN
+			
 			INSERT INTO CTS_DataCenter.TVSVoidRequest (
 					TVSRequestID,CustID,CategoryID,TVSReasonID,IssueTypeID,CreatedBy,IsParlay,SportType
 				,	RequestTypeID,CreatedDate,InsertedTime)
@@ -978,30 +985,41 @@ BEGIN
 				,	CURRENT_TIMESTAMP(3) AS InsertedTime
 			FROM Temp_NewClassification AS temp
 				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.NewCategoryID
-			WHERE temp.IsFromTVS = 1;
+				LEFT JOIN CTS_DataCenter.TVSVoidRequest AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
+			WHERE temp.IsFromTVS = 1
+				AND h.CustID IS NULL;
 		END IF;
 		
 		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAROBOT THEN
-			IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1 AND IsDataChanged = 1) THEN
-				INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate)
-				SELECT temp.CustID,temp.NewCategoryID,temp.TWRobotCounter,lv_CurrentDateTime AS CreatedDate
+			IF (EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1 AND IsDataChanged = 1 AND lv_InsertedCount > 0) 
+				OR EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1 AND DataChangeType = 1 AND lv_UpdatedCount > 0)) THEN
+				
+				INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate,InsertedTime)
+				SELECT 	temp.CustID
+					,	temp.NewCategoryID
+					,	temp.TWRobotCounter
+					,	lv_CurrentDateTime AS CreatedDate
+					,	CURRENT_TIMESTAMP(3) AS InsertedTime
 				FROM Temp_NewClassification AS temp
+					LEFT JOIN CTS_DataCenter.TWRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
 				WHERE temp.IsFromTW = 1
-				ON DUPLICATE KEY UPDATE CategoryID = temp.NewCategoryID
-									,	RobotCounter = temp.TWRobotCounter
-									,	IsDisabled = 0
-									,	CreatedDate = lv_CurrentDateTime;
+					AND h.CustID IS NULL;
 			END IF;
 			
-			IF EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromCTS = 1 AND IsDataChanged = 1) THEN
-				INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate)
-				SELECT temp.CustID,temp.NewCategoryID,temp.Remark,lv_CurrentDateTime AS CreatedDate
+			IF (EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromCTS = 1 AND IsDataChanged = 1  AND lv_InsertedCount > 0) 
+					OR EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromCTS = 1 AND DataChangeType = 1 AND lv_UpdatedCount > 0)) THEN
+					
+				INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate,InsertedTime)
+				SELECT 	temp.CustID
+					,	temp.NewCategoryID
+					,	temp.Remark
+					,	lv_CurrentDateTime AS CreatedDate
+					,	CURRENT_TIMESTAMP(3) AS InsertedTime
 				FROM Temp_NewClassification AS temp
+					LEFT JOIN CTS_DataCenter.CTSRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
 				WHERE temp.IsFromCTS = 1
-				ON DUPLICATE KEY UPDATE CreatedDate = lv_CurrentDateTime
-									,	IsDisabled = 0
-									,	Remark = temp.Remark
-									,	CategoryID = temp.NewCategoryID;
+					AND h.CustID IS NULL;
+					
 			END IF;	
 
 		END IF;	
