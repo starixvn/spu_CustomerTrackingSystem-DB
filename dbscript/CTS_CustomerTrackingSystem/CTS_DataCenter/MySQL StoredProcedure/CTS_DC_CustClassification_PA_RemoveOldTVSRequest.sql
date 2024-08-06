@@ -77,6 +77,11 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS d ON temp.TVSRequestID = d.TVSRequestID
 																			AND temp.CustID = d.CustID
 	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
+	
+	DELETE d
+    FROM Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.TVSVoidRequest AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID AND d.IsDisabled = 0
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
         
     /* REMOVE FROM CLASSIFICATION  */
     INSERT INTO Temp_ExistedEvidence(CTSCustID, Ext_EvidenceID_Licensee, Ext_EvidenceID_Credit)
