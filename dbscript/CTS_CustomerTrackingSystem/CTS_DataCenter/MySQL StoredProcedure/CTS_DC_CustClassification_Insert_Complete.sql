@@ -872,7 +872,7 @@ BEGIN
 			,	temp.SportType
 			,	temp.TVSIssueTypeID AS IssueTypeID
 		FROM Temp_NewClassification AS temp 
-		WHERE 	temp.DataChangeType = 0 
+		WHERE 	(temp.DataChangeType = 0 AND temp.IsDataChanged = 1)
 			OR 	(temp.IsFromOldPA 	= 1 AND temp.IsExistVVIP = 1);
 		
 		SET lv_InsertedCount = FOUND_ROWS();

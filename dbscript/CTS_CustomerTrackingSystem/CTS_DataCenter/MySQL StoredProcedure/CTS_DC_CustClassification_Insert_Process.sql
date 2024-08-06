@@ -179,7 +179,7 @@ BEGIN
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.ActionType = CONST_ACTIONTYPE_UPDATE
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT
-			AND (temp.NewCategoryID = temp.OldCategoryID OR temp.NewCategoryGroupID = temp.NewCategoryGroupID)
+			AND (temp.NewCategoryID = temp.OldCategoryID OR temp.NewCategoryGroupID = temp.OldCategoryGroupID)
 			AND temp.IsFromOldPA = 0;
 
 		UPDATE Temp_NewClassification AS temp
