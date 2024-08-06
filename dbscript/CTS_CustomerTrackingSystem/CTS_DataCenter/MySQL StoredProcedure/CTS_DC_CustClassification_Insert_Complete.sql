@@ -978,7 +978,7 @@ BEGIN
 			INSERT INTO CTS_DataCenter.TVSVoidRequest (
 					TVSRequestID,CustID,CategoryID,TVSReasonID,IssueTypeID,CreatedBy,IsParlay,SportType
 				,	RequestTypeID,CreatedDate,InsertedTime)
-			SELECT 	temp.TVSRequestID,temp.CustID,temp.NewCategoryID,temp.TVSIssueTypeID,temp.CreatedBy,temp.IsTVSParlay,temp.SportType
+			SELECT 	temp.TVSRequestID,temp.CustID,temp.NewCategoryID,temp.TVSReasonID,temp.TVSIssueTypeID,temp.CreatedBy,temp.IsTVSParlay,temp.SportType
 				,	CASE WHEN cc.CustomerClassName = 'Robot' THEN CONST_TVSREQUESTTYPEID_ROBOT ELSE CONST_TVSREQUESTTYPEID_PA END AS RequestTypeID
 				,	lv_CurrentDateTime AS CreatedDate
 				,	CURRENT_TIMESTAMP(3) AS InsertedTime
