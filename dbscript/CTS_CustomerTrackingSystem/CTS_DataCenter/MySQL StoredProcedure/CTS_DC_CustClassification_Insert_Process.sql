@@ -512,7 +512,7 @@ BEGIN
 			,	temp.IsDataChanged 		= 1 
 			,	temp.OldCategoryID 		= temp_old.ExistCategoryID			
 			,	temp.ActionType 		= CONST_ACTIONTYPE_UPDATE
-			,	temp.CreatedBy 			= temp_old.CreatedBy
+			,	temp.CreatedBy 			= IFNULL(temp.CreatedBy,temp_old.CreatedBy)
 		WHERE 	temp.IsDataChanged 		= 0
 			AND temp.IsFromOldPA = 1 AND temp.IsExistVVIP = 0;
 		
