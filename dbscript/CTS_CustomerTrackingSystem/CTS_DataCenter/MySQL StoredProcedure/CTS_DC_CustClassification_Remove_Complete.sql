@@ -406,7 +406,7 @@ BEGIN
 			,	cls.CategoryID
 			,	cc.Ext_EvidenceID_Licensee
 			,	cc.Ext_EvidenceID_Credit
-			,	(CASE WHEN (temp.IsExceptDirectDownline = 1 AND temp.IsMarkedDirectly = 1 AND ip_IsFromQueue = 1) THEN 0 
+			,	(CASE WHEN (temp.IsExceptDirectDownline = 1 AND cls.IsMarkedDirectly = 1 AND ip_IsFromQueue = 1) THEN 0 
 					  ELSE 1 END) AS IsRemovedPA
 			,	1 AS IsReturnData
 		FROM Temp_Customer AS temp

@@ -23,10 +23,8 @@ BEGIN
         Example:
 			- CALL CTS_DataCenter.CTS_DC_Common_GetCCAndDangerLevel('1,2,1277,555555');
 	*/ 
-	/*DECLARE CONST_PARENTID_VVIP      			INT;*/
 	DECLARE	CONST_PARENTID_PA 					INT;
 	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
-	/*DECLARE	CONST_PARENTID_NORMAL 				INT;*/
 	DECLARE	CONST_PARENTID_WRAPPER				INT;
     
 	DECLARE	CONST_CATEID_VVIP					INT;
@@ -43,10 +41,8 @@ BEGIN
     DECLARE lv_LicVIPCC_Suspicious				SMALLINT UNSIGNED;
     DECLARE lv_VVIPCC							SMALLINT UNSIGNED;
     
-	/*SET CONST_PARENTID_VVIP 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');*/
 	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
-	/*SET CONST_PARENTID_NORMAL 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');*/
 	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_CATEID_VVIP 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_LICBA 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
@@ -141,7 +137,6 @@ BEGIN
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
 					AND clss.ParentID <> CONST_PARENTID_WRAPPER
-					/*AND clss.ParentID IN (CONST_PARENTID_VVIP, CONST_PARENTID_PA, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)*/
                 ORDER BY  cate.CustomerClassPriority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss
@@ -196,7 +191,6 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
                 WHERE clss.CustID = tmp.CustID
-					/*AND clss.ParentID IN (CONST_PARENTID_VVIP, CONST_PARENTID_PA, CONST_PARENTID_WRAPPER, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)*/
                 ORDER BY  cate.CustomerClassPriority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss,
@@ -208,7 +202,6 @@ BEGIN
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
                 WHERE c.CustID = tmp.CustID
 					AND c.ParentID <> CONST_PARENTID_WRAPPER
-					/*AND c.ParentID IN (CONST_PARENTID_VVIP, CONST_PARENTID_PA, CONST_PARENTID_NORMAL, CONST_PARENTID_POTENTIALPA)*/
                 ORDER BY  cc.CustomerClassPriority ASC  
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;
