@@ -24,7 +24,6 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_Common_GetCCAndDangerLevel('1,2,1277,555555');
 	*/ 
 	DECLARE	CONST_PARENTID_PA 					INT;
-	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
 	DECLARE	CONST_PARENTID_WRAPPER				INT;
     
 	DECLARE	CONST_CATEID_VVIP					INT;
@@ -42,7 +41,6 @@ BEGIN
     DECLARE lv_VVIPCC							SMALLINT UNSIGNED;
     
 	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
-    SET CONST_PARENTID_POTENTIALPA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
 	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_CATEID_VVIP 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_LICBA 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
@@ -74,8 +72,7 @@ BEGIN
 		,	ParentID			INT
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
-		,	DangerLevelType		SMALLINT 
-		,	IsRobot				BIT(1)
+		,	DangerLevelType		SMALLINT
     );  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustLatestCate;
@@ -92,11 +89,10 @@ BEGIN
 		,	CustomerClass		INT
         ,	CustomerClassName  	VARCHAR(50)
 		,	ParentID			INT
-        ,	CategoryType		TINYINT
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
-		,	DangerLevelType		SMALLINT     
-		,	IsRobot				BIT(1)
+		,	DangerLevelType		SMALLINT  
+		,	IsPA				BIT(1)
         ,	INDEX 				IX_Temp_CustClassificationInfo_CustID(CustID)
     );  
      
@@ -144,7 +140,7 @@ BEGIN
                 LIMIT 1) AS clss
 	GROUP BY tmp.CustID;
         
-    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType,IsRobot)
+    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
 		,	clss.CategoryID
 		,	clss.CustomerClass
@@ -156,7 +152,6 @@ BEGIN
 				WHEN dangerlvl.DangerLevel IS NULL THEN 0
 				ELSE dangerlvl.Ext_DangerLevelType 
 			END AS DangerLevelType
-		,	clss.IsRobot
     FROM Temp_CustInfo AS tmp
 		INNER JOIN Temp_CustLatestCate AS t ON tmp.CustID = t.CustID,
 		LATERAL(SELECT 	CASE WHEN clss.ParentID = CONST_PARENTID_PA AND tmp.SpecialCC IS NULL THEN cate.Ext_CategoryGroupID 
@@ -191,7 +186,6 @@ BEGIN
 						END AS CustomerClassName
 					,	cate.ParentID
 					,	cate.TaggingType
-					,	CASE WHEN cate.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1
                 WHERE clss.CustID = tmp.CustID
@@ -210,19 +204,16 @@ BEGIN
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;
                 
-	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, ParentID, CategoryType, TaggingType, DangerLevel, DangerLevelType, IsRobot)	
+	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, ParentID, TaggingType, DangerLevel, DangerLevelType, IsPA)	
 	SELECT 	tmp.CustID
 		,	cate.CategoryID        
 		,	IFNULL(cate.CustomerClass,-1) AS CustomerClass
         ,	cate.CustomerClassName  
 		,	cate.ParentID
-        ,	(CASE 	WHEN cate.ParentID = CONST_PARENTID_POTENTIALPA THEN 2
-					WHEN cate.ParentID = CONST_PARENTID_PA THEN 1
-                    ELSE 3 END ) AS CategoryType
 		,	cate.TaggingType
         ,	cate.DangerLevel
         ,	cate.DangerLevelType
-		,	cate.IsRobot
+		,	CASE WHEN cate.ParentID = CONST_PARENTID_PA AND cate.CustomerClassName <> 'Robot' THEN 1 ELSE 0 END AS IsPA
     FROM Temp_CustInfo AS tmp
 		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID;
 END$$

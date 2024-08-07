@@ -18,7 +18,7 @@ BEGIN
 			- 20220705@Long.Luu: Support Licensee VIP & BA Categories [Redmine ID: #174219]            
 			- 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
             - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
-            - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Return IsRobot [Redmine ID: #205317]
+            - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Return IsPA [Redmine ID: #205317]
 
         Param's Explanation:     
         Example:
@@ -33,7 +33,7 @@ BEGIN
         ,	CustomerClassName  
         ,	DangerLevel
         ,	DangerLevelType 
-		,	IsRobot
+		,	IsPA
     FROM Temp_CustClassificationInfo;
 END$$
 

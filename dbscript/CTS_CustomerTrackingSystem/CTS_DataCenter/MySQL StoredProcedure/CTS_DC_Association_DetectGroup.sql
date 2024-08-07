@@ -575,7 +575,6 @@ BEGIN
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.ParentID)) AS ParentIDs
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.ColorTypeID)) AS ColorTypeIDs
         ,	cusclss.CustomerClass
-        ,	cusclss.CategoryType
         ,	cti.CountBotTrans AS BotTransSum
         ,	ROUND((cti.CountBotTrans/cti.CountLogin)*100,2) AS BotTransPercentage
 		,	cti.CountInvalidBrowserTrans AS InvalidBrowserInfoTransSum
@@ -594,7 +593,6 @@ BEGIN
 		,	cus.Username
 		,	cus.CustStatus
 		,	cusclss.CustomerClass
-        ,	cusclss.CategoryType
 		,	cus.Danger1
 		,	cus.Danger2
 		,	cus.Danger3
