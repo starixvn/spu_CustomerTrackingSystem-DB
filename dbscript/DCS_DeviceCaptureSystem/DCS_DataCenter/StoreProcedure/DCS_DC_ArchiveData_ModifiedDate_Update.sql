@@ -34,14 +34,14 @@ sp:BEGIN
     /*******INIT TEMPORARY TABLE************/
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction07;
 	CREATE TEMPORARY TABLE Temp_Transaction07(
-        	TransID				BIGINT UNSIGNED PRIMARY KEY
-        ,	BotComponentID		BIGINT UNSIGNED DEFAULT NULL
-        ,	CookieID			BIGINT UNSIGNED DEFAULT NULL
-        ,	RawUserAgentID		BIGINT UNSIGNED DEFAULT NULL
-        ,	RawFingerPrintID	BIGINT UNSIGNED DEFAULT NULL
-        ,	BrowserInstanceID	BIGINT UNSIGNED DEFAULT NULL
-        ,	FPDeviceID			BIGINT UNSIGNED DEFAULT NULL
-        ,	CreatedDate			DATETIME
+        	TransID					BIGINT UNSIGNED PRIMARY KEY
+        ,	BotComponentID			BIGINT UNSIGNED DEFAULT NULL
+        ,	FP_TaggingID			BIGINT UNSIGNED DEFAULT NULL
+        ,	FP_FingerPrintID		BIGINT UNSIGNED DEFAULT NULL
+        ,	FP_FingerPrintExtraID	BIGINT UNSIGNED DEFAULT NULL
+        ,	FP_UserAgentID			BIGINT UNSIGNED DEFAULT NULL
+        ,	FP_DeviceID				BIGINT UNSIGNED DEFAULT NULL
+        ,	CreatedDate				DATE
         , 	INDEX IX_Temp_Transaction07_CreatedDate(CreatedDate)
     );
     
@@ -51,45 +51,45 @@ sp:BEGIN
         ,	MaxCreatedDate		DATETIME
     );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Cookie;
-	CREATE TEMPORARY TABLE Temp_Cookie(
+    DROP TEMPORARY TABLE IF EXISTS Temp_FP_Tagging;
+	CREATE TEMPORARY TABLE Temp_FP_Tagging(
         	ID					BIGINT UNSIGNED PRIMARY KEY
         ,	MaxCreatedDate		DATETIME
     );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_RawUserAgent;
-	CREATE TEMPORARY TABLE Temp_RawUserAgent(
+    DROP TEMPORARY TABLE IF EXISTS Temp_FP_FingerPrint;
+	CREATE TEMPORARY TABLE Temp_FP_FingerPrint(
         	ID					BIGINT UNSIGNED PRIMARY KEY
         ,	MaxCreatedDate		DATETIME
     );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_RawFingerPrint;
-	CREATE TEMPORARY TABLE Temp_RawFingerPrint(
+    DROP TEMPORARY TABLE IF EXISTS Temp_FP_FingerPrintExtra;
+	CREATE TEMPORARY TABLE Temp_FP_FingerPrintExtra(
         	ID					BIGINT UNSIGNED PRIMARY KEY
         ,	MaxCreatedDate		DATETIME
     );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_BrowserInstance;
-	CREATE TEMPORARY TABLE Temp_BrowserInstance(
+    DROP TEMPORARY TABLE IF EXISTS Temp_FP_UserAgent;
+	CREATE TEMPORARY TABLE Temp_FP_UserAgent(
         	ID					BIGINT UNSIGNED PRIMARY KEY
         ,	MaxCreatedDate		DATETIME
     );
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_FPDevice;
-	CREATE TEMPORARY TABLE Temp_FPDevice(
+    DROP TEMPORARY TABLE IF EXISTS Temp_FP_Device;
+	CREATE TEMPORARY TABLE Temp_FP_Device(
         	ID					BIGINT UNSIGNED PRIMARY KEY
         ,	MaxCreatedDate		DATETIME
     );
     
     /*******GET DATA Transaction07********************/
-    INSERT INTO Temp_Transaction07(TransID, BotComponentID, CookieID, RawUserAgentID, RawFingerPrintID, BrowserInstanceID, FPDeviceID, CreatedDate)
+    INSERT INTO Temp_Transaction07(TransID, BotComponentID, FP_TaggingID, FP_FingerPrintID, FP_FingerPrintExtraID, FP_UserAgentID, FP_DeviceID, CreatedDate)
     SELECT 	TransID
         ,	BotComponentID
-        ,	CookieID
-        ,	RawUserAgentID
-        ,	RawFingerPrintID
-        ,	BrowserInstanceID
-        ,	FPDeviceID
+        ,	FP_TaggingID
+        ,	FP_FingerPrintID
+        ,	FP_FingerPrintExtraID
+        ,	FP_UserAgentID
+        ,	FP_DeviceID
         ,	CreatedDate
 	FROM DCS_DataCenter.Transaction07
 	WHERE TransID > lv_MaxTransID
@@ -103,66 +103,130 @@ sp:BEGIN
     WHERE BotComponentID IS NOT NULL
     GROUP BY BotComponentID;
     
-    INSERT INTO Temp_Cookie(ID, MaxCreatedDate)
-    SELECT 	CookieID AS ID
+    INSERT INTO Temp_FP_Tagging(ID, MaxCreatedDate)
+    SELECT  FP_TaggingID AS ID
 		,	MAX(CreatedDate) AS MaxCreatedDate
     FROM Temp_Transaction07
-    WHERE CookieID IS NOT NULL
-    GROUP BY CookieID;
+    WHERE FP_TaggingID IS NOT NULL
+    GROUP BY FP_TaggingID;
     
-    INSERT INTO Temp_RawUserAgent(ID, MaxCreatedDate)
-    SELECT 	RawUserAgentID AS ID
+    INSERT INTO Temp_FP_FingerPrint(ID, MaxCreatedDate)
+    SELECT 	FP_FingerPrintID AS ID
 		,	MAX(CreatedDate) AS MaxCreatedDate
     FROM Temp_Transaction07
-    WHERE RawUserAgentID IS NOT NULL
-    GROUP BY RawUserAgentID;
+    WHERE FP_FingerPrintID IS NOT NULL
+    GROUP BY FP_FingerPrintID;
     
-    INSERT INTO Temp_RawFingerPrint(ID, MaxCreatedDate)
-    SELECT 	RawFingerPrintID AS ID
+    INSERT INTO Temp_FP_FingerPrintExtra(ID, MaxCreatedDate)
+    SELECT 	FP_FingerPrintExtraID AS ID
 		,	MAX(CreatedDate) AS MaxCreatedDate
     FROM Temp_Transaction07
-    WHERE RawFingerPrintID IS NOT NULL
-    GROUP BY RawFingerPrintID;
+    WHERE FP_FingerPrintExtraID IS NOT NULL
+    GROUP BY FP_FingerPrintExtraID;
     
-    INSERT INTO Temp_BrowserInstance(ID, MaxCreatedDate)
-    SELECT 	BrowserInstanceID AS ID
+    INSERT INTO Temp_FP_UserAgent(ID, MaxCreatedDate)
+    SELECT 	FP_UserAgentID AS ID
 		,	MAX(CreatedDate) AS MaxCreatedDate
     FROM Temp_Transaction07
-    WHERE BrowserInstanceID IS NOT NULL
-    GROUP BY BrowserInstanceID;
+    WHERE FP_UserAgentID IS NOT NULL
+    GROUP BY FP_UserAgentID;
     
-    INSERT INTO Temp_FPDevice(ID, MaxCreatedDate)
-    SELECT 	FPDeviceID AS ID
+    INSERT INTO Temp_FP_Device(ID, MaxCreatedDate)
+    SELECT 	FP_DeviceID AS ID
 		,	MAX(CreatedDate) AS MaxCreatedDate
     FROM Temp_Transaction07
-    WHERE FPDeviceID IS NOT NULL
-    GROUP BY FPDeviceID;
+    WHERE FP_DeviceID IS NOT NULL
+    GROUP BY FP_DeviceID;
 
-    /*******UPDATE ModifiedDate********************/
-	UPDATE DCS_DataCenter.BotComponent AS main
-		INNER JOIN Temp_BotComponent AS tmp ON tmp.ID = main.ID
-	SET main.ModifiedDate = tmp.MaxCreatedDate;
+    /*******UPDATE BotComponent********************/
+    DELETE tmp
+    FROM Temp_BotComponent AS tmp
+		INNER JOIN DCS_DataCenter.FP_LastModifiedDate AS lmd ON lmd.TableName = 'BotComponent' 
+															AND lmd.RecordID = tmp.ID
+	WHERE lmd.LastModifiedDate >= tmp.MaxCreatedDate;
     
-	UPDATE DCS_DataCenter.Cookie AS main
-		INNER JOIN Temp_Cookie AS tmp ON tmp.ID = main.ID
-	SET main.ModifiedDate = tmp.MaxCreatedDate;
+    INSERT INTO DCS_DataCenter.FP_LastModifiedDate(TableName, RecordID, LastModifiedDate)
+    SELECT	'BotComponent' 	AS TableName
+		,	ID 				AS RecordID
+		,	MaxCreatedDate	AS LastModifiedDate
+	FROM Temp_BotComponent
+    ON DUPLICATE KEY UPDATE LastModifiedDate = VALUES(LastModifiedDate),
+							ModifiedTime = NOW();
+
+    /*******UPDATE FP_Tagging********************/
+    DELETE tmp
+    FROM Temp_FP_Tagging AS tmp
+		INNER JOIN DCS_DataCenter.FP_LastModifiedDate AS lmd ON lmd.TableName = 'FP_Tagging' 
+															AND lmd.RecordID = tmp.ID
+	WHERE lmd.LastModifiedDate >= tmp.MaxCreatedDate;
     
-	UPDATE DCS_DataCenter.RawUserAgent AS main
-		INNER JOIN Temp_RawUserAgent AS tmp ON tmp.ID = main.ID
-	SET main.ModifiedDate = tmp.MaxCreatedDate;
+    INSERT INTO DCS_DataCenter.FP_LastModifiedDate(TableName, RecordID, LastModifiedDate)
+    SELECT	'FP_Tagging' 	AS TableName
+		,	ID 				AS RecordID
+		,	MaxCreatedDate	AS LastModifiedDate
+	FROM Temp_FP_Tagging
+    ON DUPLICATE KEY UPDATE LastModifiedDate = VALUES(LastModifiedDate),
+							ModifiedTime = NOW();
+
+    /*******UPDATE FP_FingerPrint********************/
+    DELETE tmp
+    FROM Temp_FP_FingerPrint AS tmp
+		INNER JOIN DCS_DataCenter.FP_LastModifiedDate AS lmd ON lmd.TableName = 'FP_FingerPrint' 
+															AND lmd.RecordID = tmp.ID
+	WHERE lmd.LastModifiedDate >= tmp.MaxCreatedDate;
     
-	UPDATE DCS_DataCenter.RawFingerPrint AS main
-		INNER JOIN Temp_RawFingerPrint AS tmp ON tmp.ID = main.ID
-	SET main.ModifiedDate = tmp.MaxCreatedDate;
+    INSERT INTO DCS_DataCenter.FP_LastModifiedDate(TableName, RecordID, LastModifiedDate)
+    SELECT	'FP_FingerPrint' 	AS TableName
+		,	ID 				AS RecordID
+		,	MaxCreatedDate	AS LastModifiedDate
+	FROM Temp_FP_FingerPrint
+    ON DUPLICATE KEY UPDATE LastModifiedDate = VALUES(LastModifiedDate),
+							ModifiedTime = NOW();
+
+    /*******UPDATE FP_FingerPrintExtra********************/
+    DELETE tmp
+    FROM Temp_FP_FingerPrintExtra AS tmp
+		INNER JOIN DCS_DataCenter.FP_LastModifiedDate AS lmd ON lmd.TableName = 'FP_FingerPrintExtra' 
+															AND lmd.RecordID = tmp.ID
+	WHERE lmd.LastModifiedDate >= tmp.MaxCreatedDate;
     
-	UPDATE DCS_DataCenter.BrowserInstance AS main
-		INNER JOIN Temp_BrowserInstance AS tmp ON tmp.ID = main.ID
-	SET main.ModifiedDate = tmp.MaxCreatedDate;
+    INSERT INTO DCS_DataCenter.FP_LastModifiedDate(TableName, RecordID, LastModifiedDate)
+    SELECT	'FP_FingerPrintExtra' 	AS TableName
+		,	ID 				AS RecordID
+		,	MaxCreatedDate	AS LastModifiedDate
+	FROM Temp_FP_FingerPrintExtra
+    ON DUPLICATE KEY UPDATE LastModifiedDate = VALUES(LastModifiedDate),
+							ModifiedTime = NOW();
+
+    /*******UPDATE FP_UserAgent********************/
+    DELETE tmp
+    FROM Temp_FP_UserAgent AS tmp
+		INNER JOIN DCS_DataCenter.FP_LastModifiedDate AS lmd ON lmd.TableName = 'FP_UserAgent' 
+															AND lmd.RecordID = tmp.ID
+	WHERE lmd.LastModifiedDate >= tmp.MaxCreatedDate;
     
-	UPDATE DCS_DataCenter.FPDevice AS main
-		INNER JOIN Temp_FPDevice AS tmp ON tmp.ID = main.ID
-	SET main.ModifiedDate = tmp.MaxCreatedDate;
+    INSERT INTO DCS_DataCenter.FP_LastModifiedDate(TableName, RecordID, LastModifiedDate)
+    SELECT	'FP_UserAgent' 	AS TableName
+		,	ID 				AS RecordID
+		,	MaxCreatedDate	AS LastModifiedDate
+	FROM Temp_FP_UserAgent
+    ON DUPLICATE KEY UPDATE LastModifiedDate = VALUES(LastModifiedDate),
+							ModifiedTime = NOW();
+
+    /*******UPDATE FP_Device********************/
+    DELETE tmp
+    FROM Temp_FP_Device AS tmp
+		INNER JOIN DCS_DataCenter.FP_LastModifiedDate AS lmd ON lmd.TableName = 'FP_Device' 
+															AND lmd.RecordID = tmp.ID
+	WHERE lmd.LastModifiedDate >= tmp.MaxCreatedDate;
     
+    INSERT INTO DCS_DataCenter.FP_LastModifiedDate(TableName, RecordID, LastModifiedDate)
+    SELECT	'FP_Device' 	AS TableName
+		,	ID 				AS RecordID
+		,	MaxCreatedDate	AS LastModifiedDate
+	FROM Temp_FP_Device
+    ON DUPLICATE KEY UPDATE LastModifiedDate = VALUES(LastModifiedDate),
+							ModifiedTime = NOW();
     
     /*******UPDATE SystemSetting MaxTransID********************/
     SELECT MAX(TransID)
@@ -178,3 +242,6 @@ sp:BEGIN
 END$$
 
 DELIMITER ;
+
+
+			CALL DCS_DC_ArchiveData_ModifiedDate_Update(100);

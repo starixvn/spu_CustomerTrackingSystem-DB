@@ -14,9 +14,9 @@ CREATE TABLE `FP_LastModifiedDate` (
   `RecordID` BIGINT UNSIGNED NOT NULL,
   `LastModifiedDate` DATE,
   `InsertedTime` TIMESTAMP DEFAULT NOW(),
+  `ModifiedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UX_FP_LastModifiedDate_TableName_RecordID` (`TableName`,`RecordID`),
-  KEY `IX_FP_LastModifiedDate_LastModifiedDate` (`LastModifiedDate`)
+  UNIQUE KEY `UX_FP_LastModifiedDate_TableName_RecordID` (`TableName`,`RecordID`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `FP_Tagging` (

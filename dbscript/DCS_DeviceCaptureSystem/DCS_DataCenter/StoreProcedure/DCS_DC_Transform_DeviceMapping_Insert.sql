@@ -210,8 +210,3 @@ BEGIN
 END$$
 
 DELIMITER ;
-
-
-CALL DCS_DC_Transform_DeviceMapping_Insert('50');
-SELECT * FROM DCS_DataCenter.FP_DeviceMapping;
-SELECT * FROM DCS_DataCenter.FP_TransactionDeviceMapping;

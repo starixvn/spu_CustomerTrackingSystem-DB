@@ -447,6 +447,3 @@ BEGIN
 END$$
 
 DELIMITER ;
-
-
-			CALL DCS_DC_Transform_Device_Insert('[{"TransId": 6}]');
