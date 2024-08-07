@@ -309,7 +309,7 @@ VALUES (1,'Account has less than 10 bets for first time scan','New: New Customer
 (33,'Problem Account is unmarked directly | [Remark]','Problem Account is unmarked directly'),
 (34,'Unmarking Problem Account is affected by Uplines | [Remark]','Unmarking Problem Account is affected by Uplines'),
 (35,'Match ID [MatchID] | Win loss: [Winloss]','Auto Mark Group Betting From Match Monitor'),
-(36,'Rescan Robot','Rescan Robot'),
+(36,'Win loss: [Winloss]','Rescan Robot'),
 (37,'Insert Robot','Insert Robot'),
 (38,'[CategoryName]','Not show Details'),
 (39,'First Bet Date: [FBDate] | Detection Date: [DetectedDate] - Bot Trans: [Bot] ([BotPCT]%) - Invalid Browser Info Trans: [InvalidBrowser] ([InvalidBrowserPCT]%) | Win loss: [Winloss]','System Detect Unauthorized Login'),

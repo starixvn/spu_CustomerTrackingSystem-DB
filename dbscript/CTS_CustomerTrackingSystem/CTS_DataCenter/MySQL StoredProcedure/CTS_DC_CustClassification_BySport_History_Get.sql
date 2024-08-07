@@ -16,6 +16,7 @@ BEGIN
 		Revisions: 
 				- 20220908@Casey.Huynh: Created [Redmine ID: #176992]
                 - 20240320@Thomas.Nguyen: Return more Remark, SourceTypeName, SourceTypeID [Redmine ID: #201360]
+				- 20240628@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
 
 		Param's Explanation:
         
@@ -29,7 +30,7 @@ BEGIN
 		,	clh.CTSCustID
 		,	clh.SportID
 		,	clh.CategoryID
-        ,	(CASE WHEN clh.CategoryID IS NULL THEN '-' ELSE cat.CategoryName END) AS CategoryName
+        ,	(CASE WHEN clh.CategoryID IS NULL OR cc1.CustomerClass IS NULL THEN '-' ELSE cat.CategoryName END) AS CategoryName
 		,	clh.TurnoverRM
 		,	clh.WinlossRM
 		,	clh.BetCount
