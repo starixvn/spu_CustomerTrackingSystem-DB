@@ -442,7 +442,7 @@ BEGIN
 				,	temp.SubscriberID
 				,	temp.RoleID
 				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	(CASE WHEN temp.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END) AS CategoryID
+				,	(CASE WHEN temp.NewIsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END) AS CategoryID
 				,	lv_CurrentDateTime AS CreatedDate
 				,	temp.CreatedBy
 				,	lv_CurrentDateTime AS LastModifiedDate
@@ -457,7 +457,7 @@ BEGIN
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
 				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	(CASE WHEN temp.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END) AS CategoryID
+				,	(CASE WHEN temp.NewIsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END) AS CategoryID
 				, 	lv_CurrentDateTime AS LastModifiedDate
 				, 	temp.CreatedBy AS LastModifiedBy
 				,	lv_ActionType AS ActionType
@@ -476,7 +476,7 @@ BEGIN
 			SELECT 	temp.CustID
 				, 	temp.CTSCustID
 				,	CONST_PARENTID_WRAPPER AS ParentID
-				,	(CASE WHEN temp.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END) AS CategoryID
+				,	(CASE WHEN temp.NewIsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END) AS CategoryID
 				, 	lv_CurrentDateTime AS LastModifiedDate
 				, 	temp.CreatedBy AS LastModifiedBy
 				,	lv_ActionType AS ActionType
