@@ -367,18 +367,10 @@ BEGIN
 			,	tmpCust.BetChoiceType
 			,	tmpCust.Bettype
 			,	tmpCust.BetID
-			,	(CASE WHEN SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustAmountHome ELSE 0 END) >= @TotalAmount 
-					THEN SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustAmountHome ELSE 0 END) 
-					ELSE 0 END) AS AmountHome
-			,	(CASE WHEN SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustAmountAway ELSE 0 END) >= @TotalAmount 
-					THEN SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustAmountAway ELSE 0 END) 
-					ELSE 0 END) AS AmountWay
-			,	(CASE WHEN SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustTicketHome ELSE 0 END) >= @TotalAmount 
-					THEN SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustTicketHome ELSE 0 END) 
-					ELSE 0 END) AS TicketHome
-			,	(CASE WHEN SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustTicketAway ELSE 0 END) >= @TotalAmount 
-					THEN SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustTicketAway ELSE 0 END) 
-					ELSE 0 END) AS TicketAway
+			,	SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustAmountHome ELSE 0 END) AS AmountHome
+			,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustAmountAway ELSE 0 END) AS AmountWay
+			,	SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustTicketHome ELSE 0 END) AS TicketHome
+			,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustTicketAway ELSE 0 END) AS TicketAway
 			
 		FROM (
 				SELECT 	b.MatchId
@@ -446,18 +438,10 @@ BEGIN
 			,	tmpCust.BetChoiceType
 			,	tmpCust.Bettype
 			,	tmpCust.BetID
-			,	(CASE WHEN SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustAmountHome ELSE 0 END) >= @TotalAmount 
-					THEN SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustAmountHome ELSE 0 END) 
-					ELSE 0 END) AS AmountHome
-			,	(CASE WHEN SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustAmountAway ELSE 0 END) >= @TotalAmount 
-					THEN SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustAmountAway ELSE 0 END) 
-					ELSE 0 END) AS AmountWay
-			,	(CASE WHEN SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustTicketHome ELSE 0 END) >= @TotalAmount 
-					THEN SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustTicketHome ELSE 0 END) 
-					ELSE 0 END) AS TicketHome
-			,	(CASE WHEN SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustTicketAway ELSE 0 END) >= @TotalAmount 
-					THEN SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustTicketAway ELSE 0 END) 
-					ELSE 0 END) AS TicketAway
+			,	SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustAmountHome ELSE 0 END) AS AmountHome
+			,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustAmountAway ELSE 0 END) AS AmountWay
+			,	SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustTicketHome ELSE 0 END) AS TicketHome
+			,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustTicketAway ELSE 0 END) AS TicketAway
 			,	1
 		FROM (
 				SELECT 	b.MatchId
