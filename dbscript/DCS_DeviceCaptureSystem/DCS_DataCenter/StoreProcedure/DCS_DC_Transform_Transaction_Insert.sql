@@ -312,7 +312,7 @@ BEGIN
     WHERE IsNewRecord = 1;
 	
 	/* ======= INSERT Transaction ========= */
-    INSERT IGNORE INTO  DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FP_TaggingID, FP_FingerPrintID, FP_FingerPrintExtraID, FP_FingerPrintOldID, FP_UserAgentID)
+    INSERT IGNORE INTO DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FP_TaggingID, FP_FingerPrintID, FP_FingerPrintExtraID, FP_FingerPrintOldID, FP_UserAgentID)
    	SELECT  trt.TransID
 	    ,   trt.LoginName
         ,   trt.TransTime                

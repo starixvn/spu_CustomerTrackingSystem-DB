@@ -76,7 +76,7 @@ CREATE TABLE `FP_UserAgent` (
   `Device` VARCHAR(50) DEFAULT NULL,
   `Brand` VARCHAR(50) DEFAULT NULL,
   `Model` VARCHAR(15) DEFAULT NULL,
-  `InsertedTime` DATETIME DEFAULT NULL,
+  `InsertedTime` DATETIME DEFAULT NOW(),
   PRIMARY KEY (`ID`),
   UNIQUE KEY `UX_FP_UserAgent_Code` (`Code`)
 ) ENGINE=InnoDB;
@@ -167,6 +167,7 @@ CREATE TABLE `FP_AssociationMapping` (
   UNIQUE KEY `UX_FP_AssociationMapping_AccountID_DeviceID_FP_DeviceID` (`AccountID`,`DeviceID`,`FP_DeviceID`)
 ) ENGINE=InnoDB;
 
+/* ========= Update Schema ========= */
 ALTER TABLE `DCS_DataCenter`.`RawTransaction`
 ADD COLUMN `IsIncognitoMode` BOOLEAN,
 ADD COLUMN `ChallengeCode` VARCHAR(50) NULL,
@@ -229,6 +230,23 @@ DROP COLUMN `RecoverType`;
 ALTER TABLE `DCS_DataCenter`.`JSChallengeInfo`
 CHANGE COLUMN `ChallengeCode` `ChallengeCode` VARCHAR(50) NOT NULL;
 
+
+/* ========= INIT Data ========= */
+INSERT INTO `DCS_DataCenter`.`SystemSetting`(`ID`, `VGroup`, `VName`, `VValue`, `UpdatedTime`)
+VALUES 	(23, 'DeviceEvolution', 'Max_FP_DeviceFingerprintAccountID', 0, NOW()),
+		(24, 'DeviceMapping', 'Min_Transaction_TransID', 0, NOW());
+
+INSERT INTO `DCS_DataCenter`.`StaticList`(`ListID`, `ItemID`, `ListCode`, `ListName`, `ItemCode`, `ItemName`, `Status`, `Description`, `CreatedDate`)
+VALUES 	(4, 1, 'DeviceMapping', 'DeviceMapping', 'Tagging', 'Tagging', 1, 'Rule 1', NOW()),
+		(4, 2, 'DeviceMapping', 'DeviceMapping', 'RawFingerprint', 'RawFingerprint', 1, 'Rule 2', NOW()),
+		(4, 3, 'DeviceMapping', 'DeviceMapping', 'DeviceFingerprintAccount', 'DeviceFingerprintAccount', 1, 'Rule 3', NOW()),
+		(4, 4, 'DeviceMapping', 'DeviceMapping', 'DeviceFingerprintAccountEvolution', 'DeviceFingerprintAccountEvolution', 1, 'Rule 4', NOW()),
+		(4, 5, 'DeviceMapping', 'DeviceMapping', 'DeviceFingerprintAccountOld', 'DeviceFingerprintAccountOld', 1, 'Rule 5', NOW());
+
+UPDATE DCS_DataCenter.SystemSetting
+SET VValue = 0
+WHERE ID = 4963733;
+
 /* ========= CLEAN DB ========= */
 DROP TABLE `DCS_DataCenter`.`Cookie`;
 DROP TABLE `DCS_DataCenter`.`RawFingerPrint`;
@@ -244,34 +262,19 @@ DROP TABLE `DCS_DataCenter`.`EvolvedTransaction`;
 DROP TABLE `DCS_DataCenter`.`AssociationMapping`;
 DROP TABLE `DCS_DataCenter`.`AssociationNew`;
 
-
-INSERT INTO `DCS_DataCenter`.`SystemSetting`(`ID`, `VGroup`, `VName`, `VValue`, `UpdatedTime`)
-VALUES 	(23, 'DeviceEvolution', 'Min_FP_DeviceFingerprintAccountID', 0, NOW()),
-		(24, 'DeviceMapping', 'Min_Transaction_TransID', 0, NOW());
-
-INSERT INTO `DCS_DataCenter`.`StaticList`(`ListID`, `ItemID`, `ListCode`, `ListName`, `ItemCode`, `ItemName`, `Status`, `Description`, `CreatedDate`)
-VALUES 	(4, 1, 'DeviceMapping', 'DeviceMapping', 'Tagging', 'Tagging', 1, 'Rule 1', NOW()),
-		(4, 2, 'DeviceMapping', 'DeviceMapping', 'RawFingerprint', 'RawFingerprint', 1, 'Rule 2', NOW()),
-		(4, 3, 'DeviceMapping', 'DeviceMapping', 'DeviceFingerprintAccount', 'DeviceFingerprintAccount', 1, 'Rule 3', NOW()),
-		(4, 4, 'DeviceMapping', 'DeviceMapping', 'DeviceFingerprintAccountEvolution', 'DeviceFingerprintAccountEvolution', 1, 'Rule 4', NOW()),
-		(4, 5, 'DeviceMapping', 'DeviceMapping', 'DeviceFingerprintAccountOld', 'DeviceFingerprintAccountOld', 1, 'Rule 5', NOW());
-
-
-/*
-- Unused SPs:
- + DCS_DC_Transform_Cookie_Insert
- + DCS_DC_Transform_RawUserAgent_Insert
- + DCS_DC_Transform_RawFingerPrint_Insert
- + DCS_DC_Transform_FingerprintAttribute_Insert
- + DCS_DC_Transform_BrowserInstance_Insert
- + DCS_DC_Identity_Evolution_Insert
- + DCS_DC_Identity_EvolvedTransaction_Insert
- + DCS_DC_Identity_Evolution_GetAttributes
- + DCS_DC_Identity_AccountFingerPrint_Insert
- + DCS_DC_Identity_Device_Insert
- + DCS_DC_Identity_Device_Recover
- + DCS_DC_Identity_Device_UpdateExistsDeviceID
- + DCS_DC_Identity_DeviceCookie_Insert
- + DCS_DC_Identity_DeviceFingerPrint_Insert
- + DCS_DC_Identity_TransactionEvolution_Insert
-*/
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_Cookie_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_RawUserAgent_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_RawFingerPrint_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FingerprintAttribute_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_BrowserInstance_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_Transaction07_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Identity_Evolution_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Identity_EvolvedTransaction_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Identity_Evolution_GetAttributes`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Identity_AccountFingerPrint_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Identity_Device_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Identity_Device_Recover`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Identity_Device_UpdateExistsDeviceID`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Identity_DeviceCookie_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Identity_DeviceFingerPrint_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Identity_TransactionEvolution_Insert`;

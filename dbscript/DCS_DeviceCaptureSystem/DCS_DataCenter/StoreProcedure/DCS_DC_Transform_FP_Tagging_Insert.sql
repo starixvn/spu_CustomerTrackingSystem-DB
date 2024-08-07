@@ -22,7 +22,6 @@ BEGIN
 			CALL DCS_DC_Transform_FP_Tagging_Insert('Tagging1,Tagging2,Tagging4');
 
 	*/
-    DECLARE lv_CurrentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Tagging;
     
@@ -31,19 +30,16 @@ BEGIN
 		,	IsNewRecord					TINYINT		 					DEFAULT 1
     );
     
-    
     SET @sql = CONCAT("INSERT IGNORE INTO Temp_Tagging (Tagging) VALUES ('", REPLACE(ip_Taggings, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-	
     UPDATE Temp_Tagging AS tmp
 		INNER JOIN DCS_DataCenter.FP_Tagging AS tg ON tg.Tagging = tmp.Tagging
     SET tmp.IsNewRecord = 0;
 	
-    INSERT IGNORE INTO DCS_DataCenter.FP_Tagging(Tagging, InsertedTime)
-	SELECT	Tagging
-        ,	lv_CurrentDate AS InsertedTime
+    INSERT IGNORE INTO DCS_DataCenter.FP_Tagging(Tagging)
+	SELECT Tagging
 	FROM Temp_Tagging
     WHERE IsNewRecord = 1;
 END$$

@@ -21,9 +21,9 @@ BEGIN
             CALL DCS_DataCenter.DCS_DC_Transform_DeviceEvolution_Get(50);
 	*/
     DECLARE CONST_MINID_FP_DEVICEEVOLUTION	INT DEFAULT 23;
-	DECLARE lv_Min_FP_DeviceEvolutionID  	BIGINT UNSIGNED;
+	DECLARE lv_Max_FP_DeviceEvolutionID  	BIGINT UNSIGNED;
     
-	SET lv_Min_FP_DeviceEvolutionID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_MINID_FP_DEVICEEVOLUTION);
+	SET lv_Max_FP_DeviceEvolutionID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_MINID_FP_DEVICEEVOLUTION);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceFingerprintAccount;
     
@@ -39,7 +39,7 @@ BEGIN
 		,	FP_FingerPrintID
 		,	AccountID
     FROM DCS_DataCenter.FP_DeviceFingerprintAccount
-    WHERE ID > lv_Min_FP_DeviceEvolutionID
+    WHERE ID > lv_Max_FP_DeviceEvolutionID
 		AND DeviceID = 0
     ORDER BY ID ASC
     LIMIT ip_BatchSize;
@@ -47,11 +47,13 @@ BEGIN
     
     UPDATE Temp_DeviceFingerprintAccount AS tmp
 	INNER JOIN (
-		SELECT dfa.AccountID,
-			   GROUP_CONCAT(dfa.FP_FingerPrintID ORDER BY dfa.ID DESC SEPARATOR ',') AS FP_FingerPrintIDRef
+		SELECT 	dfa.AccountID
+			,	GROUP_CONCAT(dfa.FP_FingerPrintID ORDER BY dfa.ID DESC SEPARATOR ',') AS FP_FingerPrintIDRef
 		FROM (
-			SELECT AccountID, ID, FP_FingerPrintID,
-				   ROW_NUMBER() OVER (PARTITION BY AccountID ORDER BY ID DESC) AS rn
+			SELECT 	AccountID
+				,	ID
+                ,	FP_FingerPrintID
+                ,	ROW_NUMBER() OVER (PARTITION BY AccountID ORDER BY ID DESC) AS rn
 			FROM DCS_DataCenter.FP_DeviceFingerprintAccount
 			WHERE DeviceID > 0
 		) dfa

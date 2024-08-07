@@ -22,15 +22,15 @@ BEGIN
 	*/
     DECLARE CONST_MINID_FP_DEVICEEVOLUTION	INT DEFAULT 23;
     
-    DECLARE lv_CurrentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    DECLARE lv_CurrentDate 					TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 	DECLARE lv_Max_FP_DeviceEvolutionID  	BIGINT UNSIGNED;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceEvolution;
     
 	CREATE TEMPORARY TABLE Temp_DeviceEvolution(
-			ID				 			BIGINT UNSIGNED    				NOT NULL
-		,	EvolveByID		 			BIGINT UNSIGNED    				NULL
-		,	DeviceID 					BIGINT UNSIGNED 				NOT NULL
+			ID				 			BIGINT UNSIGNED    	NOT NULL
+		,	EvolveByID		 			BIGINT UNSIGNED    	NULL
+		,	DeviceID 					BIGINT UNSIGNED 	NOT NULL
         
         ,	PRIMARY KEY (ID)
     );
@@ -47,7 +47,7 @@ BEGIN
 					,	EvolveByID			BIGINT UNSIGNED 	PATH "$.EvolveByID"
 					,	DeviceID			BIGINT UNSIGNED 	PATH "$.DeviceID"
 				)
-		   ) AS  rt;
+		   ) AS rt;
 	
     UPDATE DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa
 		INNER JOIN Temp_DeviceEvolution AS tmp ON tmp.ID = dfa.ID

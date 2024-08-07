@@ -20,6 +20,7 @@ BEGIN
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]  
             - 20240403@Jonathan.Doan: The same AccountID must be in the same batch [Redmine ID: #202878]
             - 20240503@Jonathan.Doan: HF Division by 0 [Redmine ID: #204757]
+			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
 
 	    Param's Explanation (filtered by):
 			CALL DCS_DC_Transform_Device_GetPackage(100, 2);
@@ -39,6 +40,7 @@ BEGIN
     
     CREATE TEMPORARY TABLE Temp_Trans(	
 		    TransID		BIGINT	UNSIGNED PRIMARY KEY
+		,   RawTransID	BIGINT	UNSIGNED
 		,   AccountID	BIGINT	UNSIGNED
 		,   BatchID		INT
         ,   CreatedDate	DATE
@@ -62,7 +64,15 @@ BEGIN
 	LIMIT lv_TotalRecord;
     
     ALTER TABLE Temp_Trans
-    ADD KEY IX_Temp_Trans_AccountID (AccountID);
+    ADD KEY IX_Temp_Trans_AccountID (AccountID),
+    ADD KEY IX_Temp_Trans_RawTransID (RawTransID);
+    
+	SET lv_FromTransID = IFNULL((SELECT MIN(TransID) FROM Temp_Trans), lv_FromTransID); 
+	SET lv_FromCreatedDate = IFNULL((SELECT MIN(CreatedDate) FROM Temp_Trans), DATE_ADD(CURRENT_TIMESTAMP(), INTERVAL -2 WEEK));
+    
+    DELETE tmp
+    FROM Temp_Trans AS tmp
+    WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.FP_TransactionDeviceMapping AS tdm WHERE tdm.RawTransID = tmp.RawTransID);
 
     INSERT INTO Temp_Account(AccountID)
 	SELECT DISTINCT AccountID
@@ -81,9 +91,6 @@ BEGIN
         UPDATE Temp_Trans AS tmpT
 			INNER JOIN Temp_Account AS tmpA ON tmpA.AccountID = tmpT.AccountID
 		SET tmpT.BatchID = tmpA.BatchID;
-        
-		SET lv_FromTransID = IFNULL((SELECT MIN(TransID) FROM Temp_Trans), lv_FromTransID); 
-		SET lv_FromCreatedDate = IFNULL((SELECT MIN(CreatedDate) FROM Temp_Trans), DATE_ADD(CURRENT_TIMESTAMP(), INTERVAL -2 WEEK));
 
 		IF(lv_FromTransID IS NOT NULL AND lv_FromTransID > 0) THEN
 			UPDATE DCS_DataCenter.SystemSetting

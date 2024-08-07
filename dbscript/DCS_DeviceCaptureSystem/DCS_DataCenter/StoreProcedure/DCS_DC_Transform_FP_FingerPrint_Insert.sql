@@ -22,7 +22,6 @@ BEGIN
 			CALL DCS_DC_Transform_FP_FingerPrint_Insert('[{"FPFingerPrintCode":"123","FPFingerPrintAttribute":{"Name":"ABC"},"FPFingerPrintExtraCode":"123","FingerPrintExtraAttribute":{"Name":"Extra"},"FPFingerPrintOldCode":"123"}]');
 
 	*/
-    DECLARE lv_CurrentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Input;
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputFingerPrint;
@@ -97,10 +96,9 @@ BEGIN
 		INNER JOIN DCS_DataCenter.FP_FingerPrint AS fp ON fp.Code = tmp.FingerPrintCode
     SET tmp.IsNewRecord = 0;
     
-	INSERT IGNORE INTO DCS_DataCenter.FP_FingerPrint(Code, Attribute, InsertedTime)
+	INSERT IGNORE INTO DCS_DataCenter.FP_FingerPrint(Code, Attribute)
 	SELECT	FingerPrintCode
 		,	FingerPrintAttribute
-		,	lv_CurrentDate AS InsertedTime
 	FROM Temp_InputFingerPrint
     WHERE IsNewRecord = 1;
     
@@ -109,10 +107,9 @@ BEGIN
 		INNER JOIN DCS_DataCenter.FP_FingerPrintExtra AS fpe ON fpe.Code = tmp.FingerPrintExtraCode
     SET tmp.IsNewRecord = 0;
     
-	INSERT IGNORE INTO DCS_DataCenter.FP_FingerPrintExtra(Code, Attribute, InsertedTime)
+	INSERT IGNORE INTO DCS_DataCenter.FP_FingerPrintExtra(Code, Attribute)
 	SELECT	FingerPrintExtraCode
 		,	FingerPrintExtraAttribute
-		,	lv_CurrentDate AS InsertedTime
 	FROM Temp_InputFingerPrintExtra
     WHERE IsNewRecord = 1;
     
@@ -121,9 +118,8 @@ BEGIN
 		INNER JOIN DCS_DataCenter.FP_FingerPrintOld AS fpo ON fpo.Code = tmp.FingerPrintOldCode
     SET tmp.IsNewRecord = 0;
     
-	INSERT IGNORE INTO DCS_DataCenter.FP_FingerPrintOld(Code, InsertedTime)
+	INSERT IGNORE INTO DCS_DataCenter.FP_FingerPrintOld(Code)
 	SELECT	FingerPrintOldCode
-		,	lv_CurrentDate AS InsertedTime
 	FROM Temp_InputFingerPrintOld
     WHERE IsNewRecord = 1;
 END$$

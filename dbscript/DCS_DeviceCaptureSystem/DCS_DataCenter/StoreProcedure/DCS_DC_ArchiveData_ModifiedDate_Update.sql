@@ -16,6 +16,7 @@ sp:BEGIN
 		Revisions:
 			- 20230807@Jonathan.Doan: Created [Redmine ID: #191960]
 			- 20231123@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
+			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
             
 		Param's Explanation (filtered by):
 			
@@ -242,6 +243,3 @@ sp:BEGIN
 END$$
 
 DELIMITER ;
-
-
-			CALL DCS_DC_ArchiveData_ModifiedDate_Update(100);

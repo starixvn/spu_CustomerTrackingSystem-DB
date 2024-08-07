@@ -31,7 +31,7 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_Device_Insert('[{"TransId": 6}]');
+			CALL DCS_DC_Transform_Device_Insert('[{"TransId":1,"BatchId":1}]');
 	*/
 
 	DECLARE vrDeviceStatusNew			TINYINT DEFAULT 1;			# New Device

@@ -22,7 +22,6 @@ BEGIN
 			CALL DCS_DC_Transform_FP_UserAgent_Insert('[{"FPUserAgentCode":"123","UserAgent":"Chrome v1","ClientType":"ClientType v1","ClientName":"ClientName v1","ClientVersion":"v1","OSName":"OSName v1","OSShortName":"OSShortName v1","OSVersion":"OSVersion v1","OSPlatform":"OSPlatform v1","Device":"Device v1","Brand":"Brand v1","Model":"Model v1"},{"Code":"223","UserAgent":"Chrome v2","ClientType":"ClientType v2","ClientName":"ClientName v2","ClientVersion":"v2","OSName":"OSName v2","OSShortName":"OSShortName v2","OSVersion":"OSVersion v2","OSPlatform":"OSPlatform v2","Device":"Device v2","Brand":"Brand v2","Model":"Model v2"}]');
 
 	*/
-    DECLARE lv_CurrentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_UserAgent;
     
@@ -83,7 +82,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.FP_UserAgent AS c ON c.Code = tmp.Code
     SET tmp.IsNewRecord = 0;
 	
-    INSERT IGNORE INTO DCS_DataCenter.FP_UserAgent(Code, UserAgent, ClientType, ClientName, ClientVersion, OSName, OSShortName, OSVersion, OSPlatform, Device, Brand, Model, InsertedTime)
+    INSERT IGNORE INTO DCS_DataCenter.FP_UserAgent(Code, UserAgent, ClientType, ClientName, ClientVersion, OSName, OSShortName, OSVersion, OSPlatform, Device, Brand, Model)
 	SELECT	tmp.Code
 		,	tmp.UserAgent
 		,	tmp.ClientType
@@ -96,7 +95,6 @@ BEGIN
 		,	tmp.Device
 		,	tmp.Brand
 		,	tmp.Model
-        ,	lv_CurrentDate AS InsertedTime
 	FROM Temp_UserAgent AS tmp
     WHERE IsNewRecord = 1;
 END$$
