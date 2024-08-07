@@ -338,12 +338,12 @@ BEGIN
 				, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, CreatedDate, MatchID, IsFromTW, TWRobotCounter, IsFromAI, IsFromImperva
 				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, GroupName)
 			SELECT 	tmpJs.CustID
-				,	tmpJs.CTSCustID
-				,	tmpJs.RoleID
-				, 	tmpJs.SubscriberID
+				,	IFNULL(tmpJs.CTSCustID,cus.CTSCustID)
+				,	IFNULL(tmpJs.RoleID,cus.RoleID)
+				, 	IFNULL(tmpJs.SubscriberID,cus.SubscriberID)
 				,	tmpJs.DWCategoryID
 				,	cat.CategoryGroupID
-				,	tmpJs.IsLicensee
+				,	IFNULL(tmpJs.IsLicensee,cus.IsLicensee)
 				,	cus.IsLicenseeVIP
 				,	cus.IsLicenseeBA
 				,	tmpJs.CreatedBy 
