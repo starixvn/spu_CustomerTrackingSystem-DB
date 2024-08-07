@@ -86,7 +86,7 @@ BEGIN
 			, 	temp.CTSCustID
 			, 	temp.SportID
 			,	CONST_PARENTID_WRAPPER
-			, 	temp.CategoryID
+			, 	temp.NewCategoryID
 			, 	lv_CurrentDateTime AS CreatedDate
 			, 	temp.CreatedBy AS CreatedBy
 			, 	lv_CurrentDateTime AS LastModifiedDate
@@ -103,7 +103,7 @@ BEGIN
 			,	temp.CTSCustID
 			,	temp.SportID
 			,	CONST_PARENTID_WRAPPER
-			, 	temp.CategoryID
+			, 	temp.NewCategoryID
 			,	lv_CurrentDateTime AS LastModifiedDate
 			,	temp.CreatedBy AS LastModifiedBy
 			,	lv_ActionType AS ActionType
@@ -122,7 +122,7 @@ BEGIN
 			,	temp.CTSCustID
 			,	temp.SportID
 			,	CONST_PARENTID_WRAPPER
-			, 	temp.CategoryID
+			, 	temp.NewCategoryID
 			,	lv_CurrentDateTime AS LastModifiedDate
 			,	temp.CreatedBy AS LastModifiedBy
 			,	lv_ActionType AS ActionType
