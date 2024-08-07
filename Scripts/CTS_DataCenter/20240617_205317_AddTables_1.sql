@@ -99,7 +99,7 @@ CREATE TABLE CustomerCategory
 	CategoryName VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci, 
 	CategorySpec VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci, 
 	ParentID INT unsigned, 
-	CustomerClass SMALLINT UNSIGNED, 
+	CustomerClass INT UNSIGNED, 
 	CustomerClassName VARCHAR(50) COLLATE utf8_unicode_ci, 
 	CategoryGroupID INT UNSIGNED, 
 	CategoryPriority SMALLINT UNSIGNED,
