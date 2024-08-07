@@ -905,10 +905,10 @@ BEGIN
 			, 	(CASE	WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
 						WHEN temp.MatchID IS NOT NULL THEN CONST_REMARKID_AUTOMARKGB
 						WHEN temp.GroupName IS NOT NULL THEN CONST_REMARKID_PABYASSOCIATEDGROUP
-						WHEN temp.IsMarkedDirectly = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_ROBOTMARKEDDIRECTLY
 						WHEN lv_IsRescan = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT
-						WHEN temp.IsMarkedDirectly = 1 AND temp.IsRobot = 0 THEN CONST_REMARKID_PAMARKEDDIRECTLY 
-						WHEN temp.IsMarkedDirectly = 0 AND temp.IsRobot = 0 THEN CONST_REMARKID_PAAFFECTEDBYUPLINE END) AS SourceTypeID
+						WHEN temp.IsMarkedDirectly = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_ROBOTMARKEDDIRECTLY						
+						WHEN temp.IsMarkedDirectly = 1 THEN CONST_REMARKID_PAMARKEDDIRECTLY 
+						WHEN temp.IsMarkedDirectly = 0 THEN CONST_REMARKID_PAAFFECTEDBYUPLINE END) AS SourceTypeID
 			,  	temp.IsDataChanged
 			,	temp.TargetDangerLevel AS TargetDangerLevel1
 			,	temp.TurnoverRM
@@ -953,10 +953,10 @@ BEGIN
 			, 	(CASE	WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
 						WHEN temp.MatchID IS NOT NULL THEN CONST_REMARKID_AUTOMARKGB
 						WHEN temp.GroupName IS NOT NULL THEN CONST_REMARKID_PABYASSOCIATEDGROUP
-						WHEN temp.IsMarkedDirectly = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_ROBOTMARKEDDIRECTLY
 						WHEN lv_IsRescan = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT
-						WHEN temp.IsMarkedDirectly = 1 AND temp.IsRobot = 0 THEN CONST_REMARKID_PAMARKEDDIRECTLY 
-						WHEN temp.IsMarkedDirectly = 0 AND temp.IsRobot = 0 THEN CONST_REMARKID_PAAFFECTEDBYUPLINE END) AS SourceTypeID
+						WHEN temp.IsMarkedDirectly = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_ROBOTMARKEDDIRECTLY						
+						WHEN temp.IsMarkedDirectly = 1 THEN CONST_REMARKID_PAMARKEDDIRECTLY 
+						WHEN temp.IsMarkedDirectly = 0 THEN CONST_REMARKID_PAAFFECTEDBYUPLINE END) AS SourceTypeID
 			,	temp.IsDataChanged
 			,	temp.TargetDangerLevel AS TargetDangerLevel1
 			,	temp.TurnoverRM
