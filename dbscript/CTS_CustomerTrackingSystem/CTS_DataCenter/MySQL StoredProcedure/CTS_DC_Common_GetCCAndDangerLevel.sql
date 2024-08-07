@@ -75,6 +75,7 @@ BEGIN
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
 		,	DangerLevelType		SMALLINT 
+		,	IsRobot				BIT(1)
     );  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustLatestCate;
@@ -95,6 +96,7 @@ BEGIN
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
 		,	DangerLevelType		SMALLINT     
+		,	IsRobot				BIT(1)
         ,	INDEX 				IX_Temp_CustClassificationInfo_CustID(CustID)
     );  
      
@@ -134,7 +136,7 @@ BEGIN
     FROM Temp_CustInfo AS tmp,
 		LATERAL(SELECT 	cate.CustomerClassPriority
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
-					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1
                 WHERE clss.CustID = tmp.CustID
 					AND clss.ParentID <> CONST_PARENTID_WRAPPER
                 ORDER BY  cate.CustomerClassPriority ASC  
@@ -142,7 +144,7 @@ BEGIN
                 LIMIT 1) AS clss
 	GROUP BY tmp.CustID;
         
-    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
+    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType,IsRobot)
     SELECT 	tmp.CustID
 		,	clss.CategoryID
 		,	clss.CustomerClass
@@ -154,6 +156,7 @@ BEGIN
 				WHEN dangerlvl.DangerLevel IS NULL THEN 0
 				ELSE dangerlvl.Ext_DangerLevelType 
 			END AS DangerLevelType
+		,	clss.IsRobot
     FROM Temp_CustInfo AS tmp
 		INNER JOIN Temp_CustLatestCate AS t ON tmp.CustID = t.CustID,
 		LATERAL(SELECT 	CASE WHEN clss.ParentID = CONST_PARENTID_PA AND tmp.SpecialCC IS NULL THEN cate.Ext_CategoryGroupID 
@@ -188,8 +191,9 @@ BEGIN
 						END AS CustomerClassName
 					,	cate.ParentID
 					,	cate.TaggingType
+					,	CASE WHEN cate.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
-					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1
                 WHERE clss.CustID = tmp.CustID
                 ORDER BY  cate.CustomerClassPriority ASC  
 						, clss.LastModifiedDate DESC
@@ -199,14 +203,14 @@ BEGIN
 						 END AS DangerLevel
                     ,	cc.Ext_DangerLevelType 
 				FROM CTS_DataCenter.CTSCustomerClassification AS c
-					INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON c.CategoryID = cc.CategoryID AND cc.IsActive = 1
                 WHERE c.CustID = tmp.CustID
 					AND c.ParentID <> CONST_PARENTID_WRAPPER
                 ORDER BY  cc.CustomerClassPriority ASC  
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;
                 
-	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, ParentID, CategoryType, TaggingType, DangerLevel, DangerLevelType)	
+	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, ParentID, CategoryType, TaggingType, DangerLevel, DangerLevelType, IsRobot)	
 	SELECT 	tmp.CustID
 		,	cate.CategoryID        
 		,	IFNULL(cate.CustomerClass,-1) AS CustomerClass
@@ -218,6 +222,7 @@ BEGIN
 		,	cate.TaggingType
         ,	cate.DangerLevel
         ,	cate.DangerLevelType
+		,	cate.IsRobot
     FROM Temp_CustInfo AS tmp
 		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID;
 END$$
