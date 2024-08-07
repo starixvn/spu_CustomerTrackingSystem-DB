@@ -66,8 +66,8 @@ BEGIN
 		SET lv_SourceTypeID			= CONST_SOURCETYPE_CUSTOMERCLASS_REMOVE_MANUAL;
 		SET lv_LogTypeID 			= 20;
 	
-		INSERT INTO Temp_CustomerClassification(CustID, CTSCustID, SubscriberID, CreatedBy, Remark, IsReturnData)
-		SELECT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.CreatedBy, temp.Remark, 1 AS IsReturnData
+		INSERT INTO Temp_CustomerClassification(CustID, CTSCustID, SubscriberID, SportID, CreatedBy, Remark, IsReturnData)
+		SELECT temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.SportID, temp.CreatedBy, temp.Remark, 1 AS IsReturnData
 		FROM JSON_TABLE(ip_CustInfo,
 						"$[*]" COLUMNS(
 											CTSCustID				BIGINT UNSIGNED			PATH '$.CTSCustID'
