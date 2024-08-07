@@ -38,8 +38,9 @@ BEGIN
 	DECLARE CONST_PARENTID_PA               	INT;
 	DECLARE CONST_PARENTID_WRAPPER 				INT;
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
-    DECLARE CONST_SOURCETYPE_PROBLEMDIRECT		INT DEFAULT 31;
-    DECLARE CONST_SOURCETYPE_PROBLEMAFFECT		INT DEFAULT 32;
+    DECLARE CONST_REMARKID_PAMARKEDDIRECTLY		INT;
+    DECLARE CONST_REMARKID_PAAFFECTEDBYUPLINE	INT;
+	DECLARE CONST_REMARKID_RESCANROBOT			INT;
 	DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
     DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIME(); 
     DECLARE lv_LicBACC							INT UNSIGNED;
@@ -53,7 +54,10 @@ BEGIN
 	SET CONST_CATEID_LICBA 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
 	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
-   
+	SET CONST_REMARKID_PAMARKEDDIRECTLY 		= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_PAMARKEDDIRECTLY');
+	SET CONST_REMARKID_PAAFFECTEDBYUPLINE 		= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_PAAFFECTEDBYUPLINE');
+	SET CONST_REMARKID_RESCANROBOT 				= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_RESCANROBOT');
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
 			CustID					BIGINT UNSIGNED  
@@ -75,6 +79,7 @@ BEGIN
         ,	IsLicenseeBA			BIT(1)
         , 	IsDataChanged			BIT(1)
         ,	PerformanceTime		    DATETIME(3)
+		,	IsRobot					BIT(1)
         , 	PRIMARY KEY(CustID,CategoryID)  
     );  
     
@@ -94,7 +99,7 @@ BEGIN
     /* START */
     INSERT IGNORE INTO Temp_PA(
 			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetDangerLevel1, IsDangerProbation
-		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsMarkedDirectly,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime)
+		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsMarkedDirectly,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime, IsRobot)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
@@ -118,6 +123,7 @@ BEGIN
                  WHEN js.WinlossStatus = 2 AND cate.IsDangerProbation = 1 THEN 1  /*Win + Probation => Update */
 			END AS IsDataChanged
         ,   js.PerformanceTime
+		,	CASE WHEN cate.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot
 	FROM JSON_TABLE(ip_ProblemAccount,
 		"$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED			PATH "$.CustID"
@@ -177,9 +183,10 @@ BEGIN
 		, 	1 AS IsAuto
 		, 	DATE(lv_CurrentDateTime) AS InsertDate
 		, 	TargetCC
-		, 	CASE WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID 
-				 WHEN ccs.RemarkTemplateID IS NULL AND tmp.IsMarkedDirectly = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
-				 ELSE CONST_SOURCETYPE_PROBLEMAFFECT END AS SourceTypeID
+		, 	CASE WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
+				 WHEN tmp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT 
+				 WHEN tmp.IsMarkedDirectly = 1 THEN CONST_REMARKID_PAMARKEDDIRECTLY
+				 ELSE CONST_REMARKID_PAAFFECTEDBYUPLINE END AS SourceTypeID
 		,   tmp.IsDataChanged
         ,	tmp.TargetDangerLevel1
         ,	tmp.TurnoverRM
@@ -203,9 +210,10 @@ BEGIN
 		, 	1 AS IsAuto
 		, 	DATE(lv_CurrentDateTime) AS InsertDate
 		, 	TargetCC
-		, 	CASE WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID 
-				 WHEN ccs.RemarkTemplateID IS NULL AND tmp.IsMarkedDirectly = 1 THEN CONST_SOURCETYPE_PROBLEMDIRECT
-				 ELSE CONST_SOURCETYPE_PROBLEMAFFECT END AS SourceTypeID
+		, 	CASE WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
+				 WHEN tmp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT 
+				 WHEN tmp.IsMarkedDirectly = 1 THEN CONST_REMARKID_PAMARKEDDIRECTLY
+				 ELSE CONST_REMARKID_PAAFFECTEDBYUPLINE END AS SourceTypeID
 		,   tmp.IsDataChanged
         ,	tmp.TargetDangerLevel1
         ,	tmp.TurnoverRM
