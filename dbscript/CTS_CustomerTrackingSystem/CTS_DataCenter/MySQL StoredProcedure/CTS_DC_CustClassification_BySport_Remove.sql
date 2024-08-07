@@ -82,7 +82,7 @@ BEGIN
 		FROM CTS_DataCenter.SpecialCustomerClass_BySport AS s
 			INNER JOIN Temp_CustomerClassification AS temp ON temp.CTSCustID = s.CTSCustID AND temp.SportID = s.SportID;
 			
-		INSERT INTO CTS_DataCenter.SpecialCustomerClass_History(
+		INSERT INTO CTS_DataCenter.SpecialCustomerClass_BySport_History(
 				CTSCustID, CustID, SportID, SubscriberID, CustomerClass, CreatedBy, CreatedDate
 			, 	LastModifiedBy, LastModifiedDate, Remark, ActionType)
 		SELECT 	temp.CTSCustID
