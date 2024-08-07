@@ -171,6 +171,7 @@ BEGIN
 		,	IsReturnData				TINYINT(1) DEFAULT 1
 		,	Remark						VARCHAR(500)
 		,	GroupName					VARCHAR(100)
+		,	IsRobot						TINYINT(1) DEFAULT 0
 		, 	PRIMARY KEY (CustID, DWCategoryID)
 		,	KEY IX_Temp_NewCC_NewCateID (NewCategoryID)
 		,	KEY IX_Temp_NewCC_CTSCustID (CTSCustID)
@@ -336,7 +337,7 @@ BEGIN
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, TVSRequestID, IsTVSParlay, TVSIssueTypeID, SportType, IsFromCTS
 				, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, CreatedDate, MatchID, IsFromTW, TWRobotCounter, IsFromAI, IsFromImperva
-				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, GroupName)
+				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, GroupName, IsRobot)
 			SELECT 	tmpJs.CustID
 				,	IFNULL(tmpJs.CTSCustID,cus.CTSCustID)
 				,	IFNULL(tmpJs.RoleID,cus.RoleID)
@@ -377,6 +378,7 @@ BEGIN
 				,	0 AS IsDataChanged
 				,	tmpJs.PerformanceTime
 				,	tmpJs.GroupName
+				,	CASE WHEN cat.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"

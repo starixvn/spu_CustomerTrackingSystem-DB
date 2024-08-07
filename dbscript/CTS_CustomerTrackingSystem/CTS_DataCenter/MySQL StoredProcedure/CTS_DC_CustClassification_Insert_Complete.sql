@@ -37,6 +37,8 @@ BEGIN
 	DECLARE CONST_PARENTID_WRAPPER 							INT;
 	DECLARE CONST_PARENTID_NORMAL							INT;
 	DECLARE CONST_REMARKID_PAMARKEDDIRECTLY					INT;
+	DECLARE CONST_REMARKID_ROBOTMARKEDDIRECTLY				INT;
+	DECLARE CONST_REMARKID_RESCANROBOT						INT;
 	DECLARE CONST_REMARKID_PAAFFECTEDBYUPLINE				INT;
 	DECLARE CONST_REMARKID_PABYASSOCIATEDGROUP				INT;
 	DECLARE CONST_REMARKID_AUTOMARKGB						INT;
@@ -83,6 +85,8 @@ BEGIN
 	SET CONST_PARENTID_WRAPPER 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_PARENTID_NORMAL 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 	SET CONST_REMARKID_PAMARKEDDIRECTLY 					= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_PAMARKEDDIRECTLY');
+	SET CONST_REMARKID_ROBOTMARKEDDIRECTLY 					= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTMARKEDDIRECTLY');
+	SET CONST_REMARKID_RESCANROBOT 							= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_RESCANROBOT');
 	SET CONST_REMARKID_PAAFFECTEDBYUPLINE 					= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_PAAFFECTEDBYUPLINE');
 	SET CONST_REMARKID_PABYASSOCIATEDGROUP 					= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_PABYASSOCIATEDGROUP');
 	SET CONST_REMARKID_AUTOMARKGB 							= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_AUTOMARKGB');
@@ -901,8 +905,10 @@ BEGIN
 			, 	(CASE	WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
 						WHEN temp.MatchID IS NOT NULL THEN CONST_REMARKID_AUTOMARKGB
 						WHEN temp.GroupName IS NOT NULL THEN CONST_REMARKID_PABYASSOCIATEDGROUP
-						WHEN temp.IsMarkedDirectly = 1 THEN CONST_REMARKID_PAMARKEDDIRECTLY 
-						WHEN temp.IsMarkedDirectly = 0 THEN CONST_REMARKID_PAAFFECTEDBYUPLINE END) AS SourceTypeID
+						WHEN temp.IsMarkedDirectly = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_ROBOTMARKEDDIRECTLY
+						WHEN lv_IsRescan = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT
+						WHEN temp.IsMarkedDirectly = 1 AND temp.IsRobot = 0 THEN CONST_REMARKID_PAMARKEDDIRECTLY 
+						WHEN temp.IsMarkedDirectly = 0 AND temp.IsRobot = 0 THEN CONST_REMARKID_PAAFFECTEDBYUPLINE END) AS SourceTypeID
 			,  	temp.IsDataChanged
 			,	temp.TargetDangerLevel AS TargetDangerLevel1
 			,	temp.TurnoverRM
@@ -947,8 +953,10 @@ BEGIN
 			, 	(CASE	WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
 						WHEN temp.MatchID IS NOT NULL THEN CONST_REMARKID_AUTOMARKGB
 						WHEN temp.GroupName IS NOT NULL THEN CONST_REMARKID_PABYASSOCIATEDGROUP
-						WHEN temp.IsMarkedDirectly = 1 THEN CONST_REMARKID_PAMARKEDDIRECTLY 
-						WHEN temp.IsMarkedDirectly = 0 THEN CONST_REMARKID_PAAFFECTEDBYUPLINE END) AS SourceTypeID
+						WHEN temp.IsMarkedDirectly = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_ROBOTMARKEDDIRECTLY
+						WHEN lv_IsRescan = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT
+						WHEN temp.IsMarkedDirectly = 1 AND temp.IsRobot = 0 THEN CONST_REMARKID_PAMARKEDDIRECTLY 
+						WHEN temp.IsMarkedDirectly = 0 AND temp.IsRobot = 0 THEN CONST_REMARKID_PAAFFECTEDBYUPLINE END) AS SourceTypeID
 			,	temp.IsDataChanged
 			,	temp.TargetDangerLevel AS TargetDangerLevel1
 			,	temp.TurnoverRM
@@ -985,11 +993,10 @@ BEGIN
 					TVSRequestID,CustID,CategoryID,TVSReasonID,IssueTypeID,CreatedBy,IsParlay,SportType
 				,	RequestTypeID,CreatedDate,InsertedTime)
 			SELECT 	temp.TVSRequestID,temp.CustID,temp.NewCategoryID,temp.TVSReasonID,temp.TVSIssueTypeID,temp.CreatedBy,temp.IsTVSParlay,temp.SportType
-				,	CASE WHEN cc.CustomerClassName = 'Robot' THEN CONST_TVSREQUESTTYPEID_ROBOT ELSE CONST_TVSREQUESTTYPEID_PA END AS RequestTypeID
+				,	CASE WHEN temp.IsRobot = 1 THEN CONST_TVSREQUESTTYPEID_ROBOT ELSE CONST_TVSREQUESTTYPEID_PA END AS RequestTypeID
 				,	lv_CurrentDateTime AS CreatedDate
 				,	CURRENT_TIMESTAMP(3) AS InsertedTime
 			FROM Temp_NewClassification AS temp
-				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = temp.NewCategoryID
 				LEFT JOIN CTS_DataCenter.TVSVoidRequest AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
 			WHERE temp.IsFromTVS = 1 
 				AND ((temp.IsFromOldPA = 1 AND lv_IsRescan = 0 AND lv_InsertedCount > 0)
@@ -1001,7 +1008,7 @@ BEGIN
 		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY THEN
 			IF EXISTS (SELECT 1 
 						FROM Temp_NewClassification 
-						WHERE IsFromTW = 1 
+						WHERE IsFromTW = 1 AND IsRobot = 1
 							AND ( lv_InsertedCount > 0 OR lv_UpdatedCount > 0)) THEN
 				
 				INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate,InsertedTime)
@@ -1012,7 +1019,7 @@ BEGIN
 					,	CURRENT_TIMESTAMP(3) AS InsertedTime
 				FROM Temp_NewClassification AS temp
 					LEFT JOIN CTS_DataCenter.TWRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
-				WHERE temp.IsFromTW = 1 
+				WHERE temp.IsFromTW = 1 AND temp.IsRobot = 1
 					AND ((temp.IsFromOldPA = 1 AND lv_IsRescan = 0 AND lv_InsertedCount > 0)
 						OR (temp.IsDataChanged = 1 AND lv_InsertedCount > 0)
 						OR (temp.IsDataChanged = 1 AND lv_IsRescan = 1 AND lv_UpdatedCount > 0))
@@ -1021,7 +1028,7 @@ BEGIN
 			
 			IF EXISTS (SELECT 1 
 						FROM Temp_NewClassification 
-						WHERE IsFromCTS = 1 
+						WHERE IsFromCTS = 1 AND IsRobot = 1
 							AND ( lv_InsertedCount > 0 OR lv_UpdatedCount > 0)) THEN
 					
 				INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate,InsertedTime)
@@ -1032,7 +1039,7 @@ BEGIN
 					,	CURRENT_TIMESTAMP(3) AS InsertedTime
 				FROM Temp_NewClassification AS temp
 					LEFT JOIN CTS_DataCenter.CTSRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
-				WHERE temp.IsFromCTS = 1 
+				WHERE temp.IsFromCTS = 1 AND temp.IsRobot = 1
 					AND ((temp.IsDataChanged = 1 AND lv_InsertedCount > 0)
 						OR (temp.IsDataChanged = 1 AND lv_IsRescan = 1 AND lv_UpdatedCount > 0))
 					AND h.CustID IS NULL;
