@@ -341,7 +341,7 @@ BEGIN
 			SELECT 	tmpJs.CustID
 				,	CASE WHEN tmpJs.CTSCustID = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
 				,	CASE WHEN tmpJs.RoleID = 0 THEN cus.RoleID ELSE tmpJs.RoleID END
-				,	CASE WHEN tmpJs.SubscriberID = 0 THEN cus.RoleID ELSE tmpJs.SubscriberID END
+				,	CASE WHEN tmpJs.SubscriberID = 0 THEN cus.SubscriberID ELSE tmpJs.SubscriberID END
 				,	tmpJs.DWCategoryID
 				,	cat.CategoryGroupID
 				,	CASE WHEN tmpJs.IsLicensee = 0 THEN cus.IsLicensee ELSE tmpJs.IsLicensee END
