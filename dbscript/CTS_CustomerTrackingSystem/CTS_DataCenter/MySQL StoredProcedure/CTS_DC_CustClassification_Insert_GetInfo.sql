@@ -48,7 +48,6 @@ BEGIN
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL			INT;
 	
 	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY		INT;
-	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON		INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT		INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL		INT;
 	
@@ -82,7 +81,6 @@ BEGIN
 	SET CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL');
 	
 	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
-	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON');
 	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PAROBOT');
 	SET CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL');
 	
@@ -341,7 +339,7 @@ BEGIN
 			INSERT INTO Temp_NewClassification(
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, TVSRequestID, IsTVSParlay, TVSIssueTypeID, SportType, IsFromCTS
-				, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, CreatedDate, MatchID
+				, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, CreatedDate, MatchID, IsFromTW, TWRobotCounter, IsFromAI, IsFromImperva
 				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, GroupName)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
@@ -361,7 +359,8 @@ BEGIN
 				, 	tmpJs.BetCount 
 				, 	tmpJs.ActiveDays
 				,	tmpJs.IsFromTVS
-				,	tmpJs.TVSRequestID
+				,	CASE WHEN IFNULL(tmpJs.TVSRequestID,0) = 0 AND tmpJs.IsFromTVS = 0 THEN NULL
+						 ELSE tmpJs.TVSRequestID END AS TVSRequestID
 				,	tmpJs.IsTVSParlay
 				,	tmpJs.TVSIssueTypeID
 				,	tmpJs.SportType
@@ -372,6 +371,10 @@ BEGIN
 				,	tmpJs.LastModifiedDate
 				,	tmpJs.CreatedDate
 				,	tmpJs.MatchID
+				,	tmpJs.IsFromTW
+				,	tmpJs.TWRobotCounter
+				,	tmpJs.IsFromAI
+				,	tmpJs.IsFromImperva
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
@@ -405,6 +408,10 @@ BEGIN
 											,	IsTVSParlay					TINYINT(1)			PATH "$.IsParlay"
 											,	TVSIssueTypeID				TINYINT				PATH "$.IssueTypeID"
 											,	SportType					SMALLINT			PATH "$.SportType"
+											,	IsFromTW					TINYINT(1)			PATH "$.IsFromTW"
+											,	TWRobotCounter				INT					PATH "$.RobotCounter"
+											,	IsFromAI					TINYINT(1)			PATH "$.IsFromAI"
+											,	IsFromImperva				TINYINT(1)			PATH "$.IsFromImperva"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
@@ -439,7 +446,7 @@ BEGIN
 								;
 			
 		/*6 - PA-Reason*/
-		ELSEIF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON,CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON) THEN 
+		ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON THEN 
 			
 			IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON THEN
 				INSERT INTO CTS_DataCenter.TVSVoidRequest_Log(TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,CreatedTime,IsParlay,SportType,IssueTypeID)

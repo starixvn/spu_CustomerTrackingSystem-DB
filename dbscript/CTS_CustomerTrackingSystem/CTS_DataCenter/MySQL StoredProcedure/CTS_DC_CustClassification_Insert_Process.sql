@@ -416,7 +416,7 @@ BEGIN
 		WHERE temp.IsExistVVIP 	= 1 AND temp.ParentID = CONST_PARENTID_POTENTIALPA;
 		
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(
-				CustID, CTSCustID, SubscriberID, ParentID, CategoryID, CategoryGroupID, ExistCategoryID, RelevantCategoryID
+				CustID, CTSCustID, SubscriberID, RoleID, ParentID, CategoryID, CategoryGroupID, ExistCategoryID, RelevantCategoryID
 			, 	Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS
 			, 	IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, InsertTime, TVSRequestID, IsTVSParlay
 			, 	SportType, TVSIssueTypeID, IsMarkedDirectly, SpecialCC, CustomerClass, CategoryPriority, CustomerClassPriority
@@ -428,6 +428,7 @@ BEGIN
 		SELECT	cls.CustID
 			,	cls.CTSCustID
 			,	cls.SubscriberID
+			,	cls.RoleID
 			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN NULL ELSE cc.ParentID END AS ParentID
 			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN cc.CategoryID ELSE cc.CategoryGroupID END AS CategoryID
 			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN NULL ELSE cc.CategoryGroupID END AS CategoryGroupID /*NORMAL NOT CONSIDER TO WIN/LOSE >> SET NULL*/
@@ -548,13 +549,14 @@ BEGIN
 		
 		/*existing PotentialPA + PA - existing and new: the same CateGroup - WinlossStatus <> KEEP*/
 		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SubscriberID, ParentID, DWCategoryID, DWCategoryGroupID, OldCategoryID, NewCategoryID, NewCategoryGroupID
-			, 	TargetCC,  TargetDangerLevel, ToEvidenceID, Remark, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirectly
+				CustID, CTSCustID, SubscriberID, RoleID, ParentID, DWCategoryID, DWCategoryGroupID, OldCategoryID, NewCategoryID, NewCategoryGroupID
+			, 	TargetCC,  TargetDangerLevel, ToEvidenceID, Remark, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirectly
 			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsDataChanged, DataChangeType
 			, 	LastModifiedDate, CreatedBy, IsPAProbation, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID)
-		SELECT 		temp_old.CustID
+		SELECT 	temp_old.CustID
 			,	temp_old.CTSCustID
 			,	temp_old.SubscriberID
+			,	temp_old.RoleID
 			,	temp_old.ParentID
 			,	temp_old.ExistCategoryID AS DWCategoryID
 			,	temp_old.ExistCategoryID AS DWCategoryGroupID
@@ -568,6 +570,7 @@ BEGIN
 			,	(CASE 	WHEN tmpCp.IsLicensee = 1 THEN tmpLt.Ext_EvidenceID_Licensee
 						WHEN tmpCp.IsLicensee = 0 THEN tmpLt.Ext_EvidenceID_Credit ELSE NULL END) AS ToEvidenceID
 			,	temp_old.Remark
+			,	tmpCp.WinlossStatus
 			,	tmpCp.TurnoverRM
 			,	tmpCp.WinlossRM
 			,	tmpCp.BetCount
