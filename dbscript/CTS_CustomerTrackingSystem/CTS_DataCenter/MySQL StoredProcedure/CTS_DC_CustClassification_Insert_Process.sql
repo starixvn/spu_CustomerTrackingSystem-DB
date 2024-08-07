@@ -103,6 +103,7 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_LastHistory(
 			CustID					BIGINT UNSIGNED PRIMARY KEY
 		,	CategoryID				INT 
+		,	ParentID				INT
 		,	TargetCC				INT
 	);
 
@@ -618,10 +619,10 @@ BEGIN
 		SET temp.TargetCC = IFNULL(temp.SpecialCC, tmpVip.CustomerClass)
 		WHERE temp.SpecialCC IS NULL; 
 		
-		INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC)
-		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC 
+		INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC, ParentID)
+		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC, tmpHis.ParentID
 		FROM Temp_NewClassification AS temp,
-		LATERAL (	SELECT h.CategoryID, IFNULL(h.TargetCC,-1) AS TargetCC
+		LATERAL (	SELECT h.CategoryID, IFNULL(h.TargetCC,-1) AS TargetCC, h.ParentID
 					FROM CTS_DataCenter.CTSCustomerClassification_History AS h
 					WHERE h.CustID = temp.CustID 
 					ORDER BY ID DESC
@@ -631,9 +632,9 @@ BEGIN
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_LastHistory AS tmpHis ON temp.CustID = tmpHis.CustID
 		SET temp.IsDataChanged = 1
-		WHERE temp.NewCategoryGroupID <> tmpHis.CategoryID 
-			OR temp.TargetCC <> tmpHis.TargetCC; 
-		
+		WHERE (temp.NewCategoryGroupID <> tmpHis.CategoryID AND temp.ParentID <> tmpHis.ParentID)
+			OR temp.TargetCC <> tmpHis.TargetCC;
+			
 	END IF;
 	
 END$$

@@ -138,7 +138,7 @@ BEGIN
 			INNER JOIN Temp_NewClassification AS temp ON cate.CustID = temp.CustID AND cate.SportID = temp.SportID
 		SET   	cate.CTSCustID 			= temp.CTSCustID
 			, 	cate.CategoryID 		= temp.NewCategoryID
-			, 	cate.LastModifiedDate 	= lv_CurrentDateTime
+			, 	cate.LastModifiedDate 	= CASE WHEN temp.IsFromOld = 0 THEN lv_CurrentDateTime ELSE cate.LastModifiedDate END 
 			, 	cate.LastScannedDate 	= DATE(lv_CurrentDateTime)
 		WHERE temp.ActionType 			= CONST_ACTIONTYPE_UPDATE;
 		

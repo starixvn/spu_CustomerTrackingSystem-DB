@@ -61,6 +61,7 @@ BEGIN
 		,	PerformanceTime				DATETIME(3)
 		,	SpecialCC					INT
 		,	SourceTypeID      			SMALLINT
+		,	IsFromOld					TINYINT(1) DEFAULT 0
 		,	IsReturnData				TINYINT(1) DEFAULT 1			
 		, 	INDEX IX_Temp_NewCC_BySport_CustID_DWCategoryID (CustID, DWCategoryID)  
 		,	PRIMARY KEY (CustID, SportID)
