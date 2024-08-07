@@ -30,7 +30,7 @@ BEGIN
 		,	clh.CTSCustID
 		,	clh.SportID
 		,	clh.CategoryID
-        ,	(CASE WHEN clh.CategoryID IS NULL OR cc1.CustomerClass IS NULL THEN '-' ELSE cat.CategoryName END) AS CategoryName
+        ,	(CASE WHEN clh.CategoryID IS NULL OR cat.CustomerClass IS NULL THEN '-' ELSE cat.CategoryName END) AS CategoryName
 		,	clh.TurnoverRM
 		,	clh.WinlossRM
 		,	clh.BetCount
