@@ -157,5 +157,8 @@ BEGIN
 		
 	END IF;
 
+	SELECT CTSCustID, CustID, SportID
+	FROM Temp_CustomerClassification AS temp;
+
 END$$
 DELIMITER ;
