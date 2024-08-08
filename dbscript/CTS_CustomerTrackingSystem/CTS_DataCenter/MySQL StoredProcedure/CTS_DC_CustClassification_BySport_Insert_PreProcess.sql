@@ -85,7 +85,7 @@ BEGIN
     SELECT DISTINCT	temp.CustID, temp.SportID, CONST_ACTIONTYPE_IGNOREPROBATION, 0 AS IsReturnData
 	FROM Temp_NewClassification AS temp 
 		INNER JOIN Temp_ProbationCustomers AS pro ON temp.CustID = pro.CustID AND temp.SportID = pro.SportID
-    WHERE temp.IsPassProbationRule = 0;
+    WHERE pro.IsPassProbationRule = 0;
 	
 	UPDATE Temp_NewClassification AS temp
 		INNER JOIN Temp_ProbationCustomers AS pro ON pro.CustID = temp.CustID AND pro.SportID = temp.SportID

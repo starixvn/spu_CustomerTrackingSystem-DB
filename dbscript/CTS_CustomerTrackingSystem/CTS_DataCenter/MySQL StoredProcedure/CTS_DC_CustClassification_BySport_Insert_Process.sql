@@ -158,7 +158,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = temp.OldCategoryID
     SET 	temp.TargetCC 			= IFNULL(temp.SpecialCC, cate.CustomerClass)
 		,	temp.NewCategoryID		= temp.OldCategoryID
-        , 	temp.NewCategoryGroupID = temp.OldCateGroup
+        , 	temp.NewCategoryGroupID = temp.OldCategoryGroupID
     WHERE 	temp.ActionType 		= CONST_ACTIONTYPE_IGNOREPROBATION;
 	
 	UPDATE Temp_NewClassification AS temp
