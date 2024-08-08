@@ -19,17 +19,18 @@ BEGIN
 		Revisions: 
 			- 20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
 */
-	DECLARE CONST_PARENTID_NORMAL		      	INT;
 	DECLARE CONST_CATEID_PROBATION		      	INT;
+	DECLARE CONST_CATEID_SMART			      	INT;
+	DECLARE CONST_CATEID_RISKY			      	INT;
 	DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 	INT DEFAULT 5;
 	DECLARE CONST_LIST_BYSPORT				 	INT DEFAULT 23;
 	
 	DECLARE lv_CurrentDate						DATE DEFAULT CURRENT_DATE();
 	DECLARE lv_ToProbationLastDay 				DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 2 DAY);
-	DECLARE lv_ProbationCatePriority			SMALLINT;
 
-	SET CONST_PARENTID_NORMAL	 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 	SET CONST_CATEID_PROBATION	 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_PROBATION');
+	SET CONST_CATEID_SMART		 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SMART');
+	SET CONST_CATEID_RISKY		 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_RISKY');
 
 	/* TEMPORARY TABLE */
 	DROP TEMPORARY TABLE IF EXISTS Temp_ProbationCustomers;    
@@ -55,11 +56,6 @@ BEGIN
 	/* EXCLUDE INTERNAL CUSTOMERS */
 	CALL CTS_DataCenter.CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
 	
-	SELECT cat.CategoryPriority
-	INTO lv_ProbationCatePriority
-	FROM CTS_DataCenter.CustomerCategory AS cat
-	WHERE cat.CategoryID = CONST_CATEID_PROBATION;
-	
 	INSERT IGNORE INTO Temp_ProbationCustomers(CustID, SportID, DWCategoryID, ProbationDate, LastProbationDay)
     SELECT DISTINCT cls.CustID, cls.SportID, temp.DWCategoryID
 		, 	DATE(cls.CreatedDate) AS ProbationDate
@@ -70,16 +66,11 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
 	WHERE cate.CategoryID = CONST_CATEID_PROBATION;
 	
-	UPDATE Temp_ProbationCustomers AS temp
-	SET temp.IsPassProbationRule = 0
-	WHERE temp.ProbationDate >= lv_ToProbationLastDay;
-	
-	UPDATE Temp_ProbationCustomers AS temp
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON temp.DWCategoryID = cate.CategoryID
-	SET temp.IsPassProbationRule = 0
-	WHERE cate.ParentID = CONST_PARENTID_NORMAL 
-		AND	cate.CategoryPriority <= lv_ProbationCatePriority
-		AND temp.ProbationDate > temp.LastProbationDay;
+	UPDATE Temp_ProbationCustomers AS pro
+		INNER JOIN Temp_NewClassification AS temp ON temp.CustID = pro.CustID AND temp.SportID =  pro.SportID
+	SET pro.IsPassProbationRule = 0
+	WHERE pro.ProbationDate >= lv_ToProbationLastDay
+		OR (temp.DWCategoryID IN (CONST_CATEID_PROBATION, CONST_CATEID_SMART, CONST_CATEID_RISKY) AND pro.ProbationDate > pro.LastProbationDay);
 	
 	INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, SportID, ActionType, IsReturnData)
     SELECT DISTINCT	temp.CustID, temp.SportID, CONST_ACTIONTYPE_IGNOREPROBATION, 0 AS IsReturnData

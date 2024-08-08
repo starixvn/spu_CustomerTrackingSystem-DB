@@ -21,10 +21,10 @@ BEGIN
 			- 20240620@Thomas.Nguyen:			Created [Redmine ID: #205317]
 */ 
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL			INT;
-	DECLARE CONST_CATEGROUPID_PROBATION     				INT;
-    DECLARE CONST_PARENTID_NORMAL		      				INT;
-    DECLARE CONST_CATEID_PROBATION		      				INT;
 	DECLARE CONST_CATEGROUPID_INACTIVE						INT;
+	DECLARE CONST_CATEGROUPID_PROBATION     				INT;
+	DECLARE CONST_CATEGROUPID_SMART							INT;
+	DECLARE CONST_CATEGROUPID_RISKY							INT;
     DECLARE CONST_ACTIONTYPE_EXISTEDPA 						INT DEFAULT 3;
     DECLARE CONST_ACTIONTYPE_EXISTEDVVIP					INT DEFAULT 4;
     DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 				INT DEFAULT 5;
@@ -32,15 +32,14 @@ BEGIN
 	DECLARE	CONST_SCANTAGGINGTYPE_EXIST	   					TINYINT DEFAULT 1;
 	DECLARE	CONST_SCANTAGGINGTYPE_EXISTONLY 				TINYINT DEFAULT 2;
 
-	DECLARE lv_ProbationCatePriority						SMALLINT;
 	DECLARE lv_FromProbationLastDay 						DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 14 DAY);
 	DECLARE lv_ToProbationLastDay 							DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY);
 
 	SET CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL');
-	SET CONST_CATEGROUPID_PROBATION 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
-    SET CONST_PARENTID_NORMAL	 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
-	SET CONST_CATEID_PROBATION								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_PROBATION');
 	SET CONST_CATEGROUPID_INACTIVE							= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INACTIVE');
+	SET CONST_CATEGROUPID_PROBATION 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
+	SET CONST_CATEGROUPID_SMART		 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SMART');
+	SET CONST_CATEGROUPID_RISKY		 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_RISKY');
 
 	/*EXCLUDE INTERNAL CUSTOMERS*/      
 	CALL CTS_DataCenter.CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
@@ -60,7 +59,8 @@ BEGIN
 		CREATE TEMPORARY TABLE Temp_ProbationCustomer(	  	
 				CustID					BIGINT UNSIGNED	PRIMARY KEY
 			,	DWCategoryGroupID		INT UNSIGNED
-			, 	ScanDate				DATE
+			, 	ProbationDate			DATE
+			, 	LastProbationDay		DATE
 			,	ScanTaggingType			TINYINT DEFAULT 0   
 			,	IsPassProbationRule		TINYINT(1)
 		);
@@ -72,28 +72,23 @@ BEGIN
 			,	IsReturnData			TINYINT(1)
 		); 
 		
-		SELECT cat.CategoryPriority
-		INTO lv_ProbationCatePriority
-		FROM CTS_DataCenter.CustomerCategory AS cat
-		WHERE cat.CategoryID = CONST_CATEID_PROBATION;
-		
 		 /*GET PROBATION CUSTOMERS*/
-		INSERT IGNORE INTO Temp_ProbationCustomer(CustID, DWCategoryGroupID, ScanDate, ScanTaggingType, IsPassProbationRule)
+		INSERT IGNORE INTO Temp_ProbationCustomer(CustID, DWCategoryGroupID, ProbationDate, LastProbationDay, ScanTaggingType)
 		SELECT 	cls.CustID
 			,	temp.DWCategoryGroupID	
 			, 	DATE(cls.CreatedDate)
+			, 	lv_ToProbationLastDay
 			, 	temp.ScanTaggingType
-			, 	CASE WHEN DATE(cls.CreatedDate) >= lv_ToProbationLastDay THEN 0 ELSE 1 END AS IsPassProbationRule
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
 		WHERE cate.CategoryGroupID = CONST_CATEGROUPID_PROBATION;
 		
-		/*DWCategoryGroupID IN (CONST_CATEGORY_SMART,CONST_CATEGORY_HIGHRISK,CONST_CATEGORY_PROBATION)*/
-		UPDATE Temp_ProbationCustomer AS temp
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON temp.DWCategoryGroupID = cate.CategoryGroupID
-		SET temp.IsPassProbationRule = CASE WHEN temp.ScanDate > lv_FromProbationLastDay THEN 0 ELSE 1 END
-		WHERE cate.ParentID = CONST_PARENTID_NORMAL AND	cate.CategoryPriority <= lv_ProbationCatePriority;
+		UPDATE Temp_ProbationCustomer AS pro
+			INNER JOIN Temp_NewClassification AS temp ON pro.CustID = temp.CustID
+		SET pro.IsPassProbationRule = 0
+		WHERE pro.ProbationDate >= lv_ToProbationLastDay
+			OR (temp.DWCategoryGroupID IN (CONST_CATEGROUPID_PROBATION, CONST_CATEGROUPID_SMART, CONST_CATEGROUPID_RISKY) AND pro.ProbationDate > pro.LastProbationDay);
 		
 		INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType, IsReturnData)
 		SELECT	temp.CustID, CONST_ACTIONTYPE_IGNOREPROBATION, 0 AS IsReturnData
@@ -117,7 +112,7 @@ BEGIN
 			INNER JOIN  Temp_ProbationCustomer AS pro ON pro.CustID = temp.CustID
 		SET temp.IsDataChanged = 0
 		WHERE temp.DWCategoryGroupID = CONST_CATEGROUPID_PROBATION 
-			AND pro.ScanDate < lv_FromProbationLastDay;
+			AND pro.ProbationDate < pro.LastProbationDay;
 		
 		/* NO ACTION + VIEW LOG FOR IGNORE CASES*/ 
 		UPDATE Temp_NewClassification AS temp 
