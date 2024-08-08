@@ -844,6 +844,18 @@ BEGIN
 			,	cls.IsFromCTS 			=   CASE WHEN temp.IsFromCTS 		= 1 THEN temp.IsFromCTS 		ELSE cls.IsFromCTS 			END
 			,	cls.IsFromAI 			=   CASE WHEN temp.IsFromAI 		= 1 THEN temp.IsFromAI 			ELSE cls.IsFromAI 			END
 			,	cls.IsFromTVS 			=   CASE WHEN temp.IsFromTVS 		= 1 THEN temp.IsFromTVS 		ELSE cls.IsFromTVS 			END
+			,	cls.TVSRequestID		=   CASE WHEN IFNULL(cls.TVSRequestID,0) = 0 AND (temp.TVSRequestID > 0 OR (IFNULL(temp.TVSRequestID,0) = 0 AND temp.TVSIssueTypeID = 11)) 
+														THEN temp.TVSRequestID	
+												 ELSE cls.TVSRequestID END
+			,	cls.SportType 			=   CASE WHEN IFNULL(cls.TVSRequestID,0) = 0 AND (temp.TVSRequestID > 0 OR (IFNULL(temp.TVSRequestID,0) = 0 AND temp.TVSIssueTypeID = 11))
+														THEN temp.SportType	
+												 ELSE cls.SportType	END
+			,	cls.IsParlay 			=   CASE WHEN IFNULL(cls.TVSRequestID,0) = 0 AND (temp.TVSRequestID > 0 OR (IFNULL(temp.TVSRequestID,0) = 0 AND temp.TVSIssueTypeID = 11)) 
+														THEN temp.IsTVSParlay
+												 ELSE cls.IsParlay END
+			,	cls.IssueTypeID			=   CASE WHEN IFNULL(cls.TVSRequestID,0) = 0 AND (temp.TVSRequestID > 0 OR (IFNULL(temp.TVSRequestID,0) = 0 AND temp.TVSIssueTypeID = 11)) 
+														THEN temp.TVSIssueTypeID
+												 ELSE cls.IssueTypeID END
 			,	cls.IsFromImperva		=   CASE WHEN temp.IsFromImperva	= 1 THEN temp.IsFromImperva 	ELSE cls.IsFromImperva 		END
 			,	cls.IsMarkedDirectly	=   CASE WHEN temp.IsMarkedDirectly	= 1 THEN temp.IsMarkedDirectly 	ELSE cls.IsMarkedDirectly 	END
 			; 

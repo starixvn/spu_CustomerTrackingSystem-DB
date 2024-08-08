@@ -36,6 +36,7 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_ProbationCustomers(	  	
 			CustID								BIGINT UNSIGNED
 		,	SportID								SMALLINT UNSIGNED
+		,	DWCategoryID						INT UNSIGNED
         , 	ProbationDate						DATE     
         ,	LastProbationDay					DATE
 		,	IsPassProbationRule					TINYINT(1) DEFAULT 1
@@ -59,8 +60,8 @@ BEGIN
 	FROM CTS_DataCenter.CustomerCategory AS cat
 	WHERE cat.CategoryID = CONST_CATEID_PROBATION;
 	
-	INSERT IGNORE INTO Temp_ProbationCustomers(CustID, SportID, ProbationDate, LastProbationDay)
-    SELECT DISTINCT cls.CustID, cls.SportID
+	INSERT IGNORE INTO Temp_ProbationCustomers(CustID, SportID, DWCategoryID, ProbationDate, LastProbationDay)
+    SELECT DISTINCT cls.CustID, cls.SportID, temp.DWCategoryID
 		, 	DATE(cls.CreatedDate) AS ProbationDate
 		, 	DATE_SUB(lv_CurrentDate, INTERVAL CAST(s.ItemValue AS UNSIGNED) DAY) AS LastProbationDay
     FROM Temp_NewClassification AS temp
