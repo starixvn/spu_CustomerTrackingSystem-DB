@@ -163,7 +163,7 @@ BEGIN
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_History (
 				CustID, CTSCustID, ParentID, CategoryID, SportID, LastModifiedDate, LastModifiedBy
 			, 	TurnoverRM, WinlossRM, BetCount, ActiveDays, ActionType, InsertDate, TargetCC
-			, 	PerformanceTime, SourceTypeID, IsDataChanged)
+			, 	PerformanceTime, SourceTypeID)
 		SELECT DISTINCT	
 				temp.CustID
 			, 	temp.CTSCustID
@@ -181,7 +181,6 @@ BEGIN
 			,	temp.TargetCC 
 			,	temp.PerformanceTime	
 			,	temp.SourceTypeID
-			,	temp.IsDataChanged
 		FROM 	Temp_NewClassification AS temp
 		WHERE temp.IsDataChanged  = 1;
 		
