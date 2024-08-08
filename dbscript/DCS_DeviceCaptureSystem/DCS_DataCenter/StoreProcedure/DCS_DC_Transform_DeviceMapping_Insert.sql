@@ -34,7 +34,8 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewDevice;
     
 	CREATE TEMPORARY TABLE Temp_DeviceMapping(
-			RawTransID									BIGINT UNSIGNED NOT NULL PRIMARY KEY
+			TransID										BIGINT UNSIGNED NOT NULL PRIMARY KEY
+		,	RawTransID									BIGINT UNSIGNED NOT NULL
 		,	FP_DeviceID									BIGINT UNSIGNED DEFAULT 0
 		,	FP_TaggingID								BIGINT UNSIGNED
 		,	FP_FingerPrintID							BIGINT UNSIGNED
@@ -67,8 +68,9 @@ BEGIN
 	);
     
     /********************** Get Data ***********************************/
-    INSERT IGNORE INTO Temp_DeviceMapping(RawTransID, FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccount_InsertedTime, FP_DeviceFingerprintAccountOldID)
-    SELECT 	trans.RawTransID
+    INSERT IGNORE INTO Temp_DeviceMapping(TransID, RawTransID, FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccount_InsertedTime, FP_DeviceFingerprintAccountOldID)
+    SELECT 	trans.TransID
+		,	trans.RawTransID
 		,	IFNULL(trans.FP_TaggingID,0) AS FP_TaggingID
 		,	IFNULL(trans.FP_FingerPrintID,0) AS FP_FingerPrintID
 		,	IFNULL(dfa.ID,0) AS FP_DeviceFingerprintAccountID
@@ -88,7 +90,7 @@ BEGIN
 		AND FP_DeviceFingerprintAccount_EvolutionID = 0
 		AND FP_DeviceFingerprintAccountOldID = 0;
     
-    SET lv_Min_Transaction_TransID = (SELECT MIN(RawTransID) FROM Temp_DeviceMapping);
+    SET lv_Min_Transaction_TransID = (SELECT MIN(TransID) FROM Temp_DeviceMapping);
     
 	ALTER TABLE Temp_DeviceMapping
 	ADD INDEX IX_Temp_DeviceMapping_GroupIndex (FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccountOldID);
