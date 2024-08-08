@@ -105,10 +105,11 @@ BEGIN
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
 	
 	UPDATE Temp_NewClassification AS temp
+		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
 	SET 	temp.ActionType = CONST_ACTIONTYPE_UPDATE
 	WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT
 		AND (temp.NewCategoryID = temp.OldCategoryID OR temp.NewCategoryGroupID = temp.OldCategoryGroupID)
-		AND temp.IsFromOld = 0;
+		AND temp.IsFromOld = 0 AND o.CustID IS NOT NULL;
 
 	UPDATE Temp_NewClassification AS temp
 	SET 	temp.IsDataChanged = 0
