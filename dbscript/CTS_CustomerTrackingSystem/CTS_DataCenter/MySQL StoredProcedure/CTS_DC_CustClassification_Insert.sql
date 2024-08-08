@@ -207,11 +207,11 @@ BEGIN
 	
 	/*STEP N: Return data*/
 	SELECT DISTINCT 
-			CTSCustID
-		,  	CustID
-		,	CASE WHEN NewCategoryID = CONST_CATEID_VVIP THEN CONST_CC_VVIP ELSE TargetCC END AS CustomerClass
-		,  	CASE WHEN NewCategoryID = CONST_CATEID_VVIP THEN lv_Ext_CateGroupID_VVIP ELSE NewCategoryID END AS CategoryID
-		,	CASE WHEN ParentID = CONST_PARENTID_PA AND IsRobot = 0 THEN 1 ELSE 0 END AS IsPA
+			temp.CTSCustID
+		,  	temp.CustID
+		,	CASE WHEN NewCategoryID = CONST_CATEID_VVIP THEN CONST_CC_VVIP ELSE temp.TargetCC END AS CustomerClass
+		,  	CASE WHEN NewCategoryID = CONST_CATEID_VVIP THEN lv_Ext_CateGroupID_VVIP ELSE temp.NewCategoryID END AS CategoryID
+		,	CASE WHEN ParentID = CONST_PARENTID_PA AND temp.IsRobot = 0 THEN 1 ELSE 0 END AS IsPA
 		,	lv_CurrentDateTime AS ScannedTime 
 	FROM Temp_NewClassification AS temp
 	WHERE temp.IsReturnData = 1;
