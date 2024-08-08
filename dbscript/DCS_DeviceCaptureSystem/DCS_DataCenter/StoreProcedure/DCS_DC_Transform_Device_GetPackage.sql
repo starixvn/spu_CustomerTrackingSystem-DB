@@ -64,8 +64,6 @@ BEGIN
 	ORDER BY TransID ASC
 	LIMIT lv_TotalRecord;
     
-    select * from Temp_Trans;
-    
     ALTER TABLE Temp_Trans
     ADD KEY IX_Temp_Trans_AccountID (AccountID),
     ADD KEY IX_Temp_Trans_RawTransID (RawTransID);
@@ -84,7 +82,6 @@ BEGIN
     SET lv_CountAccountID = (SELECT COUNT(1) FROM Temp_Account);
     
     
-    select * from Temp_Account;
 	SET @RowId = 0;
     IF(lv_CountAccountID IS NOT NULL AND lv_CountAccountID > 0) THEN
 		SET lv_NoOfBatchOfAccountID = CEIL(lv_CountAccountID / ip_NoOfBatch);
