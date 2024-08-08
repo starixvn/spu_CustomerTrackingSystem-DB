@@ -65,7 +65,8 @@ BEGIN
     UPDATE CTS_Archive.CTSCustomerAssociationStatus AS cus
 		INNER JOIN Temp_Cust AS tmp ON tmp.CustID = cus.CustID
     SET cus.LastTicketDate = tmp.LastTicketDate
-    WHERE cus.LastTicketDate < tmp.LastTicketDate;
+    WHERE cus.LastTicketDate < tmp.LastTicketDate
+		OR cus.LastTicketDate IS NULL;
     
 END$$
 DELIMITER ;
