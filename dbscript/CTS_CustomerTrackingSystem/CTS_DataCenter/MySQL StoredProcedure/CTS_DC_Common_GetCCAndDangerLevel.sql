@@ -91,8 +91,7 @@ BEGIN
 		,	ParentID			INT
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
-		,	DangerLevelType		SMALLINT  
-		,	IsPA				BIT(1)
+		,	DangerLevelType		SMALLINT
         ,	INDEX 				IX_Temp_CustClassificationInfo_CustID(CustID)
     );  
      
@@ -204,7 +203,7 @@ BEGIN
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;
                 
-	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, ParentID, TaggingType, DangerLevel, DangerLevelType, IsPA)	
+	INSERT INTO Temp_CustClassificationInfo(CustID, CategoryID, CustomerClass, CustomerClassName, ParentID, TaggingType, DangerLevel, DangerLevelType)	
 	SELECT 	tmp.CustID
 		,	cate.CategoryID        
 		,	IFNULL(cate.CustomerClass,-1) AS CustomerClass
@@ -213,7 +212,6 @@ BEGIN
 		,	cate.TaggingType
         ,	cate.DangerLevel
         ,	cate.DangerLevelType
-		,	CASE WHEN cate.ParentID = CONST_PARENTID_PA AND cate.CustomerClassName <> 'Robot' THEN 1 ELSE 0 END AS IsPA
     FROM Temp_CustInfo AS tmp
 		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID;
 END$$
