@@ -54,14 +54,17 @@ BEGIN
 	SET lv_TotalRecord 	    = ip_NoOfTickets*ip_NoOfBatch;
     SET lv_FromTransID 	    = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_DEVICE_TRANSFORM_MINTRANSID);
 
-    INSERT INTO Temp_Trans(TransID, AccountID, CreatedDate)
+    INSERT INTO Temp_Trans(TransID, RawTransID, AccountID, CreatedDate)
 	SELECT	TransID
+		,   RawTransID
 		,   AccountID
 		,   CreatedDate
 	FROM DCS_DataCenter.Transaction
 	WHERE TransID >= lv_FromTransID
 	ORDER BY TransID ASC
 	LIMIT lv_TotalRecord;
+    
+    select * from Temp_Trans;
     
     ALTER TABLE Temp_Trans
     ADD KEY IX_Temp_Trans_AccountID (AccountID),
@@ -80,6 +83,8 @@ BEGIN
     
     SET lv_CountAccountID = (SELECT COUNT(1) FROM Temp_Account);
     
+    
+    select * from Temp_Account;
 	SET @RowId = 0;
     IF(lv_CountAccountID IS NOT NULL AND lv_CountAccountID > 0) THEN
 		SET lv_NoOfBatchOfAccountID = CEIL(lv_CountAccountID / ip_NoOfBatch);
