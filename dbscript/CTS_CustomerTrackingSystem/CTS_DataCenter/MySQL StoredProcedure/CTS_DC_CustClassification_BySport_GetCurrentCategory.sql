@@ -99,7 +99,7 @@ BEGIN
 						AND	tmpc.SportGroup = cc.SportID
 						AND ca.IsActive = 1
 						AND ca.ParentID <> CONST_PARENTID_WRAPPER 
-					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 					LIMIT 1
 			   ) tmplc 
 	WHERE tmplc.ParentID = CONST_PARENTID_NORMAL;

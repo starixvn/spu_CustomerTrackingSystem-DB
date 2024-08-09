@@ -105,7 +105,7 @@ BEGIN
 					AND cc.SportID = clss.SportID
 					AND ca.IsActive = 1
 					AND ca.ParentID <> CONST_PARENTID_WRAPPER 
-				ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 				LIMIT 1
 		   ) AS tmplc
 	WHERE clss.CustID > lv_LastCustID
@@ -134,11 +134,11 @@ BEGIN
 						AND cc.SportID = clss.SportID
 						AND ca.IsActive = 1
 						AND ca.ParentID <> CONST_PARENTID_WRAPPER 
-					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 					LIMIT 1
 			    ) AS tmplc
 		WHERE cate.CategoryID > lv_LastCategoryID
-			AND tmplc.CategoryID > lv_LastCategoryID
+			AND tmplc.CategoryID = cate.CategoryID
 			AND tmplc.LastScannedDate <= cate.ScanDate
 			AND EXISTS (SELECT 1
 						FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
@@ -147,12 +147,7 @@ BEGIN
 		LIMIT 1; 
     END IF;
     
-    IF lv_NextCategoryID IS NOT NULL THEN
-		SELECT ScanDate 
-		INTO lv_ScanDateValid  
-		FROM Temp_Category
-		WHERE CategoryID = lv_NextCategoryID;
-        
+    IF lv_NextCategoryID IS NOT NULL THEN      
         INSERT IGNORE INTO Temp_Normal (CustID, SportID)
 		SELECT 	tmplc.CustID, tmplc.SportID
 		FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCustomerClassification_BySport_CategoryID_CustID)
@@ -164,7 +159,7 @@ BEGIN
 						AND cc.SportID = clss.SportID
 						AND ca.IsActive = 1
 						AND ca.ParentID <> CONST_PARENTID_WRAPPER 
-					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 					LIMIT 1
 			   ) AS tmplc 
 		WHERE clss.CustID > 0
