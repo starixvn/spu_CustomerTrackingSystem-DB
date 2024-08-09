@@ -30,9 +30,10 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetTaggingByAssociationWithPA('1268,38665541,17004,32339123379301,3481646');
 	*/
     
-    DECLARE	CONST_PARENTID_PA		INT;
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;
+    DECLARE	CONST_PARENTID_PA			INT;
+    DECLARE CONST_PARENTID_WRAPPER		INT;
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;
     CREATE TEMPORARY TABLE 	Temp_InputCustomers (
 			CustID 			BIGINT UNSIGNED PRIMARY KEY
         ,   CTSCustID		BIGINT UNSIGNED DEFAULT 0
@@ -86,7 +87,8 @@ BEGIN
         ,	KEY				IX_Temp_AssociationRemoveAccounts_ToCTSCustID (ToCTSCustID)
 	); 
    
-	SET CONST_PARENTID_PA 	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+	SET CONST_PARENTID_PA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_PARENTID_WRAPPER 		= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
     
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_InputCustomers (CustID) VALUES ('", REPLACE(ip_ListCustID, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
@@ -158,7 +160,9 @@ BEGIN
 						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 					WHERE cc.CTSCustID = cus.CTSCustID
 						AND ca.IsActive = 1
-					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+                        AND ca.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
+                    LIMIT 1
 			   ) AS tmplc
     WHERE	tmplc.ParentID = CONST_PARENTID_PA
 		AND tmplc.RootTaggingID IS NOT NULL
