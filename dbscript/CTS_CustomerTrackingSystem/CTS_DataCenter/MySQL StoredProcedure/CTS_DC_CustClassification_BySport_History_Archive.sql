@@ -17,7 +17,8 @@ sp:BEGIN
 			- 20220909@Aries.Nguyen:	Created  [Redmine ID: #176992] 
 			- 20230210@Long.Luu: 		Fix Customer Classification Log [Redmine ID: #183279] 
             - 20230707@Jonas.Huynh:		Renovate normal classification [Redmine ID: #189875]
-            
+            - 20240628@Thomas.Nguyen: 	Renovate CC phase 2 [Redmine ID: #205317]
+
 		Param's Explanation (filtered by):
 
 		Example:
@@ -37,9 +38,10 @@ sp:BEGIN
     CREATE TEMPORARY TABLE Temp_History (
 			ID 					BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	CustID 				BIGINT UNSIGNED 
-		,	CTSCustID 			BIGINT UNSIGNED 
+		,	CTSCustID 			BIGINT UNSIGNED
+		,	ParentID  			INT UNSIGNED  
 		,	SportID 			SMALLINT UNSIGNED 
-		,	CategoryID 			SMALLINT UNSIGNED 
+		,	CategoryID 			INT UNSIGNED 
 		,	TurnoverRM 			DECIMAL(20 , 4 ) 
 		,	WinlossRM 			DECIMAL(20 , 4 )
 		,	BetCount 			BIGINT 
@@ -95,10 +97,11 @@ sp:BEGIN
 		LEAVE sp; 
 	END IF;
 
-    INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime)
+    INSERT INTO Temp_History(ID,CustID,CTSCustID,ParentID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime)
     SELECT 	ID 					
 		,	CustID 				
-		,	CTSCustID 			
+		,	CTSCustID 	
+		,	ParentID		
 		,	SportID 			
 		,	CategoryID 			
 		,	TurnoverRM 			
@@ -159,10 +162,11 @@ sp:BEGIN
 						WHERE k.ID = h.ID);		
         
         # take back the old log for the new active ones
-        INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime)
+        INSERT INTO Temp_History(ID,CustID,CTSCustID,ParentID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime)
 		SELECT 	h.ID 					
 			,	h.CustID 				
-			,	h.CTSCustID 			
+			,	h.CTSCustID 
+			,	h.ParentID			
 			,	h.SportID 			
 			,	h.CategoryID 			
 			,	h.TurnoverRM 			
@@ -188,7 +192,8 @@ sp:BEGIN
     
 		 SELECT ID 					
 			,	CustID 				
-			,	CTSCustID 			
+			,	CTSCustID 	
+			,	ParentID		
 			,	SportID 			
 			,	CategoryID 			
 			,	TurnoverRM 			

@@ -22,7 +22,8 @@ sp:BEGIN
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 			- 20230428@Jonas.Huynh: 	Realtime Renovation [Redmine ID: #186678]
 			- 20231108@Victoria.Le: 	Add First5TWGBTicketCount [Redmine ID: #195060]
-             
+            - 20240628@Thomas.Nguyen: 	Renovate CC phase 2 [Redmine ID: #205317]
+
 		Param's Explanation (filtered by):
 
 		Example:
@@ -43,8 +44,8 @@ sp:BEGIN
 			ID  					BIGINT UNSIGNED 
 		,	CustID  				BIGINT UNSIGNED
 		,	CTSCustID  				BIGINT UNSIGNED
-		,	SportGroupID  			SMALLINT UNSIGNED 
-		,	CategoryID  			SMALLINT  
+		,	ParentID  				INT UNSIGNED 
+		,	CategoryID  			INT  
 		,	TurnoverRM  			DECIMAL(20 , 4 )  
 		,	WinlossRM  				DECIMAL(20 , 4 )  
 		,	BetCount  				BIGINT  
@@ -53,8 +54,8 @@ sp:BEGIN
 		,	ProbationPeriodWinloss  DECIMAL(20,4)  
 		,	TargetCC  				SMALLINT  
 		,	SourceTypeID  			SMALLINT UNSIGNED  
-		,	FromCategoryID  		SMALLINT UNSIGNED  
-		,	ToCategoryID  			SMALLINT UNSIGNED  
+		,	OldCategoryID  			INT UNSIGNED  
+		,	DWCategoryID  			INT UNSIGNED  
 		,	IsAppliedCC  			BIT(1)
 		,	IsDataChanged  			BIT(1)
 		,	ActionType  			TINYINT  
@@ -70,7 +71,7 @@ sp:BEGIN
 		,	TWBetCount  			BIGINT  
 		,	TWDesktopUsageRate  	DECIMAL(10,4)  
         ,	Remark 					VARCHAR(500)
-		,	IsDirect				BIT(1) 
+		,	IsMarkedDirectly		BIT(1) 
 		,	TVSRequestID			BIGINT UNSIGNED 
         ,	IsFromTVS 				BIT 
 		,	IsFromTW 				BIT
@@ -130,8 +131,9 @@ sp:BEGIN
 			ID
 		,	CustID
 		,	CTSCustID
-		,	SportGroupID
-		,	CategoryID,TurnoverRM 
+		,	ParentID
+		,	CategoryID
+		,	TurnoverRM 
 		,	WinlossRM
 		,	BetCount
 		,	ActiveDays
@@ -139,8 +141,8 @@ sp:BEGIN
 		,	ProbationPeriodWinloss
 		,	TargetCC
 		,	SourceTypeID
-		,	FromCategoryID
-		,	ToCategoryID
+		,	OldCategoryID
+		,	DWCategoryID
 		,	IsAppliedCC
 		,	IsDataChanged
 		,	ActionType
@@ -154,7 +156,10 @@ sp:BEGIN
 		,	TWGroupBettingRate
 		,	TWTicketRejectRate
 		,	TWBetCount
-		,	TWDesktopUsageRate,Remark,IsDirect,TVSRequestID
+		,	TWDesktopUsageRate
+		,	Remark
+		,	IsMarkedDirectly
+		,	TVSRequestID
 		,	IsFromTVS
 		,	IsFromTW
 		,	IsFromCTS
@@ -169,7 +174,7 @@ sp:BEGIN
     SELECT 	ID  					
 		,	CustID  				
 		,	CTSCustID  				
-		,	SportGroupID  			
+		,	ParentID  			
 		,	CategoryID  			
 		,	TurnoverRM  			
 		,	WinlossRM  				
@@ -179,8 +184,8 @@ sp:BEGIN
 		,	ProbationPeriodWinloss  
 		,	TargetCC  				
 		,	SourceTypeID  			
-		,	FromCategoryID  		
-		,	ToCategoryID  			
+		,	OldCategoryID  		
+		,	DWCategoryID  			
 		,	IsAppliedCC  			
 		,	IsDataChanged  			
 		,	ActionType  			
@@ -196,7 +201,7 @@ sp:BEGIN
 		,	TWBetCount  			
 		,	TWDesktopUsageRate  
         ,	Remark 			
-		,	IsDirect
+		,	IsMarkedDirectly
 		,	TVSRequestID
 		,	IsFromTVS 				 
 		,	IsFromTW 				
@@ -260,8 +265,9 @@ sp:BEGIN
 				ID
 			,	CustID
 			,	CTSCustID
-			,	SportGroupID
-			,	CategoryID,TurnoverRM 
+			,	ParentID
+			,	CategoryID
+			,	TurnoverRM 
 			,	WinlossRM
 			,	BetCount
 			,	ActiveDays
@@ -269,8 +275,8 @@ sp:BEGIN
 			,	ProbationPeriodWinloss
 			,	TargetCC
 			,	SourceTypeID
-			,	FromCategoryID
-			,	ToCategoryID
+			,	OldCategoryID
+			,	DWCategoryID
 			,	IsAppliedCC
 			,	IsDataChanged
 			,	ActionType
@@ -284,7 +290,10 @@ sp:BEGIN
 			,	TWGroupBettingRate
 			,	TWTicketRejectRate
 			,	TWBetCount
-			,	TWDesktopUsageRate,Remark,IsDirect,TVSRequestID
+			,	TWDesktopUsageRate
+			,	Remark
+			,	IsMarkedDirectly
+			,	TVSRequestID
 			,	IsFromTVS
 			,	IsFromTW
 			,	IsFromCTS
@@ -299,7 +308,7 @@ sp:BEGIN
 		SELECT 	ID  					
 			,	h.CustID  				
 			,	CTSCustID  				
-			,	SportGroupID  			
+			,	ParentID  			
 			,	CategoryID  			
 			,	TurnoverRM  			
 			,	WinlossRM  				
@@ -309,8 +318,8 @@ sp:BEGIN
 			,	ProbationPeriodWinloss  
 			,	TargetCC  				
 			,	SourceTypeID  			
-			,	FromCategoryID  		
-			,	ToCategoryID  			
+			,	OldCategoryID  		
+			,	DWCategoryID  			
 			,	IsAppliedCC  			
 			,	IsDataChanged  			
 			,	ActionType  			
@@ -326,7 +335,7 @@ sp:BEGIN
 			,	TWBetCount  			
 			,	TWDesktopUsageRate  
 			,	Remark 			
-			,	IsDirect
+			,	IsMarkedDirectly
 			,	TVSRequestID
 			,	IsFromTVS 				 
 			,	IsFromTW 				
@@ -353,7 +362,7 @@ sp:BEGIN
 		SELECT	ID  					
 			,	CustID  				
 			,	CTSCustID  				
-			,	SportGroupID  			
+			,	ParentID  			
 			,	CategoryID  			
 			,	TurnoverRM  			
 			,	WinlossRM  				
@@ -363,8 +372,8 @@ sp:BEGIN
 			,	ProbationPeriodWinloss  
 			,	TargetCC  				
 			,	SourceTypeID  			
-			,	FromCategoryID  		
-			,	ToCategoryID  			
+			,	OldCategoryID  		
+			,	DWCategoryID  			
 			,	IsAppliedCC  			
 			,	IsDataChanged  			
 			,	ActionType  			
@@ -380,7 +389,7 @@ sp:BEGIN
 			,	TWBetCount  			
 			,	TWDesktopUsageRate 
             ,	Remark 	
-			,	IsDirect
+			,	IsMarkedDirectly
 			,	TVSRequestID
             ,	IsFromTVS 				 
 			,	IsFromTW 				

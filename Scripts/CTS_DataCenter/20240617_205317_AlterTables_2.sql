@@ -127,3 +127,6 @@ RENAME COLUMN PredictTime TO SourceCreatedDate;
 ALTER TABLE Customer_InitialSmart_Log
 RENAME COLUMN PredictTime TO SourceCreatedDate;
 
+/*ArchiveCustomer_CTSCustomer*/
+ALTER TABLE ArchiveCustomer_CTSCustomer
+MODIFY COLUMN CategoryID INT UNSIGNED;
