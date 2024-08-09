@@ -60,13 +60,14 @@ BEGIN
 		,	clh.TargetCC
 		,	clh.LastModifiedDate 
 		,	IFNULL(us.UserName, clh.LastModifiedBy) AS CreatedBy
-		,	TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
+		,	TRIM(TRAILING '|' FROM TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
 							   '[Winloss]', IFNULL(ROUND(clh.WinlossRM, 3),0))
 							,   '[Margin]', CASE WHEN IFNULL(clh.TurnOverRM,0) = 0 THEN 0 ELSE ROUND((clh.WinlossRM/clh.TurnOverRM) * 100, 3) END)
 							,   '[BetCount]', IFNULL(clh.BetCount,0))
 							,   '[TurnOver]', IFNULL(ROUND(clh.TurnOverRM, 3),0))
 							,   '[ActiveDays]', IFNULL(clh.ActiveDays,0))
-							,   '[Remark]', IFNULL(clh.Remark,''))) AS Remark
+							,   '[Remark]', IFNULL(clh.Remark,''))
+							)) AS Remark
     FROM	CTS_DataCenter.CTSCustomerClassification_BySport_History AS clh
 		LEFT JOIN Temp_CustRemark AS tmpcr ON tmpcr.HistoryID = clh.ID
 		LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON clh.CategoryID = cat.CategoryID
