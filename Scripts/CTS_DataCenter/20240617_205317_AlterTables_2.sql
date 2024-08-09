@@ -24,10 +24,10 @@ ALTER TABLE CTSCustomerClassification
 MODIFY COLUMN CategoryID INT UNSIGNED;
 
 ALTER TABLE CTSCustomerClassification
-ADD IsAffectToDownline BIT(1);
+ADD IsAffectToDownline BIT(1) AFTER SubscriberID;
 
 ALTER TABLE CTSCustomerClassification
-ADD RoleID TINYINT;
+ADD RoleID TINYINT AFTER SubscriberID;
 
 ALTER TABLE CTSCustomerClassification
 RENAME COLUMN IsDirect TO IsMarkedDirectly;
