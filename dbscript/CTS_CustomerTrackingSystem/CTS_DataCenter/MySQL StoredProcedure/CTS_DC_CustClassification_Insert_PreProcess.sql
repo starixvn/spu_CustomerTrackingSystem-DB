@@ -77,7 +77,7 @@ BEGIN
 		SELECT 	cls.CustID
 			,	temp.DWCategoryGroupID	
 			, 	DATE(cls.CreatedDate)
-			, 	lv_ToProbationLastDay
+			, 	lv_FromProbationLastDay
 			, 	temp.ScanTaggingType
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
