@@ -61,10 +61,10 @@ BEGIN
 		,	clh.LastModifiedDate 
 		,	IFNULL(us.UserName, clh.LastModifiedBy) AS CreatedBy
 		,	TRIM(TRAILING '|' FROM TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
-							   '[Winloss]', IFNULL(ROUND(clh.WinlossRM, 3),0))
+							   '[Winloss]', IFNULL(FORMAT(clh.WinlossRM, 2),0))
 							,   '[Margin]', CASE WHEN IFNULL(clh.TurnOverRM,0) = 0 THEN 0 ELSE ROUND((clh.WinlossRM/clh.TurnOverRM) * 100, 3) END)
 							,   '[BetCount]', IFNULL(clh.BetCount,0))
-							,   '[TurnOver]', IFNULL(ROUND(clh.TurnOverRM, 3),0))
+							,   '[TurnOver]', IFNULL(FORMAT(clh.TurnOverRM, 2),0))
 							,   '[ActiveDays]', IFNULL(clh.ActiveDays,0))
 							,   '[Remark]', IFNULL(clh.Remark,''))
 							)) AS Remark
