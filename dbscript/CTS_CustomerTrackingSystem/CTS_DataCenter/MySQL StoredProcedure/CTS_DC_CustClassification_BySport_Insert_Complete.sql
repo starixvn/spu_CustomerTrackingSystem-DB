@@ -147,7 +147,6 @@ BEGIN
 		FROM CTS_DataCenter.CTSCustomerClassification_BySport AS del
 			INNER JOIN Temp_NewClassification AS temp ON del.CustID = temp.CustID AND del.SportID = temp.SportID
 															AND del.ParentID = CONST_PARENTID_NORMAL
-			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = del.CategoryID AND ccs.IsKeepOldCateID = 0 
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport (
