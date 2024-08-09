@@ -15,6 +15,8 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20240708@Casey.Huynh: Created [RedmineID: #206486]
+      - 20240628@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
+
         Param's Explanation:     
         Example:
 			CALL CTS_DC_CustClassification_GetLatestRiskLevel(4400, 1016629001, 1000);
@@ -58,18 +60,18 @@ BEGIN
     GROUP BY tmpCls.CustID, tmpCls.RegisterName)
     SELECT cte.ID AS ID		
         ,	cte.RegisterName 
-        ,	ltr.SabaIntelligent_RiskLevel AS RiskLevel       
+        ,	ltr.Ext_SabaIntelligentRiskLevel AS RiskLevel       
 		,	cte.CustID
         ,	ltr.CategoryName
         ,	ltr.CustomerClassName
         ,	ltr.CustomerClass
         ,	ltr.LastModifiedDate
     FROM 	CTE_History AS cte
-		,	LATERAL(SELECT cat.CategoryName, cat.CustomerClassName, cat.CustomerClass, cat.SabaIntelligent_RiskLevel, cls.LastModifiedDate
+		,	LATERAL(SELECT cat.CategoryName, cat.CustomerClassName, cat.CustomerClass, cat.Ext_SabaIntelligentRiskLevel, cls.LastModifiedDate
 				FROM CTS_DataCenter.CTSCustomerClassification AS cls
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID
                 WHERE cls.CustID = cte.CustID
-                ORDER BY cat.Priority ASC, cls.LastModifiedDate DESC		
+                ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC		
                 LIMIT 1) AS ltr
 	ORDER BY cte.ID ASC;
     
