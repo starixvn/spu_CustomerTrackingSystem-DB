@@ -32,8 +32,12 @@ sp: BEGIN
 	DECLARE CONST_ASSBYIP_ACTIVESTATUS 		INT DEFAULT 1;
 	
 	DECLARE CONST_PARENTID_PA 				INT;
+	DECLARE CONST_PARENTID_VVIP				INT;
+	DECLARE CONST_PARENTID_WRAPPER			INT;
     
 	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+	SET CONST_PARENTID_VVIP					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+	SET CONST_PARENTID_WRAPPER				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	#=============================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCust;
 	CREATE TEMPORARY TABLE 		Temp_InputCust (
@@ -111,74 +115,123 @@ sp: BEGIN
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpIc.CustID = cus.CustID AND cus.CustSubID = 0;  
 
     #=======CHECK AssociationByIP====================================
-    SELECT  1
+	WITH CTE_Latest AS
+	(
+		SELECT DISTINCT ma.ToCustID AS CustID, ltc.ParentID
+		FROM Temp_Cust AS tmpCus
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.FromCustID = tmpCus.CustID AND ma.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
+			LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
+			,	LATERAL (
+							SELECT cc.CategoryID, cc.ParentID
+							FROM CTS_DataCenter.CTSCustomerClassification AS cla 
+								INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+							WHERE cla.CustID = ma.ToCustID
+								AND cc.ParentID <> CONST_PARENTID_WRAPPER
+							ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+							LIMIT 1
+						) AS ltc
+		WHERE tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
+	)
+	SELECT 1
 	INTO op_IsHedging
-	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.FromCustID = tmpCus.CustID AND ma.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
-	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
-		AND	EXISTS(	SELECT 1 
-					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
-					WHERE cla.CustID = ma.ToCustID 
-						AND cla.ParentID = CONST_PARENTID_PA
-						AND cc.IsHedgingReasonMM = 1)
+	FROM CTE_Latest AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = temp.CustID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+	WHERE temp.ParentID <> CONST_PARENTID_VVIP
+		AND cc.ParentID = CONST_PARENTID_PA AND cc.IsHedgingReasonMM = 1
 	LIMIT 1;
 
 	IF op_IsHedging IS NOT NULL THEN 
 		LEAVE sp;
 	END IF;
-    
-    SELECT  1
+	
+	WITH CTE_Latest AS
+	(
+		SELECT DISTINCT ma.FromCustID AS CustID, ltc.ParentID
+		FROM Temp_Cust AS tmpCus
+			INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.ToCustID = tmpCus.CustID AND ma.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
+				LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
+			,	LATERAL (
+							SELECT cc.CategoryID, cc.ParentID
+							FROM CTS_DataCenter.CTSCustomerClassification AS cla 
+								INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+							WHERE cla.CustID = ma.FromCustID
+								AND cc.ParentID <> CONST_PARENTID_WRAPPER
+							ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+							LIMIT 1
+						) AS ltc
+		WHERE tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
+	)
+	SELECT 1
 	INTO op_IsHedging
-	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByIP AS ma ON ma.ToCustID = tmpCus.CustID AND ma.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByIP_AssType AS tmpAt)
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
-	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
-		AND	EXISTS(	SELECT 1 
-					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
-					WHERE cla.CustID = ma.FromCustID 
-						AND cla.ParentID = CONST_PARENTID_PA
-						AND cc.IsHedgingReasonMM = 1)
+	FROM CTE_Latest AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = temp.CustID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+	WHERE temp.ParentID <> CONST_PARENTID_VVIP
+		AND cc.ParentID = CONST_PARENTID_PA AND cc.IsHedgingReasonMM = 1
 	LIMIT 1;
 
 	IF op_IsHedging IS NOT NULL THEN 
 		LEAVE sp;
 	END IF;
+	
 	#=======CHECK AssociationByAI====================================
-    SELECT  1
+	WITH CTE_Latest AS
+	(
+		SELECT DISTINCT ma.ToCustID AS CustID, ltc.ParentID
+		FROM Temp_Cust AS tmpCus
+			INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.FromCustID = tmpCus.CustID AND ma.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
+			LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
+			,	LATERAL (
+							SELECT cc.CategoryID, cc.ParentID
+							FROM CTS_DataCenter.CTSCustomerClassification AS cla 
+								INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+							WHERE cla.CustID = ma.ToCustID
+								AND cc.ParentID <> CONST_PARENTID_WRAPPER
+							ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+							LIMIT 1
+						) AS ltc
+		WHERE tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
+	)
+	SELECT 1
 	INTO op_IsHedging
-	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.FromCustID = tmpCus.CustID AND ma.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
-	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
-		AND	EXISTS(	SELECT 1 
-					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
-					WHERE cla.CustID = ma.ToCustID 
-						AND cla.ParentID = CONST_PARENTID_PA
-						AND cc.IsHedgingReasonMM = 1)
-	LIMIT 1;    
-    
+	FROM CTE_Latest AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = temp.CustID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+	WHERE temp.ParentID <> CONST_PARENTID_VVIP
+		AND cc.ParentID = CONST_PARENTID_PA AND cc.IsHedgingReasonMM = 1
+	LIMIT 1;
+
 	IF op_IsHedging IS NOT NULL THEN 
 		LEAVE sp;
 	END IF;
-    
-    SELECT  1
+	
+	WITH CTE_Latest AS
+	(
+		SELECT DISTINCT ma.FromCustID AS CustID, ltc.ParentID
+		FROM Temp_Cust AS tmpCus
+			INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.ToCustID = tmpCus.CustID AND ma.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
+				LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
+			,	LATERAL (
+							SELECT cc.CategoryID, cc.ParentID
+							FROM CTS_DataCenter.CTSCustomerClassification AS cla 
+								INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+							WHERE cla.CustID = ma.FromCustID
+								AND cc.ParentID <> CONST_PARENTID_WRAPPER
+							ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+							LIMIT 1
+						) AS ltc
+		WHERE tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
+	)
+	SELECT 1
 	INTO op_IsHedging
-	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByAI AS ma ON ma.ToCustID = tmpCus.CustID AND ma.AssType IN (SELECT tmpAt.AssTypeItemValue FROM Temp_AssociationByAI_AssType AS tmpAt)
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCustID = ar.LeastCustID AND ar.LeastCustSubID = 0 AND ma.ToCustID = ar.GreatestCustID AND ar.GreatestCustSubID = 0
-	WHERE	tmpCus.CTSCustID IS NOT NULL AND ar.LeastCustID IS NULL
-		AND	EXISTS(	SELECT 1 
-					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
-					WHERE cla.CustID = ma.FromCustID 
-						AND cla.ParentID = CONST_PARENTID_PA
-						AND cc.IsHedgingReasonMM = 1)
+	FROM CTE_Latest AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = temp.CustID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+	WHERE temp.ParentID <> CONST_PARENTID_VVIP
+		AND cc.ParentID = CONST_PARENTID_PA AND cc.IsHedgingReasonMM = 1
 	LIMIT 1;
-    
+
 	IF op_IsHedging IS NOT NULL THEN 
 		LEAVE sp;
 	END IF;
@@ -199,60 +252,33 @@ sp: BEGIN
     FROM Temp_Cust AS tmpCus
 		INNER JOIN CTS_DataCenter.AssociationGroupByAI AS asg ON tmpCus.CustID = asg.CustID ;
 
-    SELECT  1
+
+	WITH CTE_Latest AS
+	(
+		SELECT DISTINCT ma.CustID AS CustID, ltc.ParentID
+		FROM Temp_AssGroupByAI AS tmpCus
+			INNER JOIN CTS_DataCenter.AssociationGroupByAI AS ma ON ma.CustID <> tmpCus.CustID AND ma.GroupID = tmpCus.GroupID
+				LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON LEAST(ma.CustID,tmpCus.CustID) = ar.LeastCustID AND ar.LeastCustSubID = 0 AND GREATEST(ma.CustID,tmpCus.CustID) = ar.GreatestCustID AND ar.GreatestCustSubID = 0
+			,	LATERAL (
+							SELECT cc.CategoryID, cc.ParentID
+							FROM CTS_DataCenter.CTSCustomerClassification AS cla 
+								INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+							WHERE cla.CustID = ma.CustID
+								AND cc.ParentID <> CONST_PARENTID_WRAPPER
+							ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+							LIMIT 1
+						) AS ltc
+		WHERE ar.LeastCustID IS NULL
+	)
+	SELECT 1
 	INTO op_IsHedging
-	FROM Temp_AssGroupByAI AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationGroupByAI AS ma ON ma.CustID <> tmpCus.CustID AND ma.GroupID = tmpCus.GroupID
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON LEAST(ma.CustID,tmpCus.CustID) = ar.LeastCustID AND ar.LeastCustSubID = 0 AND GREATEST(ma.CustID,tmpCus.CustID) = ar.GreatestCustID AND ar.GreatestCustSubID = 0
-	WHERE ar.LeastCustID IS NULL
-		AND	EXISTS(	SELECT 1 
-					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
-					WHERE cla.CustID = ma.CustID 
-						AND cla.ParentID = CONST_PARENTID_PA
-						AND cc.IsHedgingReasonMM = 1)
-	LIMIT 1;
-    
-	IF op_IsHedging IS NOT NULL THEN 
-		LEAVE sp;
-	END IF;
-    
-    
-    #=======CHECK AssociationByManual====================================
-	SELECT  1
-	INTO op_IsHedging
-	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.FromCTSCustID = tmpCus.CTSCustID
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCTSCustID = ar.FromCTSCustID AND ma.ToCTSCustID = ar.ToCTSCustID
-	WHERE	tmpCus.CTSCustID IS NOT NULL 
-		AND ar.FromCTSCustID IS NULL
-		AND	EXISTS(	SELECT 1 
-					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
-					WHERE cla.CTSCustID = ma.ToCTSCustID 
-						AND cla.ParentID = CONST_PARENTID_PA
-						AND cc.IsHedgingReasonMM = 1)
+	FROM CTE_Latest AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = temp.CustID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+	WHERE temp.ParentID <> CONST_PARENTID_VVIP
+		AND cc.ParentID = CONST_PARENTID_PA AND cc.IsHedgingReasonMM = 1
 	LIMIT 1;
 
-	IF op_IsHedging IS NOT NULL THEN 
-		LEAVE sp;
-	END IF;
-
-    SELECT  1
-	INTO op_IsHedging
-	FROM Temp_Cust AS tmpCus
-		INNER JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.ToCTSCustID = tmpCus.CTSCustID
-        LEFT JOIN CTS_DataCenter.AssociationRemove AS ar ON ma.FromCTSCustID = ar.FromCTSCustID AND ma.ToCTSCustID = ar.ToCTSCustID
-	WHERE	tmpCus.CTSCustID IS NOT NULL 
-		AND ar.FromCTSCustID IS NULL
-		AND	EXISTS(	SELECT 1 
-					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
-					WHERE cla.CTSCustID = ma.FromCTSCustID 
-						AND cla.ParentID = CONST_PARENTID_PA
-						AND cc.IsHedgingReasonMM = 1)
-	LIMIT 1;
-	
 	IF op_IsHedging IS NOT NULL THEN 
 		LEAVE sp;
 	END IF;
@@ -292,44 +318,81 @@ sp: BEGIN
 		FROM Temp_Association AS tmpAss
 			INNER JOIN AssociationRemove AS tmpAr ON tmpAss.FromCTSCustID = tmpAr.FromCTSCustID AND tmpAss.ToCTSCustID = tmpAr.ToCTSCustID;
 		
-		SELECT  1
+		WITH CTE_Latest AS
+		(
+			SELECT DISTINCT tmpAss.FromCTSCustID AS CTSCustID, ltc.ParentID
+			FROM Temp_Association AS tmpAss
+				,	LATERAL (
+								SELECT cc.CategoryID, cc.ParentID
+								FROM CTS_DataCenter.CTSCustomerClassification AS cla 
+									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+								WHERE cla.CTSCustID = tmpAss.FromCTSCustID 
+									AND cc.ParentID <> CONST_PARENTID_WRAPPER
+								ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+								LIMIT 1
+							) AS ltc
+		)
+		SELECT 1
 		INTO op_IsHedging
-		FROM Temp_Association AS tmpAss
-		WHERE EXISTS(	SELECT 1 
-						FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-							INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
-						WHERE cla.CTSCustID = tmpAss.FromCTSCustID 
-							AND cla.ParentID = CONST_PARENTID_PA
-							AND cc.IsHedgingReasonMM = 1)
+		FROM CTE_Latest AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CTSCustID = temp.CTSCustID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+		WHERE temp.ParentID <> CONST_PARENTID_VVIP
+			AND cc.ParentID = CONST_PARENTID_PA AND cc.IsHedgingReasonMM = 1
 		LIMIT 1;
 		
 		IF op_IsHedging IS NOT NULL THEN 
 			LEAVE sp;
 		END IF;
 		
-		SELECT  1
+		WITH CTE_Latest AS
+		(
+			SELECT DISTINCT tmpAss.ToCTSCustID AS CTSCustID, ltc.ParentID
+			FROM Temp_Association AS tmpAss
+				,	LATERAL (
+								SELECT cc.CategoryID, cc.ParentID
+								FROM CTS_DataCenter.CTSCustomerClassification AS cla 
+									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+								WHERE cla.CTSCustID = tmpAss.ToCTSCustID 
+									AND cc.ParentID <> CONST_PARENTID_WRAPPER
+								ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+								LIMIT 1
+							) AS ltc
+		)
+		SELECT 1
 		INTO op_IsHedging
-		FROM Temp_Association AS tmpAss
-		WHERE EXISTS(	SELECT 1 
-						FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-							INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
-						WHERE cla.CTSCustID = tmpAss.ToCTSCustID 
-							AND cla.ParentID = CONST_PARENTID_PA
-							AND cc.IsHedgingReasonMM = 1)
-		LIMIT 1;	
+		FROM CTE_Latest AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CTSCustID = temp.CTSCustID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+		WHERE temp.ParentID <> CONST_PARENTID_VVIP
+			AND cc.ParentID = CONST_PARENTID_PA AND cc.IsHedgingReasonMM = 1
+		LIMIT 1;
        
     ELSE
-		SELECT  1
+		WITH CTE_Latest AS
+		(
+			SELECT DISTINCT adv.CTSCustID AS CTSCustID, ltc.ParentID
+			FROM Temp_Device AS tmpAdv
+				INNER JOIN CTS_DataCenter.AssociationByDevice AS adv ON adv.DCSDeviceID = tmpAdv.DeviceID
+				,	LATERAL (
+								SELECT cc.CategoryID, cc.ParentID
+								FROM CTS_DataCenter.CTSCustomerClassification AS cla 
+									INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+								WHERE cla.CTSCustID = adv.CTSCustID
+									AND cc.ParentID <> CONST_PARENTID_WRAPPER
+								ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+								LIMIT 1
+							) AS ltc
+		)
+		SELECT 1
 		INTO op_IsHedging
-        FROM Temp_Device AS tmpAdv
-			INNER JOIN CTS_DataCenter.AssociationByDevice AS adv ON adv.DCSDeviceID = tmpAdv.DeviceID
-		WHERE EXISTS(	SELECT 1 
-					FROM CTS_DataCenter.CTSCustomerClassification AS cla 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
-					WHERE cla.CTSCustID = adv.CTSCustID 
-						AND cla.ParentID = CONST_PARENTID_PA
-						AND cc.IsHedgingReasonMM = 1)
-		LIMIT 1;	
+		FROM CTE_Latest AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CTSCustID = temp.CTSCustID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+		WHERE temp.ParentID <> CONST_PARENTID_VVIP
+			AND cc.ParentID = CONST_PARENTID_PA AND cc.IsHedgingReasonMM = 1
+		LIMIT 1;
+	
 	END IF;
 END$$
 DELIMITER ;

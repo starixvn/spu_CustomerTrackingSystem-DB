@@ -43,74 +43,52 @@ BEGIN
     
     /* REMOVE FROM QUEUE  */
     UPDATE Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS d ON temp.TVSRequestID = d.TVSRequestID 
-																			AND temp.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID
 	SET d.IsFromTVS = 0
 	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
         
     DELETE d
     FROM Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS d ON temp.TVSRequestID = d.TVSRequestID 
-																		AND temp.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID
 	WHERE IFNULL(temp.TVSRequestID,0) <> 0
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0);
-    
-    /* REMOVE FROM OLD PA  */
-    UPDATE Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON temp.TVSRequestID = d.TVSRequestID 
-																		AND temp.CustID = d.CustID
-	SET d.IsFromTVS = 0
-	WHERE IFNULL(temp.TVSRequestID,0) <> 0
-		AND ((temp.IsExistVVIP = 1 OR temp.IsExistWrapper = 1) AND temp.IsFromOldPA = 1);
-    
-    DELETE d
-    FROM Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON temp.TVSRequestID = d.TVSRequestID 
-																		AND temp.CustID = d.CustID
-	WHERE IFNULL(temp.TVSRequestID,0) <> 0
-		AND ((temp.IsExistVVIP = 1 OR temp.IsExistWrapper = 1) AND temp.IsFromOldPA = 1)
-		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
-    
-    /* REMOVE FROM CLASSIFICATION HISTORY  */    
-	DELETE d
-    FROM Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS d ON temp.TVSRequestID = d.TVSRequestID
-																			AND temp.CustID = d.CustID
-	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
-	
-	DELETE d
-    FROM Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.TVSVoidRequest AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID AND d.IsDisabled = 0
-	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
-        
+
     /* REMOVE FROM CLASSIFICATION  */
     INSERT INTO Temp_ExistedEvidence(CTSCustID, Ext_EvidenceID_Licensee, Ext_EvidenceID_Credit)
     SELECT DISTINCT temp.CTSCustID, c.Ext_EvidenceID_Licensee, c.Ext_EvidenceID_Credit
     FROM Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON temp.TVSRequestID = d.TVSRequestID 
-																	AND temp.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS c ON d.CategoryID = c.CategoryID
-	WHERE IFNULL(temp.TVSRequestID,0) <> 0
-		AND (temp.IsExistVVIP = 0 AND temp.IsExistWrapper = 0);
-    
-    UPDATE Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON temp.TVSRequestID = d.TVSRequestID 
-																		AND temp.CustID = d.CustID
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0 AND temp.IsExistVVIP = 0;
+	
+	/* UPDATE CLASSIFICATION  */ 
+	UPDATE Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID
 	SET 	d.IsFromTVS = 0
-		,	temp.WinlossStatus = 	CASE 	
-									WHEN temp.WinlossStatus = CONST_WINLOSSSTATUS_KEEP THEN CONST_WINLOSSSTATUS_WINNING
-                                    ELSE temp.WinlossStatus
-								END
-	WHERE IFNULL(temp.TVSRequestID,0) <> 0
-		AND (temp.IsExistVVIP = 0 AND temp.IsExistWrapper = 0);
-    
+		,	temp.WinlossStatus = 	CASE WHEN temp.WinlossStatus = CONST_WINLOSSSTATUS_KEEP THEN CONST_WINLOSSSTATUS_WINNING
+										 ELSE temp.WinlossStatus END
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
+	
+	/* REMOVE FROM TVSVoidRequest  */    	
 	DELETE d
     FROM Temp_NewClassification AS temp
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON temp.TVSRequestID = d.TVSRequestID 
-																	AND temp.CustID = d.CustID
+		INNER JOIN CTS_DataCenter.TVSVoidRequest AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID AND d.IsDisabled = 0
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON d.TVSRequestID = cc.TVSRequestID AND d.CustID = cc.CustID
 	WHERE IFNULL(temp.TVSRequestID,0) <> 0
-		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0)
-		AND (temp.IsExistVVIP = 0 AND temp.IsExistWrapper = 0);
+		AND (cc.IsFromCTS = 0 AND cc.IsFromTW = 0 AND cc.IsFromAI = 0 AND cc.IsFromImperva = 0);
+		
+	/* REMOVE FROM CTSCustomerClassification  */
+	DELETE d
+    FROM Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0
+		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
+
+    /* REMOVE FROM CLASSIFICATION HISTORY  */    
+	DELETE d
+    FROM Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
       
 	/* REMOVE FROM CUSTOMER EVIDENCE  */ 
     DELETE d

@@ -48,6 +48,8 @@ sp: BEGIN
     DECLARE CONST_MMRULEGROUP_HEDGING	INT DEFAULT 3;
     DECLARE CONST_MMREASON_HEDGING		INT DEFAULT 1;
 	DECLARE CONST_PARENTID_PA 			INT;
+	DECLARE CONST_PARENTID_VVIP			INT;
+	DECLARE CONST_PARENTID_WRAPPER		INT;
 
 	DECLARE lv_RuleTimeStep 			SMALLINT;
 	DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
@@ -57,6 +59,8 @@ sp: BEGIN
 	DECLARE lv_SPName 					VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_Process';
     
 	SET CONST_PARENTID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+	SET CONST_PARENTID_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+	SET CONST_PARENTID_WRAPPER			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 
     #==================LOG=======================================================
     IF CONST_LOG = 1 THEN     
@@ -295,13 +299,24 @@ sp: BEGIN
 		PREPARE stmt1 FROM @sql;
 		EXECUTE stmt1;
 
+		WITH CTE_Latest AS
+		(
+
+			SELECT tmpCus.CustID,cc.CategoryID,cc.ParentID
+			FROM Temp_Cust AS tmpCus 
+				INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = tmpCus.CustID
+				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+			WHERE cc.ParentID <> CONST_PARENTID_WRAPPER
+			ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+			LIMIT 1
+		)
 		SELECT 1 
 		INTO lv_IsHedging
-		FROM Temp_Cust AS tmpCus 
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = tmpCus.CustID
+		FROM CTE_Latest AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = temp.CustID
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
-		WHERE cla.ParentID = CONST_PARENTID_PA
-		AND cc.IsHedgingReasonMM = 1
+		WHERE temp.ParentID <> CONST_PARENTID_VVIP
+			AND cc.ParentID = CONST_PARENTID_PA AND cc.IsHedgingReasonMM = 1
 		LIMIT 1;
    
         IF lv_IsHedging <> 1 THEN
