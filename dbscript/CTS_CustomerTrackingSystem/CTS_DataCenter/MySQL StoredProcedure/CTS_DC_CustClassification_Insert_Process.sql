@@ -348,20 +348,37 @@ BEGIN
 			SET lv_IsRescan = 1;
 		END IF;
 		
-		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
-		SELECT DISTINCT 
-				temp.CustID
-			,	CASE WHEN cc.IsDangerProbation = 1 THEN 0 ELSE 2 END AS WinlossStatus
-		FROM Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
-            INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cls.CategoryID = cc.CategoryID
-		WHERE cls.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
+		IF lv_IsRescan = 0 THEN 
+			INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
+			SELECT DISTINCT 
+					temp.CustID
+				,	CASE WHEN cc.IsDangerProbation = 1 THEN 0 ELSE 2 END AS WinlossStatus
+			FROM Temp_NewClassification AS temp
+				INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
+				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cls.CategoryID = cc.CategoryID
+			WHERE cls.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
+		
+		ELSE
+			INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
+			SELECT DISTINCT 
+					temp.CustID
+				,	CASE WHEN cc.IsDangerProbation = 1 THEN 0 ELSE 2 END AS WinlossStatus
+			FROM Temp_NewClassification AS temp
+				INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
+				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON temp.DWCategoryID = cc.CategoryID 
+																		AND (temp.RelevantCategoryID = cls.CategoryID OR temp.DWCategoryID = cls.CategoryID)
+			WHERE cls.ParentID = CONST_PARENTID_PA 
+				AND temp.ParentID = CONST_PARENTID_PA
+				AND temp.WinlossStatus 	= 1;
+			
+		END IF;
 		
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_PAWinlossStatus AS r ON temp.CustID = r.CustID
 		SET temp.WinlossStatus 		= r.WinlossStatus,
 			temp.IsPAProbation 		= (CASE WHEN r.WinlossStatus = 0 THEN 1 ELSE 0 END)
 		WHERE temp.WinlossStatus 	= 1;
+		
 		
 		UPDATE Temp_NewClassification AS temp
             ,	LATERAL(SELECT 	cat.CategoryGroupID
