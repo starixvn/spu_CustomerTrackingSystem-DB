@@ -181,10 +181,11 @@ BEGIN
     	SET temp.NewIsDangerProbation = cate.IsDangerProbation;
 
 		UPDATE Temp_NewClassification AS temp
+			LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID
 		SET 	temp.ActionType = CONST_ACTIONTYPE_UPDATE
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT
 			AND (temp.NewCategoryID = temp.OldCategoryID OR temp.NewCategoryGroupID = temp.OldCategoryGroupID)
-			AND temp.IsFromOldPA = 0;
+			AND temp.IsFromOldPA = 0 AND o.CustID IS NOT NULL;
 
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsDataChanged = 0
