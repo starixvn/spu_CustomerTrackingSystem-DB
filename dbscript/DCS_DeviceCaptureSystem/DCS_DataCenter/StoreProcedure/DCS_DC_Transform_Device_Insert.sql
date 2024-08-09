@@ -444,6 +444,10 @@ BEGIN
 	FROM DCS_DataCenter.Transaction AS trans
 		INNER JOIN Temp_Transaction AS tmp ON tmp.TransID = trans.TransID
 	WHERE tmp.DeviceID IS NOT NULL;
+    
+    DELETE tdm
+    FROM DCS_DataCenter.FP_TransactionDeviceMapping AS tdm
+		INNER JOIN Temp_Transaction AS tmp ON tmp.RawTransID = tdm.RawTransID;
 END$$
 
 DELIMITER ;

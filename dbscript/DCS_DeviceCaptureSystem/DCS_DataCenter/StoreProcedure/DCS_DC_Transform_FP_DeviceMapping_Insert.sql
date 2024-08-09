@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_DeviceMapping_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_DeviceMapping_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_DeviceMapping_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_DeviceMapping_Insert`(
 	IN ip_BatchSize INT UNSIGNED
 )
     SQL SECURITY INVOKER
@@ -18,13 +18,17 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_DeviceMapping_Insert('50');
+			CALL DCS_DC_Transform_FP_DeviceMapping_Insert('50');
 	*/
     DECLARE CONST_MIN_TRANSACTION_TRANSID	INT DEFAULT 24;
+    DECLARE CONST_MINUTE_TO_WAIT_EVOLUTION	INT DEFAULT 25;
+    
 	DECLARE lv_Min_Transaction_TransID  	BIGINT UNSIGNED;
+	DECLARE lv_Minute_To_Wait_Evolution  	INT UNSIGNED;
     DECLARE lv_CurrentDate 					TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
     
 	SET lv_Min_Transaction_TransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_MIN_TRANSACTION_TRANSID);
+	SET lv_Minute_To_Wait_Evolution = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_MINUTE_TO_WAIT_EVOLUTION);
 	
     
     /********************** CREAT TEMP TABLE ***********************************/
@@ -91,6 +95,14 @@ BEGIN
 		AND FP_DeviceFingerprintAccountOldID = 0;
     
     SET lv_Min_Transaction_TransID = (SELECT MIN(TransID) FROM Temp_DeviceMapping);
+    
+    -- Wait lv_Minute_To_Wait_Evolution minutes
+    DELETE tmp
+    FROM Temp_DeviceMapping AS tmp
+    WHERE FP_DeviceFingerprintAccountID > 0
+		AND FP_DeviceFingerprintAccount_EvolutionID = 0
+		AND FP_DeviceFingerprintAccount_InsertedTime >= DATE_ADD(NOW(), INTERVAL (-1)*lv_Minute_To_Wait_Evolution MINUTE);
+    
     
 	ALTER TABLE Temp_DeviceMapping
 	ADD INDEX IX_Temp_DeviceMapping_GroupIndex (FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccountOldID);

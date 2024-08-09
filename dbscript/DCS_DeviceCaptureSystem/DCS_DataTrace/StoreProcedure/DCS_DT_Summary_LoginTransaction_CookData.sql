@@ -17,6 +17,7 @@ BEGIN
 		- 20240314@Jonathan.Doan: Created [Redmine ID: 199295]
 		- 20240503@Jonathan.Doan: HotFix FlaggedGroupID is incorrect [Redmine ID: 204733]
 		- 20240924@Jonathan.Doan: Add table LoginTransactionSummaryByDevice [Redmine ID: #211161]
+		- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
 		
 	Param's Explanation (filtered by):
 
@@ -51,8 +52,8 @@ BEGIN
 		, 	SubscriberID				INT UNSIGNED
 		, 	AccountID					BIGINT UNSIGNED
 		, 	DeviceID					BIGINT UNSIGNED
-		, 	FPDeviceID					BIGINT UNSIGNED
-		, 	RawUserAgentID				BIGINT UNSIGNED
+		, 	FP_DeviceID					BIGINT UNSIGNED
+		, 	FP_UserAgentID				BIGINT UNSIGNED
 		, 	Flagged						SMALLINT
 		, 	FlaggedGroupID				SMALLINT
 		, 	TransTime					DATETIME
@@ -127,14 +128,14 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-    INSERT INTO Temp_Trans07(TransID, TransDate, AccountID, SubscriberID, DeviceID, FPDeviceID, RawUserAgentID, Flagged, TransTime)
+    INSERT INTO Temp_Trans07(TransID, TransDate, AccountID, SubscriberID, DeviceID, FP_DeviceID, FP_UserAgentID, Flagged, TransTime)
     SELECT 	TransID
 		,	CreatedDate AS TransDate
         ,	IFNULL(AccountID, 0) AS AccountID
         ,	IFNULL(SubscriberID, 0) AS SubscriberID
         ,	IFNULL(DeviceID, 0) AS DeviceID
-        ,	IFNULL(FPDeviceID, 0) AS FPDeviceID
-        ,	IFNULL(RawUserAgentID, 0) AS RawUserAgentID
+        ,	IFNULL(FP_DeviceID, 0) AS FP_DeviceID
+        ,	IFNULL(FP_UserAgentID, 0) AS FP_UserAgentID
         ,	IFNULL(Flagged, 0) AS Flagged
         ,	TransTime
 	FROM DCS_DataCenter.Transaction07
@@ -145,7 +146,7 @@ BEGIN
     ALTER TABLE Temp_Trans07
     ADD KEY IX_Temp_Trans07_Flagged (Flagged),
     ADD KEY IX_Temp_Trans07_TransID_SubscriberID (TransID, SubscriberID),
-    ADD KEY IX_Temp_Trans07_RawUserAgentID (RawUserAgentID);
+    ADD KEY IX_Temp_Trans07_FP_UserAgentID (FP_UserAgentID);
     
     UPDATE Temp_Trans07 AS tmp
 		INNER JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = tmp.Flagged
@@ -154,15 +155,6 @@ BEGIN
 		,	tmp.IsBotTrans = (CASE WHEN sl.GroupID = CONST_FLAGGEDGROUPID_BOTTRANS THEN 1 ELSE 0 END);
         
     SET lv_MaxTransID = (SELECT MAX(TransID) FROM Temp_Trans07);
-    
-    /* === Insert RawUserAgent === */
-	SELECT GROUP_CONCAT(DISTINCT RawUserAgentID)
-	INTO lv_RawUserAgentIDs
-	FROM Temp_Trans07
-	WHERE RawUserAgentID IS NOT NULL;
-    
-    SET lv_RawUserAgentIDs = IFNULL(lv_RawUserAgentIDs,'');
-	CALL DCS_DT_Summary_RawUserAgent_Insert(lv_RawUserAgentIDs);
     
     /* == Insert into LoginTransactionSummary == */
     INSERT INTO Temp_LoginTrans(TransDate, SubscriberID, AccountID, DeviceID, Flagged, FlaggedGroupID, FirstLoginTransTime, LastLoginTransTime, TotalTrans)
@@ -218,7 +210,7 @@ BEGIN
         ,	SUM(IsInvalidBrowers) AS TotalInvalidBrowers
         ,	SUM(IsBotTrans) AS TotalBotTrans
         ,	SUM(CASE WHEN DeviceID = 0 THEN 1 ELSE 0 END) AS TotalNoDeviceTrans
-        ,	SUM(CASE WHEN FPDeviceID = 0 THEN 1 ELSE 0 END) AS TotalNoFPDeviceTrans
+        ,	SUM(CASE WHEN FP_DeviceID = 0 THEN 1 ELSE 0 END) AS TotalNoFPDeviceTrans
 	FROM Temp_Trans07
     GROUP BY TransDate, SubscriberID, AccountID;
     
@@ -288,7 +280,7 @@ BEGIN
         ,	SUM(tmp.IsInvalidBrowers) AS TotalInvalidBrowers
         ,	SUM(tmp.IsBotTrans) AS TotalBotTrans
 	FROM Temp_Trans07 AS tmp
-		LEFT JOIN DCS_DataTrace.RawUserAgent AS ua ON ua.ID = tmp.RawUserAgentID
+		LEFT JOIN DCS_DataCenter.FP_UserAgent AS ua ON ua.ID = tmp.FP_UserAgentID
     GROUP BY tmp.TransDate, _BrowserID, _OSID, _DeviceTypeID;
     
     ALTER TABLE Temp_TotalTransByBrowser

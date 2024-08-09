@@ -74,7 +74,7 @@ BEGIN
     DELETE tmp
     FROM Temp_Trans AS tmp
     WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.FP_TransactionDeviceMapping AS tdm WHERE tdm.RawTransID = tmp.RawTransID);
-
+    
     INSERT INTO Temp_Account(AccountID)
 	SELECT DISTINCT AccountID
 	FROM Temp_Trans;

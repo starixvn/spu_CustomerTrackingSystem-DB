@@ -66,20 +66,55 @@ CREATE TABLE `FP_UserAgent` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Code` VARCHAR(32) NOT NULL,
   `UserAgent` VARCHAR(1000) NOT NULL,
-  `ClientType` VARCHAR(15) DEFAULT NULL,
-  `ClientName` VARCHAR(100) DEFAULT NULL,
-  `ClientVersion` VARCHAR(50) DEFAULT NULL,
+  `BrowserID` BIGINT UNSIGNED DEFAULT NULL,
+  `OSID` BIGINT UNSIGNED DEFAULT NULL,
+  `DeviceTypeID` BIGINT UNSIGNED DEFAULT NULL,
+  `InsertedTime` DATETIME DEFAULT NOW(),
+  PRIMARY KEY (`ID`),
+  UNIQUE KEY `UX_FP_UserAgent_Code` (`Code`),
+  KEY `IX_FP_UserAgent_BrowserID` (`BrowserID`),
+  KEY `IX_FP_UserAgent_OSID` (`OSID`),
+  KEY `IX_FP_UserAgent_DeviceTypeID` (`DeviceTypeID`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `FP_Browser` (
+  `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `BrowserCode` VARCHAR(32) NOT NULL,
+  `BrowserType` VARCHAR(15) DEFAULT NULL,
+  `BrowserName` VARCHAR(100) DEFAULT NULL,
+  `BrowserVersion` VARCHAR(50) DEFAULT NULL,
+  `InsertedTime` DATETIME DEFAULT NOW(),
+  PRIMARY KEY (`ID`),
+  UNIQUE KEY `UX_FP_Browser_BrowserCode` (`BrowserCode`),
+  KEY `IX_FP_Browser_BrowserName_BrowserVersion` (`BrowserName`,`BrowserVersion`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `FP_OS` (
+  `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `OSCode` VARCHAR(32) NOT NULL,
   `OSName` VARCHAR(100) DEFAULT NULL,
   `OSShortName` VARCHAR(50) DEFAULT NULL,
   `OSVersion` VARCHAR(50) DEFAULT NULL,
-  `OSPlatform` VARCHAR(15) DEFAULT NULL,
-  `Device` VARCHAR(50) DEFAULT NULL,
+  `InsertedTime` DATETIME DEFAULT NOW(),
+  PRIMARY KEY (`ID`),
+  UNIQUE KEY `UX_FP_OS_OSCode` (`OSCode`),
+  KEY `IX_FP_OS_OSName_OSVersion` (`OSName`,`OSVersion`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `FP_DeviceType` (
+  `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `DeviceTypeCode` VARCHAR(32) NOT NULL,
+  `DeviceType` VARCHAR(50) DEFAULT NULL,
   `Brand` VARCHAR(50) DEFAULT NULL,
   `Model` VARCHAR(15) DEFAULT NULL,
   `InsertedTime` DATETIME DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UX_FP_UserAgent_Code` (`Code`)
+  UNIQUE KEY `UX_FP_DeviceType_DeviceTypeCode` (`DeviceTypeCode`),
+  KEY `IX_FP_DeviceType_DeviceType` (`DeviceType`),
+  KEY `IX_FP_DeviceType_Brand` (`Brand`)
 ) ENGINE=InnoDB;
+
+
 
 CREATE TABLE `FP_DeviceFingerprintAccount` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -234,7 +269,8 @@ CHANGE COLUMN `ChallengeCode` `ChallengeCode` VARCHAR(50) NOT NULL;
 /* ========= INIT Data ========= */
 INSERT INTO `DCS_DataCenter`.`SystemSetting`(`ID`, `VGroup`, `VName`, `VValue`, `UpdatedTime`)
 VALUES 	(23, 'DeviceEvolution', 'Max_FP_DeviceFingerprintAccountID', 0, NOW()),
-		(24, 'DeviceMapping', 'Min_Transaction_TransID', 0, NOW());
+		(24, 'DeviceMapping', 'Min_Transaction_TransID', 0, NOW()),
+		(25, 'DeviceMapping', 'Minute_To_Wait_Evolution', 10, NOW());
 
 INSERT INTO `DCS_DataCenter`.`StaticList`(`ListID`, `ItemID`, `ListCode`, `ListName`, `ItemCode`, `ItemName`, `Status`, `Description`, `CreatedDate`)
 VALUES 	(4, 1, 'DeviceMapping', 'DeviceMapping', 'Tagging', 'Tagging', 1, 'Rule 1', NOW()),
