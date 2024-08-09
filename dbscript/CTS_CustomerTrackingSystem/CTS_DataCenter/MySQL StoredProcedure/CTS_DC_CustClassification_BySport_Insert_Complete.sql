@@ -33,7 +33,7 @@ BEGIN
 
 	DECLARE	lv_CurrentDateTime								DATETIME(3) DEFAULT CURRENT_TIME(3);
 	DECLARE lv_ActionType									INT;
-	DECLARE lv_CreatedBy									INT;
+	DECLARE lv_CreatedBy									INT DEFAULT 10278938;
 	
 	SET CONST_CATEID_SPECIALCC								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
 	SET CONST_PARENTID_WRAPPER								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
