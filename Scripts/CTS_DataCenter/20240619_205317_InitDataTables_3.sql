@@ -337,5 +337,4 @@ INSERT INTO `CTS_DataCenter`.`SystemParameter`
 (166, 'CC_ProbationScan_LastCategoryID', 'CC_ProbationScan_LastCategoryID', 'BIGINT', 0),
 (167, 'CC_ProbationScan_LastCustID', 'CC_ProbationScan_LastCustID', 'BIGINT', 0),
 (168, 'CC_BySport_ProbationScan_BatchSize', 'CC_BySport_ProbationScan_BatchSize', 'BIGINT', 5000),
-(169, 'CC_BySport_ProbationScan_LastCategoryID', 'CC_BySport_ProbationScan_LastCategoryID', 'BIGINT', 0),
-(170, 'CC_BySport_ProbationScan_LastCustID', 'CC_BySport_ProbationScan_LastCustID', 'BIGINT', 0);
+(169, 'CC_BySport_ProbationScan_LastCustID', 'CC_BySport_ProbationScan_LastCustID', 'BIGINT', 0);
