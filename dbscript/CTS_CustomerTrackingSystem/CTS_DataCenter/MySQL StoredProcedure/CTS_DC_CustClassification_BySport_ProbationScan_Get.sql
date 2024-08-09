@@ -29,6 +29,7 @@ sp: BEGIN
     DECLARE CONST_CATEID_PROBATION			INT;   
 
 	DECLARE lv_BatchSize 					INT;
+	DECLARE lv_LastCustID					BIGINT UNSIGNED;
     DECLARE lv_CurrentDate 					DATE DEFAULT CURRENT_DATE();
     DECLARE lv_ToLastDay 					DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 2 DAY); /*Up to 3 Last Day*/
     DECLARE lv_From30Date 					DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 29 DAY);
