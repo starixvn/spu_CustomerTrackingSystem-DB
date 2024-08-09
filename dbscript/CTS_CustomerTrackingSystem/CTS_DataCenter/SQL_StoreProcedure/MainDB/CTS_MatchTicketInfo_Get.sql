@@ -367,31 +367,32 @@ BEGIN
 			,	tmpCust.BetChoiceType
 			,	tmpCust.Bettype
 			,	tmpCust.BetID
-			,	SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustAmountHome ELSE 0 END) AS AmountHome
-			,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustAmountAway ELSE 0 END) AS AmountWay
-			,	SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustTicketHome ELSE 0 END) AS TicketHome
-			,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustTicketAway ELSE 0 END) AS TicketAway
-			
+			,	SUM(CASE WHEN tmpCust.BetChoiceType = 2 AND tmpCust.betteam = tmpCust.BetChoiceHome THEN CustTotalAmount 
+						 WHEN tmpCust.BetChoiceType = 1 THEN CustTotalAmount 
+							ELSE 0 END) AS TotalAmountHome
+			,	SUM(CASE WHEN tmpCust.BetChoiceType = 2 AND tmpCust.betteam = tmpCust.BetChoiceAway THEN CustTotalAmount 
+						 ELSE 0 END) AS TotalAmountAway
+			,	SUM(CASE WHEN tmpCust.BetChoiceType = 2 AND tmpCust.betteam = tmpCust.BetChoiceHome THEN CustTotalTicket 
+							WHEN tmpCust.BetChoiceType = 1 THEN CustTotalTicket
+							ELSE 0 END) AS TotalTicketHome
+			,	SUM(CASE WHEN tmpCust.BetChoiceType = 2 AND tmpCust.betteam = tmpCust.BetChoiceAway THEN CustTotalTicket
+							ELSE 0 END) AS TotalTicketAway	
 		FROM (
-				SELECT 	b.MatchId
+				SELECT 	 b.MatchId
 					,	b.LiveIndicator
-					,	t.BetChoiceType
 					,	b.Bettype
-					,	b.BetID
-					,	SUM(CASE WHEN t.BetChoiceType = 2 AND b.betteam = t.BetChoiceHome THEN b.stake * b.actualrate 
-								 WHEN t.BetChoiceType = 1 THEN b.stake * b.actualrate 
-								 ELSE 0 END) AS CustAmountHome
-					,	SUM(CASE WHEN t.BetChoiceType = 2 AND b.betteam = t.BetChoiceAway THEN b.stake * b.actualrate 
-								 ELSE 0 END) AS CustAmountAway
-					,	SUM(CASE WHEN t.BetChoiceType = 2 AND b.betteam = t.BetChoiceHome THEN 1 
-								 WHEN t.BetChoiceType = 1 THEN 1
-								 ELSE 0 END) AS CustTicketHome
-					,	SUM(CASE WHEN t.BetChoiceType = 2 AND b.betteam = t.BetChoiceAway THEN 1 
-								 ELSE 0 END) AS CustTicketAway			
+					,	b.BetId
+					,	t.BetChoiceType
+					,	t.BetChoiceHome
+					,	t.BetChoiceAway
+					,	b.Betteam
+					,	b.CustID
+					,	SUM(b.stake * b.actualrate) AS CustTotalAmount
+					,	COUNT(1) AS CustTotalTicket		
 				FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 					INNER JOIN #tmpCustomer AS cust WITH(NOLOCK) ON cust.custid = b.custid
 					CROSS APPLY (
-							SELECT bt.BetID, bt.BetChoiceType,bt.BetChoiceHome,bt.BetChoiceAway
+							SELECT bt.BetID, bt.BetChoiceType, bt.BetChoiceHome, bt.BetChoiceAway
 							FROM #tmpBetType AS bt WITH(NOLOCK)
 							WHERE b.Bettype = bt.Bettype
 						) AS t
@@ -400,13 +401,15 @@ BEGIN
 							  WHEN @MarketList <> '' AND b.LiveIndicator IN (SELECT ssk.value FROM STRING_SPLIT (@MarketList, ',') AS ssk) THEN 1
 							  ELSE 0 END = 1)
 					AND b.BetID = t.BetID
-				GROUP BY b.MatchId, t.BetChoiceType, b.Bettype, b.LiveIndicator, b.BetId, b.CustID
+				GROUP BY b.MatchId, b.LiveIndicator, b.Bettype, b.BetId, t.BetChoiceType, t.BetChoiceHome, t.BetChoiceAway, b.Betteam, b.CustID
+				HAVING SUM(b.stake * b.actualrate) >= @UserAmount
 				) AS tmpCust
-			WHERE tmpCust.CustAmountHome >= @UserAmount
-				OR tmpCust.CustAmountAway >= @UserAmount
-			GROUP BY tmpCust.MatchId, tmpCust.BetChoiceType, tmpCust.Bettype, tmpCust.LiveIndicator, tmpCust.BetId
-			HAVING SUM(tmpCust.CustAmountHome) >=  @TotalAmount
-				OR SUM(tmpCust.CustAmountAway) >=  @TotalAmount;
+			GROUP BY tmpCust.MatchId, tmpCust.LiveIndicator, tmpCust.Bettype, tmpCust.BetId, tmpCust.BetChoiceType
+			HAVING SUM(CASE WHEN tmpCust.BetChoiceType = 2 AND tmpCust.betteam = tmpCust.BetChoiceHome THEN CustTotalAmount 
+						 WHEN tmpCust.BetChoiceType = 1 THEN CustTotalAmount 
+							ELSE 0 END) >=  @TotalAmount
+				OR SUM(CASE WHEN tmpCust.BetChoiceType = 2 AND tmpCust.betteam = tmpCust.BetChoiceAway THEN CustTotalAmount 
+						 ELSE 0 END) >=  @TotalAmount
 		-- OPTION (RECOMPILE)
 		;
 
@@ -438,27 +441,29 @@ BEGIN
 			,	tmpCust.BetChoiceType
 			,	tmpCust.Bettype
 			,	tmpCust.BetID
-			,	SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustAmountHome ELSE 0 END) AS AmountHome
-			,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustAmountAway ELSE 0 END) AS AmountWay
-			,	SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustTicketHome ELSE 0 END) AS TicketHome
-			,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustTicketAway ELSE 0 END) AS TicketAway
+			,	SUM(CASE WHEN tmpCust.BetChoiceType = 2 AND tmpCust.betteam = tmpCust.BetChoiceHome THEN CustTotalAmount 
+						 WHEN tmpCust.BetChoiceType = 1 THEN CustTotalAmount 
+							ELSE 0 END) AS TotalAmountHome
+			,	SUM(CASE WHEN tmpCust.BetChoiceType = 2 AND tmpCust.betteam = tmpCust.BetChoiceAway THEN CustTotalAmount 
+						 ELSE 0 END) AS TotalAmountAway
+			,	SUM(CASE WHEN tmpCust.BetChoiceType = 2 AND tmpCust.betteam = tmpCust.BetChoiceHome THEN CustTotalTicket 
+							WHEN tmpCust.BetChoiceType = 1 THEN CustTotalTicket
+							ELSE 0 END) AS TotalTicketHome
+			,	SUM(CASE WHEN tmpCust.BetChoiceType = 2 AND tmpCust.betteam = tmpCust.BetChoiceAway THEN CustTotalTicket
+							ELSE 0 END) AS TotalTicketAway	
 			,	1
 		FROM (
-				SELECT 	b.MatchId
+				SELECT 	 b.MatchId
 					,	b.LiveIndicator
-					,	t.BetChoiceType
 					,	b.Bettype
-					,	b.BetID
-					,	SUM(CASE WHEN t.BetChoiceType = 2 AND b.betteam = t.BetChoiceHome THEN b.stake * b.actualrate 
-								 WHEN t.BetChoiceType = 1 THEN b.stake * b.actualrate 
-								 ELSE 0 END) AS CustAmountHome
-					,	SUM(CASE WHEN t.BetChoiceType = 2 AND b.betteam = t.BetChoiceAway THEN b.stake * b.actualrate 
-								 ELSE 0 END) AS CustAmountAway
-					,	SUM(CASE WHEN t.BetChoiceType = 2 AND b.betteam = t.BetChoiceHome THEN 1 
-								 WHEN t.BetChoiceType = 1 THEN 1
-								 ELSE 0 END) AS CustTicketHome
-					,	SUM(CASE WHEN t.BetChoiceType = 2 AND b.betteam = t.BetChoiceAway THEN 1 
-								 ELSE 0 END) AS CustTicketAway			
+					,	b.BetId
+					,	t.BetChoiceType
+					,	t.BetChoiceHome
+					,	t.BetChoiceAway
+					,	b.Betteam
+					,	b.CustID
+					,	SUM(b.stake * b.actualrate) AS CustTotalAmount
+					,	COUNT(1) AS CustTotalTicket		
 				FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 					INNER JOIN #tmpCustomer AS cust WITH(NOLOCK) ON cust.custid = b.custid
 					CROSS APPLY (
@@ -471,13 +476,15 @@ BEGIN
 							  WHEN @MarketList <> '' AND b.LiveIndicator IN (SELECT ssk.value FROM STRING_SPLIT (@MarketList, ',') AS ssk) THEN 1
 							  ELSE 0 END = 1)
 					AND b.BetID = t.BetID
-				GROUP BY b.MatchId, t.BetChoiceType, b.Bettype, b.LiveIndicator, b.BetId, b.CustID
+				GROUP BY b.MatchId, b.LiveIndicator, b.Bettype, b.BetId, t.BetChoiceType, t.BetChoiceHome, t.BetChoiceAway, b.Betteam, b.CustID
+				HAVING SUM(b.stake * b.actualrate) >= @UserAmount
 				) AS tmpCust
-			WHERE tmpCust.CustAmountHome >= @UserAmount
-				OR tmpCust.CustAmountAway >= @UserAmount
-			GROUP BY tmpCust.MatchId, tmpCust.BetChoiceType, tmpCust.Bettype, tmpCust.LiveIndicator, tmpCust.BetId
-			HAVING SUM(tmpCust.CustAmountHome) >=  @TotalAmount
-				OR SUM(tmpCust.CustAmountAway) >=  @TotalAmount;
+			GROUP BY tmpCust.MatchId, tmpCust.LiveIndicator, tmpCust.Bettype, tmpCust.BetId, tmpCust.BetChoiceType
+			HAVING SUM(CASE WHEN tmpCust.BetChoiceType = 2 AND tmpCust.betteam = tmpCust.BetChoiceHome THEN CustTotalAmount 
+						 WHEN tmpCust.BetChoiceType = 1 THEN CustTotalAmount 
+							ELSE 0 END) >=  @TotalAmount
+				OR SUM(CASE WHEN tmpCust.BetChoiceType = 2 AND tmpCust.betteam = tmpCust.BetChoiceAway THEN CustTotalAmount 
+						 ELSE 0 END) >=  @TotalAmount
 			-- OPTION (RECOMPILE)
 			;
 
@@ -540,8 +547,7 @@ BEGIN
 																						WHEN ms.Id = @MatchSection_Early AND m.EventDate > @Today THEN 1 END)
 											 WHEN m.EventStatus = ms.EventStatus AND ms.Id = @MatchSection_Closed THEN 1
 											 ELSE 0 END) AS mss
-			WHERE 1=1
-				AND l.IsTest = 0 AND m.isTestMatch = 0 AND m.IsDeleted = 0 
+			WHERE l.IsTest = 0 AND m.isTestMatch = 0 AND m.IsDeleted = 0 
 				AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
 								AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
 						  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
