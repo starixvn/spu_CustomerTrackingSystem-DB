@@ -348,8 +348,6 @@ BEGIN
 			SET lv_IsRescan = 1;
 		END IF;
         
-        SELECT lv_IsRescan;
-		
 		IF lv_IsRescan = 0 THEN 
 			INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 			SELECT DISTINCT 
@@ -374,9 +372,7 @@ BEGIN
 				AND temp.WinlossStatus 	= 1;
 			
 		END IF;
-        
-        SELECT 'Temp_PAWinlossStatus',T.* FROM Temp_PAWinlossStatus AS T;
-		
+        		
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_PAWinlossStatus AS r ON temp.CustID = r.CustID
 		SET temp.WinlossStatus 		= r.WinlossStatus,
