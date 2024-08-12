@@ -37,6 +37,7 @@ BEGIN
 			CustID										BIGINT UNSIGNED
 		,	SportID										SMALLINT UNSIGNED
         ,	OldCategoryID 								INT UNSIGNED
+        ,	OldCategoryGroupID							INT UNSIGNED
 		,	IsKeepOldCateID								TINYINT(1)
         ,	PRIMARY KEY (CustID, SportID)
 	); 
@@ -67,8 +68,8 @@ BEGIN
 				LIMIT 1) AS tmpHis
 	;
 	
-	INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(CustID, SportID, OldCategoryID, IsKeepOldCateID)
-    SELECT DISTINCT temp.CustID, temp.SportID, cate.CategoryID, cc.IsKeepOldCateID
+	INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(CustID, SportID, OldCategoryGroupID, OldCategoryID, IsKeepOldCateID)
+    SELECT DISTINCT temp.CustID, temp.SportID, cc.CategoryGroupID, cate.CategoryID, cc.IsKeepOldCateID
     FROM Temp_NewClassification AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cate ON temp.CustID = cate.CustID AND cate.ParentID = CONST_PARENTID_NORMAL
 																				AND temp.SportID = cate.SportID
@@ -83,7 +84,8 @@ BEGIN
 	
 	UPDATE Temp_NewClassification AS temp
 		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
-	SET 	temp.OldCategoryID 			= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryID END
+	SET 	temp.OldCategoryGroupID 	= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryGroupID END
+		,	temp.OldCategoryID 			= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryID END
         ,	temp.ActionType 			= CASE WHEN (o.CustID IS NULL AND temp.IsFromOld = 0)
 														OR (o.CustID IS NULL AND temp.IsFromOld = 1)
 														OR (o.CustID IS NOT NULL AND temp.IsFromOld = 0) 
@@ -93,11 +95,12 @@ BEGIN
 	
 	UPDATE Temp_NewClassification AS temp
 		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
-	SET		temp.OldCategoryID 			= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryID END
+	SET 	temp.OldCategoryGroupID 	= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryGroupID END
+		,	temp.OldCategoryID 			= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryID END
 	WHERE temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
 	
 	UPDATE Temp_NewClassification AS temp 
-	SET 	temp.NewCategoryID = temp.DWCategoryID 
+	SET 	temp.NewCategoryGroupID = temp.DWCategoryGroupID 
 		,	temp.NewCategoryID 		= temp.DWCategoryID 
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
 	
@@ -105,7 +108,7 @@ BEGIN
 		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
 	SET 	temp.ActionType = CONST_ACTIONTYPE_UPDATE
 	WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT
-		AND temp.NewCategoryID = temp.OldCategoryID
+		AND (temp.NewCategoryID = temp.OldCategoryID OR temp.NewCategoryGroupID = temp.OldCategoryGroupID)
 		AND temp.IsFromOld = 0 AND o.CustID IS NOT NULL;
 
 	UPDATE Temp_NewClassification AS temp
@@ -116,10 +119,10 @@ BEGIN
     
 	UPDATE 	Temp_NewClassification AS temp 
 	SET 	temp.SourceTypeID = (CASE 
-									WHEN (temp.OldCategoryID IS NULL OR temp.OldCategoryID = CONST_CATEID_NEW) 
-											AND temp.NewCategoryID = CONST_CATEID_NEW 
+									WHEN (temp.OldCategoryGroupID IS NULL OR temp.OldCategoryGroupID = CONST_CATEID_NEW) 
+											AND temp.NewCategoryGroupID = CONST_CATEID_NEW 
 										THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
-                                    WHEN temp.OldCategoryID = temp.NewCategoryID THEN CONST_SOURCETYPE_SAMECATEGORY
+                                    WHEN temp.OldCategoryGroupID = temp.NewCategoryGroupID THEN CONST_SOURCETYPE_SAMECATEGORY
 								END)
 	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
 	
@@ -156,6 +159,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = temp.OldCategoryID
     SET 	temp.TargetCC 			= IFNULL(temp.SpecialCC, cate.CustomerClass)
 		,	temp.NewCategoryID		= temp.OldCategoryID
+        , 	temp.NewCategoryGroupID = temp.OldCategoryGroupID
     WHERE 	temp.ActionType 		= CONST_ACTIONTYPE_IGNOREPROBATION;
 	
 	UPDATE Temp_NewClassification AS temp

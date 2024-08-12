@@ -49,8 +49,11 @@ BEGIN
 		, 	BetCount					BIGINT
 		, 	ActiveDays					INT	
 		,	DWCategoryID				INT UNSIGNED
+		,	DWCategoryGroupID			INT UNSIGNED
 		,	OldCategoryID 				INT UNSIGNED
+		,	OldCategoryGroupID			INT UNSIGNED
 		,	NewCategoryID				INT UNSIGNED
+		, 	NewCategoryGroupID			INT UNSIGNED
 		,	CategoryPriority			SMALLINT UNSIGNED
 		,	CustomerClassPriority		SMALLINT UNSIGNED
 		,	IsDataChanged				TINYINT(1) DEFAULT 1 /*0: No change category => No Action*/
