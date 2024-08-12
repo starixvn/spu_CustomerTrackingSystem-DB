@@ -50,7 +50,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
     CREATE TEMPORARY TABLE Temp_Customer(
 			CustID				BIGINT UNSIGNED
-		,	Probability		    DECIMAL(8,4)
+		,	Probability		    DECIMAL(8,2)
         ,   SourceCreatedDate 	DATETIME(3)
         ,   InsertedTime        DATETIME(3)
         ,   PRIMARY KEY (InsertedTime, CustID)

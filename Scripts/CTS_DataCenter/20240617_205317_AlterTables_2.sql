@@ -135,9 +135,15 @@ MODIFY COLUMN DWCategoryID INT UNSIGNED;
 ALTER TABLE Customer_InitialSmart
 RENAME COLUMN PredictTime TO SourceCreatedDate;
 
+ALTER TABLE Customer_InitialSmart
+MODIFY COLUMN Probability DECIMAL(8,2);
+
 /*Customer_InitialSmart_Log*/
 ALTER TABLE Customer_InitialSmart_Log
 RENAME COLUMN PredictTime TO SourceCreatedDate;
+
+ALTER TABLE Customer_InitialSmart_Log
+MODIFY COLUMN Probability DECIMAL(8,2);
 
 /*ArchiveCustomer_CTSCustomer*/
 ALTER TABLE ArchiveCustomer_CTSCustomer

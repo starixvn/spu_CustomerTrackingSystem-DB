@@ -25,7 +25,7 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE Temp_Customer(
 			CustID 				BIGINT NOT NULL PRIMARY KEY
-		,   Probability 		DECIMAL(8,4)
+		,   Probability 		DECIMAL(8,2)
 		,   SourceCreatedDate 	DATETIME(3)
 	);
 
@@ -40,7 +40,7 @@ BEGIN
 		,	tmp.SourceCreatedDate
     FROM JSON_TABLE(ip_CustInfo,
                         "$[*]" COLUMNS (CustID          			BIGINT			UNSIGNED	PATH "$.CustID"
-									,	Probability					DECIMAL(8,4)				PATH "$.Probability"
+									,	Probability					DECIMAL(8,2)				PATH "$.Probability"
                                     ,   SourceCreatedDate		    DATETIME(3)					PATH "$.PredictTime"                                           
                                 )) AS tmp;
 
