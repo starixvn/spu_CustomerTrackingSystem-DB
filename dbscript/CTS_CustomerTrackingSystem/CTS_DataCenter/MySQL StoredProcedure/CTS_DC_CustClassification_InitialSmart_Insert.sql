@@ -14,6 +14,7 @@ BEGIN
 
 		Revisions: 
 				- 20240530@Thomas.Nguyen: Created [Redmine ID: #199345]
+				- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Update datatype of Probability [Redmine ID: #205317]
 
 		Example:
 			CALL CTS_DC_CustClassification_InitialSmart_Insert (@ip_CustInfo:='[{"CustID":1275,"Probability":0.1419399977,"PredictTime":"2024-05-30T03:02:26"},{"CustID":1277,"Probability":0.7015600204,"PredictTime":"2024-05-30T03:03:26"},{"CustID":1280,"Probability":0.7505900264,"PredictTime":"2024-05-31T03:02:26"},{"CustID":1282,"Probability":0.7498900294,"PredictTime":"2024-05-30T07:02:26"}]');
