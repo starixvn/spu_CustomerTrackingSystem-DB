@@ -100,7 +100,7 @@ BEGIN
 	WHERE temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
 	
 	UPDATE Temp_NewClassification AS temp 
-	SET 	temp.NewCategoryGroupID = temp.DWCategoryGroupID 
+	SET 	temp.NewCategoryGroupID = temp.DWCategoryID 
 		,	temp.NewCategoryID 		= temp.DWCategoryID 
 	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
 	

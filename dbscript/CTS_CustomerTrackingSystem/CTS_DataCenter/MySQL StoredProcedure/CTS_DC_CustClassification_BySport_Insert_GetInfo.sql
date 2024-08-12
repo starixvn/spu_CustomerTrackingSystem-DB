@@ -49,7 +49,6 @@ BEGIN
 		, 	BetCount					BIGINT
 		, 	ActiveDays					INT	
 		,	DWCategoryID				INT UNSIGNED
-		,	DWCategoryGroupID			INT UNSIGNED
 		,	OldCategoryID 				INT UNSIGNED
 		,	OldCategoryGroupID			INT UNSIGNED
 		,	NewCategoryID				INT UNSIGNED
