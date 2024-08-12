@@ -136,7 +136,7 @@ BEGIN
 	ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL THEN
 		
 		UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS cate
-			INNER JOIN Temp_NewClassification AS temp ON cate.CustID = temp.CustID AND cate.SportID = temp.SportID
+			INNER JOIN Temp_NewClassification AS temp ON cate.CustID = temp.CustID AND cate.SportID = temp.SportID AND cate.ParentID = CONST_PARENTID_NORMAL
 		SET   	cate.CTSCustID 			= temp.CTSCustID
 			, 	cate.CategoryID 		= temp.NewCategoryID
 			, 	cate.LastModifiedDate 	= CASE WHEN temp.IsFromOld = 0 THEN lv_CurrentDateTime ELSE cate.LastModifiedDate END 
