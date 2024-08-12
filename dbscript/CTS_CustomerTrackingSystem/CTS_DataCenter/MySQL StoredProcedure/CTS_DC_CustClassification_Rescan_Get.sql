@@ -404,7 +404,7 @@ sp: BEGIN
 	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
 						,	LastModifiedDate = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END
                         ,	CreatedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.CreatedDate THEN s.CreatedDate ELSE Temp_CustCategory.CreatedDate END
-                        ,	IsMarkedDirectly = CASE WHEN s.IsMarkedDirectly = 1 AND s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.IsMarkedDirectly ELSE Temp_CustCategory.IsMarkedDirectly END
+                        ,	IsMarkedDirectly = CASE WHEN s.IsMarkedDirectly = 1 THEN s.IsMarkedDirectly ELSE Temp_CustCategory.IsMarkedDirectly END
                         ,	IsFromCTS = CASE WHEN s.IsFromCTS = 1 THEN s.IsFromCTS ELSE Temp_CustCategory.IsFromCTS END
                         ,	IsFromTW = CASE WHEN s.IsFromTW = 1 THEN s.IsFromTW ELSE Temp_CustCategory.IsFromTW END
                         ,	IsFromTVS = CASE WHEN s.IsFromTVS = 1 THEN s.IsFromTVS ELSE Temp_CustCategory.IsFromTVS END
