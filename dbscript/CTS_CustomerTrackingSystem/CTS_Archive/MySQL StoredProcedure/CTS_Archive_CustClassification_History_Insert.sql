@@ -19,6 +19,7 @@ BEGIN
 		- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
 		- 20230428@Jonas.Huynh: 	Realtime Renovation [Redmine ID: #186678]
 		- 20231108@Victoria.Le: 	Add First5TWGBTicketCount [Redmine ID: #195060]
+		- 20240812@Victoria.Le: 	Renovate CC - Phase 2 [Redmine ID: #205317]
         
 	Param's Explanation (filtered by):
 
