@@ -99,6 +99,18 @@ ADD ParentID INT UNSIGNED;
 ALTER TABLE CTSCustomerClassification_BySport
 MODIFY COLUMN CategoryID INT UNSIGNED;
 
+UPDATE CTSCustomerClassification_BySport AS t
+INNER JOIN CustomerCategory AS c ON c.OldCategoryID = t.CategoryID
+SET t.CategoryID = c.CategoryID;
+
+UPDATE CTSCustomerClassification_BySport AS t
+INNER JOIN CustomerCategory AS c ON c.CategoryID = t.CategoryID
+SET t.ParentID = c.ParentID;
+ 
+ALTER TABLE CTSCustomerClassification_BySport
+DROP PRIMARY KEY, ADD PRIMARY KEY (CustID,SportID,ParentID,CategoryID);
+
+
 /*CTSCustomerClassification_BySport_History*/
 ALTER TABLE CTSCustomerClassification_BySport_History
 ADD ParentID INT UNSIGNED;
