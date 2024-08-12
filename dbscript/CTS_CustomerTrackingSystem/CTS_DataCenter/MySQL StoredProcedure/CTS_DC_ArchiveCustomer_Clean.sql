@@ -22,6 +22,7 @@ sp: BEGIN
 			- 	20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 			- 	20231023@Jonas.Huynh:	HF wrong reactivated category [Redmine ID: #193050]
 			-	20240321@Thomas.Nguyen:	Clean data for Special CC BySport/History and history of special CC general [Redmine ID: #201360]
+			-	20240628@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
 
 		Param's Explanation (filtered by):	
         
@@ -780,12 +781,16 @@ sp: BEGIN
 			CREATE TEMPORARY TABLE Temp_CTSCustomerClassification_BySport_Clean(
 					CustID   			BIGINT UNSIGNED  
 				,	SportID				BIGINT UNSIGNED
-                ,	PRIMARY KEY(CustID, SportID)
+				,	ParentID			INT UNSIGNED
+				,	CategoryID			INT UNSIGNED
+                ,	PRIMARY KEY(CustID, SportID, ParentID, CategoryID)
 			);
             
-            INSERT IGNORE INTO Temp_CTSCustomerClassification_BySport_Clean(CustID, SportID)
+            INSERT IGNORE INTO Temp_CTSCustomerClassification_BySport_Clean(CustID, SportID, ParentID, CategoryID)
             SELECT 	clss.CustID
 				,	clss.SportID
+				,	clss.ParentID
+				,	clss.CategoryID
 			FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss
 			WHERE  clss.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
 			LIMIT lv_CleanTableBatchSize;
@@ -793,7 +798,9 @@ sp: BEGIN
             DELETE cl
 			FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cl
 				INNER JOIN Temp_CTSCustomerClassification_BySport_Clean AS tmp ON tmp.CustID = cl.CustID 
-																		AND tmp.SportID = cl.SportID;
+																		AND tmp.SportID = cl.SportID
+																		AND tmp.ParentID = cl.ParentID
+																		AND tmp.CategoryID = cl.CategoryID;
 			
 			UPDATE  CTS_DataCenter.SystemParameter 
 			SET ParameterValue = 'CTS_DataCenter.CTSCustomerClassification_BySport'

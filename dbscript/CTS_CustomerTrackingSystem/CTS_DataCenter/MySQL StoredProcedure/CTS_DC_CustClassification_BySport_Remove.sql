@@ -102,6 +102,7 @@ BEGIN
 		FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cls
 			INNER JOIN Temp_CustomerClassification AS temp ON temp.CustID = cls.CustID 
 																AND temp.SportID = cls.SportID
+																AND cls.ParentID = CONST_PARENTID_WRAPPER
 																AND cls.CategoryID = CONST_CATEID_SPECIALCC;
 		
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_History(
