@@ -16,8 +16,8 @@ ALTER PROCEDURE [dbo].[CTS_MatchTicketInfo_Get]
 	,	@SportSabaLeagueGroup	VARCHAR(200) = ''
 	,	@UserNameList			VARCHAR(MAX)=''
 	,	@LeagueGroupList		VARCHAR(MAX)=''
-	,	@UserAmount				MONEY
-	,	@TotalAmount			MONEY
+	,	@UserAmount				MONEY = 0
+	,	@TotalAmount			MONEY = 0
 	,	@IsExclTestCurr			BIT = 1
 AS
 
