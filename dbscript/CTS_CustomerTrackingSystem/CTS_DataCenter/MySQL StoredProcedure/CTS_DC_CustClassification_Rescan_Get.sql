@@ -369,6 +369,7 @@ sp: BEGIN
         ,   CONST_INPUTFLOWID_CATEGORY_PA	AS InputFlowID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS s USE INDEX (PRIMARY) ON s.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) 
+					AND s.CustID <> tmp.CustID
 					AND s.ParentID = CONST_PARENTID_PA 
                     AND s.IsMarkedDirectly = 1
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = s.CategoryID
