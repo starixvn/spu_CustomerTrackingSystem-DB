@@ -69,7 +69,12 @@ BEGIN
 										 ELSE temp.WinlossStatus END
 	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
 	
-	/* REMOVE FROM TVSVoidRequest  */    	
+	/* REMOVE FROM TVSVoidRequest  */   
+	UPDATE Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.TVSVoidRequest AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID AND d.IsDisabled = 0
+	SET d.IsDisabled = 1
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
+ 	
 	DELETE d
     FROM Temp_NewClassification AS temp
 		INNER JOIN CTS_DataCenter.TVSVoidRequest AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID AND d.IsDisabled = 0
