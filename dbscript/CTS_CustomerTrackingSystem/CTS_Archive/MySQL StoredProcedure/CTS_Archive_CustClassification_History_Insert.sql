@@ -24,23 +24,21 @@ BEGIN
 
 */
 
-	INSERT INTO CTS_Archive.CTSCustomerClassification_History_Archive(
+	INSERT INTO CTS_Archive.CTSCustomerClassification_History_Renovate_Archive(
 			HistoryID
         ,	CustID
         ,	CTSCustID
-        ,	SportGroupID
+        ,	ParentID
         ,	CategoryID
         ,	TurnoverRM
         ,	WinlossRM
         ,	BetCount
         ,	ActiveDays
         ,	RobotCounter
-        ,	ProbationPeriodWinloss
         ,	TargetCC
         ,	SourceTypeID
-		,	FromCategoryID 			
-        ,	ToCategoryID 			
-        ,	IsAppliedCC 			
+		,	OldCategoryID 			
+        ,	DWCategoryID 						
         ,	IsDataChanged 			
         ,	ActionType 				
         ,	IsAuto 					
@@ -49,13 +47,12 @@ BEGIN
         ,	InsertDate 				
         ,	TaggingType 			
         ,	TargetDangerLevel1 		
-        ,	IsAppliedDangerLevel1 	
         ,	TWGroupBettingRate 		
         ,	TWTicketRejectRate 		
         ,	TWBetCount 				
         ,	TWDesktopUsageRate   
      	,	Remark
-        ,   IsDirect
+        ,   IsMarkedDirectly
         ,   TVSRequestID
         ,	IsFromTVS 				 
 		,	IsFromTW 				
@@ -66,24 +63,21 @@ BEGIN
 		,	SportType
 		,	IssueTypeID
         ,	PerformanceTime
-        ,	First5TWGBTicketCount
 	)
 	SELECT	HistoryID
         ,	CustID
         ,	CTSCustID
-        ,	SportGroupID
+        ,	ParentID
         ,	CategoryID
         ,	TurnoverRM
         ,	WinlossRM
         ,	BetCount
         ,	ActiveDays
         ,	RobotCounter
-        ,	ProbationPeriodWinloss
         ,	TargetCC
         ,	SourceTypeID
-		,	FromCategoryID 			
-        ,	ToCategoryID 			
-        ,	IsAppliedCC 			
+		,	OldCategoryID 			
+        ,	DWCategoryID 						
         ,	IsDataChanged 			
         ,	ActionType 				
         ,	IsAuto 					
@@ -92,13 +86,12 @@ BEGIN
         ,	InsertDate 				
         ,	TaggingType 			
         ,	TargetDangerLevel1 		
-        ,	IsAppliedDangerLevel1 	
         ,	TWGroupBettingRate 		
         ,	TWTicketRejectRate 		
         ,	TWBetCount 				
         ,	TWDesktopUsageRate  
         ,	Remark
-        ,   IsDirect
+        ,   IsMarkedDirectly
         ,   TVSRequestID
         ,	IsFromTVS 				 
 		,	IsFromTW 				
@@ -109,52 +102,47 @@ BEGIN
 		,	SportType
 		,	IssueTypeID
         ,	PerformanceTime
-        ,	First5TWGBTicketCount
 	FROM JSON_TABLE(
 			ip_HistoryJson,
 			 "$[*]" COLUMNS(
 								HistoryID				BIGINT UNSIGNED 	PATH "$.ID"       
 							,	CustID					BIGINT UNSIGNED 	PATH "$.CustID"   
 							,	CTSCustID				BIGINT UNSIGNED 	PATH "$.CTSCustID"
-							,	SportGroupID			SMALLINT UNSIGNED	PATH "$.SportGroupID"
-							,	CategoryID				SMALLINT			PATH "$.CategoryID"
+							,	ParentID    			INT UNSIGNED	    PATH "$.ParentID"
+							,	CategoryID				INT     			PATH "$.CategoryID"
 							,	TurnoverRM				DECIMAL(20 , 4 )	PATH "$.TurnoverRM"
 							,	WinlossRM				DECIMAL(20 , 4 ) 	PATH "$.WinlossRM"
 							,	BetCount				BIGINT 				PATH "$.BetCount"
                             ,	ActiveDays				INT					PATH "$.ActiveDays"
                             ,	RobotCounter			SMALLINT			PATH "$.RobotCounter"
-							,	ProbationPeriodWinloss	DECIMAL(20 , 4 ) 	PATH "$.ProbationPeriodWinloss"
-							,	TargetCC				SMALLINT 			PATH "$.TargetCC"
+							,	TargetCC				INT      			PATH "$.TargetCC"
                             ,	SourceTypeID			SMALLINT UNSIGNED	PATH "$.SourceTypeID"
-							,	FromCategoryID 			SMALLINT UNSIGNED 	PATH "$.FromCategoryID"
-							,	ToCategoryID 			SMALLINT UNSIGNED 	PATH "$.ToCategoryID"
-							,	IsAppliedCC 			BIT(1) 				PATH "$.IsAppliedCC"
-							,	IsDataChanged 			BIT(1) 				PATH "$.IsDataChanged"
+							,	OldCategoryID 			INT UNSIGNED 	    PATH "$.OldCategoryID"
+							,	DWCategoryID 			INT UNSIGNED 	    PATH "$.DWCategoryID"
+							,	IsDataChanged 			TINYINT(1)			PATH "$.IsDataChanged"
 							,	ActionType 				TINYINT 			PATH "$.ActionType"
-							,	IsAuto 					BIT(1) 				PATH "$.IsAuto"
+							,	IsAuto 					TINYINT(1)			PATH "$.IsAuto"
 							,	LastModifiedDate 		DATETIME 			PATH "$.LastModifiedDate"
 							,	LastModifiedBy 			INT UNSIGNED 		PATH "$.LastModifiedBy"
 							,	InsertDate 				DATETIME  			PATH "$.InsertDate"
 							,	TaggingType 			SMALLINT  			PATH "$.TaggingType"
 							,	TargetDangerLevel1 		SMALLINT  			PATH "$.TargetDangerLevel1"
-							,	IsAppliedDangerLevel1 	BIT(1)  			PATH "$.IsAppliedDangerLevel1"
 							,	TWGroupBettingRate 		DECIMAL(10 , 4 )  	PATH "$.TWGroupBettingRate"
 							,	TWTicketRejectRate 		DECIMAL(10 , 4 )  	PATH "$.TWTicketRejectRate"
 							,	TWBetCount 				BIGINT  			PATH "$.TWBetCount"
 							,	TWDesktopUsageRate		DECIMAL(10 , 4 ) 	PATH "$.TWDesktopUsageRate"
                             ,	Remark		            VARCHAR(500) 		PATH "$.Remark"
-                            ,   IsDirect                BOOLEAN             PATH "$.IsDirect"
+                            ,   IsMarkedDirectly        TINYINT(1)          PATH "$.IsDirect"
                             ,   TVSRequestID            BIGINT UNSIGNED 	PATH "$.TVSRequestID"   
-                            ,	IsFromTVS 				BOOLEAN 	        PATH "$.IsFromTVS"
-			                ,	IsFromTW 				BOOLEAN 	        PATH "$.IsFromTW"  
-			                ,	IsFromCTS 				BOOLEAN 	        PATH "$.IsFromCTS"   
-			                ,	IsFromAI 	            BOOLEAN 	        PATH "$.IsFromAI"  
-							,	IsFromImperva			BOOLEAN 	        PATH "$.IsFromImperva"  
-							,	IsParlay				BOOLEAN				PATH "$.IsParlay"  
+                            ,	IsFromTVS 				TINYINT(1) 	        PATH "$.IsFromTVS"
+			                ,	IsFromTW 				TINYINT(1) 	        PATH "$.IsFromTW"  
+			                ,	IsFromCTS 				TINYINT(1) 	        PATH "$.IsFromCTS"   
+			                ,	IsFromAI 	            TINYINT(1) 	        PATH "$.IsFromAI"  
+							,	IsFromImperva			TINYINT(1) 	        PATH "$.IsFromImperva"  
+							,	IsParlay				TINYINT(1)			PATH "$.IsParlay"  
 							,	SportType				SMALLINT			PATH "$.SportType"  
 							,	IssueTypeID				TINYINT				PATH "$.IssueTypeID"  
                             ,	PerformanceTime			DATETIME			PATH "$.PerformanceTime"  
-                            ,	First5TWGBTicketCount	TINYINT				PATH "$.First5TWGBTicketCount"  
 							)
 		   ) AS  tbl; 
 
