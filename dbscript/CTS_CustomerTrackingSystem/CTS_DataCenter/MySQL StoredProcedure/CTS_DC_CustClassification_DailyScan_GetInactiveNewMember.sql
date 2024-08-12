@@ -81,7 +81,7 @@ sp:BEGIN
 	END  IF;
 	
     INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
-	SELECT 	clss.CustID
+	SELECT 	tmplc.CustID
 	FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
 		,	LATERAL	
 			(	SELECT cc.CustID, cc.CategoryID
@@ -90,7 +90,7 @@ sp:BEGIN
 				WHERE cc.CustID = clss.CustID
 					AND ca.IsActive = 1
 				    AND ca.ParentID <> CONST_PARENTID_WRAPPER 
-				ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 				LIMIT 1
 			) AS tmplc 
 	WHERE clss.CustID > lv_LastCustID
@@ -106,7 +106,7 @@ sp:BEGIN
 	LIMIT lv_BatchSize;
         
     IF NOT EXISTS (SELECT 1 FROM Temp_InactiveNewMember) THEN
-		SELECT 	cate.CategoryID
+		SELECT 	tmplc.CategoryID
         INTO 	lv_NextCategoryID
 		FROM Temp_Category  AS cate
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CategoryID = cate.CategoryID
@@ -117,11 +117,11 @@ sp:BEGIN
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
 					    AND ca.ParentID <> CONST_PARENTID_WRAPPER 
-					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 					LIMIT 1
 				) AS tmplc
 		WHERE cate.CategoryID > lv_LastCategoryID
-			AND tmplc.CategoryID > lv_LastCategoryID
+			AND tmplc.CategoryID = cate.CategoryID
 			AND tmplc.CreatedDate <= lv_ScanDateValid
             AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
@@ -133,7 +133,7 @@ sp:BEGIN
     
     IF lv_NextCategoryID IS NOT NULL THEN
 		INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
-		SELECT 	clss.CustID
+		SELECT 	tmplc.CustID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
 			,	LATERAL	
 				(	SELECT cc.CustID, cc.CategoryID
@@ -142,7 +142,7 @@ sp:BEGIN
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
                         AND ca.ParentID <> CONST_PARENTID_WRAPPER 
-					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 					LIMIT 1
 			   ) AS tmplc 
 		WHERE clss.CustID > 0

@@ -92,7 +92,7 @@ BEGIN
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
                         AND ca.ParentID <> CONST_PARENTID_WRAPPER 
-					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 					LIMIT 1
 			   ) AS tmplc 
 	WHERE clss.CustID > lv_LastCustID
@@ -115,11 +115,11 @@ BEGIN
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
                         AND ca.ParentID <> CONST_PARENTID_WRAPPER
-					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 					LIMIT 1
 			    ) AS tmplc
 		WHERE cate.CategoryID > lv_LastCategoryID
-			AND tmplc.CategoryID > lv_LastCategoryID
+			AND tmplc.CategoryID = cate.CategoryID
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
     END IF;
@@ -135,7 +135,7 @@ BEGIN
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
                         AND ca.ParentID <> CONST_PARENTID_WRAPPER
-					ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 					LIMIT 1
 			   ) AS tmplc 
 		WHERE clss.CustID > 0

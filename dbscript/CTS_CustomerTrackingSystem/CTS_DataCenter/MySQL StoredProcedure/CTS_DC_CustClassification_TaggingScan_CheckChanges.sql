@@ -65,7 +65,7 @@ BEGIN
 				WHERE t.CustID = cc.CustID 
 					AND ca.ParentID <> CONST_PARENTID_WRAPPER
                     AND ca.IsActive = 1
-				ORDER BY ca.CategoryPriority ASC, cc.CreatedDate DESC
+				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 				LIMIT 1
 		   ) tmplc 
 	WHERE t.CustID = tmplc.CustID
