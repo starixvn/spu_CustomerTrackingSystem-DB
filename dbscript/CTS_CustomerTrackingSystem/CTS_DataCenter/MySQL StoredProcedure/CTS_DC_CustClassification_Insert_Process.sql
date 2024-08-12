@@ -347,6 +347,8 @@ BEGIN
 		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY THEN
 			SET lv_IsRescan = 1;
 		END IF;
+        
+        SELECT lv_IsRescan;
 		
 		IF lv_IsRescan = 0 THEN 
 			INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
@@ -372,6 +374,8 @@ BEGIN
 				AND temp.WinlossStatus 	= 1;
 			
 		END IF;
+        
+        SELECT 'Temp_PAWinlossStatus',T.* FROM Temp_PAWinlossStatus AS T;
 		
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_PAWinlossStatus AS r ON temp.CustID = r.CustID
@@ -506,7 +510,17 @@ BEGIN
 		FROM Temp_CTSCustomerClassification_Old AS temp_old 
 		WHERE (temp_old.IsNew = 0 AND temp_old.IsRemove IS NULL)
 			OR (temp_old.ParentID IS NULL AND temp_old.IsNew = 0 AND temp_old.IsRemove = 0);
-			
+		
+        INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC, ParentID)
+		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC, tmpHis.ParentID
+		FROM Temp_NewClassification AS temp,
+		LATERAL (	SELECT h.CategoryID, IFNULL(h.TargetCC,-1) AS TargetCC, h.ParentID
+					FROM CTS_DataCenter.CTSCustomerClassification_History AS h
+					WHERE h.CustID = temp.CustID 
+					ORDER BY ID DESC
+					LIMIT 1) AS tmpHis
+		WHERE temp.IsExistVVIP 	= 0;
+        
 		/*existing PotentialPA + PA - existing and new: not the same CateGroup*/
 		UPDATE Temp_NewClassification AS temp 
 			LEFT JOIN Temp_CTSCustomerClassification_Old AS temp_old ON temp.CustID = temp_old.CustID	
@@ -520,17 +534,19 @@ BEGIN
 			
 		/*existing PA - existing and new: the same CateGroup*/
 		UPDATE Temp_NewClassification AS temp 
+			INNER JOIN Temp_LastHistory AS h ON h.CustID = temp.CustID
 			INNER JOIN Temp_CTSCustomerClassification_Old AS temp_old ON temp.CustID = temp_old.CustID	
 																			AND temp_old.ParentID IS NOT NULL
 																			AND temp_old.IsNew = 0
 																			AND temp.NewCategoryGroupID = temp_old.CategoryGroupID
+                                                                            -- AND temp.TargetCC <> temp_old.CustomerClass
 		SET 	temp.DataChangeType		= 1
 			,	temp.IsDataChanged 		= 1 
 			,	temp.OldCategoryID 		= temp_old.ExistCategoryID			
 			,	temp.ActionType 		= CONST_ACTIONTYPE_UPDATE
 			,	temp.CreatedBy 			= IFNULL(temp.CreatedBy,temp_old.CreatedBy)
 		WHERE 	temp.IsDataChanged 		= 0
-			AND lv_IsRescan = 1;
+			AND lv_IsRescan = 1 AND temp.TargetCC <> h.TargetCC;
 		
 		/*existing PotentialPA + PA - existing and new: the same CateGroup*/
 		UPDATE Temp_NewClassification AS temp 
@@ -637,7 +653,7 @@ BEGIN
 		SET temp.TargetCC = IFNULL(temp.SpecialCC, tmpVip.CustomerClass)
 		WHERE temp.SpecialCC IS NULL; 
 		
-		INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC, ParentID)
+/*		INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC, ParentID)
 		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC, tmpHis.ParentID
 		FROM Temp_NewClassification AS temp,
 		LATERAL (	SELECT h.CategoryID, IFNULL(h.TargetCC,-1) AS TargetCC, h.ParentID
@@ -646,7 +662,7 @@ BEGIN
 					ORDER BY ID DESC
 					LIMIT 1) AS tmpHis
 		WHERE temp.IsExistVVIP 	= 0;
-					
+	*/				
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_LastHistory AS tmpHis ON temp.CustID = tmpHis.CustID
 		SET temp.IsDataChanged = 1
