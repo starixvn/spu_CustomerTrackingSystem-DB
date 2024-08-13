@@ -23,7 +23,8 @@ BEGIN
 	*/
 	
     INSERT INTO CTS_Archive.CTSCustomerClassification_BySport_History_Renovate_Archive(
-		HistoryID,CustID,CTSCustID,SportID,ParentID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime)
+			HistoryID,CustID,CTSCustID,SportID,ParentID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate
+		,	LastModifiedBy,InsertDate,PerformanceTime,SourceTypeID,Remark)
 	SELECT	HistoryID
         ,	CustID 				
 		,	CTSCustID 			
@@ -40,6 +41,8 @@ BEGIN
 		,	LastModifiedBy 		
 		,	InsertDate 
         ,	PerformanceTime
+        ,	SourceTypeID
+        ,	Remark
 	FROM JSON_TABLE(
 			ip_HistoryJson,
 			 "$[*]" COLUMNS(
@@ -59,6 +62,8 @@ BEGIN
 							,	LastModifiedBy 		INT UNSIGNED		PATH "$.LastModifiedBy"       
 							,	InsertDate 			DATETIME 			PATH "$.InsertDate" 
                             ,	PerformanceTime 	DATETIME 			PATH "$.PerformanceTime" 
+                            ,	SourceTypeID	 	SMALLINT UNSIGNED	PATH "$.SourceTypeID" 
+                            ,	Remark			 	VARCHAR(500)		PATH "$.Remark" 
 				)
 		   ) AS  tbl;  
 END$$
