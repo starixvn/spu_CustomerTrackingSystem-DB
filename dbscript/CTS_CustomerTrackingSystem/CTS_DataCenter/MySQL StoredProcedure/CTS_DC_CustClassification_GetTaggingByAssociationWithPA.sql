@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_GetTaggingByAssociationWithPA`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_GetTaggingByAssociationWithPA_xtest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_GetTaggingByAssociationWithPA`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_GetTaggingByAssociationWithPA_xtest`(
 	IN ip_ListCustID		TEXT 
 )
     SQL SECURITY INVOKER
@@ -182,8 +182,9 @@ BEGIN
 												 WHEN ca.RootTaggingID = 8 AND Temp_PA.RootTaggingID = 10 THEN 10
 												 WHEN ca.RootTaggingID = 13 AND Temp_PA.RootTaggingID = 10 THEN 10
                                                  WHEN ca.RootTaggingID = 13 AND Temp_PA.RootTaggingID = 8 THEN 8
-											END;
-                                            
+                                                 ELSE ca.RootTaggingID
+											END; 
+    
     INSERT INTO Temp_CustAssociationPA (CustID, TaggingID)
     WITH CTE_Result AS (      
 		SELECT	cus.CustID
