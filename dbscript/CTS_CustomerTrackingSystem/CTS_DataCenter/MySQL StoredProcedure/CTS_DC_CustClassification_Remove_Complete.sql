@@ -533,7 +533,7 @@ BEGIN
 		UPDATE CTS_DataCenter.CustomerLoginInfoDetection AS cld
 		INNER JOIN Temp_CustomerClassification AS temp ON cld.CustID = temp.CustID
 																AND temp.IsFromCTS = 1 AND cld.IsDisabled = 0
-		SET cld.IsDisabled = 1;
+		SET cld.IsDisabled = 1
 		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
 		
 		DELETE cls
