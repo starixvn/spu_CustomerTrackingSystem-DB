@@ -1,9 +1,9 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_DeviceEvolution_GetAttributes`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_DeviceEvolution_GetAttributes`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_DeviceEvolution_GetAttributes`(
-    IN ip_listFingerprintID	LONGTEXT
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_DeviceEvolution_GetAttributes`(
+    IN ip_FPDeviceFingerprintAccountIDs	LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -19,21 +19,21 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_DeviceEvolution_GetAttributes('28,29');
+			CALL DCS_DC_Transform_FP_DeviceEvolution_GetAttributes('28,29');
 	*/
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_FP_FingerPrint;
+	DROP TEMPORARY TABLE IF EXISTS Temp_FP_DeviceFingerprintAccountID;
     
-	CREATE TEMPORARY TABLE Temp_FP_FingerPrint(
+	CREATE TEMPORARY TABLE Temp_FP_DeviceFingerprintAccountID(
 			ID		BIGINT UNSIGNED		PRIMARY KEY
     );
     
     
-    SET @sql = CONCAT("INSERT IGNORE INTO Temp_FP_FingerPrint (ID) VALUES ('", REPLACE(ip_listFingerprintID, ",", "'),('"),"');");
+    SET @sql = CONCAT("INSERT IGNORE INTO Temp_FP_DeviceFingerprintAccountID (ID) VALUES ('", REPLACE(ip_FPDeviceFingerprintAccountIDs, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-    SELECT 	fp.ID AS FP_FingerPrintID
+    SELECT 	fp.ID AS FPFingerPrintID
 		,	fpe.Attribute->>'$.UserAgent' AS UserAgent
 		,	fpe.Attribute->>'$.OSName' AS OSName
 		,	fpe.Attribute->>'$.BrowserName' AS BrowserName
@@ -53,11 +53,14 @@ BEGIN
 		,	fp.Attribute->>'$.Languages' AS Languages
 		,	fp.Attribute->>'$.ScreenResolution' AS Resolution
 		,	fp.Attribute->>'$.Timezone' AS Timezone
-	FROM Temp_FP_FingerPrint AS tmp
-		INNER JOIN DCS_DataCenter.FP_FingerPrint AS fp ON fp.ID = tmp.ID
-		LEFT JOIN DCS_DataCenter.FP_EvolvedMapping AS em ON em.FP_FingerprintID = tmp.ID
+	FROM Temp_FP_DeviceFingerprintAccountID AS tmp
+		INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa ON dfa.ID = tmp.ID
+		INNER JOIN DCS_DataCenter.FP_FingerPrint AS fp ON fp.ID = dfa.FP_FingerPrintID
+		LEFT JOIN DCS_DataCenter.FP_EvolvedMapping AS em ON em.FP_DeviceFingerprintAccountID = tmp.ID
 		LEFT JOIN DCS_DataCenter.FP_FingerPrintExtra AS fpe ON fpe.ID = em.FP_FingerPrintExtraID;
 	
 END$$
 
 DELIMITER ;
+
+			CALL DCS_DC_Transform_FP_DeviceEvolution_GetAttributes('21,19');

@@ -36,100 +36,104 @@ BEGIN
 		Example:
 			CALL DCS_DC_Transform_Transaction_Insert(1,200);
     */
+    DECLARE 	CONST_MINCREATEDDATE	INT DEFAULT 2;
+    
 	DECLARE		lv_SysMinCreatedDate	DATETIME;
     DECLARE 	lv_CurrentDate 			TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
     
 
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
-		    TransID					BIGINT UNSIGNED NOT NULL
-		,   LoginName				VARCHAR(100) NOT NULL
-		,   TransTime				TIMESTAMP(4) NOT NULL
-		,   SubscriberID			INT 				
-        ,   AccountID				BIGINT	UNSIGNED 	
-        ,   SubscriberType		    TINYINT	UNSIGNED	
-        ,   URLDetails			    VARCHAR(250)		
-		,   URLID					INT					
-		,   DeviceCode			    VARCHAR(32) COMMENT 'Trans Device Code'
-        ,   UserAgentKey			VARCHAR(32)			
-		,   IP					    VARCHAR(50) 		
-        ,   IPID					DECIMAL(50,0)			
-		,   ActionResultID		    INT					
-		,   Flagged				    SMALLINT COMMENT 'captcha & browserless'
-		,   PluginID				BIGINT 				
-		,   TransStatus			    BIT(16) 			
-		,   CreatedDate			    DATETIME COMMENT 'Date Only' 
-		,   InsertTime			    TIMESTAMP(4) 		
-        ,   FingerprintCode		    VARCHAR(620)
-        ,   BotDetectionValue		BIT(20)
-        ,   BotComponentID			BIGINT UNSIGNED
-        ,	FakeIP					VARCHAR(100)
-        ,	ChallengeCode			VARCHAR(50)
-        ,	FP_Tagging				VARCHAR(32)
-        ,	FP_FingerPrintCode		VARCHAR(32)
-        ,	FP_FingerPrintExtraCode	VARCHAR(32)
-        ,	FP_FingerPrintOldCode	VARCHAR(32)
-        ,	FP_UserAgentCode		VARCHAR(32)
-        ,	IsIncognitoMode			BIT
-        ,	JSChallengeInfoID		BIGINT UNSIGNED
-        ,	FP_TaggingID			BIGINT UNSIGNED
-        ,	FP_FingerPrintID		BIGINT UNSIGNED
-        ,	FP_FingerPrintExtraID	BIGINT UNSIGNED
-        ,	FP_FingerPrintOldID		BIGINT UNSIGNED
-        ,	FP_UserAgentID			BIGINT UNSIGNED
+		    TransID								BIGINT UNSIGNED NOT NULL
+		,   LoginName							VARCHAR(100) NOT NULL
+		,   TransTime							TIMESTAMP(4) NOT NULL
+		,   SubscriberID						INT 				
+        ,   AccountID							BIGINT	UNSIGNED 	
+        ,   SubscriberType		    			TINYINT	UNSIGNED	
+        ,   URLDetails			    			VARCHAR(250)		
+		,   URLID								INT					
+		,   DeviceCode			    			VARCHAR(32) COMMENT 'Trans Device Code'
+        ,   UserAgentKey						VARCHAR(32)			
+		,   IP					    			VARCHAR(50) 		
+        ,   IPID								DECIMAL(50,0)			
+		,   ActionResultID		    			INT					
+		,   Flagged				    			SMALLINT COMMENT 'captcha & browserless'
+		,   PluginID							BIGINT 				
+		,   TransStatus			    			BIT(16) 			
+		,   CreatedDate			    			DATETIME COMMENT 'Date Only' 
+		,   InsertTime			    			TIMESTAMP(4) 		
+        ,   FingerprintCode		    			VARCHAR(620)
+        ,   BotDetectionValue					BIT(20)
+        ,   BotComponentID						BIGINT UNSIGNED
+        ,	FakeIP								VARCHAR(100)
+        ,	ChallengeCode						VARCHAR(50)
+        ,	FP_Tagging							VARCHAR(32)
+        ,	FP_FingerPrintCode					VARCHAR(32)
+        ,	FP_FingerPrintExtraCode				VARCHAR(32)
+        ,	FP_FingerPrintOldCode				VARCHAR(32)
+        ,	FP_UserAgentCode					VARCHAR(32)
+        ,	IsIncognitoMode						BIT
+        ,	JSChallengeInfoID					BIGINT UNSIGNED
+        ,	FP_TaggingID						BIGINT UNSIGNED
+        ,	FP_FingerPrintID					BIGINT UNSIGNED
+        ,	FP_FingerPrintExtraID				BIGINT UNSIGNED
+        ,	FP_FingerPrintOldID					BIGINT UNSIGNED
+        ,	FP_UserAgentID						BIGINT UNSIGNED
+        ,	FP_DeviceFingerprintAccountID		BIGINT UNSIGNED
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_RawTransactionInfo;
-	CREATE TEMPORARY TABLE  Temp_RawTransactionInfo(
-		    TransID		    BIGINT UNSIGNED NOT NULL
-		,   URLID			INT
-        ,   AccountID		BIGINT	UNSIGNED
-        ,   INDEX           IX_Temp_RawTransactionInfo_TransID(TransID)
-    );
-
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
 	CREATE TEMPORARY TABLE  Temp_Account(
-		    LoginName				VARCHAR(100) NOT NULL
-		,   SubscriberID			INT 
-        ,   SubscriberType		    TINYINT	UNSIGNED	
+		    LoginName							VARCHAR(100) NOT NULL
+		,   SubscriberID						INT 
+        ,   SubscriberType		    			TINYINT	UNSIGNED	
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTime;
     CREATE TEMPORARY TABLE Temp_LastLoginTime(
-		    SubscriberID	INT
-        ,   AccountID		BIGINT UNSIGNED
-        ,   LastLoginTime	TIMESTAMP(4)
+		    SubscriberID						INT
+        ,   AccountID							BIGINT UNSIGNED
+        ,   LastLoginTime						TIMESTAMP(4)
     );
    
     DROP TEMPORARY TABLE IF EXISTS Temp_LastLoginTimeCTSCust;
     CREATE TEMPORARY TABLE Temp_LastLoginTimeCTSCust(
-		    CTSCustID		BIGINT UNSIGNED
-        ,   LastLoginTime	TIMESTAMP(4)
+		    CTSCustID							BIGINT UNSIGNED
+        ,   LastLoginTime						TIMESTAMP(4)
     );
    
     DROP TEMPORARY TABLE IF EXISTS Temp_FP_DeviceFingerprintAccount;
     CREATE TEMPORARY TABLE Temp_FP_DeviceFingerprintAccount(
-		    FP_FingerPrintID	BIGINT UNSIGNED
-        ,   AccountID			BIGINT UNSIGNED
-		,	IsNewRecord			TINYINT			DEFAULT 1
+		    FP_FingerPrintID					BIGINT UNSIGNED
+        ,   AccountID							BIGINT UNSIGNED
+        ,   FP_FingerPrintExtraID				BIGINT UNSIGNED
+		,	IsNewRecord							TINYINT			DEFAULT 1
         
         ,	PRIMARY KEY (`FP_FingerPrintID`,`AccountID`)
     );
    
     DROP TEMPORARY TABLE IF EXISTS Temp_FP_DeviceFingerprintAccountOld;
     CREATE TEMPORARY TABLE Temp_FP_DeviceFingerprintAccountOld(
-		    FP_FingerPrintOldID	BIGINT UNSIGNED
-        ,   AccountID			BIGINT UNSIGNED
-		,	IsNewRecord			TINYINT			DEFAULT 1
+		    FP_FingerPrintOldID					BIGINT UNSIGNED
+        ,   AccountID							BIGINT UNSIGNED
+		,	IsNewRecord							TINYINT	DEFAULT 1
         
         ,	PRIMARY KEY (`FP_FingerPrintOldID`,`AccountID`)
+    );
+   
+    DROP TEMPORARY TABLE IF EXISTS Temp_FP_EvolvedMapping;
+    CREATE TEMPORARY TABLE Temp_FP_EvolvedMapping(
+		    FP_DeviceFingerprintAccountID		BIGINT UNSIGNED
+        ,   FP_FingerPrintExtraID				BIGINT UNSIGNED
+		,	IsNewRecord							TINYINT	DEFAULT 1
+        
+        ,	PRIMARY KEY (`FP_DeviceFingerprintAccountID`,`FP_FingerPrintExtraID`)
     );
    
     SELECT DATE(VValue)
     INTO lv_SysMinCreatedDate
     FROM DCS_DataCenter.SystemSetting 
-    WHERE VGroup = "DCS_Device_Transform" 
-        AND VName = "MinCreatedDate";
+    WHERE ID = CONST_MINCREATEDDATE;
         
 	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode)
 	SELECT  rt.TransID
@@ -198,19 +202,12 @@ BEGIN
         ,    trt.LoginName
         ,    trt.SubscriberType;
     
-    # Update AccountID to Temp_Transaction
-    INSERT INTO Temp_RawTransactionInfo(TransID, AccountID, URLID)
-    SELECT  trt.TransID
-        ,   ac.AccountID
-        ,   ur.URLID
-    FROM Temp_RawTransaction AS trt
-        INNER JOIN	DCS_DataCenter.Account AS ac ON trt.SubscriberID = ac.SubscriberID  AND trt.LoginName = ac.LoginName
-	    LEFT JOIN	DCS_DataCenter.URL	AS ur ON trt.URLDetails = ur.URLDetails;
-
-    UPDATE Temp_RawTransaction AS trt
-        INNER JOIN	Temp_RawTransactionInfo AS info ON trt.TransID = info.TransID  
-    SET     trt.AccountID = info.AccountID
-	    ,   trt.URLID = info.URLID;   
+    # Update AccountID & URLID
+    UPDATE Temp_RawTransaction AS tmp
+        INNER JOIN DCS_DataCenter.Account AS acc ON acc.SubscriberID = tmp.SubscriberID AND acc.LoginName = tmp.LoginName
+	    LEFT JOIN DCS_DataCenter.URL AS url ON url.URLDetails = tmp.URLDetails
+    SET tmp.AccountID = acc.AccountID,
+		tmp.URLID = url.URLID;
     
     #Remove Temp Trans If AccountID Is NULL
     DELETE 	trt
@@ -274,10 +271,10 @@ BEGIN
 	SET tmp.JSChallengeInfoID = CASE WHEN tmp.ChallengeCode IS NULL THEN NULL ELSE IFNULL(jsc.ID, 0) END;
     
 	/* ======= INSERT FP_DeviceFingerprintAccount ========= */
-    INSERT INTO Temp_FP_DeviceFingerprintAccount(FP_FingerPrintID, AccountID)
-    SELECT 	DISTINCT
-			FP_FingerPrintID
+    INSERT IGNORE INTO Temp_FP_DeviceFingerprintAccount(FP_FingerPrintID, AccountID, FP_FingerPrintExtraID)
+    SELECT 	FP_FingerPrintID
 		,	AccountID
+		,	FP_FingerPrintExtraID
     FROM Temp_RawTransaction
     WHERE FP_FingerPrintID IS NOT NULL
 		AND AccountID IS NOT NULL;
@@ -286,9 +283,10 @@ BEGIN
 		INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa ON dfa.FP_FingerPrintID = tmp.FP_FingerPrintID AND dfa.AccountID = tmp.AccountID
     SET tmp.IsNewRecord = 0;
     
-    INSERT IGNORE INTO DCS_DataCenter.FP_DeviceFingerprintAccount(FP_FingerPrintID, AccountID)
+    INSERT IGNORE INTO DCS_DataCenter.FP_DeviceFingerprintAccount(FP_FingerPrintID, AccountID, FP_FingerPrintExtraID)
     SELECT	FP_FingerPrintID
 		,	AccountID
+		,	FP_FingerPrintExtraID
     FROM Temp_FP_DeviceFingerprintAccount
     WHERE IsNewRecord = 1;
     
@@ -309,6 +307,29 @@ BEGIN
     SELECT	FP_FingerPrintOldID
 		,	AccountID
     FROM Temp_FP_DeviceFingerprintAccountOld
+    WHERE IsNewRecord = 1;
+    
+	/* ======= INSERT FP_EvolvedMapping ========= */
+    UPDATE Temp_RawTransaction AS tmp
+		INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa ON dfa.FP_FingerPrintID = tmp.FP_FingerPrintID AND dfa.AccountID = tmp.AccountID
+    SET tmp.FP_DeviceFingerprintAccountID = dfa.ID;
+    
+    INSERT IGNORE INTO Temp_FP_EvolvedMapping(FP_DeviceFingerprintAccountID, FP_FingerPrintExtraID)
+    SELECT 	DISTINCT 
+			FP_DeviceFingerprintAccountID
+		,	FP_FingerPrintExtraID
+    FROM Temp_RawTransaction
+    WHERE FP_DeviceFingerprintAccountID IS NOT NULL
+		AND FP_FingerPrintExtraID IS NOT NULL;
+
+    UPDATE Temp_FP_EvolvedMapping AS tmp
+		INNER JOIN DCS_DataCenter.FP_EvolvedMapping AS em ON em.FP_DeviceFingerprintAccountID = tmp.FP_DeviceFingerprintAccountID AND em.FP_FingerPrintExtraID = tmp.FP_FingerPrintExtraID
+    SET tmp.IsNewRecord = 0;
+    
+    INSERT IGNORE INTO DCS_DataCenter.FP_EvolvedMapping(FP_DeviceFingerprintAccountID, FP_FingerPrintExtraID)
+    SELECT 	FP_DeviceFingerprintAccountID
+		,	FP_FingerPrintExtraID
+    FROM Temp_FP_EvolvedMapping
     WHERE IsNewRecord = 1;
 	
 	/* ======= INSERT Transaction ========= */

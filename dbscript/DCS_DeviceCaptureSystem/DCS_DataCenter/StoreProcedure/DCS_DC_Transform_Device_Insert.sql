@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transform_Device_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_Device_Insert`(
-    IN ip_TransJson LONGTEXT
+    IN ip_TransIDs LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -31,7 +31,8 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_Device_Insert('[{"TransId":1,"BatchId":1}]');
+			SET sql_safe_updates = 0;
+			CALL DCS_DC_Transform_Device_Insert('32');
 	*/
 
 	DECLARE vrDeviceStatusNew			TINYINT DEFAULT 1;			# New Device
@@ -46,6 +47,7 @@ BEGIN
     SET lv_InsertionTime = CURRENT_TIMESTAMP(4);
     
     #============================================
+	DROP TEMPORARY TABLE IF EXISTS Temp_Input;
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedDevice;
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoveredDevice;
@@ -53,6 +55,10 @@ BEGIN
     #==============================================
     
 	#======GET DATA FROM RAW TRANSACTION===========================
+	CREATE TEMPORARY TABLE Temp_Input(
+			TransID			 			BIGINT	UNSIGNED NOT NULL		PRIMARY KEY
+    );
+    
 	CREATE TEMPORARY TABLE Temp_Transaction(
 			TransID					BIGINT	UNSIGNED PRIMARY KEY
         , 	RawTransID				BIGINT UNSIGNED
@@ -108,16 +114,12 @@ BEGIN
 	
     
 	#========GET INPUT DATA===========================
+    SET @sql = CONCAT("INSERT IGNORE INTO Temp_Input(TransID) VALUES ('", REPLACE(ip_TransIDs, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
+    
+    
 	INSERT INTO Temp_Transaction(TransID, RawTransID, AccountID, LoginName, SubscriberID, UserAgentKey, IP, DeviceCode, CreatedDate, TransTime, FingerprintCode)
-    WITH CTE_Trans AS (
-		SELECT TransID
-		FROM JSON_TABLE(
-			ip_TransJson,
-			 "$[*]" COLUMNS(
-				TransID BIGINT UNSIGNED PATH "$.TransId" 
-			  )
-		) AS t
-    )
     SELECT 	trans.TransID
 		, 	trans.RawTransID
 		, 	trans.AccountID
@@ -129,9 +131,9 @@ BEGIN
 		, 	trans.CreatedDate
 		, 	trans.TransTime
 		, 	trans.FingerprintCode
-	FROM CTE_Trans AS cte
-		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = cte.TransID
-    ORDER BY cte.TransID ASC;
+	FROM Temp_Input AS tmp
+		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
+    ORDER BY tmp.TransID ASC;
     
     /* === Add index Temp_Transaction === */
 	ALTER TABLE Temp_Transaction
