@@ -168,7 +168,7 @@ BEGIN
 		AND (FP_TaggingID > 0
 			OR FP_DeviceFingerprintAccountID > 0);
     
-    CALL DCS_DataCenter.DCS_DC_Transform_DeviceMapping_UpdateTheSameDevice('Temp_NewDevice');
+    CALL DCS_DataCenter.DCS_DC_Transform_FP_DeviceMapping_UpdateTheSameDevice('Temp_NewDevice');
     
     INSERT IGNORE INTO DCS_DataCenter.FP_Device(FirstRawTransID)
     SELECT DISTINCT SameDeviceWithRawTransID
