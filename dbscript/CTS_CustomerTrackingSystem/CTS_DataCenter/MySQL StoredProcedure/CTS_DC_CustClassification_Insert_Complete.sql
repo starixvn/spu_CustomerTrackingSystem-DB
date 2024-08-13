@@ -707,12 +707,14 @@ BEGIN
 		
 		UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cate.CustID AND cate.ParentID = CONST_PARENTID_NORMAL
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cc ON cc.CategoryID = cate.CategoryID
 		SET   	cate.CTSCustID 			= temp.CTSCustID
 			, 	cate.SubscriberID 		= temp.SubscriberID
 			, 	cate.CategoryID 		= temp.NewCategoryID
-			, 	cate.LastModifiedDate 	= CASE WHEN temp.IsFromOldPA = 0 THEN lv_CurrentDateTime ELSE cate.LastModifiedDate END
-			, 	cate.LastScannedDate 	= CASE WHEN temp.IsFromOldPA = 0 AND temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY 
-													THEN cate.LastScannedDate
+			, 	cate.LastModifiedDate 	= CASE	WHEN cc.IsKeepOldCateID = 0 THEN lv_CurrentDateTime 
+												WHEN cc.IsKeepOldCateID = 1 AND temp.IsFromOldPA = 0 THEN lv_CurrentDateTime 
+												ELSE cate.LastModifiedDate END
+			, 	cate.LastScannedDate 	= CASE  WHEN temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY  THEN cate.LastScannedDate
 												ELSE DATE(lv_CurrentDateTime) END
 		WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE;
 	
