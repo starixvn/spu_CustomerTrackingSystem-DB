@@ -529,11 +529,11 @@ BEGIN
 		SET rd.IsDisabled = 1
 		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
 		
-		-- DELETE PA 305/3005
-		DELETE cld
-		FROM CTS_DataCenter.CustomerLoginInfoDetection AS cld
-			INNER JOIN Temp_CustomerClassification AS temp ON cld.CustID = temp.CustID
-																AND temp.IsFromCTS = 1
+		-- PA 305/3005
+		UPDATE CTS_DataCenter.CustomerLoginInfoDetection AS cld
+		INNER JOIN Temp_CustomerClassification AS temp ON cld.CustID = temp.CustID
+																AND temp.IsFromCTS = 1 AND cld.IsDisabled = 0
+		SET cld.IsDisabled = 1;
 		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
 		
 		DELETE cls

@@ -74,7 +74,7 @@ BEGIN
         ,	CountInvalidBrowserTrans		    INT DEFAULT 0
         ,   BotTransPercentage                  DECIMAL(6,2)
         ,   InvalidBrowserInfoTransPercentage   DECIMAL(6,2)
-        ,   DetectionDate                       DATETIME
+        ,   SourceCreatedDate                   DATETIME
 	);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustAccLogTransInfo;
@@ -167,14 +167,14 @@ BEGIN
         ,   ROUND((cte.CountInvalidBrowserTrans/cte.CountLogin)*100,2) AS InvalidBrowserInfoTransPercentage
     FROM CTECustInfo AS cte;
 
-    INSERT IGNORE INTO Temp_CustUnauthorizedLogin(CTSCustID, CustID, FirstBetDate, SubscriberID, RoleID, IsLicensee, CountBotTrans, CountInvalidBrowserTrans, BotTransPercentage, InvalidBrowserInfoTransPercentage, DetectionDate)
+    INSERT IGNORE INTO Temp_CustUnauthorizedLogin(CTSCustID, CustID, FirstBetDate, SubscriberID, RoleID, IsLicensee, CountBotTrans, CountInvalidBrowserTrans, BotTransPercentage, InvalidBrowserInfoTransPercentage, SourceCreatedDate)
     SELECT ct.CTSCustID, cus.CustID, cus.FirstBetDate, cus.SubscriberID, cus.RoleID, cus.IsLicensee, ct.CountBotTrans, ct.CountInvalidBrowserTrans, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage, ip_ProcessedDate
     FROM Temp_CustLogTransInfo AS ct
         INNER JOIN Temp_Customer AS cus ON cus.CTSCustID = ct.CTSCustID
     WHERE ct.BotTransPercentage > lv_Percentage_Threshold OR ct.InvalidBrowserInfoTransPercentage > lv_Percentage_Threshold;
     
-    INSERT IGNORE INTO CTS_DataCenter.CustomerLoginInfoDetection(CTSCustID, CustID, FirstBetDate, Bot, InvalidBrowser, BotTransPercentage, InvalidBrowserInfoTransPercentage, DetectionDate) 
-    SELECT ct.CTSCustID, ct.CustID, ct.FirstBetDate, ct.CountBotTrans, ct.CountInvalidBrowserTrans, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage, ct.DetectionDate
+    INSERT IGNORE INTO CTS_DataCenter.CustomerLoginInfoDetection(CTSCustID, CustID, FirstBetDate, Bot, InvalidBrowser, BotTransPercentage, InvalidBrowserInfoTransPercentage, SourceCreatedDate) 
+    SELECT ct.CTSCustID, ct.CustID, ct.FirstBetDate, ct.CountBotTrans, ct.CountInvalidBrowserTrans, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage, ct.SourceCreatedDate
     FROM Temp_CustUnauthorizedLogin AS ct;
     
     /*Return data*/

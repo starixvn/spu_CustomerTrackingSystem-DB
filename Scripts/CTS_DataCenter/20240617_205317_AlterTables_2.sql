@@ -148,3 +148,22 @@ MODIFY COLUMN Probability DECIMAL(8,2);
 /*ArchiveCustomer_CTSCustomer*/
 ALTER TABLE ArchiveCustomer_CTSCustomer
 MODIFY COLUMN CategoryID INT UNSIGNED;
+
+/*CustomerLoginInfoDetection*/
+ALTER TABLE CustomerLoginInfoDetection
+RENAME COLUMN DetectionDate TO SourceCreatedDate;
+
+ALTER TABLE CustomerLoginInfoDetection
+DROP PRIMARY KEY;
+
+ALTER TABLE CustomerLoginInfoDetection
+ADD ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST;
+
+ALTER TABLE CustomerLoginInfoDetection
+ADD IsDisabled BIT(1) DEFAULT 0;
+
+ALTER TABLE CustomerLoginInfoDetection
+ADD InsertedTime DATETIME DEFAULT CURRENT_TIMESTAMP();
+
+ALTER TABLE CustomerLoginInfoDetection
+ADD KEY IX_CustLoginInfoDetection_CustID_InsertedTime (CustID, InsertedTime);

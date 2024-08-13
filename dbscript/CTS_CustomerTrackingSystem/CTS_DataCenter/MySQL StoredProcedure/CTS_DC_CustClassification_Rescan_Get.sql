@@ -304,11 +304,12 @@ sp: BEGIN
         ,   1 								AS IsFromCTS
         ,	0 								AS IsFromAI
         ,	0 								AS IsFromImperva
-		,	s.DetectionDate 				AS CreatedDate
-        ,	s.DetectionDate 				AS LastModifiedDate
+		,	s.SourceCreatedDate 			AS CreatedDate
+        ,	s.SourceCreatedDate 			AS LastModifiedDate
         ,   CONST_INPUTFLOWID_CATEGORY_PA	AS InputFlowID
     FROM  Temp_CustInfo AS tmp
-		INNER JOIN CTS_DataCenter.CustomerLoginInfoDetection AS s ON s.CustID = tmp.CustID;
+		INNER JOIN CTS_DataCenter.CustomerLoginInfoDetection AS s ON s.CustID = tmp.CustID 
+    WHERE s.IsDisabled = 0;
     
     /***********************Check TVS Void****************************/
 	INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, TVSRequestID, IsParlay, SportType, IssueTypeID, InputFlowID)

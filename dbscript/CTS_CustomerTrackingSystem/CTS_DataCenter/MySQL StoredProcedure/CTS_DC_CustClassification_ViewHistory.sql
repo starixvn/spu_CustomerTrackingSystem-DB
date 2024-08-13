@@ -124,10 +124,11 @@ BEGIN
 				,	RoleID				TINYINT
 				,	SportType			SMALLINT
 				,	IsParlay			BIT(1)
+				,	LastModifiedDate	DATETIME	
 				,	KEY IX_Temp_CustRemark_CateID(CategoryID)	
 		);
 
-		INSERT IGNORE INTO Temp_CustRemark(HistoryID, CustID, CategoryID, SourceTypeID, RoleID, SportType, IsParlay)
+		INSERT IGNORE INTO Temp_CustRemark(HistoryID, CustID, CategoryID, SourceTypeID, RoleID, SportType, IsParlay, LastModifiedDate)
 		SELECT  clss.ID
 			,	clss.CustID
             ,   clss.CategoryID
@@ -135,6 +136,7 @@ BEGIN
 			,	cus.RoleID
 			,	clss.SportType
 			,	clss.IsParlay
+			,	clss.LastModifiedDate
 		FROM CTS_DataCenter.CTSCustomerClassification_History AS clss
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON clss.CustID = cus.CustID
 		WHERE 	clss.CTSCustID = ip_CTSCustID AND clss.IsDataChanged = 1;
@@ -199,11 +201,17 @@ BEGIN
 		WHERE tmp.Remark IS NULL AND tmp.SourceTypeID IS NOT NULL;
 
 		IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING)) THEN
-            UPDATE Temp_CustRemark AS tmp
-                INNER JOIN CTS_DataCenter.CustomerLoginInfoDetection AS cld ON cld.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmp.Remark,'[FBDate]', IFNULL(DATE_FORMAT(cld.FirstBetDate, '%b %d, %Y'),''))
-								,'[DetectedDate]', IFNULL(DATE_FORMAT(cld.DetectionDate, '%b %d, %Y'),'')), '[Bot]', IFNULL(cld.Bot,0)),'[BotPCT]',IFNULL(cld.BotTransPercentage,0)),'[InvalidBrowser]'
-                                ,IFNULL(cld.InvalidBrowser,0)),'[InvalidBrowserPCT]',IFNULL(cld.InvalidBrowserInfoTransPercentage,0))
+            UPDATE Temp_CustRemark AS tmp,
+			LATERAL (
+				SELECT cld.CustID, cld.FirstBetDate, cld.SourceCreatedDate, cld.Bot, cld.BotTransPercentage, cld.InvalidBrowser, cld.InvalidBrowserInfoTransPercentage
+				FROM CTS_DataCenter.CustomerLoginInfoDetection AS cld
+				WHERE cld.CustID = tmp.CustID AND tmp.LastModifiedDate >= cld.InsertedTime
+				ORDER BY cld.InsertedTime DESC
+				LIMIT 1
+			) AS cd
+            SET tmp.Remark = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmp.Remark,'[FBDate]', IFNULL(DATE_FORMAT(cd.FirstBetDate, '%b %d, %Y'),''))
+								,'[DetectedDate]', IFNULL(DATE_FORMAT(cd.SourceCreatedDate, '%b %d, %Y'),'')), '[Bot]', IFNULL(cd.Bot,0)),'[BotPCT]',IFNULL(cd.BotTransPercentage,0)),'[InvalidBrowser]'
+                                ,IFNULL(cd.InvalidBrowser,0)),'[InvalidBrowserPCT]',IFNULL(cd.InvalidBrowserInfoTransPercentage,0))
             WHERE tmp.CategoryID IN (CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING);
 		END IF;
 
