@@ -179,8 +179,9 @@ BEGIN
 	WHERE lc.ParentID = CONST_PARENTID_PA
         AND ca.RootTaggingID IS NOT NULL
     ON DUPLICATE KEY UPDATE RootTaggingID = CASE WHEN ca.RootTaggingID = 10 THEN 10
-												 WHEN ca.RootTaggingID = 10 AND Temp_PA.RootTaggingID <> 10 THEN 8
 												 WHEN ca.RootTaggingID = 8 AND Temp_PA.RootTaggingID = 10 THEN 10
+												 WHEN ca.RootTaggingID = 13 AND Temp_PA.RootTaggingID = 10 THEN 10
+                                                 WHEN ca.RootTaggingID = 13 AND Temp_PA.RootTaggingID = 8 THEN 8
 											END;
                                             
     INSERT INTO Temp_CustAssociationPA (CustID, TaggingID)
