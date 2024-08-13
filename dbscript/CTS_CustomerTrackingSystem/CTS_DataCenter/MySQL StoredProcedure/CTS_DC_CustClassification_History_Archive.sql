@@ -51,12 +51,10 @@ sp:BEGIN
 		,	BetCount  				BIGINT  
 		,	ActiveDays  			INT  
 		,	RobotCounter  			SMALLINT  
-		,	ProbationPeriodWinloss  DECIMAL(20,4)  
 		,	TargetCC  				SMALLINT  
 		,	SourceTypeID  			SMALLINT UNSIGNED  
 		,	OldCategoryID  			INT UNSIGNED  
 		,	DWCategoryID  			INT UNSIGNED  
-		,	IsAppliedCC  			BIT(1)
 		,	IsDataChanged  			BIT(1)
 		,	ActionType  			TINYINT  
 		,	IsAuto  				BIT(1)  
@@ -65,7 +63,6 @@ sp:BEGIN
 		,	InsertDate  			DATETIME
 		,	TaggingType  			SMALLINT
 		,	TargetDangerLevel1  	SMALLINT  
-		,	IsAppliedDangerLevel1  	BIT(1)
 		,	TWGroupBettingRate  	DECIMAL(10,4)  
 		,	TWTicketRejectRate  	DECIMAL(10,4)  
 		,	TWBetCount  			BIGINT  
@@ -82,7 +79,6 @@ sp:BEGIN
 		,	SportType				SMALLINT
 		,	IssueTypeID				TINYINT
         ,	PerformanceTime			DATETIME
-        ,	First5TWGBTicketCount	TINYINT UNSIGNED
 		,	PRIMARY KEY (ID)
 		,	KEY 					IX_CTSCustomerClassification_History_CustID (CustID)
 	);
@@ -138,12 +134,10 @@ sp:BEGIN
 		,	BetCount
 		,	ActiveDays
 		,	RobotCounter
-		,	ProbationPeriodWinloss
 		,	TargetCC
 		,	SourceTypeID
 		,	OldCategoryID
 		,	DWCategoryID
-		,	IsAppliedCC
 		,	IsDataChanged
 		,	ActionType
 		,	IsAuto
@@ -152,7 +146,6 @@ sp:BEGIN
 		,	InsertDate
 		,	TaggingType
 		,	TargetDangerLevel1
-		,	IsAppliedDangerLevel1
 		,	TWGroupBettingRate
 		,	TWTicketRejectRate
 		,	TWBetCount
@@ -169,7 +162,6 @@ sp:BEGIN
 		,	SportType
 		,	IssueTypeID
         ,	PerformanceTime
-        ,	First5TWGBTicketCount
 	)
     SELECT 	ID  					
 		,	CustID  				
@@ -181,12 +173,10 @@ sp:BEGIN
 		,	BetCount  				
 		,	ActiveDays  			
 		,	RobotCounter  		
-		,	ProbationPeriodWinloss  
 		,	TargetCC  				
 		,	SourceTypeID  			
 		,	OldCategoryID  		
 		,	DWCategoryID  			
-		,	IsAppliedCC  			
 		,	IsDataChanged  			
 		,	ActionType  			
 		,	IsAuto  				
@@ -195,7 +185,6 @@ sp:BEGIN
 		,	InsertDate  			
 		,	TaggingType  			
 		,	TargetDangerLevel1  	
-		,	IsAppliedDangerLevel1  	
 		,	TWGroupBettingRate  	
 		,	TWTicketRejectRate  	
 		,	TWBetCount  			
@@ -212,7 +201,6 @@ sp:BEGIN
 		,	SportType
 		,	IssueTypeID
         ,	PerformanceTime
-        ,	First5TWGBTicketCount
 	FROM CTS_DataCenter.CTSCustomerClassification_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
 		AND IsDataChanged = 1
@@ -272,12 +260,10 @@ sp:BEGIN
 			,	BetCount
 			,	ActiveDays
 			,	RobotCounter
-			,	ProbationPeriodWinloss
 			,	TargetCC
 			,	SourceTypeID
 			,	OldCategoryID
 			,	DWCategoryID
-			,	IsAppliedCC
 			,	IsDataChanged
 			,	ActionType
 			,	IsAuto
@@ -286,7 +272,6 @@ sp:BEGIN
 			,	InsertDate
 			,	TaggingType
 			,	TargetDangerLevel1
-			,	IsAppliedDangerLevel1
 			,	TWGroupBettingRate
 			,	TWTicketRejectRate
 			,	TWBetCount
@@ -303,7 +288,6 @@ sp:BEGIN
 			,	SportType
 			,	IssueTypeID
             ,	PerformanceTime
-            ,	First5TWGBTicketCount
 		)
 		SELECT 	ID  					
 			,	h.CustID  				
@@ -315,12 +299,10 @@ sp:BEGIN
 			,	BetCount  				
 			,	ActiveDays  			
 			,	RobotCounter  		
-			,	ProbationPeriodWinloss  
 			,	TargetCC  				
 			,	SourceTypeID  			
 			,	OldCategoryID  		
 			,	DWCategoryID  			
-			,	IsAppliedCC  			
 			,	IsDataChanged  			
 			,	ActionType  			
 			,	IsAuto  				
@@ -329,7 +311,6 @@ sp:BEGIN
 			,	InsertDate  			
 			,	TaggingType  			
 			,	TargetDangerLevel1  	
-			,	IsAppliedDangerLevel1  	
 			,	TWGroupBettingRate  	
 			,	TWTicketRejectRate  	
 			,	TWBetCount  			
@@ -346,7 +327,6 @@ sp:BEGIN
 			,	SportType
 			,	IssueTypeID
             ,	PerformanceTime
-            ,	First5TWGBTicketCount
 		FROM Temp_CustDataShouldBeRemoved AS k
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON k.CustID = h.CustID
 		WHERE h.ID < lv_LastID
@@ -369,12 +349,10 @@ sp:BEGIN
 			,	BetCount  				
 			,	ActiveDays  			
 			,	RobotCounter  		
-			,	ProbationPeriodWinloss  
 			,	TargetCC  				
 			,	SourceTypeID  			
 			,	OldCategoryID  		
 			,	DWCategoryID  			
-			,	IsAppliedCC  			
 			,	IsDataChanged  			
 			,	ActionType  			
 			,	IsAuto  				
@@ -383,7 +361,6 @@ sp:BEGIN
 			,	InsertDate  			
 			,	TaggingType  			
 			,	TargetDangerLevel1  	
-			,	IsAppliedDangerLevel1  	
 			,	TWGroupBettingRate  	
 			,	TWTicketRejectRate  	
 			,	TWBetCount  			
@@ -400,7 +377,6 @@ sp:BEGIN
 			,	SportType
 			,	IssueTypeID
             ,	PerformanceTime
-            ,	First5TWGBTicketCount
 		FROM Temp_History;
 		
 		UPDATE CTS_DataCenter.SystemParameter
