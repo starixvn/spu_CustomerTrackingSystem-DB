@@ -52,6 +52,8 @@ sp:BEGIN
 		,	LastModifiedBy 		INT UNSIGNED 
 		,	InsertDate 			DATETIME
         ,	PerformanceTime		DATETIME
+		,	SourceTypeID	 	SMALLINT UNSIGNED
+		,	Remark			 	VARCHAR(500)
 		,	KEY 				IX_Temp_History_CustIDSportID (CustID, SportID)
 	);
     
@@ -97,7 +99,7 @@ sp:BEGIN
 		LEAVE sp; 
 	END IF;
 
-    INSERT INTO Temp_History(ID,CustID,CTSCustID,ParentID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime)
+    INSERT INTO Temp_History(ID,CustID,CTSCustID,ParentID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime,SourceTypeID,Remark)
     SELECT 	ID 					
 		,	CustID 				
 		,	CTSCustID 	
@@ -114,6 +116,8 @@ sp:BEGIN
 		,	LastModifiedBy 		
 		,	InsertDate
         ,   PerformanceTime
+		,	SourceTypeID
+		,	Remark
 	FROM CTS_DataCenter.CTSCustomerClassification_BySport_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
         AND InsertDate < lv_DateValid;
@@ -162,7 +166,7 @@ sp:BEGIN
 						WHERE k.ID = h.ID);		
         
         # take back the old log for the new active ones
-        INSERT INTO Temp_History(ID,CustID,CTSCustID,ParentID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime)
+        INSERT INTO Temp_History(ID,CustID,CTSCustID,ParentID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime,SourceTypeID,Remark)
 		SELECT 	h.ID 					
 			,	h.CustID 				
 			,	h.CTSCustID 
@@ -179,6 +183,8 @@ sp:BEGIN
 			,	h.LastModifiedBy 		
 			,	h.InsertDate 	
             ,	h.PerformanceTime
+			,	h.SourceTypeID
+			,	h.Remark
 		FROM Temp_CustDataShouldBeRemoved AS k
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport_History AS h ON k.CustID = h.CustID AND k.SportID = h.SportID
 		WHERE h.ID < lv_LastID
@@ -206,6 +212,8 @@ sp:BEGIN
 			,	LastModifiedBy 		
 			,	InsertDate
             , 	PerformanceTime
+			,	SourceTypeID
+			,	Remark
 		FROM Temp_History;
 		
 		UPDATE CTS_DataCenter.SystemParameter
