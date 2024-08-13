@@ -27,7 +27,7 @@ BEGIN
            
 		Param's Explanation (filtered by):
         Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetTaggingByAssociationWithPA('1268,38665541,17004,32339123379301,3481646');
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetTaggingByAssociationWithPA('148628950');
 	*/
     
     DECLARE	CONST_PARENTID_PA			INT;
@@ -66,6 +66,12 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustLevel1;
     CREATE TEMPORARY TABLE 	Temp_CustLevel1 (			
 			CTSCustID		BIGINT UNSIGNED PRIMARY KEY
+	);
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_LatestCategory;
+    CREATE TEMPORARY TABLE 	Temp_LatestCategory (			
+			CTSCustID		BIGINT UNSIGNED PRIMARY KEY,
+            ParentID		INT
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;
@@ -149,28 +155,34 @@ BEGIN
 	
     INSERT INTO Temp_CustLevel1(CTSCustID)
     SELECT DISTINCT CTSCustID_Aff AS Level1  
-    FROM 	Temp_CustAssociation;
-    
-    INSERT INTO Temp_PA(CTSCustID, RootTaggingID)
-    SELECT 	tmplc.CTSCustID, tmplc.RootTaggingID
+    FROM 	Temp_CustAssociation;       
+     
+	INSERT INTO Temp_LatestCategory(CTSCustID, ParentID)
+	SELECT DISTINCT tmplc.CTSCustID, tmplc.ParentID
 	FROM 	Temp_CustLevel1 AS cus
-		,	LATERAL	
-			  (		SELECT cc.CTSCustID, ca.ParentID, ca.RootTaggingID
-					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
-					WHERE cc.CTSCustID = cus.CTSCustID
-						AND ca.IsActive = 1
-                        AND ca.ParentID <> CONST_PARENTID_WRAPPER
-					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
-                    LIMIT 1
-			   ) AS tmplc
-    WHERE	tmplc.ParentID = CONST_PARENTID_PA
-		AND tmplc.RootTaggingID IS NOT NULL
-    ON DUPLICATE KEY UPDATE RootTaggingID = CASE WHEN tmplc.RootTaggingID = 10 THEN 10
-												 WHEN tmplc.RootTaggingID = 10 AND Temp_PA.RootTaggingID <> 10 THEN 8
-												 WHEN tmplc.RootTaggingID = 8 AND Temp_PA.RootTaggingID = 10 THEN 10
+	,	LATERAL	
+		  (		SELECT cc.CTSCustID, ca.ParentID
+				FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+				WHERE cc.CTSCustID = cus.CTSCustID
+					AND ca.IsActive = 1
+					AND ca.ParentID <> CONST_PARENTID_WRAPPER
+				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
+				LIMIT 1
+		   ) AS tmplc;
+        
+    INSERT INTO Temp_PA(CTSCustID, RootTaggingID)
+    SELECT 	lc.CTSCustID, ca.RootTaggingID
+	FROM Temp_LatestCategory AS lc
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = lc.CTSCustID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+	WHERE lc.ParentID = CONST_PARENTID_PA
+        AND ca.RootTaggingID IS NOT NULL
+    ON DUPLICATE KEY UPDATE RootTaggingID = CASE WHEN ca.RootTaggingID = 10 THEN 10
+												 WHEN ca.RootTaggingID = 10 AND Temp_PA.RootTaggingID <> 10 THEN 8
+												 WHEN ca.RootTaggingID = 8 AND Temp_PA.RootTaggingID = 10 THEN 10
 											END;
-    
+                                            
     INSERT INTO Temp_CustAssociationPA (CustID, TaggingID)
     WITH CTE_Result AS (      
 		SELECT	cus.CustID
