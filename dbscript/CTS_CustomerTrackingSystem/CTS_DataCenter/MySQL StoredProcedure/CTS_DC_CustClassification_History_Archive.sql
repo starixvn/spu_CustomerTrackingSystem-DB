@@ -51,7 +51,7 @@ sp:BEGIN
 		,	BetCount  				BIGINT  
 		,	ActiveDays  			INT  
 		,	RobotCounter  			SMALLINT  
-		,	TargetCC  				SMALLINT  
+		,	TargetCC  				INT  
 		,	SourceTypeID  			SMALLINT UNSIGNED  
 		,	OldCategoryID  			INT UNSIGNED  
 		,	DWCategoryID  			INT UNSIGNED  

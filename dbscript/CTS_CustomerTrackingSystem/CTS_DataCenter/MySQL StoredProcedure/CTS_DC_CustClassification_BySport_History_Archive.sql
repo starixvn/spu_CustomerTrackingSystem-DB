@@ -46,7 +46,7 @@ sp:BEGIN
 		,	WinlossRM 			DECIMAL(20 , 4 )
 		,	BetCount 			BIGINT 
 		,	ActiveDays 			INT
-		,	TargetCC 			SMALLINT
+		,	TargetCC 			INT
 		,	ActionType 			TINYINT 
 		,	LastModifiedDate 	DATETIME 
 		,	LastModifiedBy 		INT UNSIGNED 

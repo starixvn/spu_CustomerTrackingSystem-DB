@@ -408,8 +408,7 @@ sp : BEGIN
 						FROM CTS_DataCenter.CTSCustomerClassification AS clss
 							INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
 						WHERE clss.CTSCustID = tmpAcc.CTSCustID
-						ORDER BY cat.CategoryPriority ASC, clss.CreatedDate DESC) AS cate
-		/*INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CTSCustID = tmpAcc.CTSCustID*/
+						ORDER BY cat.CategoryPriority ASC, clss.LastModifiedDate DESC) AS cate
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = tmpCate.CategoryID 
 	GROUP BY tmpAcc.CTSCustID, cc.ParentID;
