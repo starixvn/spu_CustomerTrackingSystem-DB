@@ -199,7 +199,7 @@ BEGIN
 					 ELSE @TYPE_SCANNING END
 			,	@Today
 		FROM #tmpBatch AS tb
-		WHERE tb.IsExist = 0 AND tb.SportType IN (@SPORT_SOCCER,@SPORT_BASEKETBALL);;
+		WHERE tb.IsExist = 0 AND tb.SportType IN (@SPORT_SOCCER,@SPORT_BASEKETBALL);
 		
 		INSERT INTO dbo.CustomerClassification_ScannedNewCust (CustId,TotalTicketCount,GBTicketCount,SportType,CreatedTime,JobScannedType,LastJobScannedTime)
 		SELECT 	tb.CustId
