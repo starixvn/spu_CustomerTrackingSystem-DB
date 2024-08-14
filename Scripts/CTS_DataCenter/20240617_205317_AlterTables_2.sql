@@ -170,3 +170,7 @@ ADD COLUMN ArchivedDate DATETIME;
 
 ALTER TABLE CustomerLoginInfoDetection
 ADD KEY IX_CustLoginInfoDetection_CustID_InsertedTime (CustID, InsertedTime);
+
+/*RobotImperva*/
+ALTER TABLE RobotImperva
+ADD IsDisabled BIT(1) DEFAULT 0;

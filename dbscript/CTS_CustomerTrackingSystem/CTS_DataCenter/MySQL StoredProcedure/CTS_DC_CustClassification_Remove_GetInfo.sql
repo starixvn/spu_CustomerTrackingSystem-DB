@@ -61,6 +61,7 @@ BEGIN
 		,	IsFromTVS							TINYINT(1) DEFAULT 0
 		,	IsFromAI							TINYINT(1) DEFAULT 0
 		,	IsFromCTS							TINYINT(1) DEFAULT 0
+		,	IsFromImperva						TINYINT(1) DEFAULT 0
 		,	INDEX IX_Temp_CC_CustID_CategoryID (CustID, CategoryID)
 		,	INDEX IX_Temp_CC_CTSCustID (CTSCustID)
 	);

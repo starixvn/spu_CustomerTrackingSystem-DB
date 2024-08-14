@@ -432,6 +432,14 @@ BEGIN
 																					AND ccR.IsActive = 1
 						WHERE clsR.CustID = temp.CustID AND clsR.IsFromTW = 1);	
 
+		UPDATE Temp_CustomerClassification AS temp
+		SET temp.IsFromImperva = 1
+		WHERE EXISTS (	SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassification AS clsR 
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ccR ON clsR.CategoryID = ccR.CategoryID
+																					AND ccR.IsActive = 1
+						WHERE clsR.CustID = temp.CustID AND clsR.IsFromImperva = 1);	
+
 
 		UPDATE Temp_CustomerClassification AS temp
 		SET temp.IsFromTVS = 1
@@ -508,6 +516,13 @@ BEGIN
 		SET rd.IsDisabled = 1
 		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
 		
+		-- ROBOT IMPERVA
+		UPDATE CTS_DataCenter.RobotImperva AS rd
+			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID
+																AND temp.IsExistRobot = 1 AND temp.IsFromImperva = 1 AND rd.IsDisabled = 0
+		SET rd.IsDisabled = 1
+		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
+
 		-- ROBOT TW
 		UPDATE CTS_DataCenter.TWRobotUser AS rd
 			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID 
