@@ -133,7 +133,7 @@ BEGIN
 							,	TWBetCount 				BIGINT  			PATH "$.TWBetCount"
 							,	TWDesktopUsageRate		DECIMAL(10 , 4 ) 	PATH "$.TWDesktopUsageRate"
                             ,	Remark		            VARCHAR(500) 		PATH "$.Remark"
-                            ,   IsMarkedDirectly        TINYINT(1)          PATH "$.IsDirect"
+                            ,   IsMarkedDirectly        TINYINT(1)          PATH "$.IsMarkedDirectly"
                             ,   TVSRequestID            BIGINT UNSIGNED 	PATH "$.TVSRequestID"   
                             ,	IsFromTVS 				TINYINT(1) 	        PATH "$.IsFromTVS"
 			                ,	IsFromTW 				TINYINT(1) 	        PATH "$.IsFromTW"  
