@@ -55,9 +55,9 @@ sp:BEGIN
 		,	SourceTypeID  			SMALLINT UNSIGNED  
 		,	OldCategoryID  			INT UNSIGNED  
 		,	DWCategoryID  			INT UNSIGNED  
-		,	IsDataChanged  			BIT(1)
+		,	IsDataChanged  			TINYINT(1)
 		,	ActionType  			TINYINT  
-		,	IsAuto  				BIT(1)  
+		,	IsAuto  				TINYINT(1)  
 		,	LastModifiedDate  		DATETIME  
 		,	LastModifiedBy  		INT UNSIGNED  
 		,	InsertDate  			DATETIME
@@ -68,14 +68,14 @@ sp:BEGIN
 		,	TWBetCount  			BIGINT  
 		,	TWDesktopUsageRate  	DECIMAL(10,4)  
         ,	Remark 					VARCHAR(500)
-		,	IsMarkedDirectly		BIT(1) 
+		,	IsMarkedDirectly		TINYINT(1) 
 		,	TVSRequestID			BIGINT UNSIGNED 
-        ,	IsFromTVS 				BIT 
-		,	IsFromTW 				BIT
-		,	IsFromCTS 				BIT
-		,	IsFromAI 				BIT 
-		,	IsFromImperva			BIT
-		,	IsParlay				BIT
+        ,	IsFromTVS 				TINYINT(1) 
+		,	IsFromTW 				TINYINT(1)
+		,	IsFromCTS 				TINYINT(1)
+		,	IsFromAI 				TINYINT(1) 
+		,	IsFromImperva			TINYINT(1)
+		,	IsParlay				TINYINT(1)
 		,	SportType				SMALLINT
 		,	IssueTypeID				TINYINT
         ,	PerformanceTime			DATETIME
