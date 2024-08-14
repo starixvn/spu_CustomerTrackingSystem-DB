@@ -166,6 +166,7 @@ sp: BEGIN
 		, LATERAL (SELECT CreateTime, LastModifiedDate
 					 FROM CTS_DataCenter.RobotImperva
 					 WHERE CustID = tmp.CustID 
+						AND IsDisabled = 0
 					 ORDER BY CreateTime DESC
 					 LIMIT 1) AS s;
 	
