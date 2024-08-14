@@ -24,7 +24,7 @@ BEGIN
     DECLARE CONST_MINUTE_TO_WAIT_EVOLUTION	INT DEFAULT 25;
     
 	DECLARE lv_Min_Transaction_TransID  	BIGINT UNSIGNED;
-	DECLARE lv_Minute_To_Wait_Evolution  	INT UNSIGNED;
+	DECLARE lv_Minute_To_Wait_Evolution  	INT;
     DECLARE lv_CurrentDate 					TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
     
 	SET lv_Min_Transaction_TransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_MIN_TRANSACTION_TRANSID);

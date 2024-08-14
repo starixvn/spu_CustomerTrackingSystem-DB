@@ -106,7 +106,6 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_FP_DeviceFingerprintAccount(
 		    FP_FingerPrintID					BIGINT UNSIGNED
         ,   AccountID							BIGINT UNSIGNED
-        ,   FP_FingerPrintExtraID				BIGINT UNSIGNED
 		,	IsNewRecord							TINYINT			DEFAULT 1
         
         ,	PRIMARY KEY (`FP_FingerPrintID`,`AccountID`)
@@ -271,10 +270,9 @@ BEGIN
 	SET tmp.JSChallengeInfoID = CASE WHEN tmp.ChallengeCode IS NULL THEN NULL ELSE IFNULL(jsc.ID, 0) END;
     
 	/* ======= INSERT FP_DeviceFingerprintAccount ========= */
-    INSERT IGNORE INTO Temp_FP_DeviceFingerprintAccount(FP_FingerPrintID, AccountID, FP_FingerPrintExtraID)
+    INSERT IGNORE INTO Temp_FP_DeviceFingerprintAccount(FP_FingerPrintID, AccountID)
     SELECT 	FP_FingerPrintID
 		,	AccountID
-		,	FP_FingerPrintExtraID
     FROM Temp_RawTransaction
     WHERE FP_FingerPrintID IS NOT NULL
 		AND AccountID IS NOT NULL;
@@ -283,10 +281,9 @@ BEGIN
 		INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa ON dfa.FP_FingerPrintID = tmp.FP_FingerPrintID AND dfa.AccountID = tmp.AccountID
     SET tmp.IsNewRecord = 0;
     
-    INSERT IGNORE INTO DCS_DataCenter.FP_DeviceFingerprintAccount(FP_FingerPrintID, AccountID, FP_FingerPrintExtraID)
+    INSERT IGNORE INTO DCS_DataCenter.FP_DeviceFingerprintAccount(FP_FingerPrintID, AccountID)
     SELECT	FP_FingerPrintID
 		,	AccountID
-		,	FP_FingerPrintExtraID
     FROM Temp_FP_DeviceFingerprintAccount
     WHERE IsNewRecord = 1;
     
