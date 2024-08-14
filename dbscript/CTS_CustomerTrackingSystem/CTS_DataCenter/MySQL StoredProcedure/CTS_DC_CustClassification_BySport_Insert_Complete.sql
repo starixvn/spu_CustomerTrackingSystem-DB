@@ -137,7 +137,7 @@ BEGIN
 		
 		UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS cate
 			INNER JOIN Temp_NewClassification AS temp ON cate.CustID = temp.CustID AND cate.SportID = temp.SportID AND cate.ParentID = CONST_PARENTID_NORMAL
-			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cc ON cc.CategoryID = cate.CategoryID  
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cc ON cc.CategoryID = temp.NewCategoryID
 		SET   	cate.CTSCustID 			= temp.CTSCustID
 			, 	cate.CategoryID 		= temp.NewCategoryID
 			, 	cate.LastModifiedDate 	= CASE 	WHEN cc.IsKeepOldCateID = 0 THEN lv_CurrentDateTime
