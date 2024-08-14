@@ -707,7 +707,7 @@ BEGIN
 		
 		UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cate.CustID AND cate.ParentID = CONST_PARENTID_NORMAL
-			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cc ON cc.CategoryID = cate.CategoryID
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cc ON cc.CategoryID = temp.NewCategoryID
 		SET   	cate.CTSCustID 			= temp.CTSCustID
 			, 	cate.SubscriberID 		= temp.SubscriberID
 			, 	cate.CategoryID 		= temp.NewCategoryID

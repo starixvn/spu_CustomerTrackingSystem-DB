@@ -355,6 +355,14 @@ VALUES (1,'Account has less than 10 bets for first time scan','New: New Customer
 /************************* II. Data Classification ******************************/
 /* 1. Customer_InitialGroupBetting - 2600/2601 */
 
+LOAD DATA LOCAL INFILE 'D:/Tasks/RenovationCC/ListCust_2600_2601.csv'
+INTO TABLE Customer_InitialGroupBetting
+FIELDS TERMINATED BY ',' 
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
+
+SELECT 'Customer_InitialGroupBetting', COUNT(1) FROM Customer_InitialGroupBetting;
 
 /* 2. TVSVoidRequest - Replace TVSVoidRequest_History & CTSCustomerClassificationOldCategory  */
 
