@@ -59,6 +59,7 @@ CREATE TABLE TVSVoidRequest
     CreatedDate DATETIME,
 	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
 	IsDisabled BIT(1) DEFAULT 0,
+	ArchivedDate DATETIME,
     PRIMARY KEY (ID),
     KEY IX_TVSVoidRequest_CustID_CateID_IsDisabled (CustID, CategoryID, IsDisabled),
 	KEY IX_TVSVoidRequest_TVSReasonID (TVSReasonID),
@@ -74,6 +75,7 @@ CREATE TABLE CTSRobotUser
 	IsDisabled BIT(1) DEFAULT 0,
 	CreatedDate DATETIME,
 	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
+	ArchivedDate DATETIME,
 	PRIMARY KEY (ID),
 	KEY IX_CTSRobotUser_CustID_CateID_IsDisabled (CustID, CategoryID, IsDisabled)
 );
@@ -87,6 +89,7 @@ CREATE TABLE TWRobotUser
 	IsDisabled BIT(1) DEFAULT 0,
 	CreatedDate DATETIME,	
 	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
+	ArchivedDate DATETIME,
 	PRIMARY KEY (ID),
 	KEY IX_TWRobotUser_CustID_CateID_IsDisabled (CustID, CategoryID, IsDisabled)
 );

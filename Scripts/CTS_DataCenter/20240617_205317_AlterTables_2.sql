@@ -166,4 +166,7 @@ ALTER TABLE CustomerLoginInfoDetection
 ADD InsertedTime DATETIME DEFAULT CURRENT_TIMESTAMP();
 
 ALTER TABLE CustomerLoginInfoDetection
+ADD COLUMN ArchivedDate DATETIME;
+
+ALTER TABLE CustomerLoginInfoDetection
 ADD KEY IX_CustLoginInfoDetection_CustID_InsertedTime (CustID, InsertedTime);
