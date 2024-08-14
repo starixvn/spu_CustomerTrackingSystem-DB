@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_Tagging_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_TaggingInsert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_Tagging_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_TaggingInsert`(
 	IN ip_Taggings	LONGTEXT
 )
     SQL SECURITY INVOKER
@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transform_FP_Tagging_Insert('Tagging1,Tagging2,Tagging4');
+			CALL DCS_DC_Transform_FP_TaggingInsert('Tagging1,Tagging2,Tagging4');
 
 	*/
 	

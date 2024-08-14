@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_DeviceEvolution_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_DeviceEvolutionInsert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_DeviceEvolution_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_DeviceEvolutionInsert`(
     IN ip_DeviceEvolutionJson	LONGTEXT
 )
     SQL SECURITY INVOKER
@@ -18,7 +18,7 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_FP_DeviceEvolution_Insert('[{"FPDeviceFingerprintAccountID":27,"EvolveByID":0},{"FPDeviceFingerprintAccountID":28,"EvolveByID":27},{"FPDeviceFingerprintAccountID":29,"EvolveByID":28}]');
+			CALL DCS_DC_Transform_FP_DeviceEvolutionInsert('[{"FPDeviceFingerprintAccountID":27,"EvolveByID":0},{"FPDeviceFingerprintAccountID":28,"EvolveByID":27},{"FPDeviceFingerprintAccountID":29,"EvolveByID":28}]');
 	*/
     DECLARE CONST_MINID_FP_DEVICEEVOLUTION	INT DEFAULT 23;
     

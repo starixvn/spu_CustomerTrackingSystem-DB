@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_DeviceEvolution_Get`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_DeviceEvolutionGet`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_DeviceEvolution_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_DeviceEvolutionGet`(
 		IN ip_BatchSize INT UNSIGNED
 )
 SQL SECURITY INVOKER
@@ -18,7 +18,7 @@ BEGIN
 
 	    Param's Explanation (filtered by):
         Example:
-            CALL DCS_DataCenter.DCS_DC_Transform_FP_DeviceEvolution_Get(50);
+            CALL DCS_DataCenter.DCS_DC_Transform_FP_DeviceEvolutionGet(50);
 	*/
     DECLARE CONST_MINID_FP_DEVICEEVOLUTION	INT DEFAULT 23;
 	DECLARE lv_Max_FP_DeviceEvolutionID  	BIGINT UNSIGNED;

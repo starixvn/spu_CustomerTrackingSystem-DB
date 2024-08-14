@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_UserAgent_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_UserAgentInsert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_UserAgent_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_UserAgentInsert`(
 	IN ip_UserAgentJson	LONGTEXT
 )
     SQL SECURITY INVOKER
@@ -20,7 +20,7 @@ BEGIN
 			
 		Example:
 			SET sql_safe_updates = 0;
-			CALL DCS_DC_Transform_FP_UserAgent_Insert('[{"FPUserAgentCode":"f1f6b29a6cc1f79a0fea05b885aa33d0","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36","ClientType":"browser","ClientName":"Chrome","ClientVersion":"126.0.0.0","OSName":"Windows","OSShortName":"WIN","OSVersion":"10","OSPlatform":"x64","Device":"desktop","Brand":"","Model":""}]');
+			CALL DCS_DC_Transform_FP_UserAgentInsert('[{"FPUserAgentCode":"f1f6b29a6cc1f79a0fea05b885aa33d0","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36","ClientType":"browser","ClientName":"Chrome","ClientVersion":"126.0.0.0","OSName":"Windows","OSShortName":"WIN","OSVersion":"10","OSPlatform":"x64","Device":"desktop","Brand":"","Model":""}]');
 
 	*/
 	

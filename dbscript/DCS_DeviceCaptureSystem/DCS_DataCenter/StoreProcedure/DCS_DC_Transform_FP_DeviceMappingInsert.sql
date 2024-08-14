@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_DeviceMapping_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_DeviceMappingInsert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_DeviceMapping_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_DeviceMappingInsert`(
 	IN ip_BatchSize INT UNSIGNED
 )
     SQL SECURITY INVOKER
@@ -18,7 +18,7 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_FP_DeviceMapping_Insert('50');
+			CALL DCS_DC_Transform_FP_DeviceMappingInsert('50');
 	*/
     DECLARE CONST_MIN_TRANSACTION_TRANSID	INT DEFAULT 24;
     DECLARE CONST_MINUTE_TO_WAIT_EVOLUTION	INT DEFAULT 25;
@@ -168,7 +168,7 @@ BEGIN
 		AND (FP_TaggingID > 0
 			OR FP_DeviceFingerprintAccountID > 0);
     
-    CALL DCS_DataCenter.DCS_DC_Transform_FP_DeviceMapping_UpdateTheSameDevice('Temp_NewDevice');
+    CALL DCS_DataCenter.DCS_DC_Transform_FP_DeviceMappingUpdateTheSameDevice('Temp_NewDevice');
     
     INSERT IGNORE INTO DCS_DataCenter.FP_Device(FirstRawTransID)
     SELECT DISTINCT SameDeviceWithRawTransID

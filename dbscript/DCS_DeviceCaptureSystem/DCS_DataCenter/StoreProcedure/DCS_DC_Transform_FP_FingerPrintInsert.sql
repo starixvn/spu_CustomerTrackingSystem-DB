@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_FingerPrint_Insert`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_FingerPrintInsert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_FingerPrint_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_FingerPrintInsert`(
 	IN ip_FingerPrintJson	LONGTEXT
 )
     SQL SECURITY INVOKER
@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transform_FP_FingerPrint_Insert('[{"FPFingerPrintCode":"123","FPFingerPrintAttribute":{"Name":"ABC"},"FPFingerPrintExtraCode":"123","FingerPrintExtraAttribute":{"Name":"Extra"},"FPFingerPrintOldCode":"123"}]');
+			CALL DCS_DC_Transform_FP_FingerPrintInsert('[{"FPFingerPrintCode":"123","FPFingerPrintAttribute":{"Name":"ABC"},"FPFingerPrintExtraCode":"123","FingerPrintExtraAttribute":{"Name":"Extra"},"FPFingerPrintOldCode":"123"}]');
 
 	*/
 	

@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_DeviceMapping_UpdateTheSameDevice`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_FP_DeviceMappingUpdateTheSameDevice`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_DeviceMapping_UpdateTheSameDevice`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_FP_DeviceMappingUpdateTheSameDevice`(
 		IN ip_TableName VARCHAR(50)
 )
     SQL SECURITY INVOKER
@@ -26,7 +26,7 @@ BEGIN
 				,	FP_TaggingID								BIGINT UNSIGNED
 				,	FP_DeviceFingerprintAccountID				BIGINT UNSIGNED
 			);
-			CALL DCS_DC_Transform_FP_DeviceMapping_UpdateTheSameDevice('Temp_NewDevice');
+			CALL DCS_DC_Transform_FP_DeviceMappingUpdateTheSameDevice('Temp_NewDevice');
 	*/
     
     DECLARE lv_CurrentID 				INT DEFAULT 0;
