@@ -16,19 +16,20 @@ BEGIN
 		Revisions:
 			- 20230227@Jonas.Huynh: Created SP to get customer category [RedmineID: #183278]
             - 20230523@Jonas.Huynh: Realtime Inactive Enhancement [RedmineID: #188509]
+            - 20240620@Jonas.Huynh: Renovate CC [RedmineID: #205317]
             
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_Monitoring_GetCategoryByCustIDs('123,456', false)
 	*/  
     
-    DECLARE CONST_CATEGORY_INACTIVE		INT DEFAULT 1000;
+    DECLARE	CONST_CATEGROUPID_INACTIVE	INT;
     
     DECLARE	CONST_VALID_CATEGORY		TINYINT DEFAULT 0;
 	DECLARE	CONST_INVALID_INACTIVE 		TINYINT DEFAULT 2;
     DECLARE	CONST_INVALID_NULL			TINYINT DEFAULT 3;
     
 	DECLARE lv_ScanDateValid 			DATE DEFAULT DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY);
-        
+ 
     DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
 	CREATE TEMPORARY TABLE Temp_Customers(
 			CustID				BIGINT UNSIGNED PRIMARY KEY
@@ -37,9 +38,11 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
 	CREATE TEMPORARY TABLE Temp_CustomerCategory(
 			CustID				BIGINT UNSIGNED
-        ,	CurrentCategoryID 	INT
+        ,	CategoryGroupID 	INT
         ,	INDEX IX_Temp_CustomerCategory_CustID(CustID)
 	);
+
+    SET CONST_CATEGROUPID_INACTIVE 	= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INACTIVE');   
 
     INSERT INTO Temp_Customers (CustID)
     SELECT DISTINCT temp.CustID
@@ -55,18 +58,18 @@ BEGIN
 		WHERE IsInternal = 1;
     END IF;
 
-	INSERT IGNORE INTO Temp_CustomerCategory(CustID, CurrentCategoryID)
-	SELECT 		cate.CustID AS CustID
-			, 	cc.CategoryGroup AS CurrentCategoryID
+	INSERT IGNORE INTO Temp_CustomerCategory(CustID, CategoryGroupID)
+	SELECT 		temp.CustID
+			, 	cate.CategoryGroupID
 	FROM Temp_Customers AS temp
-		INNER JOIN	CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CustID = temp.CustID
-		INNER JOIN	CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID;
+		INNER JOIN	CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CustID = temp.CustID
+		INNER JOIN	CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = cc.CategoryID;
         
     SELECT 	cust.CustID AS CustID
-		,	cate.CurrentCategoryID AS CurrentCategoryID
+		,	cate.CategoryGroupID AS CurrentCategoryID
         ,	CASE 
-				WHEN cate.CurrentCategoryID = CONST_CATEGORY_INACTIVE AND ass.LastTicketDate >= lv_ScanDateValid THEN CONST_INVALID_INACTIVE
-                WHEN cate.CurrentCategoryID IS NULL THEN CONST_INVALID_NULL
+				WHEN cate.CategoryGroupID = CONST_CATEGROUPID_INACTIVE AND ass.LastTicketDate >= lv_ScanDateValid THEN CONST_INVALID_INACTIVE
+                WHEN cate.CategoryGroupID IS NULL THEN CONST_INVALID_NULL
 				ELSE CONST_VALID_CATEGORY
 			END AS TypeID
 	FROM Temp_Customers as cust
