@@ -134,12 +134,13 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = cls.CategoryID
 		WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
 		
+		/*Rescan: VVIP/SpecialCC/PA*/
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_LastHistory AS h ON temp.CustID = h.CustID
 		SET 	temp.IsFromOldPA = 1
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT
-			AND h.TargetCC = -1
-			AND (h.CategoryID IS NULL OR h.CategoryID = CONST_CATEID_VVIP);
+			AND (h.TargetCC = -1 OR h.CategoryID IS NULL);
+			/* AND (h.CategoryID IS NULL OR h.CategoryID = CONST_CATEID_VVIP); */
 
 		UPDATE Temp_NewClassification AS temp
 			LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID

@@ -52,10 +52,11 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;
 	CREATE TEMPORARY TABLE Temp_LastHistory(
-			CustID					BIGINT UNSIGNED PRIMARY KEY
+			CustID					BIGINT UNSIGNED 
 		,	SportID					SMALLINT UNSIGNED
 		,	CategoryID				INT 
 		,	TargetCC				INT
+		,	PRIMARY KEY (CustID, SportID)
 	);
 
 	INSERT IGNORE INTO Temp_LastHistory(CustID, SportID, CategoryID, TargetCC)
