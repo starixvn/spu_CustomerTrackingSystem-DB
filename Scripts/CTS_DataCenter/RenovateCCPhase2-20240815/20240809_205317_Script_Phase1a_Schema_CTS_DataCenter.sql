@@ -186,6 +186,10 @@ CREATE TABLE TWRobotUser
 ;
 
 	ALTER TABLE CTSCustomerClassification
+	ADD COLUMN LastScannedDate_new 		DATETIME
+,	ADD COLUMN LastScannedDate_bk 		DATETIME
+
+	ALTER TABLE CTSCustomerClassification
 	MODIFY COLUMN SportGroupID			INT UNSIGNED
 ,	MODIFY COLUMN CategoryID			INT UNSIGNED
 ;
@@ -253,6 +257,10 @@ CREATE TABLE TWRobotUser
 ,	ADD COLUMN CategoryID_bk 			INT UNSIGNED
 ,	ADD COLUMN CreatedDate_bk 			DATETIME
 ;
+
+	ALTER TABLE CTSCustomerClassification_BySport
+	ADD COLUMN LastScannedDate_new 		DATETIME
+,	ADD COLUMN LastScannedDate_bk 		DATETIME
 
 	ALTER TABLE CTSCustomerClassification_BySport
 	MODIFY COLUMN CategoryID			INT UNSIGNED
