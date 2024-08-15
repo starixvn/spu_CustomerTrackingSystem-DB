@@ -239,15 +239,20 @@ CREATE TABLE TWRobotUser
 /* 4. CTSCustomerClassificationQueue */
 	ALTER TABLE CTSCustomerClassificationQueue
 	ADD COLUMN CategoryGroupID_new		INT
-,	ADD COLUMN CategoryID_new 			INT  
+,	ADD COLUMN CategoryID_new 			INT UNSIGNED
 ,	ADD COLUMN CategoryGroup_bk			INT  
-,	ADD COLUMN CategoryID_bk 			INT
+,	ADD COLUMN CategoryID_bk 			INT UNSIGNED
 ;
 
 	ALTER TABLE CTSCustomerClassificationQueue
 	MODIFY COLUMN Remark				VARCHAR(500)
 ,	MODIFY COLUMN CategoryID			INT
 ;
+
+	ALTER TABLE CTSCustomerClassificationQueue
+	MODIFY COLUMN CategoryID			INT UNSIGNED
+,	MODIFY COLUMN CategoryID_new		INT UNSIGNED
+,	MODIFY COLUMN CategoryID_bk 		INT UNSIGNED
 
 /* 5. CTSCustomerClassification_BySport */
 	ALTER TABLE CTSCustomerClassification_BySport

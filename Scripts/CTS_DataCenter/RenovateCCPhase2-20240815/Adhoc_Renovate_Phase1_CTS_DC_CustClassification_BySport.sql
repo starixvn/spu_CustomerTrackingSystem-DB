@@ -74,7 +74,7 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CustomerCategory_new AS newcate ON newcate.OldCategoryID = cc.CategoryID
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS curcate ON curcate.CategoryID = cc.CategoryID
 																		AND curcate.CategoryID = CONST_CATEGORYID_PROBATION
-			LEFT JOIN CTS_DataCenter.ProbationAccountMonitor AS pro ON pro.CustID = cc.CustID AND pro.SportID = cc.SportID
+			LEFT JOIN CTS_DataCenter.ProbationAccountMonitor_BySport AS pro ON pro.CustID = cc.CustID AND pro.SportID = cc.SportID
 		SET 	cc.ParentID		 		= newcate.ParentID
 			,	cc.CategoryID_new 		= newcate.CategoryID
 			,	cc.CreatedDate_new 		= CASE 	WHEN curcate.CategoryID IS NOT NULL AND pro.CustID IS NOT NULL 

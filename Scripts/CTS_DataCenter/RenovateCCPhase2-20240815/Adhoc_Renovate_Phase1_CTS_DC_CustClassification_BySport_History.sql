@@ -52,7 +52,7 @@ BEGIN
 		
 		UPDATE CTS_DataCenter.CTSCustomerClassification_BySport_History AS cc
 			INNER JOIN CTS_DataCenter.CustomerCategory_new AS newcate ON newcate.OldCategoryID = cc.CategoryID
-		SET 	cc.ParentID_new 		= newcate.ParentID
+		SET 	cc.ParentID	 			= newcate.ParentID
 			,	cc.CategoryID_new 		= newcate.CategoryID
 			,	cc.CategoryID_bk 		= cc.CategoryID
 		WHERE cc.ID BETWEEN lv_FromID AND lv_ToID
