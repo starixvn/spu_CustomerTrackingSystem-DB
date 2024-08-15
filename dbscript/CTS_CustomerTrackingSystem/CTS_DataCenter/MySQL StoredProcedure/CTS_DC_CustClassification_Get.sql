@@ -58,11 +58,11 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
-			CategoryID				SMALLINT UNSIGNED
+			CategoryID				INT UNSIGNED
 		,   CategoryName   			VARCHAR(200) 
-        ,	CategoryGroupID   		SMALLINT UNSIGNED
+        ,	CategoryGroupID   		INT UNSIGNED
 		,	CategoryPriority		SMALLINT UNSIGNED
-		,	ParentID				SMALLINT UNSIGNED
+		,	ParentID				INT UNSIGNED
 		,	CustomerClassPriority	SMALLINT UNSIGNED
 		,	IsProbation				BIT DEFAULT 0
 		,	ColorTypeID				TINYINT UNSIGNED

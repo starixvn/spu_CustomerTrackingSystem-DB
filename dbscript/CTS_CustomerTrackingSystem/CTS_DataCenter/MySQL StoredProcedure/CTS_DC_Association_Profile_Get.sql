@@ -112,7 +112,7 @@ sp : BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Classification;
     CREATE TEMPORARY TABLE 	Temp_Classification (
 			CTSCustID 		BIGINT UNSIGNED
-		,	ParentID		SMALLINT UNSIGNED
+		,	ParentID		INT UNSIGNED
 		,	CategoryIDs		VARCHAR(1000)
 		,	CategoryNames	VARCHAR(5000)
 		,	ColorTypeIDs	VARCHAR(100)
@@ -152,7 +152,7 @@ sp : BEGIN
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_CategoryID;
     CREATE TEMPORARY TABLE 	Temp_CategoryID (
-			CategoryID 		SMALLINT UNSIGNED
+			CategoryID 		INT UNSIGNED
         , 	PRIMARY KEY (CategoryID)
 	);
     
