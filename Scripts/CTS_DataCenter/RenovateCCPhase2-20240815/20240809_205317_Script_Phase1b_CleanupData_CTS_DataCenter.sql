@@ -19,28 +19,29 @@ CREATE TEMPORARY TABLE Temp_History(
 		ID					BIGINT UNSIGNED	PRIMARY KEY
 );
 
-
+INSERT INTO Temp_History (ID)
 WITH cte_ALL AS
 (
 	SELECT h.CTSCustID, COUNT(1) as TotalRows
 	FROM CTSCustomerClassification_History as h
-	AND h.IsDataChanged = 1
+	WHERE h.IsDataChanged = 1
 	GROUP BY h.CTSCustID
 ), cte_KEEP as
 (
 	SELECT h.CTSCustID, MIN(h.ID) AS KeepID
 	FROM CTSCustomerClassification_History as h
 		INNER JOIN cte_ALL AS c ON c.CTSCustID = h.CTSCustID
-	WHERE c.TotalRows > 1
-		AND h.InsertDate >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+	WHERE c.TotalRows >= 1
+		AND h.InsertDate >= DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY)
 		AND h.IsDataChanged = 1
 	GROUP BY h.CTSCustID
 )
-INSERT INTO Temp_History (ID)
 SELECT h.ID
 FROM CTSCustomerClassification_History as h
 	INNER JOIN cte_KEEP AS c ON h.CTSCustID = c.CTSCustID AND h.ID < c.KeepID
 ;
+
+SELECT COUNT(1) FROM Temp_History;
 
 DELETE h
 FROM CTSCustomerClassification_History as h
@@ -52,11 +53,11 @@ FROM CTSCustomerClassification_History as h
 DELETE FROM CTSCustomerClassification
 WHERE CategoryID in (0,51,151,160);
 
--- TargetCC: 4X
+-- MARK/UNMARK SPECIAL CC
 UPDATE CTSCustomerClassification_History as h
 SET h.IsDataChanged = 1
-WHERE h.TargetCC  IN (43,45,46,47,2500,2503,2504,2505)
-	AND h.IsDataChanged = 0
+WHERE h.IsDataChanged = 0
+	AND h.SourceTypeID IN (10,12)
 ;
 
 
