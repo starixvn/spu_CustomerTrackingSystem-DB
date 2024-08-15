@@ -48,12 +48,12 @@ BEGIN
 	);
     
 	SET @sql = CONCAT('INSERT INTO Temp_SameDevice(ID, FirstDeviceID, SecondDeviceID) 
-						SELECT 	RawTransID 						AS ID
-							,	FP_TaggingID 					AS FirstDeviceID
-							,	FP_DeviceFingerprintAccountID 	AS SecondDeviceID
+						SELECT 	RawTransID AS ID
+							,	FirstDeviceID
+							,	SecondDeviceID
                         FROM ', ip_TableName, 
-					' 	WHERE FP_TaggingID IS NOT NULL
-							OR FP_DeviceFingerprintAccountID IS NOT NULL');
+					' 	WHERE FirstDeviceID IS NOT NULL
+							OR SecondDeviceID IS NOT NULL');
     PREPARE stmt FROM @sql;
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;

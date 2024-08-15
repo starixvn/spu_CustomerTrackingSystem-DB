@@ -34,7 +34,7 @@ BEGIN
     /********************** CREAT TEMP TABLE ***********************************/
 	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceMapping;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TaggingDevice;
-	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceFingerprintAccount;
+	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceFingerprintAccountOld;
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewDevice;
     
 	CREATE TEMPORARY TABLE Temp_DeviceMapping(
@@ -57,8 +57,8 @@ BEGIN
 		,	FP_DeviceID									BIGINT UNSIGNED DEFAULT 0
 	);
     
-	CREATE TEMPORARY TABLE Temp_DeviceFingerprintAccount(
-			FP_DeviceFingerprintAccountID				BIGINT UNSIGNED NOT NULL PRIMARY KEY
+	CREATE TEMPORARY TABLE Temp_DeviceFingerprintAccountOld(
+			FP_DeviceFingerprintAccountOldID			BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	FP_DeviceID									BIGINT UNSIGNED DEFAULT 0
 	);
     
@@ -67,8 +67,8 @@ BEGIN
 		,	SameDeviceWithRawTransID					BIGINT UNSIGNED DEFAULT 0
 		,	FP_DeviceID									BIGINT UNSIGNED DEFAULT 0
         
-		,	FP_TaggingID								BIGINT UNSIGNED
-		,	FP_DeviceFingerprintAccountID				BIGINT UNSIGNED
+		,	FirstDeviceID								BIGINT UNSIGNED
+		,	SecondDeviceID								BIGINT UNSIGNED
 	);
     
     /********************** Get Data ***********************************/
@@ -137,36 +137,36 @@ BEGIN
     WHERE tmp.FP_DeviceMappingID = 0;
     
     
-    /********************** Check Rule 3 ***********************************/
-    INSERT INTO Temp_DeviceFingerprintAccount(FP_DeviceFingerprintAccountID)
-    SELECT DISTINCT FP_DeviceFingerprintAccountID
+    /********************** Check Rule 5 FP_DeviceFingerprintAccountOldID ***********************************/
+    INSERT INTO Temp_DeviceFingerprintAccountOld(FP_DeviceFingerprintAccountOldID)
+    SELECT DISTINCT FP_DeviceFingerprintAccountOldID
     FROM Temp_DeviceMapping
     WHERE FP_DeviceMappingID = 0
-		AND FP_DeviceFingerprintAccountID > 0
+		AND FP_DeviceFingerprintAccountOldID > 0
 		AND FP_DeviceID = 0;
     
-    UPDATE Temp_DeviceFingerprintAccount AS tmp
-		INNER JOIN DCS_DataCenter.FP_DeviceMapping AS dm ON dm.FP_DeviceFingerprintAccountID = tmp.FP_DeviceFingerprintAccountID
+    UPDATE Temp_DeviceFingerprintAccountOld AS tmp
+		INNER JOIN DCS_DataCenter.FP_DeviceMapping AS dm ON dm.FP_DeviceFingerprintAccountOldID = tmp.FP_DeviceFingerprintAccountOldID
 	SET tmp.FP_DeviceID = dm.FP_DeviceID;
     
     /********************** Update Temp ***********************************/
     UPDATE Temp_DeviceMapping AS tmp
-		INNER JOIN Temp_DeviceFingerprintAccount AS tmpDfa ON tmpDfa.FP_DeviceFingerprintAccountID = tmp.FP_DeviceFingerprintAccountID
+		INNER JOIN Temp_DeviceFingerprintAccountOld AS tmpDfa ON tmpDfa.FP_DeviceFingerprintAccountOldID = tmp.FP_DeviceFingerprintAccountOldID
 	SET tmp.FP_DeviceID = tmpDfa.FP_DeviceID
     WHERE tmp.FP_DeviceMappingID = 0
 		AND tmp.FP_DeviceID = 0;
     
     
     /********************** INSERT INTO Temp_NewDevice ***********************************/
-    INSERT INTO Temp_NewDevice(RawTransID, FP_TaggingID, FP_DeviceFingerprintAccountID)
+    INSERT INTO Temp_NewDevice(RawTransID, FirstDeviceID, SecondDeviceID)
     SELECT 	RawTransID
-		,	FP_TaggingID
-		,	FP_DeviceFingerprintAccountID
+		,	FP_TaggingID AS FirstDeviceID
+		,	FP_DeviceFingerprintAccountOldID AS SecondDeviceID
     FROM Temp_DeviceMapping
     WHERE FP_DeviceMappingID = 0
 		AND FP_DeviceID = 0
 		AND (FP_TaggingID > 0
-			OR FP_DeviceFingerprintAccountID > 0);
+			OR FP_DeviceFingerprintAccountOldID > 0);
     
     CALL DCS_DataCenter.DCS_DC_Transform_FP_DeviceMappingUpdateTheSameDevice('Temp_NewDevice');
     
