@@ -71,10 +71,10 @@ VALUES
 (21101,'Robot User','Robot User (Evidence)',Null,'Robot',20000,21100,400,400,10,0,Null,Null,Null,Null,Null,0,0,0,Null,'Evidence','2021/05/14 00:03:06','机械用户',Null,Null,Null,'機械',Null,Null,Null,16,6,2,161,61,Null,Null,'Robot','機械','机械',Null,Null,Null,6),
 (21103,'Robot User','Robot User - Abnormal Account, IssueType:13',13,'Robot',20000,21100,400,400,10,0,Null,Null,13,21700,Null,105,0,0,Null,'NAP','2023/04/18 22:30:04','机械用户',Null,Null,Null,'機械',Null,Null,Null,16,6,2,179,61,Null,Null,'Robot','機械','机械',Null,Null,Null,6),
 (21200,'Odds Crawler Robot','Odds Crawler Robot',3100,'Robot',20000,21200,450,450,10,1,Null,Null,13,26200,Null,Null,0,0,Null,'AI','2023/05/29 00:03:51','机械爬虫','Robot thu thập tỷ lệ cược','หุ่นยนต์รวบรวมอัตราการเดิมพัน','Robot mengumpulkan taruhan odds','機械','2',Null,Null,Null,Null,2,165,165,Null,Null,'Robot','機械','机械','Robot','บอท','Robot',6),
-(21300,'Abnormal','Abnormal',Null,Null,20000,21300,400,400,10,1,Null,Null,Null,Null,Null,27,0,0,Null,'NAP','2020/07/26 22:29:56','非正常',Null,Null,Null,Null,Null,Null,Null,Null,Null,2,51,51,Null,Null,Null,Null,Null,Null,Null,Null,6),
-(21302,'Abnormal','Abnormal(M)',Null,Null,20000,21300,400,400,10,1,Null,Null,Null,Null,Null,Null,0,0,Null,'NAP','2020/07/26 22:29:56','非正常',Null,Null,Null,Null,Null,Null,Null,Null,Null,2,151,51,Null,Null,Null,Null,Null,Null,Null,Null,6),
+(21300,'Abnormal','Abnormal',Null,Null,20000,21300,400,400,10,0,Null,Null,Null,Null,Null,27,0,0,Null,'NAP','2020/07/26 22:29:56','非正常',Null,Null,Null,Null,Null,Null,Null,Null,Null,2,51,51,Null,Null,Null,Null,Null,Null,Null,Null,6),
+(21302,'Abnormal','Abnormal(M)',Null,Null,20000,21300,400,400,10,0,Null,Null,Null,Null,Null,Null,0,0,Null,'NAP','2020/07/26 22:29:56','非正常',Null,Null,Null,Null,Null,Null,Null,Null,Null,2,151,51,Null,Null,Null,Null,Null,Null,Null,Null,6),
 (21303,'Abnormal','Abnormal - Abnormal Account, IssueType:13',Null,Null,20000,21300,400,400,10,1,Null,Null,Null,Null,Null,39,0,0,Null,'NAP','2023/04/18 22:30:04','非正常',Null,Null,Null,Null,Null,Null,Null,Null,Null,2,171,51,Null,Null,Null,Null,Null,Null,Null,Null,6),
-(21402,'Others','Others(M)',Null,Null,20000,21400,400,400,10,1,Null,Null,Null,Null,Null,Null,0,0,Null,'NAP','2020/07/26 22:29:56',Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,2,160,Null,Null,Null,Null,Null,Null,Null,Null,Null,6),
+(21402,'Others','Others(M)',Null,Null,20000,21400,400,400,10,0,Null,Null,Null,Null,Null,Null,0,0,Null,'NAP','2020/07/26 22:29:56',Null,Null,Null,Null,Null,Null,Null,Null,Null,Null,2,160,Null,Null,Null,Null,Null,Null,Null,Null,Null,6),
 (21500,'AB Bet','AB Bet',11,'Problems',20000,21500,400,400,10,0,Null,Null,Null,Null,Null,32,0,0,Null,'NAP','2020/07/26 22:29:56','AB投注',Null,Null,Null,'問題',Null,Null,Null,17,Null,2,56,56,49,Null,'Problems','問題','问题',Null,Null,Null,6),
 (21501,'AB Bet','AB Bet (Evidence)',11,'Problems',20000,21500,400,400,10,0,Null,Null,Null,Null,Null,32,0,0,Null,'Evidence','2020/10/20 22:58:31','AB投注',Null,Null,Null,'問題',Null,Null,Null,17,Null,2,76,56,49,Null,'Problems','問題','问题',Null,Null,Null,6),
 (21502,'AB Bet','AB Bet(M)',11,'Problems',20000,21500,400,400,10,0,Null,Null,Null,Null,Null,106,0,0,Null,'NAP','2020/07/26 22:29:56','AB投注',Null,Null,Null,'問題',Null,Null,Null,17,Null,2,156,56,49,Null,'Problems','問題','问题',Null,Null,Null,6),
@@ -159,6 +159,7 @@ VALUES
 (40606,'Risky (Lic Sub)','High Risk Punter (47)',2505,'Dangerous',40000,40600,545,550,30,0,Null,Null,Null,Null,Null,Null,0,0,Null,Null,'2022/03/23 05:42:15','高风险玩家','Rủi ro (tuyến phụ)','ความเสี่ยง (สายรอง)','Risiko (jalur sekunder)','危險',Null,Null,Null,Null,Null,1,274,204,Null,Null,'Dangerous','危險','危险','Nguy hiểm','อันตราย','Berbahaya',Null),
 (40700,'Normal (inactive)','Normal Member Inactive',901,'Healthy',40000,40700,1000,1000,40,1,Null,Null,Null,Null,Null,Null,0,1,Null,Null,'2021/07/19 05:13:45','不活跃正常会员','Bình thường (Không hoạt động)','ปกติ (ไม่ทำงาน)','Biasa (Tidak beroperasi)','健康',Null,Null,0,Null,Null,1,1001,1000,Null,Null,'Healthy','健康','健康','Tốt','ดี','Baik',1),
 (40701,'Smart (inactive)','Pro Punter Inactive',902,'Dangerous -',40000,40700,1000,1000,40,1,Null,Null,Null,Null,Null,Null,0,1,Null,Null,'2021/07/19 05:13:45','不活跃精明玩家','Thông minh (không hoạt động)','สมาร์ท (ไม่ทำงาน)','Pintar (tidak berfungsi)','危險-',Null,Null,0,Null,Null,1,1002,1000,Null,Null,'Dangerous','危險','危险','Nguy hiểm','อันตราย','Berbahaya',2);
+
 
 
 /* 2. CustomerCategorySettings  */
@@ -374,45 +375,250 @@ SELECT 'Customer_InitialGroupBetting', COUNT(1) FROM Customer_InitialGroupBettin
 
 
 /* 5. CTSCustomerClassification  */
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification ();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification ();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification ();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification ();
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,151,1339367,244);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,51,1339367,160);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,159,79873,78455);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,79,328436,62106);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,164,5053,49785);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,52,55053,133466);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,153,401765,8425);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,155,493474,6557);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,163,115770,132743);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,59,511989,30890);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,55,493474,55961);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,152,20,47132);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,54,55053,5028);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,72,632680,51905);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,74,925145,3725);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,154,2103048,2742);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,158,16653809,712);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,73,401765,7522);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,53,511989,4815);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,58,11646775,339);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,78,10185253,339);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,162,18004048,303);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,119,10728,4941);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,139,10728,6173);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,92,926312,25571);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,99,780963,4329);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,112,24256,8869);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,132,937176,8339);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,103,961597,25117);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,95,61146,9571);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,166,1906349,226);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,63,1473601,61779);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,115,401808,1028);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,75,493474,7437);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,135,401808,882);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,94,1018105,389);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,114,10385702,521);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,134,10385702,349);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,82,19011495,222);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,64,106954653,8917);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,104,107899552,75);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,98,8524996,151);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,118,64906,199);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,138,64906,320);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,113,221583,1826);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,133,221583,1993);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,93,964209,1280);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,165,10569668,233);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,160,4710622,35);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,122,46944498,2);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,0,142,48494430,2);
 
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,100,4,858252,38281);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,100,3,1074204,6520);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,100,2,10377395,3654);
+	
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,150,105,1111247,1979);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,150,65,1453219,201908);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,150,67,29891364,4257);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,150,106,137009547,48);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,150,66,54367073,4121);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 10000,150,107,119685510,10);
 
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,201,344007,14561290);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,202,8765,651329);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,203,87903,665);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,204,1829,8702);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,205,3293,90333);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,206,8143,128202);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,210,2344,2438);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,211,4106654,213);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,212,1310208,352);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,213,7393983,136);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,221,9497807,874);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,222,1182879,1687);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,223,4381410,1141);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,231,16903816,214);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,232,2584728,487);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,233,15050405,291);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,251,8590786,226);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,252,7448749,329);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,253,16055482,152);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,257,4800978,8249);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,258,19381770,76);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,261,33813044,1);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,262,118157726,5);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,263,142366592,1);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,267,59441111,15);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,271,40872275,6);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,272,19761668,155);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,273,1647708,106);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,277,14180580,175);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,278,49139881,2);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,1001,8,65467061);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification( 50000,200,1002,1346,1446543);
+
+	
 /* 6. CTSCustomerClassification_History  */
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_History();
+
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_History( 50000,0,8,691719);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_History( 50000,100,251125211,39515);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_History( 50000,150,433274760,211791);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_History( 50000,200,820722,141413286);
+	
+	-- SportGroupID = NULL	MinID = 3675859		Counter = 1,655,192
 
 
 /* 7. CTSCustomerClassification_Log  - SKIP */
 
 
-/* 8. CTSCustomerClassificationQueue  */
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_Queue();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_Queue();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_Queue();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_Queue();
+/* 8. CTSCustomerClassificationQueue  - SKIP - WILL BE INITIAL DATA IN PHASE 2*/
 
 /* 9. CTSCustomerClassification_BySport  */
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport();
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,1,201,21938,4656228);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,1,202,2344,2160858);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,1,203,56194,1355);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,1,204,56196,41145);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,1,205,3293,253378);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,1,206,1829,753258);
+	
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,2,201,3562,2315386);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,2,202,3293,620556);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,2,203,1485650,912);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,2,204,2344,14934);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,2,205,5053,76399);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,2,206,917156,307753);
+	
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,43,201,608032,322953);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,43,202,810408,80720);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,43,203,1416276,1934);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,43,204,2037494,1320);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,43,205,1025821,10291);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,43,206,980528,37158);
+	
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,99,201,3293,1669282);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,99,202,8634,189516);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,99,203,402076,2444);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,99,204,985371,1924);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,99,205,55901,29806);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,99,206,405952,65257);
+	
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,145,201,8634,637333);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,145,202,12063,334211);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,145,203,8535866,199);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,145,204,12381144,228);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,145,205,190264,29095);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,145,206,755416,87506);
+	
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,229,201,5053,998608);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,229,202,0,317295);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,229,203,1423112,261);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,229,204,15262797,751);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,229,205,3293,185469);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,229,206,668206,44030);
+	
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,912,201,431580,210213);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,912,202,1032857,49595);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,912,203,405747,720);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,912,204,1940292,2426);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,912,205,937400,8588);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 50000,912,206,1001546,15658);
+
 
 
 /* 10. CTSCustomerClassification_BySport_History  */
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport_History();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport_History();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport_History();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport_History();
+	/*
+	DataSource						SportID			MinID				Counter
+	CTSCustClassifi_BySport_History	1				815					11,815,675
+	CTSCustClassifi_BySport_History	2				328					4,518,641
+	CTSCustClassifi_BySport_History	43				3427				554,521
+	CTSCustClassifi_BySport_History	99				8					2,062,883
+	CTSCustClassifi_BySport_History	145				22599626			1,707,237
+	CTSCustClassifi_BySport_History	229				10056402			2,395,285
+	CTSCustClassifi_BySport_History	912				22599664			375,951
+	*/
+
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport_History( 50000,1,815,11815675);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport_History( 50000,2,328,4518641);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport_History( 50000,43,3427,554521);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport_History( 50000,99,8,2062883);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport_History( 50000,145,22599626,1707237);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport_History( 50000,229,10056402,2395285);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport_History( 50000,912,22599664,375951);
 
 
 /* 11. CTSCustomerClassification_BySport_Log - SKIP */
 
 
 /* 12. ArchiveCustomer_CTSCustomer  */
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer();
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer();
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,201,28584246,65);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,202,35827191,1);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,204,35822903,1);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,205,35822848,8);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 50000,1001,27599254,26657731);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 50000,1002,27599279,243987);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,210,44458862,24);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,2,42997317,4);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,3,27603378,456);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,4,27599256,6987);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,51,27627093,10);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,52,27600999,21936);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,53,27635925,3722);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,54,27610909,433);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,55,27601423,13318);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,58,37014238,46);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,59,27599364,16551);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,63,27599315,1028);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,72,27599835,4530);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,73,43003175,321);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,74,27640553,154);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,75,27611819,1722);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,78,40608985,2);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,79,27601593,677);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,82,27732634,17);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,92,27599423,1030);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,93,27723280,870);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,94,27602137,106);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,95,27599655,1925);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,98,27812681,44);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,99,27600708,4019);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,103,27599277,425);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,112,27599435,740);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,113,27929684,47);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,114,27601988,10);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,115,27607570,46);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,118,39655504,2);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,119,27723312,58);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,132,27599283,476);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,133,40839821,158);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,134,27812686,19);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,135,27602462,82);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,138,39655501,7);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,139,27599478,384);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,142,28000053,2);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,152,27599460,10708);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,153,27869036,722);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,154,27616668,289);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,155,27611441,1669);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,158,28130196,17);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,159,27599493,7547);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,162,27680788,106);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,163,27599732,17979);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,164,27599255,8860);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,165,27752942,7);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_ArchiveCustomer_CTSCustomer( 5000,166,44717493,1);
+
 
