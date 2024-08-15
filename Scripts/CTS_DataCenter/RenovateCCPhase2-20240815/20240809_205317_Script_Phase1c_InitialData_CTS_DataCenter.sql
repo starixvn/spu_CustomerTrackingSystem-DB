@@ -360,7 +360,7 @@ VALUES (1,'Account has less than 10 bets for first time scan','New: New Customer
 	INTO TABLE Customer_InitialGroupBetting
 	FIELDS TERMINATED BY ',' 
 	ENCLOSED BY '"'
-	LINES TERMINATED BY '\n'
+	LINES TERMINATED BY '\r\n'
 	IGNORE 1 ROWS;
 
 	SELECT 'Customer_InitialGroupBetting', COUNT(1) FROM Customer_InitialGroupBetting;
