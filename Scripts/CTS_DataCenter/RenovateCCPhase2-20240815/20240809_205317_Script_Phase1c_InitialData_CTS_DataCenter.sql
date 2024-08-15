@@ -366,12 +366,48 @@ VALUES (1,'Account has less than 10 bets for first time scan','New: New Customer
 	SELECT 'Customer_InitialGroupBetting', COUNT(1) FROM Customer_InitialGroupBetting;
 
 /* 2. TVSVoidRequest - Replace TVSVoidRequest_History & CTSCustomerClassificationOldCategory  */
-
+	/* select COUNT(1)
+	from CTSCustomerClassification
+	where IsFromTVS = 1 
+	and CategoryID NOT in (57,61,81,157,161,163,164,165,166,179)
+	;
+	
+	172177
+	*/
+	
+	
+	
+	
 
 /* 3. CTSRobotUser - Replace CTSCustomerClassificationOldCategory  */
+	/*
+	select CategoryID, count(1)
+	from CTSCustomerClassification
+	where IsFromCTS = 1
+	and CategoryID in (57,61,81,157,161,163,164,165,166,179)
+	group by CategoryID
+	;
+	
+	163	1851
+	164	579
+	
+	*/
 
 
-/* 4. TWRobotUser  */
+
+/* 4. TWRobotUser  - WILL BE INITIAL DATA IN PHASE 2*/
+	/*
+	select CategoryID, count(1)
+	from CTSCustomerClassification
+	where IsFromTW = 1
+	and CategoryID in (57,61,81,157,161,163,164,165,166,179)
+	group by CategoryID
+	;
+	
+	
+	163	58566
+	164	13018
+	*/
 
 
 /* 5. CTSCustomerClassification  */
