@@ -86,9 +86,10 @@ BEGIN
 		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
 	SET 	temp.OldCategoryGroupID 	= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryGroupID END
 		,	temp.OldCategoryID 			= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryID END
-        ,	temp.ActionType 			=  CASE WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT 
-												WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NOT NULL THEN CONST_ACTIONTYPE_UPDATE
-										   END
+        ,	temp.ActionType 			= CASE WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT 
+											   WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NOT NULL THEN CONST_ACTIONTYPE_UPDATE
+											   ELSE temp.ActionType
+										  END
 	WHERE temp.IsDataChanged = 1 OR temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
 	
 	UPDATE Temp_NewClassification AS temp 
