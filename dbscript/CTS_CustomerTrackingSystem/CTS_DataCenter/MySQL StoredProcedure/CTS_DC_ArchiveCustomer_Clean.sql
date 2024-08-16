@@ -752,7 +752,7 @@ sp: BEGIN
 			FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc,
 			LATERAL
 				(
-					SELECT DISTINCT cls.CustID, cls.ParentID, cls.CategoryID
+					SELECT cls.CustID, cls.ParentID, cls.CategoryID
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
 					WHERE cls.CustID = arc.CustID
