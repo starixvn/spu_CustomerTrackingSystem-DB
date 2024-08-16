@@ -23,6 +23,7 @@ BEGIN
 			
 		Revisions: 
 			- 20240809@Victoria.Le:			Initial Writing [Redmine ID: #205317]
+			- 20240816@Victoria.Le:			Missing initial data [Redmine ID: #205317]
 */
 
 	
@@ -49,6 +50,8 @@ BEGIN
 	WHERE cc.SportID = ip_SportID
 		AND cc.CustID >= ip_MinCustID
 		AND cc.CategoryID = ip_CategoryID
+		AND cc.ParentID IS NULL
+		AND cc.CreatedDate  < '2024-08-15 00:00:00' and cc.LastModifiedDate  < '2024-08-15 00:00:00' and cc.LastScannedDate < '2024-08-15 00:00:00'
 		ORDER BY cc.CustID;
 	
 	WITH CTE AS
