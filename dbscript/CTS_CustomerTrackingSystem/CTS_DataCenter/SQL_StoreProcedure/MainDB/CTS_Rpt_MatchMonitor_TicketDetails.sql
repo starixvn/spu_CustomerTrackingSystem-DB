@@ -77,6 +77,7 @@ AS
 		- 20240322@Vitoria.Le: 	Optimize query by considering to remove temporarily table  
 									And Separate between QueryType = 1 and QueryType in (2,3) [Redmine ID: #201380]
 		- 20240521@Thomas.Nguyen: Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
+		- 20240802@Casey.Huynh:	Enhance Filter Amount Sum by all Selected BetChoice  [Redmine ID: #207528]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize) >> refer to new SP CTS_Rpt_MatchMonitor_GetTicketInfo
@@ -156,6 +157,7 @@ BEGIN
 		,	SportType			SMALLINT
 		,	BetType				SMALLINT
 		,	CustId				INT
+		,	BetteamGroup		NVARCHAR(10)
 		,	BetTeam				NVARCHAR(10)
 		,	BetChoiceHome		NVARCHAR(10)
 		,	BetChoiceAway		NVARCHAR(10)
@@ -187,6 +189,7 @@ BEGIN
 		,	OddsType			TINYINT
 		,	MalayOdds			SMALLMONEY
 		,	IsCashout			BIT
+		
 	);	
 	
 	CREATE CLUSTERED INDEX #CIX_tmpTickets_CustId ON #tmpTickets (CustId,CurrencyId,BetTeam);
@@ -291,7 +294,7 @@ BEGIN
 			BEGIN
 				IF (@ListTransId <> '' AND @TicketType = 1) 
 				BEGIN
-					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetteamGroup,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 					SELECT 
 							b.transid
@@ -306,6 +309,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -342,7 +346,7 @@ BEGIN
 			BEGIN
 				IF (@ListTransId <> '' AND @TicketType = 1) 
 				BEGIN
-					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetteamGroup,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 					SELECT 
 							b.transid
@@ -357,6 +361,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -393,7 +398,7 @@ BEGIN
 			BEGIN
 				IF (@ListTransId <> '' AND @TicketType = 1) 
 				BEGIN
-					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 					SELECT b.sequenceid
 						,	b.transid
@@ -408,6 +413,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -442,7 +448,7 @@ BEGIN
 					IF (@CustAmountRM > 0) 
 					BEGIN	
 
-						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 							,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 							SELECT b.sequenceid
 								,	b.transid
@@ -457,6 +463,7 @@ BEGIN
 								,	m.sporttype
 								,	b.bettype
 								,	b.custid
+								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
 								,	b.betteam
 								,	st.BetChoiceHome
 								,	st.BetChoiceAway
@@ -495,7 +502,7 @@ BEGIN
 					BEGIN
 						IF (@BatchSize = 0) ---GET TotalTicket
 						BEGIN
-							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 								,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 							SELECT b.sequenceid
 								,	b.transid
@@ -510,6 +517,7 @@ BEGIN
 								,	m.sporttype
 								,	b.bettype
 								,	b.custid
+								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
 								,	b.betteam
 								,	st.BetChoiceHome
 								,	st.BetChoiceAway
@@ -545,7 +553,7 @@ BEGIN
 						END
 						ELSE IF (@BatchSize > 0) --- GET Ticket Details 
 						BEGIN
-							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+							INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 								,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
 							SELECT TOP (@BatchSize) b.sequenceid
 								,	b.transid
@@ -560,6 +568,7 @@ BEGIN
 								,	m.sporttype
 								,	b.bettype
 								,	b.custid
+								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
 								,	b.betteam
 								,	st.BetChoiceHome
 								,	st.BetChoiceAway
@@ -635,7 +644,7 @@ BEGIN
 			BEGIN
 				IF (@ListTransId <> '' AND @TicketType = 1) 
 				BEGIN
-					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 					SELECT 
 							b.transid
@@ -650,6 +659,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -683,7 +693,7 @@ BEGIN
 					IF (@CustAmountRM > 0) 
 					BEGIN	
 
-						INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+						INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 							,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 							SELECT b.transid
 								,	b.transdate
@@ -697,6 +707,7 @@ BEGIN
 								,	m.sporttype
 								,	b.bettype
 								,	b.custid
+								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
 								,	b.betteam
 								,	st.BetChoiceHome
 								,	st.BetChoiceAway
@@ -738,7 +749,7 @@ BEGIN
 					IF (@CustAmountRM <= 0) 
 					BEGIN
 						--- GET Ticket Details 
-						INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+						INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 							,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 						SELECT TOP (@BatchSize) b.transid
 							,	b.transdate
@@ -753,6 +764,7 @@ BEGIN
 							,	b.bettype
 							,	b.custid
 							,	b.betteam
+							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
 							,	st.BetChoiceHome
 							,	st.BetChoiceAway
 							,	b.betid
@@ -793,7 +805,7 @@ BEGIN
 
 						SET @MinTransDate= (SELECT MIN(TransDate) FROM #tmpTickets WITH(NOLOCK));
 
-						INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+						INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 							,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 						SELECT b.transid
 							,	b.transdate
@@ -807,6 +819,7 @@ BEGIN
 							,	m.sporttype
 							,	b.bettype
 							,	b.custid
+							,	(CASE WHEN st.BetChoiceType = 2 THEN '' ELSE b.betteam END) AS BetteamGroup
 							,	b.betteam
 							,	st.BetChoiceHome
 							,	st.BetChoiceAway
@@ -853,7 +866,7 @@ BEGIN
 			BEGIN
 				IF (@ListTransId <> '' AND @TicketType = 1) 
 				BEGIN
-					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 					SELECT b.sequenceid
 						,	b.transid
@@ -868,6 +881,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -900,7 +914,7 @@ BEGIN
 				BEGIN	
 					IF (@CustAmountRM > 0) 
 					BEGIN
-						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 							,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 						SELECT b.sequenceid
 							,	b.transid
@@ -915,6 +929,7 @@ BEGIN
 							,	m.sporttype
 							,	b.bettype
 							,	b.custid
+							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
 							,	b.betteam
 							,	st.BetChoiceHome
 							,	st.BetChoiceAway
@@ -956,7 +971,7 @@ BEGIN
 					IF (@CustAmountRM <= 0) 
 					BEGIN
 						--- GET Ticket Details 
-						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetTeam,BetChoiceHome,BetChoiceAway
+						INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 							,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
 						SELECT TOP (@BatchSize) b.sequenceid
 							,	b.transid
@@ -971,6 +986,7 @@ BEGIN
 							,	m.sporttype
 							,	b.bettype
 							,	b.custid
+							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
 							,	b.betteam
 							,	st.BetChoiceHome
 							,	st.BetChoiceAway
@@ -1274,22 +1290,22 @@ BEGIN
 				END;
 
 				CREATE TABLE	#tmpCustAmount(
-						CustId		INT
-					,	BetTeam		NVARCHAR(10)
+						CustId			INT
+					,	BetteamGroup	NVARCHAR(10)
 				);
 			
-				INSERT INTO #tmpCustAmount(CustId, BetTeam)
+				INSERT INTO #tmpCustAmount(CustId, BetteamGroup)
 				SELECT	tmpTk.CustId
-					,	tmpTk.BetTeam
+					,	tmpTk.BetteamGroup
 				FROM #tmpTickets AS tmpTk WITH(NOLOCK)
-				GROUP BY tmpTk.CustId, tmpTk.BetTeam
+				GROUP BY tmpTk.CustId, tmpTk.BetteamGroup
 				HAVING SUM(tmpTk.Stake) >= @CustAmountRM;
 
-				CREATE CLUSTERED INDEX CIX_tmpCustAmount_Group ON #tmpCustAmount (CustID, BetTeam);
+				CREATE CLUSTERED INDEX CIX_tmpCustAmount_Group ON #tmpCustAmount (CustID, BetteamGroup);
 
 				DELETE tmpTk
 				FROM #tmpTickets AS tmpTk WITH(NOLOCK)
-					LEFT JOIN #tmpCustAmount AS tmpCa WITH(NOLOCK) ON tmpCa.CustId = tmpTk.CustId and tmpCa.BetTeam = tmpTk.BetTeam
+					LEFT JOIN #tmpCustAmount AS tmpCa WITH(NOLOCK) ON tmpCa.CustId = tmpTk.CustId and tmpCa.BetteamGroup = tmpTk.BetteamGroup
 				WHERE tmpCa.CustId IS NULL;
 			END;
 
