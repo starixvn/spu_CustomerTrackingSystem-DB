@@ -707,13 +707,10 @@ BEGIN
 		
 		UPDATE CTS_DataCenter.CTSCustomerClassification AS cate
 			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = cate.CustID AND cate.ParentID = CONST_PARENTID_NORMAL
-			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cc ON cc.CategoryID = temp.NewCategoryID
 		SET   	cate.CTSCustID 			= temp.CTSCustID
 			, 	cate.SubscriberID 		= temp.SubscriberID
 			, 	cate.CategoryID 		= temp.NewCategoryID
-			, 	cate.LastModifiedDate 	= CASE	WHEN cc.IsKeepOldCateID = 0 THEN lv_CurrentDateTime 
-												WHEN cc.IsKeepOldCateID = 1 AND temp.IsFromOldPA = 0 THEN lv_CurrentDateTime 
-												ELSE cate.LastModifiedDate END
+			, 	cate.LastModifiedDate 	= lv_CurrentDateTime
 			, 	cate.LastScannedDate 	= CASE  WHEN temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_EXISTONLY  THEN cate.LastScannedDate
 												ELSE DATE(lv_CurrentDateTime) END
 		WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE;
@@ -840,6 +837,7 @@ BEGIN
 																						AND temp.DataChangeType = 1
 		SET 	cls.CTSCustID 			=  temp.CTSCustID
 			,	cls.CategoryID 			=  temp.NewCategoryID
+			, 	cls.LastModifiedDate 	=  lv_CurrentDateTime
 			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime)
 			,	cls.IsFromTW 			=   CASE WHEN temp.IsFromTW 		= 1 THEN temp.IsFromTW 			ELSE cls.IsFromTW 			END
 			,	cls.IsFromCTS 			=   CASE WHEN temp.IsFromCTS 		= 1 THEN temp.IsFromCTS 		ELSE cls.IsFromCTS 			END
@@ -881,7 +879,7 @@ BEGIN
 			, 	temp.ParentID
 			, 	CASE WHEN lv_IsRescan = 1 THEN temp.CreatedDate ELSE lv_CurrentDateTime END AS CreatedDate
 			, 	temp.CreatedBy
-			, 	CASE WHEN lv_IsRescan = 1 THEN temp.LastModifiedDate ELSE lv_CurrentDateTime END AS LastModifiedDate
+			, 	lv_CurrentDateTime AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
 			,	temp.IsMarkedDirectly

@@ -336,7 +336,7 @@ BEGIN
 			INSERT INTO Temp_NewClassification(
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, TVSRequestID, IsTVSParlay, TVSIssueTypeID, SportType, IsFromCTS
-				, 	SpecialCC, IsPAProbation, RelevantCategoryID, LastModifiedDate, CreatedDate, MatchID, IsFromTW, TWRobotCounter, IsFromAI, IsFromImperva
+				, 	SpecialCC, IsPAProbation, RelevantCategoryID, CreatedDate, MatchID, IsFromTW, TWRobotCounter, IsFromAI, IsFromImperva
 				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, GroupName, IsRobot)
 			SELECT 	tmpJs.CustID
 				,	CASE WHEN tmpJs.CTSCustID = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
@@ -365,7 +365,6 @@ BEGIN
 				,	sp.CustomerClass AS SpecialCC
 				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
 				,	cat.RelevantCategoryID
-				,	tmpJs.LastModifiedDate
 				,	tmpJs.CreatedDate
 				,	tmpJs.MatchID
 				,	tmpJs.IsFromTW
@@ -396,7 +395,6 @@ BEGIN
 											, 	BetCount					BIGINT 				PATH "$.BetCount"
 											, 	ActiveDays					INT 				PATH "$.ActiveDays"
 											, 	IsFromCTS					TINYINT(1) 			PATH "$.IsFromCTS"
-											, 	LastModifiedDate			DATETIME(3)			PATH "$.LastModifiedDate"
 											, 	CreatedDate					DATETIME(3)			PATH "$.CreatedDate"
 											, 	MatchID						INT 				PATH "$.MatchID"	
 											, 	PerformanceTime				DATETIME(3)			PATH "$.PerformanceTime"
