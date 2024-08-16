@@ -765,7 +765,7 @@ sp: BEGIN
 				UPDATE CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc
 					INNER JOIN Temp_CTSCustomerClassification_Archive AS temp ON temp.ArchiveID = arc.ID
 					INNER JOIN Temp_CustLatestCate AS cate ON cate.CustID = arc.CustID
-				SET arc.CategoryID = cate.CategoryID;
+				SET arc.CategoryID = cate.LatestCateID;
             END IF;
 
 			IF EXISTS (SELECT 1 FROM Temp_CustLatestCate WHERE ParentID = CONST_PARENTID_PA) THEN
