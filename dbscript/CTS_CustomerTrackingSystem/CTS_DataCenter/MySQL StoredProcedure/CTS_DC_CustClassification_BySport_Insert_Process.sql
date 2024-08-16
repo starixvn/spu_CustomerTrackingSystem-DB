@@ -27,6 +27,7 @@ BEGIN
 	DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 			INT DEFAULT 5;
 	DECLARE CONST_SOURCETYPE_SAMECATEGORY 				INT DEFAULT 0;
 	DECLARE CONST_SOURCETYPE_LESSTHAN10TICKETS			INT DEFAULT 1;
+	DECLARE CONST_ACTIONTYPE_RESCAN_CHANGECC 			INT DEFAULT 6;
 
 	SET CONST_CATEID_NEW		 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_NEW');
 	SET CONST_CATEID_SPECIALCC	 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
@@ -38,7 +39,6 @@ BEGIN
 		,	SportID										SMALLINT UNSIGNED
         ,	OldCategoryID 								INT UNSIGNED
         ,	OldCategoryGroupID							INT UNSIGNED
-		,	IsKeepOldCateID								TINYINT(1)
         ,	PRIMARY KEY (CustID, SportID)
 	); 
 	
@@ -69,54 +69,32 @@ BEGIN
 				LIMIT 1) AS tmpHis
 	;
 	
-	INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(CustID, SportID, OldCategoryGroupID, OldCategoryID, IsKeepOldCateID)
-    SELECT DISTINCT temp.CustID, temp.SportID, cc.CategoryGroupID, cate.CategoryID, cc.IsKeepOldCateID
+	UPDATE Temp_NewClassification AS temp 
+		INNER JOIN Temp_LastHistory AS h ON temp.CustID = h.CustID AND temp.SportID = h.SportID 
+	SET temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC /*Remove SpecialCC*/
+	WHERE h.TargetCC = -1 OR h.CategoryID = CONST_CATEID_SPECIALCC;
+	
+	INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(CustID, SportID, OldCategoryGroupID, OldCategoryID)
+    SELECT DISTINCT temp.CustID, temp.SportID, cc.CategoryGroupID, cate.CategoryID
     FROM Temp_NewClassification AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cate ON temp.CustID = cate.CustID AND cate.ParentID = CONST_PARENTID_NORMAL
 																				AND temp.SportID = cate.SportID
-		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cc ON cc.CategoryID = cate.CategoryID 
-	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION);
-
-	UPDATE Temp_NewClassification AS temp
-			INNER JOIN Temp_LastHistory AS h ON temp.CustID = h.CustID AND temp.SportID = h.SportID 
-	SET 	temp.IsFromOld = 1
-	WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT
-		AND h.TargetCC = -1 AND h.CategoryID = CONST_CATEID_SPECIALCC;
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID 
+	WHERE temp.IsDataChanged = 1 OR temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
 	
 	UPDATE Temp_NewClassification AS temp
 		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
 	SET 	temp.OldCategoryGroupID 	= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryGroupID END
 		,	temp.OldCategoryID 			= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryID END
-        ,	temp.ActionType 			= CASE WHEN (o.CustID IS NULL AND temp.IsFromOld = 0)
-														OR (o.CustID IS NULL AND temp.IsFromOld = 1)
-														OR (o.CustID IS NOT NULL AND temp.IsFromOld = 0) 
-													THEN CONST_ACTIONTYPE_INSERT 
-											   ELSE CONST_ACTIONTYPE_UPDATE END /*o.CustID IS NOT NULL AND temp.IsFromOld = 1*/
-	WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
-	
-	UPDATE Temp_NewClassification AS temp
-		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
-	SET 	temp.OldCategoryGroupID 	= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryGroupID END
-		,	temp.OldCategoryID 			= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryID END
-	WHERE temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
+        ,	temp.ActionType 			=  CASE WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT 
+												WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NOT NULL THEN CONST_ACTIONTYPE_UPDATE
+										   END
+	WHERE temp.IsDataChanged = 1 OR temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
 	
 	UPDATE Temp_NewClassification AS temp 
 	SET 	temp.NewCategoryGroupID = temp.DWCategoryID 
 		,	temp.NewCategoryID 		= temp.DWCategoryID 
-	WHERE temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
-	
-	UPDATE Temp_NewClassification AS temp
-		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
-	SET 	temp.ActionType = CONST_ACTIONTYPE_UPDATE
-	WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT
-		AND (temp.NewCategoryID = temp.OldCategoryID OR temp.NewCategoryGroupID = temp.OldCategoryGroupID)
-		AND temp.IsFromOld = 0 AND o.CustID IS NOT NULL;
-
-	UPDATE Temp_NewClassification AS temp
-	SET 	temp.IsDataChanged = 0
-	WHERE temp.ActionType = CONST_ACTIONTYPE_UPDATE
-		AND temp.NewCategoryID = temp.OldCategoryID
-		AND temp.IsFromOld = 0;
+	WHERE temp.IsDataChanged = 1;
     
 	UPDATE 	Temp_NewClassification AS temp 
 	SET 	temp.SourceTypeID = (CASE 
@@ -125,32 +103,24 @@ BEGIN
 										THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
                                     WHEN temp.OldCategoryGroupID = temp.NewCategoryGroupID THEN CONST_SOURCETYPE_SAMECATEGORY
 								END)
-	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE);
+	WHERE temp.IsDataChanged = 1;
+	
+	UPDATE Temp_NewClassification AS temp
+	SET 	temp.IsDataChanged = 0
+	WHERE temp.ActionType IN (CONST_ACTIONTYPE_UPDATE,CONST_ACTIONTYPE_RESCAN_CHANGECC)
+		AND temp.NewCategoryID = temp.OldCategoryID;
 	
 	UPDATE Temp_NewClassification AS temp 
 		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = temp.NewCategoryID
-	SET 	temp.TargetCC = IFNULL(temp.SpecialCC, cate.CustomerClass)
-	WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_UPDATE, CONST_ACTIONTYPE_IGNOREPROBATION);
+	SET 	temp.TargetCC = IFNULL(temp.SpecialCC, cate.CustomerClass);
 	
 	INSERT IGNORE INTO Temp_UpdateCustomerClass(CustID, SportID, CustomerClass)
-	WITH CTE_LatestLog AS (
-		SELECT h.CustID, h.SportID, MAX(h.LastModifiedDate) AS LatestInsertDate
-		FROM Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport_History AS h ON temp.CustID = h.CustID
-																							AND temp.SportID = h.SportID
-		WHERE temp.IsDataChanged  = 0
-		GROUP BY h.CustID, h.SportID
-	),CTE_LatestHistory AS (
-		SELECT h.CustID, h.SportID, h.TargetCC
-		FROM CTE_LatestLog AS l
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport_History AS h ON l.CustID = h.CustID 
-																						AND l.SportID = h.SportID
-																						AND l.LatestInsertDate = h.LastModifiedDate
-	)
-	SELECT 	cte.CustID
-		,	cte.SportID
-		,	cte.TargetCC
-	FROM CTE_LatestHistory AS cte;
+	SELECT 	temp.CustID
+		,	h.SportID
+		,	h.TargetCC
+	FROM Temp_NewClassification AS temp
+		INNER JOIN Temp_LastHistory AS h ON temp.CustID = h.CustID AND temp.SportID = h.SportID
+	WHERE temp.IsDataChanged  = 0;
 	
 	UPDATE Temp_UpdateCustomerClass AS c
 		INNER JOIN Temp_NewClassification AS temp ON c.CustID = temp.CustID AND c.SportID = temp.SportID
