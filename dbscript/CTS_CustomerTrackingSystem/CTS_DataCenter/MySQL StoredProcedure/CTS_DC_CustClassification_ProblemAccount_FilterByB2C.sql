@@ -20,15 +20,13 @@ BEGIN
         
         Example: 
 			-CALL CTS_DC_CustClassification_ProblemAccount_FilterByB2C("8,9,10");
-	*/	
-    DECLARE	CONST_GROUP_PROBLEM 	INT DEFAULT 0;
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;    
+	*/		
+    DROP TEMPORARY TABLE IF EXISTS Temp_Cust;    
 	CREATE TEMPORARY TABLE Temp_Cust( 	  
 			CustID		INT UNSIGNED	
         ,	PRIMARY	KEY (CustID)
 	);
-    
+        
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_Cust (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;
