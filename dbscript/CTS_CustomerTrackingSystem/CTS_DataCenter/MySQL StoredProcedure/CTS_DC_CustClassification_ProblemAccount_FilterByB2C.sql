@@ -15,7 +15,8 @@ BEGIN
 
 		Revisions:
 			- 20211130@Aries.Nguyen: Created [Redmine: #164079]
-        
+            - 20240620@Jonas.Huynh:  Renovate CC [RedmineID: #205317]
+            
 		Param's Explanation (filtered by):   
         
         Example: 
