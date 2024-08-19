@@ -43,7 +43,6 @@ BEGIN
 			- 20231024@Jonas.Huynh: HF wrong reactivated category [Redmine ID: #193050]
 			- 20231207@Long.Luu: 	Add Agent M999RM00 as internal account [Redmine ID: #197915]
 			- 20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
-            - 20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
 		Param's Explanation (filtered by):
 		Example:
 			 CALL CTS_DataCenter.CTS_DC_CustInfo_Insert('[
