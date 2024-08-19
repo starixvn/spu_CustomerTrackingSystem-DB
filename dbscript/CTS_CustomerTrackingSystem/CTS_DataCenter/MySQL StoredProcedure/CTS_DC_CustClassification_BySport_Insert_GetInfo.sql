@@ -59,7 +59,7 @@ BEGIN
 		,	OldTargetCC					INT
 		,	TargetCC					INT
 		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
-		,	PerformanceTime				DATETIME(3)
+		,	PerformanceTime				DATETIME
 		,	SpecialCC					INT
 		,	SourceTypeID      			SMALLINT
 		,	IsFromOld					TINYINT(1) DEFAULT 0
@@ -120,7 +120,7 @@ BEGIN
 											, 	WinlossRM				DECIMAL(20,4)		PATH "$.WinlossRM"
 											, 	BetCount				BIGINT				PATH "$.BetCount"
 											, 	ActiveDays				INT					PATH "$.ActiveDays"		
-											,	PerformanceTime			DATETIME(3)			PATH "$.PerformanceTime"
+											,	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
 										   )) AS tmpJs
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass_BySport AS sp ON tmpJs.CustID = sp.CustID AND tmpJs.SportID = sp.SportID

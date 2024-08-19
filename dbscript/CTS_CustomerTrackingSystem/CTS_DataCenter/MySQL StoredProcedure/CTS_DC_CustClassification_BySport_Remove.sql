@@ -39,7 +39,7 @@ BEGIN
 	DECLARE lv_LogTypeID									INT;
 	DECLARE lv_CreatedBy									INT;
 	DECLARE lv_SPName 										VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_BySport_Remove';
-	DECLARE lv_CurrentDateTime 								DATETIME(3) DEFAULT CURRENT_TIME(3);
+	DECLARE lv_CurrentDateTime 								DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_ListCustInfo									LONGTEXT;
 	
 	SET CONST_PARENTID_WRAPPER								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');

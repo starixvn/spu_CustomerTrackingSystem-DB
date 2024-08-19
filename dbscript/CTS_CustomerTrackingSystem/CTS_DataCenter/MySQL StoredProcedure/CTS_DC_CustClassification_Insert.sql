@@ -63,7 +63,7 @@ BEGIN
 	DECLARE lv_SPName 										VARCHAR(200) DEFAULT 'CTS_DC_CustClassification_Insert';
 	DECLARE lv_LogInfo 										VARCHAR(500);
 	DECLARE lv_CreatedBy									INT;
-	DECLARE	lv_CurrentDateTime								DATETIME(3) DEFAULT CURRENT_TIME(3);
+	DECLARE	lv_CurrentDateTime								DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_Ext_CateGroupID_VVIP							INT;
 
 	SET CONST_CATEID_VVIP									= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
