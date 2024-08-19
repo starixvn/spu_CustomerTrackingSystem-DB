@@ -12,7 +12,13 @@ Revisions:
 
 USE CTS_DataCenter;
 
-/************************* I. Data Setting ******************************/
+/************************* I. CustClassification_BySport ******************************/
+/*
+-- DONE 16/08/2024
 CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 10000,1,201,21938,4633210);
 CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 10000,1,202,2344,2094457);
 CALL CTS_DataCenter.Adhoc_Renovate_Phase1_CTS_DC_CustClassification_BySport( 10000,2,201,3562,2305009);
+*/
+
+
+/************************* II. ArchiveCustomer_CTSCustomer ******************************/

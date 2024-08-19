@@ -220,7 +220,9 @@ BEGIN
 			AND temp.NewCategoryID = temp.OldCategoryID;
 			
 		UPDATE Temp_NewClassification AS temp
-		SET temp.ActionType = CASE WHEN temp.NewCategoryID = temp.OldCategoryID THEN CONST_ACTIONTYPE_UPDATE ELSE CONST_ACTIONTYPE_INSERT END
+			LEFT JOIN Temp_CTSCustomerClassification_Old AS temp_old ON temp_old.CustID = temp.CustID
+		SET temp.ActionType = CASE WHEN temp.NewCategoryID = temp.OldCategoryID AND temp_old.CustID IS NOT NULL THEN CONST_ACTIONTYPE_UPDATE 
+								   ELSE CONST_ACTIONTYPE_INSERT END
 		WHERE temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECATEGORY;
 		
 		UPDATE Temp_NewClassification AS tmp 
