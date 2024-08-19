@@ -6,6 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_Renovate_Phase1_CTS_DC_ArchiveCus
 		IN		ip_Batchsize			INT
 	,	IN		ip_CategoryID			INT
 	,	IN		ip_MinID				BIGINT
+	,	IN		ip_MaxID				BIGINT
 	,	IN		ip_TotalRows			BIGINT
 )
     SQL SECURITY INVOKER
@@ -22,6 +23,7 @@ BEGIN
 			
 		Revisions: 
 			- 20240809@Victoria.Le:			Initial Writing [Redmine ID: #205317]
+			- 20240819@Victoria.Le:			Correct Script - Initial missing data with: SubscriberID is null or SubscriberID is not terminated + IsReactivated = 0 [Redmine ID: #205317]
 */
 	DECLARE lv_FromID						BIGINT DEFAULT 0;
 	DECLARE lv_ToID							BIGINT DEFAULT 0;
@@ -34,9 +36,11 @@ BEGIN
 	WITH CTE AS
 	(	SELECT cc.ID
 		FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS cc
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = cc.CustID AND cust.CustSubID = 0
-		WHERE cc.ID >= ip_MinID
+			left join CTS_Admin.Subscriber as sub on sub.SubscriberID = cc.SubscriberID
+		WHERE cc.ID >= ip_MinID AND cc.ID <= ip_MaxID
 			AND cc.CategoryID = ip_CategoryID
+			AND cc.ParentID is null and cc.IsReactivated = 0
+			AND (cc.SubscriberID is null or (sub.SubscriberID is not null and sub.TerminatedDate is null ))
 		ORDER BY cc.ID
 		LIMIT ip_Batchsize
 	)
@@ -52,11 +56,15 @@ BEGIN
 		
 		UPDATE CTS_DataCenter.ArchiveCustomer_CTSCustomer AS cc
 			INNER JOIN CTS_DataCenter.CustomerCategory_new AS newcate ON newcate.OldCategoryID = cc.CategoryID
+			left join CTS_Admin.Subscriber as sub on sub.SubscriberID = cc.SubscriberID
 		SET 	cc.ParentID		 		= newcate.ParentID
 			,	cc.CategoryID_new 		= newcate.CategoryID
 			,	cc.CategoryID_bk 		= cc.CategoryID
 		WHERE cc.ID BETWEEN lv_FromID AND lv_ToID
-			AND cc.CategoryID = ip_CategoryID;
+			AND cc.CategoryID = ip_CategoryID
+			AND cc.ParentID is null and cc.IsReactivated = 0
+			AND (cc.SubscriberID is null or (sub.SubscriberID is not null and sub.TerminatedDate is null ))
+			;
 		
 		SET lv_UpdatedCount = FOUND_ROWS();
 		SET lv_TotalRowsUpdated = lv_TotalRowsUpdated + lv_UpdatedCount;
@@ -65,9 +73,11 @@ BEGIN
 		WITH CTE AS
 		(	SELECT cc.ID
 			FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS cc
-				INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CTSCustID = cc.CTSCustID AND cust.CustSubID = 0
-			WHERE cc.ID > lv_ToID
+				left join CTS_Admin.Subscriber as sub on sub.SubscriberID = cc.SubscriberID
+			WHERE cc.ID > lv_ToID AND cc.ID <= ip_MaxID
 				AND cc.CategoryID = ip_CategoryID
+				AND cc.ParentID is null and cc.IsReactivated = 0
+				AND (cc.SubscriberID is null or (sub.SubscriberID is not null and sub.TerminatedDate is null ))
 			ORDER BY cc.ID
 			LIMIT ip_Batchsize
 		)
@@ -94,6 +104,7 @@ BEGIN
 	SELECT 	ip_Batchsize AS Batchsize
 		,	ip_CategoryID AS CategoryID
 		,	ip_MinID AS MinID
+		,	ip_MaxID AS MaxID
 		,	ip_TotalRows AS TotalRows
 		,	lv_TotalRowsUpdated AS TotalRowsUpdated;
 
