@@ -21,14 +21,15 @@ BEGIN
 			- 20220705@Aries.Nguyen: Created [Redmine ID: #167748]
             - 20220831@Aries.Nguyen: Associated Group Enhancement [Redmine ID: #176991]
             - 20221028@Harvey.Nguyen: Check PA site [Redmine ID: #179398]
-        
+			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Change datatype for lv_PACategoryID to INT [Redmine ID: #205317]
+
 		Param's Explanation (filtered by):
 
         Example: 
 			- CALL CTS_DC_AssociatedGroup_Account_Add(@ip_GroupID:=14,@ip_CTSCustIDs:='9,10',@ip_IsAuto:=1,@ip_Remark:="Test Remark",@ip_CreatedBy:=169368);
 	*/
     DECLARE lv_Sites			LONGTEXT;
-    DECLARE lv_PACategoryID		SMALLINT;
+    DECLARE lv_PACategoryID		INT;
     
     DECLARE lv_LogInfo JSON;
     DECLARE CONST_USERLOG_LOGTYPE SMALLINT DEFAULT 34;

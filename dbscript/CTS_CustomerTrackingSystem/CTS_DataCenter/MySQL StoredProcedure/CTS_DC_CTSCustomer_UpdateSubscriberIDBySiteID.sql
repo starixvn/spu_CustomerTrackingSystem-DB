@@ -16,6 +16,7 @@ BEGIN
 		Revisions:
 			-	20210115@Casey.Huynh: Created [Redmine ID: 148849]
             -	20211029@Casey.Huynh: Update CTSClassification, CTSClassification_History [Redmine ID: 163899]
+			-	20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove unused table ProbationAccountMonitor
 		Param's Explanation (filtered by):
 		
 		Exampele: CALL CTS_DC_CTSCustomer_UpdateSubscriberIDBySiteID ('[{"SubscriberID":898294,"SiteID":43534235,"RoleMapping":1}]');
@@ -125,11 +126,6 @@ BEGIN
         UPDATE CTS_DataCenter.CTSCustomerClassification_History AS ch
         INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
         SET	ch.CTSCustID = tmpCus.CTSCustID;
-		
-        #=====UPDATE ProbationAccountMonitor====================
-        UPDATE CTS_DataCenter.ProbationAccountMonitor AS pa
-        INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= pa.CustID
-        SET	pa.CTSCustID = tmpCus.CTSCustID;
         
         #================================================================        
         SET lv_PreCTSCustID = (SELECT 1 FROM TempCTSCustomer AS tmpCus LIMIT 1);

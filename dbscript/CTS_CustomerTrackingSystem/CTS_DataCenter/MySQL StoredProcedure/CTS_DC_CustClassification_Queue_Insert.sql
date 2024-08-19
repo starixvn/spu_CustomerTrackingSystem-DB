@@ -6,7 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassificat
      	IN ip_CTSCustID			BIGINT UNSIGNED
     ,	IN ip_CustID			BIGINT UNSIGNED
     ,	IN ip_SubscriberID		INT
-	,	IN ip_CategoryID		SMALLINT
+	,	IN ip_CategoryID		INT
     , 	IN ip_Remark 			VARCHAR(300)
 	,	IN ip_CreatedBy 		INT
     ,	IN ip_RoleID			TINYINT
@@ -22,6 +22,7 @@ BEGIN
 
 		Revisions:
 			- 20220418@Casey.Huynh: Add and Remove VVIP for Downline [Redmine ID: #159013]
+			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Change datatype for ip_CategoryID to INT [Redmine ID: #205317]
 
 		Param's Explanation:
 			ip_ActionType: 1-Insert, 2-Remove

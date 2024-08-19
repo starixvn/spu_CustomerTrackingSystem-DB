@@ -177,3 +177,7 @@ ADD KEY IX_CustLoginInfoDetection_CustID_InsertedTime (CustID, InsertedTime);
 /*RobotImperva*/
 ALTER TABLE RobotImperva
 ADD IsDisabled BIT(1) DEFAULT 0;
+
+/*******************************PHASE 2************************************/
+ALTER TABLE AssociatedGroup
+MODIFY COLUMN PACategoryID INT;

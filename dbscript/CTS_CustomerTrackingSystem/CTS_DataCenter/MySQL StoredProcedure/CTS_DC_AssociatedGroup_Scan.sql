@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_AssociatedGroup_Scan`(
 	,	OUT	op_GroupName		VARCHAR(100)
 	,	OUT	op_ABI				INT
     ,	OUT	op_Ori				INT
-    ,	OUT	op_PACategoryID		SMALLINT
+    ,	OUT	op_PACategoryID		INT
     ,	OUT op_LastCTSCustID	BIGINT
 ) 
     SQL SECURITY INVOKER
@@ -25,7 +25,8 @@ sp : BEGIN
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 			- 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
             - 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
-            
+            - 20240628@Thomas.Nguyen:	Renovate CC phase 2 - Change datatype for lv_PACategoryID to INT [Redmine ID: #205317]
+
 		Param's Explanation (filtered by):
 
 		Example:

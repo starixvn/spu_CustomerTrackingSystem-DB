@@ -16,7 +16,8 @@ BEGIN
 			- 20200924@Long.Luu: Created [Redmine ID: #141755]
             - 20201202@Lex.Khuat: Hotfix remove sportgroup, no use sportgroup table [Redmine ID: #146819]
 			- 20210622@Aries.Nguyen: Update coding convention  [Redmine ID: #157203]
-            
+            - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Change datatype for CategoryID to INT [Redmine ID: #205317]
+
 		Param's Explanation:
 
 		Example:
@@ -25,7 +26,7 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CategoryID;
     CREATE TEMPORARY TABLE Temp_CategoryID (
-			CategoryID 		SMALLINT UNSIGNED PRIMARY KEY
+			CategoryID 		INT UNSIGNED PRIMARY KEY
     );  
     
     SET @sql = CONCAT("INSERT INTO Temp_CategoryID (CategoryID) VALUES ('", REPLACE(ip_CategoryIDList, ",", "'),('"),"');");
