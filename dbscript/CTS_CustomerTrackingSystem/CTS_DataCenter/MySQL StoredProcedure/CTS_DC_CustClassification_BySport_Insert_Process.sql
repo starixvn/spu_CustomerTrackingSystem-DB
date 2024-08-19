@@ -73,6 +73,11 @@ BEGIN
 		INNER JOIN Temp_LastHistory AS h ON temp.CustID = h.CustID AND temp.SportID = h.SportID 
 	SET temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC /*Remove SpecialCC*/
 	WHERE h.TargetCC = -1 OR h.CategoryID = CONST_CATEID_SPECIALCC;
+
+	UPDATE Temp_NewClassification AS temp 
+	SET 	temp.NewCategoryGroupID = temp.DWCategoryID 
+		,	temp.NewCategoryID 		= temp.DWCategoryID 
+	WHERE temp.IsDataChanged = 1;
 	
 	INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(CustID, SportID, OldCategoryGroupID, OldCategoryID)
     SELECT DISTINCT temp.CustID, temp.SportID, cc.CategoryGroupID, cate.CategoryID
@@ -86,17 +91,15 @@ BEGIN
 		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
 	SET 	temp.OldCategoryGroupID 	= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryGroupID END
 		,	temp.OldCategoryID 			= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryID END
-        ,	temp.ActionType 			= CASE WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT 
-											   WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NOT NULL THEN CONST_ACTIONTYPE_UPDATE
-											   ELSE temp.ActionType
+        ,	temp.ActionType 			= CASE 	WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT 
+												WHEN temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryID <> o.OldCategoryID
+													THEN CONST_ACTIONTYPE_INSERT
+												WHEN temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryID = o.OldCategoryID
+													THEN CONST_ACTIONTYPE_UPDATE
+												ELSE temp.ActionType
 										  END
 	WHERE temp.IsDataChanged = 1 OR temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
-	
-	UPDATE Temp_NewClassification AS temp 
-	SET 	temp.NewCategoryGroupID = temp.DWCategoryID 
-		,	temp.NewCategoryID 		= temp.DWCategoryID 
-	WHERE temp.IsDataChanged = 1;
-    
+
 	UPDATE 	Temp_NewClassification AS temp 
 	SET 	temp.SourceTypeID = (CASE 
 									WHEN (temp.OldCategoryGroupID IS NULL OR temp.OldCategoryGroupID = CONST_CATEID_NEW) 

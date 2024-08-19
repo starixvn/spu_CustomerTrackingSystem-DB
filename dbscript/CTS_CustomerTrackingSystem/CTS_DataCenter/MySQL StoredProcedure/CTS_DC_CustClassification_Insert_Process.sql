@@ -135,25 +135,6 @@ BEGIN
 							  END
 		WHERE h.TargetCC = -1 OR h.CategoryID IS NULL;
 
-		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old (
-				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID)
-		SELECT 	temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, ccs.CategoryID, ccs.CategoryGroupID
-		FROM Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID AND cls.ParentID = CONST_PARENTID_NORMAL
-			INNER JOIN CTS_DataCenter.CustomerCategory AS ccs ON ccs.CategoryID = cls.CategoryID
-		WHERE temp.IsDataChanged = 1 OR temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
-		/*temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION,CONST_ACTIONTYPE_RESCAN_CHANGECC,CONST_ACTIONTYPE_RESCAN_CHANGECATEGORY)*/
-
-		UPDATE Temp_NewClassification AS temp
-			LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID
-		SET 	temp.OldCategoryGroupID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryGroupID END
-			,	temp.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryID END
-			,	temp.ActionType = CASE 	WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT 
-										WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NOT NULL THEN CONST_ACTIONTYPE_UPDATE
-										ELSE temp.ActionType
-								  END
-		WHERE temp.IsDataChanged = 1 OR temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
-		
 		UPDATE Temp_NewClassification AS temp 
 		SET temp.NewCategoryGroupID = temp.DWCategoryGroupID 
 		WHERE temp.IsDataChanged = 1;
@@ -170,6 +151,28 @@ BEGIN
 		SET temp.NewCategoryID = DWCategoryID
 		WHERE temp.IsDataChanged = 1 
 			AND temp.DWCategoryGroupID = CONST_CATEGROUPID_INACTIVE; 
+
+		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old (
+				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID)
+		SELECT 	temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, ccs.CategoryID, ccs.CategoryGroupID
+		FROM Temp_NewClassification AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID AND cls.ParentID = CONST_PARENTID_NORMAL
+			INNER JOIN CTS_DataCenter.CustomerCategory AS ccs ON ccs.CategoryID = cls.CategoryID
+		WHERE temp.IsDataChanged = 1 OR temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
+		/*temp.ActionType IN (CONST_ACTIONTYPE_INSERT, CONST_ACTIONTYPE_IGNOREPROBATION,CONST_ACTIONTYPE_RESCAN_CHANGECC,CONST_ACTIONTYPE_RESCAN_CHANGECATEGORY)*/
+
+		UPDATE Temp_NewClassification AS temp
+			LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID
+		SET 	temp.OldCategoryGroupID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryGroupID END
+			,	temp.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryID END
+			,	temp.ActionType = CASE 	WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT 
+										WHEN temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryGroupID <> o.CategoryGroupID
+											THEN CONST_ACTIONTYPE_INSERT
+										WHEN temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryGroupID = o.CategoryGroupID
+											THEN CONST_ACTIONTYPE_UPDATE
+										ELSE temp.ActionType
+								  END
+		WHERE temp.IsDataChanged = 1 OR temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
 
 		/* UPDATE NewIsDangerProbation */    
     	UPDATE 	Temp_NewClassification AS temp 
@@ -646,9 +649,10 @@ BEGIN
 		
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_LastHistory AS tmpHis ON temp.CustID = tmpHis.CustID
+            LEFT JOIN Temp_CTSCustomerClassification_Old as temp_old ON temp_old.CustID = temp.CustID AND temp_old.CategoryGroupID = temp.NewCategoryGroupID
 		SET temp.IsDataChanged = 1
-		WHERE (temp.NewCategoryGroupID <> tmpHis.CategoryID AND temp.ParentID <> tmpHis.ParentID)
-			OR temp.TargetCC <> tmpHis.TargetCC;
+		WHERE temp_old.CustID IS NULL AND temp_old.IsRemove = 0
+			AND ((temp.NewCategoryGroupID <> tmpHis.CategoryID AND temp.ParentID <> tmpHis.ParentID) OR temp.TargetCC <> tmpHis.TargetCC);
 			
 	END IF;
 	
