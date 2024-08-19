@@ -158,7 +158,7 @@ BEGIN
 		,	TaggingType					SMALLINT	
 		,	ScanTaggingType				TINYINT DEFAULT 0
 
-		,   SpecialCC	       			INT  
+		,   SpecialCC	       			SMALLINT  
 		,	SpecialCCName				VARCHAR(50)
 		,   SpecialCCCatePriority  		SMALLINT DEFAULT -1
 		,   SpecialCCDangerProbation   	TINYINT(1) DEFAULT NULL
@@ -217,7 +217,7 @@ BEGIN
 		,	TVSIssueTypeID				TINYINT DEFAULT NULL 
 		,	IsMarkedDirectly			TINYINT(1)
 		,	TWRobotCounter				INT
-		,	SpecialCC	       			INT 
+		,	SpecialCC	       			SMALLINT 
 		,	CustomerClass				INT 
 		,	CategoryPriority			SMALLINT
 		,	CustomerClassPriority		SMALLINT
@@ -296,7 +296,7 @@ BEGIN
 												,	CTSCustID 		BIGINT UNSIGNED		PATH "$.CTSCustID"
 												,	SubscriberID 	INT UNSIGNED		PATH "$.SubscriberID"
 												,	IsLicenseeVIP	TINYINT(1)			PATH "$.IsLicenseeVIP"            
-												,	TargetCC		INT 				PATH "$.CustomerClass"            
+												,	TargetCC		SMALLINT 			PATH "$.CustomerClass"            
 												,	CreatedBy 		INT UNSIGNED		PATH "$.CreatedBy"          
 												,	Remark			VARCHAR(500)		PATH "$.Remark"
 											 )) AS tmpJs

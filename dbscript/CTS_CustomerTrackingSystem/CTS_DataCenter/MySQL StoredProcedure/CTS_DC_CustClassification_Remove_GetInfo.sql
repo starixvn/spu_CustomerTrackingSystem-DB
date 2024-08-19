@@ -54,7 +54,7 @@ BEGIN
 		,	IsCleanPA							TINYINT(1) DEFAULT 1
 		,	IsDangerProbation					TINYINT(1)
 		,	CustomerClassPriority				SMALLINT
-		,	CustomerClass						SMALLINT UNSIGNED
+		,	CustomerClass						INT UNSIGNED
 		,	IsReturnData						TINYINT(1) DEFAULT 0
 		,	IsExistRobot						TINYINT(1) DEFAULT 0
 		,	IsFromTW							TINYINT(1) DEFAULT 0
