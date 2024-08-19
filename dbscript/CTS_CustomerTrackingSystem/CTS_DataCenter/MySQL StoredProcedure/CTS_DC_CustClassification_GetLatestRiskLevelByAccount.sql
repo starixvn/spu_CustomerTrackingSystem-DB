@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsAPI" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetLatestRiskLevelByAccount`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetRiskLevelByAccount`;
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetLatestRiskLevelByAccount`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetRiskLevelByAccount`(
 		IN ip_AccountIDList	LONGTEXT
 )
     SQL SECURITY INVOKER
@@ -16,7 +16,7 @@ BEGIN
             
         Param's Explanation:     
         Example:
-			CALL CTS_DC_CustClassification_GetLatestRiskLevelByAccount('3344869');
+			CALL CTS_DC_CustClassification_GetRiskLevelByAccount('1002,8652,17198,24,20896,20934,20939');
 	*/         
     DROP TEMPORARY TABLE IF EXISTS Temp_CustDCSAccount;    
     CREATE TEMPORARY TABLE Temp_CustDCSAccount(
