@@ -36,10 +36,10 @@ BEGIN
 		Example:
 			CALL DCS_DC_Transform_Transaction_Insert(1,200);
     */
-    DECLARE 	CONST_MINCREATEDDATE	INT DEFAULT 2;
+    DECLARE 	CONST_SYSTEMSETTINGID_MINCREATEDDATE	INT DEFAULT 2;
     
-	DECLARE		lv_SysMinCreatedDate	DATETIME;
-    DECLARE 	lv_CurrentDate 			TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
+	DECLARE		lv_SysMinCreatedDate					DATETIME;
+    DECLARE 	lv_CurrentDate 							TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
     
 
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
@@ -132,7 +132,7 @@ BEGIN
     SELECT DATE(VValue)
     INTO lv_SysMinCreatedDate
     FROM DCS_DataCenter.SystemSetting 
-    WHERE ID = CONST_MINCREATEDDATE;
+    WHERE ID = CONST_SYSTEMSETTINGID_MINCREATEDDATE;
         
 	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode)
 	SELECT  rt.TransID

@@ -42,9 +42,7 @@ BEGIN
     DECLARE lv_AssociationJson 			LONGTEXT;
     DECLARE lv_NewAccountDeviceJson 	LONGTEXT;
     
-    # STATS count
-    DECLARE lv_InsertionTime TIMESTAMP(4);
-    SET lv_InsertionTime = CURRENT_TIMESTAMP(4);
+    DECLARE lv_InsertionTime 			TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
     
     #============================================
 	DROP TEMPORARY TABLE IF EXISTS Temp_Input;
@@ -56,7 +54,7 @@ BEGIN
     
 	#======GET DATA FROM RAW TRANSACTION===========================
 	CREATE TEMPORARY TABLE Temp_Input(
-			TransID			 			BIGINT	UNSIGNED NOT NULL		PRIMARY KEY
+			TransID			 		BIGINT	UNSIGNED NOT NULL		PRIMARY KEY
     );
     
 	CREATE TEMPORARY TABLE Temp_Transaction(
@@ -329,12 +327,10 @@ BEGIN
 		, tts.FirstDeviceCode 		= IF(de.DeviceID > 0, de.FirstDeviceCode, tts.FirstDeviceCode)
 		, tts.DeviceCodeID 			= IF(de.DeviceID > 0, de.DeviceCodeID, tts.DeviceCodeID)
 		, tts.DeviceFingerprintID 	= IF(df.DeviceFingerprintID > 0, df.DeviceFingerprintID, tts.DeviceFingerprintID)
-		, tts.DeviceStatus 			= CASE 
-										WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN vrDeviceStatusOld
+		, tts.DeviceStatus 			= CASE WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN vrDeviceStatusOld
 										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN vrDeviceStatusRecover
                                         WHEN de.DeviceID > 0 AND (tts.TransId = de.FirstTransID OR de.IsNew = 1) THEN vrDeviceStatusNew  
-										ELSE tts.DeviceStatus 
-									END;
+										ELSE tts.DeviceStatus END;
     
     UPDATE Temp_Transaction AS tmp
 		INNER JOIN DCS_DataCenter.FP_TransactionDeviceMapping AS tdm ON tdm.RawTransID = tmp.RawTransID

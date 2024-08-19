@@ -25,8 +25,8 @@ BEGIN
 	    Param's Explanation (filtered by):
 			CALL DCS_DC_Transform_Device_GetPackage(100, 2);
 	*/
-    DECLARE 	CONST_DEVICE_TRANSFORM_MINTRANSID 		INT 		DEFAULT 1;
-    DECLARE 	CONST_DEVICE_TRANSFORM_MINCREATEDDATE 	INT 		DEFAULT 2;
+    DECLARE 	CONST_SYSTEMSETTINGID_MINTRANSID 		INT 		DEFAULT 1;
+    DECLARE 	CONST_SYSTEMSETTINGID_MINCREATEDDATE 	INT 		DEFAULT 2;
 	
 	DECLARE		lv_TotalRecord			INT UNSIGNED DEFAULT 0;
 	DECLARE		lv_RateBatch			DECIMAL(4,2);
@@ -52,7 +52,7 @@ BEGIN
     );
     
 	SET lv_TotalRecord 	    = ip_NoOfTickets*ip_NoOfBatch;
-    SET lv_FromTransID 	    = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_DEVICE_TRANSFORM_MINTRANSID);
+    SET lv_FromTransID 	    = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_SYSTEMSETTINGID_MINTRANSID);
 
     INSERT INTO Temp_Trans(TransID, RawTransID, AccountID, CreatedDate)
 	SELECT	TransID
@@ -81,7 +81,6 @@ BEGIN
     
     SET lv_CountAccountID = (SELECT COUNT(1) FROM Temp_Account);
     
-    
 	SET @RowId = 0;
     IF(lv_CountAccountID IS NOT NULL AND lv_CountAccountID > 0) THEN
 		SET lv_NoOfBatchOfAccountID = CEIL(lv_CountAccountID / ip_NoOfBatch);
@@ -96,16 +95,16 @@ BEGIN
 
 		IF(lv_FromTransID IS NOT NULL AND lv_FromTransID > 0) THEN
 			UPDATE DCS_DataCenter.SystemSetting
-			SET 	VValue = CONCAT('', lv_FromTransID)
-				,	UpdatedTime = CURRENT_TIMESTAMP()
-			WHERE ID = CONST_DEVICE_TRANSFORM_MINTRANSID;
+			SET VValue = CONCAT('', lv_FromTransID),
+				UpdatedTime = CURRENT_TIMESTAMP()
+			WHERE ID = CONST_SYSTEMSETTINGID_MINTRANSID;
 		END IF;
 
 		IF(lv_FromCreatedDate IS NOT NULL) THEN
 			UPDATE DCS_DataCenter.SystemSetting
-			SET 	VValue = CONCAT('', lv_FromCreatedDate)
-				,	UpdatedTime = CURRENT_TIMESTAMP()
-			WHERE ID = CONST_DEVICE_TRANSFORM_MINCREATEDDATE;
+			SET VValue = CONCAT('', lv_FromCreatedDate),
+				UpdatedTime = CURRENT_TIMESTAMP()
+			WHERE ID = CONST_SYSTEMSETTINGID_MINCREATEDDATE;
 		END IF;
 		
 		#RETURN OUTPUT
