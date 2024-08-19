@@ -1,0 +1,47 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsAPI" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetLatestRiskLevelByAccount`;
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetLatestRiskLevelByAccount`(
+		IN ip_AccountIDList	LONGTEXT
+)
+    SQL SECURITY INVOKER
+BEGIN
+	/*
+		Created:	20240819@Casey.Huynh	
+		Task :		Get the latest Risk Level By Account 
+		DB:			CTS_DataCenter
+		Original: 
+		Revisions:
+			- 20240819@Casey.Huynh: Created [RedmineID: #209345]
+            
+        Param's Explanation:     
+        Example:
+			CALL CTS_DC_CustClassification_GetLatestRiskLevelByAccount('3344869');
+	*/         
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustDCSAccount;    
+    CREATE TEMPORARY TABLE Temp_CustDCSAccount(
+			AccountID	BIGINT  PRIMARY KEY
+        ,	CTSCustID 	BIGINT UNSIGNED		
+        
+        ,	INDEX IX_Temp_CustDCSAccount_CTSCustID(CTSCustID)
+	);     
+     
+	SET @sql =  CONCAT('INSERT INTO Temp_CustDCSAccount (CTSCustID, AccountID)
+						SELECT cda.CTSCustID, cda.AccountID
+						FROM CTS_DataCenter.CustDCSAccount AS cda
+						WHERE AccountID IN (',ip_AccountIDList,')');  
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
+
+    SELECT  tmp.AccountID
+        ,	ltr.SabaIntelligent_RiskLevel AS RiskLevel
+    FROM 	Temp_CustDCSAccount AS tmp
+		,	LATERAL(SELECT cat.CategoryName, cat.CustomerClassName, cat.CustomerClass, cat.SabaIntelligent_RiskLevel, cls.LastModifiedDate
+				FROM CTS_DataCenter.CTSCustomerClassification_Original AS cls
+					INNER JOIN CTS_DataCenter.CustomerCategory_Original AS cat ON cls.CategoryID = cat.CategoryID
+                WHERE cls.CTSCustID = tmp.CTSCustID
+                ORDER BY cat.Priority ASC	
+                LIMIT 1) AS ltr;
+    
+END$$
+DELIMITER ;
