@@ -147,6 +147,9 @@ MODIFY COLUMN Probability DECIMAL(8,2);
 
 /*ArchiveCustomer_CTSCustomer*/
 ALTER TABLE ArchiveCustomer_CTSCustomer
+ADD COLUMN ParentID	INT UNSIGNED AFTER RoleID;
+	
+ALTER TABLE ArchiveCustomer_CTSCustomer
 MODIFY COLUMN CategoryID INT UNSIGNED;
 
 /*CustomerLoginInfoDetection*/
