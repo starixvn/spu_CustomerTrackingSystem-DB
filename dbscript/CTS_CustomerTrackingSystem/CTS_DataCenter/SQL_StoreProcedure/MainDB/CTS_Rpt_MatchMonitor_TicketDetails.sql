@@ -104,21 +104,27 @@ AS
 		DECLARE @MinSequenceId BIGINT
 		DECLARE @TotalTicket INT;
 
-		EXEC CTS_Rpt_MatchMonitor_TicketDetails
-		 @QueryType=1,@LastScannedSequenceID=117290386614,@IsLive=0,@BatchSize=500,@ListTransId='',@EventDate ='1900-09-22',@MatchID=0
-		 ,@ListSportBettype='[		{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":1}
-								,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":1}
-								,	{"SportTypeID":43, "BetTypeID":9003, "BetChoiceType":1}]'
-		 ,@TicketType=1 ,@IsLicensee=NULL,@IsExclTestCurr=0,@ListCurrency=NULL,@ListHDPBetTeam='1.25',@ListScore=NULL,@CustAmountRM=0
-		 ,@ListDanger=NULL,@ListStatus=NULL,@ListCustomerClass=NULL ,@ListReason=NULL,@ListAGroup=NULL,@ListMGroup=NULL
-		 ,@MinSequenceId=@MinSequenceId OUTPUT,@TotalTicket=@TotalTicket OUTPUT;
-		SELECT @MinSequenceId,@TotalTicket ;
-
-		 EXEC CTS_Rpt_MatchMonitor_TicketDetails
-		 @QueryType=2,@LastScannedSequenceID=1,@IsLive=0,@BatchSize=500,@ListTransId='',@EventDate ='1900-09-22',@MatchID=0
-		 ,@ListSportBettype='[ {"SportTypeID":1, "BetTypeID":413, "BetChoiceType":0},{"SportTypeID":2, "BetTypeID":609, "BetChoiceType":1},{"SportTypeID":43, "BetTypeID":9003, "BetChoiceType":1}]'
-		 ,@TicketType=1 ,@IsLicensee=NULL,@IsExclTestCurr=0,@ListCurrency=NULL,@ListHDPBetTeam=NULL,@ListScore=NULL,@CustAmountRM=0
-		 ,@ListDanger=NULL,@ListStatus=NULL,@ListCustomerClass=NULL ,@ListReason=NULL,@ListAGroup=NULL,@ListMGroup=NULL
+		exec CTS_Rpt_MatchMonitor_TicketDetails_xtest 
+			@QueryType=3
+		,	@LastScannedSequenceID=119785603800
+		,	@IsLive=1
+		,	@BatchSize=-1
+		,	@ListTransId=''
+		,	@EventDate='2024-08-17 00:00:00'
+		,	@ListSportBettype='[{"SportTypeID":1,"BetTypeID":6,"BetChoiceType":1,"BetChoiceHome":null,"BetChoiceAway":null,"BetIDPattern":null,"BetID":0}]'
+		,	@MatchID=83674467
+		,	@TicketType=0
+		,	@ListCurrency='2,13,9'
+		,	@ListHDPBetTeam='7&over'
+		,	@ListScore='0 - 0'
+		,	@CustAmountRM=1.0000
+		,	@ListDanger='[{"Danger1":0,"Danger2":0,"Danger3":0,"Danger4":33,"Danger5":0}]'
+		,	@ListStatus='0'
+		,	@ListCustomerClass='302,303,3001,400,0'
+		,	@ListReason='0'
+		,	@ListAGroup='0'
+		,	@ListMGroup='0'
+		,	@IsExclTestCurr=1
 		 ,@MinSequenceId=@MinSequenceId OUTPUT,@TotalTicket=@TotalTicket OUTPUT;
 		SELECT @MinSequenceId,@TotalTicket ;
 */
@@ -309,7 +315,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
-						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -361,7 +367,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
-						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -413,7 +419,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
-						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -463,7 +469,7 @@ BEGIN
 								,	m.sporttype
 								,	b.bettype
 								,	b.custid
-								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
+								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
 								,	b.betteam
 								,	st.BetChoiceHome
 								,	st.BetChoiceAway
@@ -517,7 +523,7 @@ BEGIN
 								,	m.sporttype
 								,	b.bettype
 								,	b.custid
-								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
+								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
 								,	b.betteam
 								,	st.BetChoiceHome
 								,	st.BetChoiceAway
@@ -568,7 +574,7 @@ BEGIN
 								,	m.sporttype
 								,	b.bettype
 								,	b.custid
-								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
+								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
 								,	b.betteam
 								,	st.BetChoiceHome
 								,	st.BetChoiceAway
@@ -659,7 +665,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
-						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -707,7 +713,7 @@ BEGIN
 								,	m.sporttype
 								,	b.bettype
 								,	b.custid
-								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
+								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
 								,	b.betteam
 								,	st.BetChoiceHome
 								,	st.BetChoiceAway
@@ -764,7 +770,7 @@ BEGIN
 							,	b.bettype
 							,	b.custid
 							,	b.betteam
-							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
+							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
 							,	st.BetChoiceHome
 							,	st.BetChoiceAway
 							,	b.betid
@@ -881,7 +887,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
-						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -929,7 +935,7 @@ BEGIN
 							,	m.sporttype
 							,	b.bettype
 							,	b.custid
-							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
+							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
 							,	b.betteam
 							,	st.BetChoiceHome
 							,	st.BetChoiceAway
@@ -986,7 +992,7 @@ BEGIN
 							,	m.sporttype
 							,	b.bettype
 							,	b.custid
-							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE NULL END) AS BetteamGroup
+							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
 							,	b.betteam
 							,	st.BetChoiceHome
 							,	st.BetChoiceAway
