@@ -33,7 +33,7 @@ BEGIN
         ,	SubscriberID		INT
         ,	CreatedBy			BIGINT
         ,	Remark				VARCHAR(300)
-        ,	CategoryID			SMALLINT
+        ,	CategoryID			INT
         ,	CategoryGroupID		INT
         ,	IsFromTVS			BIT(1)
         ,	IsFromTW			BIT(1)

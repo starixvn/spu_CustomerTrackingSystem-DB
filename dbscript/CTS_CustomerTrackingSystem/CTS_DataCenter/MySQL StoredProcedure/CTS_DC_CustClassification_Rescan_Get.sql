@@ -67,8 +67,7 @@ sp: BEGIN
 		,	Recommend 		INT  
         , 	SubscriberID	INT 
         ,	IsLicensee		BIT 
-        ,	IsLicenseeVIP	BIT 
-        ,	CategoryGroup   SMALLINT
+        ,	IsLicenseeVIP	BIT
      ); 
      
 	DROP TEMPORARY TABLE IF EXISTS Temp_PotentialCategory;    

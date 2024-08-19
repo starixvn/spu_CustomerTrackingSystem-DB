@@ -35,7 +35,7 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_RobotDetection(
 			ID					BIGINT UNSIGNED 
 		,	CustID				BIGINT UNSIGNED  
-        ,	CategoryID			SMALLINT UNSIGNED NOT NULL
+        ,	CategoryID			INT UNSIGNED NOT NULL
         ,	LastModifiedDate	DATETIME(3)
         ,	PRIMARY KEY PK_Temp_RobotDetection_ID(ID)
         ,	INDEX IX_Temp_RobotDetection_CustIDCategoryID(CustID,CategoryID)
