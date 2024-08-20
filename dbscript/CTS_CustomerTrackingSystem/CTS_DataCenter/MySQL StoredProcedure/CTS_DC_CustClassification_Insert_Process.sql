@@ -539,6 +539,19 @@ BEGIN
 			,	temp.CreatedBy 			= IFNULL(temp.CreatedBy,temp_old.CreatedBy)
 		WHERE 	temp.IsDataChanged 		= 0
 			AND lv_IsRescan = 1;
+
+		UPDATE Temp_NewClassification AS temp 
+			INNER JOIN Temp_LastHistory AS h ON h.CustID = temp.CustID
+			INNER JOIN Temp_CTSCustomerClassification_Old AS temp_old ON temp.CustID = temp_old.CustID	
+																			AND temp_old.ParentID IS NOT NULL
+																			AND temp_old.IsNew = 0
+																			AND temp.NewCategoryGroupID = temp_old.CategoryGroupID
+		SET 	temp.DataChangeType		= 1
+			,	temp.IsDataChanged 		= CASE WHEN temp.TargetCC <> h.TargetCC THEN 1 ELSE temp.IsDataChanged END
+			,	temp.OldCategoryID 		= temp_old.ExistCategoryID			
+			,	temp.ActionType 		= CONST_ACTIONTYPE_UPDATE
+			,	temp.CreatedBy 			= IFNULL(temp.CreatedBy,temp_old.CreatedBy)
+		WHERE 	temp.IsDataChanged 		= 0 AND lv_IsRescan = 0;
 		
 		/*existing PotentialPA + PA - existing and new: the same CateGroup*/
 		UPDATE Temp_NewClassification AS temp 
@@ -649,7 +662,15 @@ BEGIN
 			INNER JOIN Temp_LastHistory AS tmpHis ON temp.CustID = tmpHis.CustID
             LEFT JOIN Temp_CTSCustomerClassification_Old as temp_old ON temp_old.CustID = temp.CustID AND temp_old.CategoryGroupID = temp.NewCategoryGroupID
 		SET temp.IsDataChanged = 1
-		WHERE temp_old.CustID IS NULL AND temp_old.IsRemove = 0
+		WHERE temp_old.CustID IS NULL 
+			AND ((temp.NewCategoryGroupID <> tmpHis.CategoryID AND temp.ParentID <> tmpHis.ParentID) OR temp.TargetCC <> tmpHis.TargetCC);
+
+
+		UPDATE Temp_NewClassification AS temp
+			INNER JOIN Temp_LastHistory AS tmpHis ON temp.CustID = tmpHis.CustID
+            LEFT JOIN Temp_CTSCustomerClassification_Old as temp_old ON temp_old.CustID = temp.CustID AND temp_old.CategoryGroupID = temp.NewCategoryGroupID
+		SET temp_old.IsRemove = 0
+		WHERE temp_old.CustID IS NOT NULL AND temp_old.IsRemove = 1
 			AND ((temp.NewCategoryGroupID <> tmpHis.CategoryID AND temp.ParentID <> tmpHis.ParentID) OR temp.TargetCC <> tmpHis.TargetCC);
 			
 	END IF;
