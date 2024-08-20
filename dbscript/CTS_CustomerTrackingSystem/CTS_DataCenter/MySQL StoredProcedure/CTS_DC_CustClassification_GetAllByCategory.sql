@@ -34,8 +34,6 @@ BEGIN
 	EXECUTE stmt1;
     
     SELECT DISTINCT c.CustID
-		,	c.ParentID
-		,	'All Sports'
 		,	c.CategoryID
 		,	a.CategoryName
     FROM Temp_CategoryID AS t
