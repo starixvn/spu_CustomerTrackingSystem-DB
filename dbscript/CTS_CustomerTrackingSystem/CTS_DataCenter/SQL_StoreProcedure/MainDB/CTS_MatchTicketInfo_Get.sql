@@ -181,7 +181,7 @@ BEGIN
 	IF @UserNameList <> '' AND @UserNameList IS NOT NULL
 	BEGIN
 		INSERT INTO #tmpUsername(UserName)
-		SELECT ssk.value FROM STRING_SPLIT (@UserNameList, ',') AS ssk;
+		SELECT DISTINCT ssk.value FROM STRING_SPLIT (@UserNameList, ',') AS ssk;
 	END;
 
 	IF @LeagueGroupList <> ''
