@@ -137,20 +137,21 @@ BEGIN
 
 		UPDATE Temp_NewClassification AS temp 
 		SET temp.NewCategoryGroupID = temp.DWCategoryGroupID 
-		WHERE temp.IsDataChanged = 1;
+		WHERE temp.IsDataChanged = 1
+			OR (temp.IsDataChanged = 0 AND temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC);
 		
 		UPDATE 	Temp_NewClassification AS temp 
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS tag ON tag.CategoryGroupID = temp.NewCategoryGroupID
 																	AND tag.TaggingType = temp.TaggingType 
 																	AND tag.TaggingID = temp.TaggingID
 		SET temp.NewCategoryID = IFNULL(tag.CategoryID, temp.NewCategoryGroupID)
-		 WHERE 	temp.IsDataChanged = 1 
-			AND temp.DWCategoryGroupID <> CONST_CATEGROUPID_INACTIVE; /*Exclude Inactive category*/
+		WHERE temp.DWCategoryGroupID <> CONST_CATEGROUPID_INACTIVE /*Exclude Inactive category*/
+			AND (temp.IsDataChanged = 1 OR ((temp.IsDataChanged = 0 AND temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC))) 
 			
 		UPDATE Temp_NewClassification AS temp 
 		SET temp.NewCategoryID = DWCategoryID
-		WHERE temp.IsDataChanged = 1 
-			AND temp.DWCategoryGroupID = CONST_CATEGROUPID_INACTIVE; 
+		WHERE temp.DWCategoryGroupID = CONST_CATEGROUPID_INACTIVE
+			AND AND (temp.IsDataChanged = 1 OR ((temp.IsDataChanged = 0 AND temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC))); 
 
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old (
 				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID)
@@ -172,7 +173,8 @@ BEGIN
 											THEN CONST_ACTIONTYPE_UPDATE
 										ELSE temp.ActionType
 								  END
-		WHERE temp.IsDataChanged = 1 OR temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
+		WHERE temp.IsDataChanged = 1 
+			OR (temp.IsDataChanged = 0 AND temp.ActionType IN (CONST_ACTIONTYPE_RESCAN_CHANGECC,CONST_ACTIONTYPE_IGNOREPROBATION));
 
 		/* UPDATE NewIsDangerProbation */    
     	UPDATE 	Temp_NewClassification AS temp 
@@ -295,7 +297,7 @@ BEGIN
 			,	tmp.NewCategoryID = tmp.OldCategoryID
 			, 	tmp.NewCategoryGroupID = tmp.OldCategoryGroupID
 			,	tmp.NewIsDangerProbation = cate.IsDangerProbation
-		WHERE tmp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
+		WHERE temp.ActionType IN (CONST_ACTIONTYPE_IGNOREPROBATION,CONST_ACTIONTYPE_RESCAN_CHANGECC);
 		
 		UPDATE Temp_NewClassification
 		SET 	IsDataChanged = 1
@@ -311,7 +313,7 @@ BEGIN
 			,	ActionType = CONST_ACTIONTYPE_UPDATE
 		WHERE IsDataChanged = 0 
 			AND ((TargetCC <> OldTargetCC) OR (OldCategoryID <> NewCategoryID))
-			AND (SourceTypeID IN (CONST_SOURCETYPE_SAMECATEGORY, CONST_SOURCETYPE_LESSTHAN10TICKETS ) OR ActionType = CONST_ACTIONTYPE_IGNOREPROBATION);    
+			AND (SourceTypeID IN (CONST_SOURCETYPE_SAMECATEGORY, CONST_SOURCETYPE_LESSTHAN10TICKETS ) OR ActionType temp.ActionType IN (CONST_ACTIONTYPE_IGNOREPROBATION,CONST_ACTIONTYPE_RESCAN_CHANGECC));    
 		
 		UPDATE Temp_NewClassification AS temp 
 			INNER JOIN CTS_DataCenter.CustomerCategory AS d ON d.CategoryID = temp.NewCategoryID 

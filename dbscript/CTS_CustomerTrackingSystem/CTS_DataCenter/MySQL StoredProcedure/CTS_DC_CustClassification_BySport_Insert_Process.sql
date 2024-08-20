@@ -77,7 +77,8 @@ BEGIN
 	UPDATE Temp_NewClassification AS temp 
 	SET 	temp.NewCategoryGroupID = temp.DWCategoryID 
 		,	temp.NewCategoryID 		= temp.DWCategoryID 
-	WHERE temp.IsDataChanged = 1;
+	WHERE temp.IsDataChanged = 1
+		OR (temp.IsDataChanged = 0 AND temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC);
 	
 	INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(CustID, SportID, OldCategoryGroupID, OldCategoryID)
     SELECT DISTINCT temp.CustID, temp.SportID, cc.CategoryGroupID, cate.CategoryID
@@ -85,7 +86,8 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cate ON temp.CustID = cate.CustID AND cate.ParentID = CONST_PARENTID_NORMAL
 																				AND temp.SportID = cate.SportID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID 
-	WHERE temp.IsDataChanged = 1 OR temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
+	WHERE temp.IsDataChanged = 1 
+		OR (temp.IsDataChanged = 0 AND temp.ActionType IN (CONST_ACTIONTYPE_RESCAN_CHANGECC,CONST_ACTIONTYPE_IGNOREPROBATION));
 	
 	UPDATE Temp_NewClassification AS temp
 		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
@@ -98,7 +100,8 @@ BEGIN
 													THEN CONST_ACTIONTYPE_UPDATE
 												ELSE temp.ActionType
 										  END
-	WHERE temp.IsDataChanged = 1 OR temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION;
+	WHERE temp.IsDataChanged = 1 
+		OR (temp.IsDataChanged = 0 AND temp.ActionType IN (CONST_ACTIONTYPE_RESCAN_CHANGECC,CONST_ACTIONTYPE_IGNOREPROBATION));
 
 	UPDATE 	Temp_NewClassification AS temp 
 	SET 	temp.SourceTypeID = (CASE 
@@ -135,14 +138,14 @@ BEGIN
     SET 	temp.TargetCC 			= IFNULL(temp.SpecialCC, cate.CustomerClass)
 		,	temp.NewCategoryID		= temp.OldCategoryID
         , 	temp.NewCategoryGroupID = temp.OldCategoryGroupID
-    WHERE 	temp.ActionType 		= CONST_ACTIONTYPE_IGNOREPROBATION;
+    WHERE 	temp.ActionType IN (CONST_ACTIONTYPE_IGNOREPROBATION,CONST_ACTIONTYPE_RESCAN_CHANGECC);
 	
 	UPDATE Temp_NewClassification AS temp
     SET 	temp.IsDataChanged 	= 1
 		,	temp.ActionType 	= CONST_ACTIONTYPE_UPDATE
     WHERE 	temp.IsDataChanged 	= 0 
 		AND ((temp.TargetCC <> temp.OldTargetCC) OR (temp.OldCategoryID <> temp.NewCategoryID))
-		AND (temp.ActionType = CONST_ACTIONTYPE_IGNOREPROBATION 
+		AND (temp.ActionType IN (CONST_ACTIONTYPE_IGNOREPROBATION,CONST_ACTIONTYPE_RESCAN_CHANGECC)
 				OR temp.SourceTypeID IN (CONST_SOURCETYPE_SAMECATEGORY, CONST_SOURCETYPE_LESSTHAN10TICKETS));
 	
 END$$
