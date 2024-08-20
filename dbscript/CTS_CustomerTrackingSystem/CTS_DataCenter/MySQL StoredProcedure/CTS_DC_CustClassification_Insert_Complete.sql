@@ -1012,7 +1012,8 @@ BEGIN
 			WHERE temp.IsFromTVS = 1 
 				AND ((temp.IsFromOldPA = 1 AND lv_IsRescan = 0 AND lv_InsertedCount > 0)
 					OR (temp.IsDataChanged = 1 AND lv_InsertedCount > 0)
-					OR (temp.IsDataChanged = 1 AND lv_IsRescan = 1 AND lv_UpdatedCount > 0))
+					OR (temp.IsDataChanged = 1 AND lv_IsRescan = 1 AND lv_UpdatedCount > 0)
+					OR (temp.IsDataChanged = 1 AND DataChangeType = 1 AND lv_UpdatedCount > 0))
 				AND h.CustID IS NULL;
 		END IF;
 		

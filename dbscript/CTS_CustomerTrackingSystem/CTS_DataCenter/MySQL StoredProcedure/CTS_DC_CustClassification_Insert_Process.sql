@@ -210,7 +210,7 @@ BEGIN
 									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryGroupID = o.CategoryGroupID
 										THEN CONST_ACTIONTYPE_UPDATE
 									WHEN temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECATEGORY THEN
-										CASE WHEN temp.NewCategoryID = temp.OldCategoryID AND temp_old.CustID IS NOT NULL THEN CONST_ACTIONTYPE_UPDATE 
+										CASE WHEN temp.NewCategoryID = temp.OldCategoryID AND o.CustID IS NOT NULL THEN CONST_ACTIONTYPE_UPDATE 
 								   			 ELSE CONST_ACTIONTYPE_INSERT END
 									ELSE temp.ActionType
 								END
@@ -527,10 +527,10 @@ BEGIN
 																			AND temp_old.ParentID IS NOT NULL
 																			AND temp_old.IsNew = 0
 																			AND temp.NewCategoryGroupID = temp_old.CategoryGroupID
-		SET 	temp.DataChangeType		= 1
+		SET 	temp.DataChangeType		= CASE WHEN temp.TargetCC <> h.TargetCC THEN 1 ELSE temp.DataChangeType END
 			,	temp.IsDataChanged 		= CASE WHEN temp.TargetCC <> h.TargetCC THEN 1 ELSE temp.IsDataChanged END
 			,	temp.OldCategoryID 		= temp_old.ExistCategoryID			
-			,	temp.ActionType 		= CONST_ACTIONTYPE_UPDATE
+			,	temp.ActionType 		= CASE WHEN temp.TargetCC <> h.TargetCC THEN CONST_ACTIONTYPE_UPDATE ELSE temp.ActionType END
 			,	temp.CreatedBy 			= IFNULL(temp.CreatedBy,temp_old.CreatedBy)
 		WHERE 	temp.IsDataChanged 		= 0
 			AND lv_IsRescan = 1;
@@ -541,10 +541,10 @@ BEGIN
 																			AND temp_old.ParentID IS NOT NULL
 																			AND temp_old.IsNew = 0
 																			AND temp.NewCategoryGroupID = temp_old.CategoryGroupID
-		SET 	temp.DataChangeType		= 1
+		SET 	temp.DataChangeType		= CASE WHEN temp.TargetCC <> h.TargetCC THEN 1 ELSE temp.DataChangeType END
 			,	temp.IsDataChanged 		= CASE WHEN temp.TargetCC <> h.TargetCC THEN 1 ELSE temp.IsDataChanged END
 			,	temp.OldCategoryID 		= temp_old.ExistCategoryID			
-			,	temp.ActionType 		= CONST_ACTIONTYPE_UPDATE
+			,	temp.ActionType 		= CASE WHEN temp.TargetCC <> h.TargetCC THEN CONST_ACTIONTYPE_UPDATE ELSE temp.ActionType END
 			,	temp.CreatedBy 			= IFNULL(temp.CreatedBy,temp_old.CreatedBy)
 		WHERE 	temp.IsDataChanged 		= 0 AND lv_IsRescan = 0;
 		
