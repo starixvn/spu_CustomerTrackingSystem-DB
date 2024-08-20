@@ -146,12 +146,12 @@ BEGIN
 																	AND tag.TaggingID = temp.TaggingID
 		SET temp.NewCategoryID = IFNULL(tag.CategoryID, temp.NewCategoryGroupID)
 		WHERE temp.DWCategoryGroupID <> CONST_CATEGROUPID_INACTIVE /*Exclude Inactive category*/
-			AND (temp.IsDataChanged = 1 OR ((temp.IsDataChanged = 0 AND temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC))) 
+			AND (temp.IsDataChanged = 1 OR ((temp.IsDataChanged = 0 AND temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC)));
 			
 		UPDATE Temp_NewClassification AS temp 
 		SET temp.NewCategoryID = DWCategoryID
 		WHERE temp.DWCategoryGroupID = CONST_CATEGROUPID_INACTIVE
-			AND AND (temp.IsDataChanged = 1 OR ((temp.IsDataChanged = 0 AND temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC))); 
+			AND (temp.IsDataChanged = 1 OR ((temp.IsDataChanged = 0 AND temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC))); 
 
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old (
 				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID)
@@ -313,7 +313,7 @@ BEGIN
 			,	ActionType = CONST_ACTIONTYPE_UPDATE
 		WHERE IsDataChanged = 0 
 			AND ((TargetCC <> OldTargetCC) OR (OldCategoryID <> NewCategoryID))
-			AND (SourceTypeID IN (CONST_SOURCETYPE_SAMECATEGORY, CONST_SOURCETYPE_LESSTHAN10TICKETS ) OR ActionType temp.ActionType IN (CONST_ACTIONTYPE_IGNOREPROBATION,CONST_ACTIONTYPE_RESCAN_CHANGECC));    
+			AND (SourceTypeID IN (CONST_SOURCETYPE_SAMECATEGORY, CONST_SOURCETYPE_LESSTHAN10TICKETS ) OR temp.ActionType IN (CONST_ACTIONTYPE_IGNOREPROBATION,CONST_ACTIONTYPE_RESCAN_CHANGECC));    
 		
 		UPDATE Temp_NewClassification AS temp 
 			INNER JOIN CTS_DataCenter.CustomerCategory AS d ON d.CategoryID = temp.NewCategoryID 
