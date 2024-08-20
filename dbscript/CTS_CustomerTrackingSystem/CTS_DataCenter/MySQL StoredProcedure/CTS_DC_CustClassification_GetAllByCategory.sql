@@ -34,7 +34,7 @@ BEGIN
 	EXECUTE stmt1;
     
     SELECT DISTINCT c.CustID
-		,	c.SportGroupID
+		,	c.ParentID
 		,	'All Sports'
 		,	c.CategoryID
 		,	a.CategoryName
