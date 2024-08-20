@@ -92,14 +92,32 @@ BEGIN
 		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
 	SET 	temp.OldCategoryGroupID 	= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryGroupID END
 		,	temp.OldCategoryID 			= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryID END
+		,	o.IsNew						= CASE WHEN o.CustID IS NULL THEN 0 ELSE 1 END
 	;
 
 	UPDATE Temp_NewClassification AS temp
-		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
-	SET 	temp.ActionType = CASE 	WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT 
-									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryID <> o.OldCategoryID
+		INNER JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID AND o.IsNew = 1
+	SET 	temp.ActionType = CASE 	WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryID <> o.OldCategoryID
 										THEN CONST_ACTIONTYPE_INSERT
-									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryID = o.OldCategoryID
+									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryID = o.OldCategoryID
+										THEN CONST_ACTIONTYPE_UPDATE
+									ELSE temp.ActionType
+								END
+		,	temp.SourceTypeID = (CASE 
+									WHEN (temp.OldCategoryGroupID IS NULL OR temp.OldCategoryGroupID = CONST_CATEID_NEW) 
+											AND temp.NewCategoryGroupID = CONST_CATEID_NEW 
+										THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
+									WHEN temp.OldCategoryGroupID = temp.NewCategoryGroupID THEN CONST_SOURCETYPE_SAMECATEGORY
+								END)
+	;
+
+	UPDATE Temp_NewClassification AS temp
+		INNER JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID AND o.IsNew = 0
+	SET 	temp.ActionType = CASE WHEN	temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryID <> o.OldCategoryID
+										THEN CONST_ACTIONTYPE_INSERT
+									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) 
+											AND temp.NewCategoryID = o.OldCategoryID
+											AND o.OldCategoryID <> CONST_CATEID_NEW
 										THEN CONST_ACTIONTYPE_UPDATE
 									ELSE temp.ActionType
 								END
