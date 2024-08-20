@@ -24,18 +24,21 @@ BEGIN
         Example:
 				- CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory('Temp_CustNewCategory', true);
 */ 
-	DECLARE	CONST_PARENTID_NORMAL 			INT;
-    DECLARE CONST_CATEID_NEW				INT;
-    DECLARE CONST_CATEID_INACTIVENORMAL		INT;
-    DECLARE CONST_CATEID_INACTIVESMART		INT;
-    DECLARE CONST_CREATEDBY					INT DEFAULT 10278938;
+	DECLARE	CONST_PARENTID_NORMAL 						INT;
+    DECLARE CONST_CATEID_NEW							INT;
+    DECLARE CONST_CATEID_INACTIVENORMAL					INT;
+    DECLARE CONST_CATEID_INACTIVESMART					INT;
+	DECLARE CONST_SOURCETYPE_LESSTHAN10TICKETS 			INT DEFAULT 1;
+	DECLARE CONST_SOURCETYPE_INACTIVENORMAL 			INT DEFAULT 18;
+    DECLARE CONST_SOURCETYPE_INACTIVEPROPUNTER			INT DEFAULT 19;
+    DECLARE CONST_CREATEDBY								INT DEFAULT 10278938;
     
-	DECLARE lv_CurrentDateTime 				DATETIME DEFAULT CURRENT_TIME();
+	DECLARE lv_CurrentDateTime 							DATETIME DEFAULT CURRENT_TIME();
 
-	SET CONST_PARENTID_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
-	SET CONST_CATEID_NEW					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_NEW');
-	SET CONST_CATEID_INACTIVENORMAL			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INACTIVENORMAL');
-	SET CONST_CATEID_INACTIVESMART			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INACTIVESMART');
+	SET CONST_PARENTID_NORMAL							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_CATEID_NEW								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_NEW');
+	SET CONST_CATEID_INACTIVENORMAL						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INACTIVENORMAL');
+	SET CONST_CATEID_INACTIVESMART						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INACTIVESMART');
 
     #=====================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
@@ -126,36 +129,40 @@ BEGIN
 	WHERE cls.CustID IS NULL;
     
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(CustID, ParentID, CategoryID, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate)
-	SELECT	tmp.CustID					AS CustID
-		,	CONST_PARENTID_NORMAL		AS ParentID
-		,	tmp.CategoryID				AS CategoryID
-		,	tmp.CustomerClass			AS TargetCC
-		,	1	AS SourceTypeID
-		,	tmp.CategoryID				AS OldCategoryID
-		,	tmp.CategoryID				AS DWCategoryID
-		,	1	AS IsDataChanged
-		,	0	AS ActionType
-		,	1	AS IsAuto
-		,	lv_CurrentDateTime			AS LastModifiedDate
-		,	CONST_CREATEDBY				AS LastModifiedBy
-		,	DATE(lv_CurrentDateTime)	AS InsertDate
+	SELECT	tmp.CustID							AS CustID
+		,	CONST_PARENTID_NORMAL				AS ParentID
+		,	tmp.CategoryID						AS CategoryID
+		,	tmp.CustomerClass					AS TargetCC
+		,	CASE 	WHEN tmp.CategoryID = CONST_CATEID_INACTIVENORMAL THEN CONST_SOURCETYPE_INACTIVENORMAL
+					WHEN tmp.CategoryID = CONST_CATEID_INACTIVESMART THEN CONST_SOURCETYPE_INACTIVEPROPUNTER 
+					ELSE CONST_SOURCETYPE_LESSTHAN10TICKETS END AS SourceTypeID
+		,	tmp.CategoryID						AS OldCategoryID
+		,	tmp.CategoryID						AS DWCategoryID
+		,	1									AS IsDataChanged
+		,	0									AS ActionType
+		,	1									AS IsAuto
+		,	lv_CurrentDateTime					AS LastModifiedDate
+		,	CONST_CREATEDBY						AS LastModifiedBy
+		,	DATE(lv_CurrentDateTime)			AS InsertDate
 	FROM 	Temp_CustomerHistory AS tmp;
 
     /* 3: WRITE CTSCustomerClassification_Log(TRACE DATA) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, ParentID, CategoryID, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate)
-	SELECT	tmp.CustID					AS CustID
-		,	CONST_PARENTID_NORMAL		AS ParentID
-		,	tmp.CategoryID				AS CategoryID
-		,	tmp.CustomerClass			AS TargetCC
-		,	1	AS SourceTypeID
-		,	tmp.CategoryID				AS OldCategoryID
-		,	tmp.CategoryID				AS DWCategoryID
-		,	1	AS IsDataChanged
-		,	0	AS ActionType
-		,	1	AS IsAuto
-		,	lv_CurrentDateTime			AS LastModifiedDate
-		,	CONST_CREATEDBY				AS LastModifiedBy
-		,	DATE(lv_CurrentDateTime)	AS InsertDate
+	SELECT	tmp.CustID							AS CustID
+		,	CONST_PARENTID_NORMAL				AS ParentID
+		,	tmp.CategoryID						AS CategoryID
+		,	tmp.CustomerClass					AS TargetCC
+		,	CASE 	WHEN tmp.CategoryID = CONST_CATEID_INACTIVENORMAL THEN CONST_SOURCETYPE_INACTIVENORMAL
+					WHEN tmp.CategoryID = CONST_CATEID_INACTIVESMART THEN CONST_SOURCETYPE_INACTIVEPROPUNTER 
+					ELSE CONST_SOURCETYPE_LESSTHAN10TICKETS END AS SourceTypeID
+		,	tmp.CategoryID						AS OldCategoryID
+		,	tmp.CategoryID						AS DWCategoryID
+		,	1									AS IsDataChanged
+		,	0									AS ActionType
+		,	1									AS IsAuto
+		,	lv_CurrentDateTime					AS LastModifiedDate
+		,	CONST_CREATEDBY						AS LastModifiedBy
+		,	DATE(lv_CurrentDateTime)			AS InsertDate
 	FROM 	Temp_Customer AS tmp;
     
 END$$
