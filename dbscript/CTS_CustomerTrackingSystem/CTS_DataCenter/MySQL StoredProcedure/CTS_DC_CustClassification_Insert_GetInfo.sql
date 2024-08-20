@@ -94,6 +94,7 @@ BEGIN
 		,	IsExistPA					TINYINT(1) DEFAULT 0
 		,	IsExistPotentialPA			TINYINT(1) DEFAULT 0
 		,	IsFromOldPA					TINYINT(1) DEFAULT 0
+		,	IsFromOld					TINYINT(1) DEFAULT 0
 		
 		, 	TurnoverRM					DECIMAL(20,4)
 		, 	WinlossRM					DECIMAL(20,4)

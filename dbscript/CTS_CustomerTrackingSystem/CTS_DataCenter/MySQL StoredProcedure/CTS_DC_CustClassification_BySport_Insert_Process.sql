@@ -39,7 +39,6 @@ BEGIN
 		,	SportID										SMALLINT UNSIGNED
         ,	OldCategoryID 								INT UNSIGNED
         ,	OldCategoryGroupID							INT UNSIGNED
-		,	IsNew										TINYINT(1) DEFAULT 0
         ,	PRIMARY KEY (CustID, SportID)
 	); 
 	
@@ -85,19 +84,16 @@ BEGIN
     FROM Temp_NewClassification AS temp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cate ON temp.CustID = cate.CustID AND cate.ParentID = CONST_PARENTID_NORMAL
 																				AND temp.SportID = cate.SportID
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID 
-	WHERE temp.IsDataChanged = 1 
-		OR (temp.IsDataChanged = 0 AND temp.ActionType IN (CONST_ACTIONTYPE_RESCAN_CHANGECC,CONST_ACTIONTYPE_IGNOREPROBATION));
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID;
 	
 	UPDATE Temp_NewClassification AS temp
 		LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
 	SET 	temp.OldCategoryGroupID 	= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryGroupID END
 		,	temp.OldCategoryID 			= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryID END
-		,	o.IsNew						= CASE WHEN o.CustID IS NULL THEN 0 ELSE 1 END
-	;
+		,	temp.IsFromOld				= CASE WHEN o.CustID IS NULL THEN 0 ELSE 1 END;
 
 	UPDATE Temp_NewClassification AS temp
-		INNER JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID AND o.IsNew = 1
+		INNER JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID AND temp.IsFromOld = 1
 	SET 	temp.ActionType = CASE 	WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryID <> temp.OldCategoryID
 										THEN CONST_ACTIONTYPE_INSERT
 									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryID = temp.OldCategoryID
@@ -109,17 +105,20 @@ BEGIN
 											AND temp.NewCategoryGroupID = CONST_CATEID_NEW 
 										THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
 									WHEN temp.OldCategoryGroupID = temp.NewCategoryGroupID THEN CONST_SOURCETYPE_SAMECATEGORY
-								END)
-	;
+								END);
 
 	UPDATE Temp_NewClassification AS temp
-		INNER JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID AND o.IsNew = 0
-	SET 	temp.ActionType = CASE WHEN	temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryID <> temp.OldCategoryID
+	SET 	temp.ActionType = CASE WHEN	temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) 
+											AND temp.NewCategoryID <> temp.OldCategoryID
 										THEN CONST_ACTIONTYPE_INSERT
 									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) 
 											AND temp.NewCategoryID = temp.OldCategoryID
 											AND temp.OldCategoryID <> CONST_CATEID_NEW
 										THEN CONST_ACTIONTYPE_UPDATE
+									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) 
+											AND temp.NewCategoryID = temp.OldCategoryID
+											AND temp.OldCategoryID = CONST_CATEID_NEW
+										THEN CONST_ACTIONTYPE_INSERT
 									ELSE temp.ActionType
 								END
 		,	temp.SourceTypeID = (CASE 
@@ -128,7 +127,7 @@ BEGIN
 										THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
 									WHEN temp.OldCategoryGroupID = temp.NewCategoryGroupID THEN CONST_SOURCETYPE_SAMECATEGORY
 								END)
-	;
+	WHERE temp.IsFromOld = 0;
 	
 	UPDATE Temp_NewClassification AS temp
 	SET 	temp.IsDataChanged = 0

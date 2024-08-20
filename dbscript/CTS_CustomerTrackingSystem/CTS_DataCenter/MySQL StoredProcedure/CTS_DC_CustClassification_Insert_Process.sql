@@ -164,7 +164,7 @@ BEGIN
 			LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID
 		SET 	temp.OldCategoryGroupID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryGroupID END
 			,	temp.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryID END
-			,	o.IsNew = CASE WHEN o.CustID IS NULL THEN 0 ELSE 1 END
+			,	temp.IsFromOld = CASE WHEN o.CustID IS NULL THEN 0 ELSE 1 END
 		WHERE temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA,CONST_ACTIONTYPE_EXISTEDVVIP);
 
 		/* UPDATE NewIsDangerProbation */    
@@ -173,7 +173,7 @@ BEGIN
     	SET temp.NewIsDangerProbation = cate.IsDangerProbation;
 								
 		UPDATE Temp_NewClassification AS temp 
-			INNER JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND o.IsNew = 1
+			INNER JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.IsFromOld = 1
 		SET temp.SourceTypeID = CASE WHEN temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECATEGORY THEN
 										(CASE WHEN temp.NewCategoryGroupID = CONST_CATEGROUPID_NEW THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
 											  WHEN temp.NewCategoryGroupID = CONST_CATEGROUPID_INACTIVE AND temp.NewCategoryID = CONST_CATEID_INACTIVENORMAL 
@@ -217,7 +217,6 @@ BEGIN
 		WHERE temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA,CONST_ACTIONTYPE_EXISTEDVVIP);
 
 		UPDATE Temp_NewClassification AS temp 
-			INNER JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND o.IsNew = 0
 		SET temp.SourceTypeID = CASE WHEN temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECATEGORY THEN
 										(CASE WHEN temp.NewCategoryGroupID = CONST_CATEGROUPID_NEW THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
 											  WHEN temp.NewCategoryGroupID = CONST_CATEGROUPID_INACTIVE AND temp.NewCategoryID = CONST_CATEID_INACTIVENORMAL 
@@ -249,19 +248,25 @@ BEGIN
 												ELSE CONST_SOURCETYPE_SCANONSCHEDULE
 										  END)
 								END
-		,	temp.ActionType = CASE 	WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT 
-									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryGroupID <> temp.OldCategoryGroupID
+		,	temp.ActionType = CASE 	WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT THEN CONST_ACTIONTYPE_INSERT 
+									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) 
+											AND temp.NewCategoryGroupID <> temp.OldCategoryGroupID
 										THEN CONST_ACTIONTYPE_INSERT
 									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) 
 											AND temp.NewCategoryGroupID = temp.OldCategoryGroupID
 											AND temp.OldCategoryGroupID <> CONST_CATEGROUPID_NEW
 										THEN CONST_ACTIONTYPE_UPDATE
+									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) 
+											AND temp.NewCategoryGroupID = temp.OldCategoryGroupID
+											AND temp.OldCategoryGroupID = CONST_CATEGROUPID_NEW
+										THEN CONST_ACTIONTYPE_INSERT
 									WHEN temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECATEGORY THEN
 										CASE WHEN temp.NewCategoryID = temp.OldCategoryID AND temp.OldCategoryGroupID <> CONST_CATEGROUPID_NEW THEN CONST_ACTIONTYPE_UPDATE 
 								   			 ELSE CONST_ACTIONTYPE_INSERT END
 									ELSE temp.ActionType
 								END
-		WHERE temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA,CONST_ACTIONTYPE_EXISTEDVVIP);
+		WHERE temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA,CONST_ACTIONTYPE_EXISTEDVVIP)
+			AND temp.IsFromOld = 0;
 		
 		UPDATE Temp_NewClassification AS temp
 		SET temp.IsDataChanged = 0
