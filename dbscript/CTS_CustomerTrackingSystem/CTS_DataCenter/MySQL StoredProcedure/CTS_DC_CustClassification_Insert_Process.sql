@@ -205,9 +205,9 @@ BEGIN
 												ELSE CONST_SOURCETYPE_SCANONSCHEDULE
 										  END)
 								END
-		,	temp.ActionType = CASE 	WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryGroupID <> o.CategoryGroupID
+		,	temp.ActionType = CASE 	WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryGroupID <> temp.OldCategoryGroupID
 										THEN CONST_ACTIONTYPE_INSERT
-									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryGroupID = o.CategoryGroupID
+									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryGroupID = temp.OldCategoryGroupID
 										THEN CONST_ACTIONTYPE_UPDATE
 									WHEN temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECATEGORY THEN
 										CASE WHEN temp.NewCategoryID = temp.OldCategoryID THEN CONST_ACTIONTYPE_UPDATE 
@@ -250,14 +250,14 @@ BEGIN
 										  END)
 								END
 		,	temp.ActionType = CASE 	WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT 
-									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryGroupID <> o.CategoryGroupID
+									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryGroupID <> temp.OldCategoryGroupID
 										THEN CONST_ACTIONTYPE_INSERT
 									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) 
-											AND temp.NewCategoryGroupID = o.CategoryGroupID
-											AND o.OldCategoryID <> CONST_CATEID_NEW
+											AND temp.NewCategoryGroupID = temp.OldCategoryGroupID
+											AND temp.OldCategoryGroupID <> CONST_CATEGROUPID_NEW
 										THEN CONST_ACTIONTYPE_UPDATE
 									WHEN temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECATEGORY THEN
-										CASE WHEN temp.NewCategoryID = temp.OldCategoryID AND o.OldCategoryID <> CONST_CATEID_NEW THEN CONST_ACTIONTYPE_UPDATE 
+										CASE WHEN temp.NewCategoryID = temp.OldCategoryID AND temp.OldCategoryGroupID <> CONST_CATEGROUPID_NEW THEN CONST_ACTIONTYPE_UPDATE 
 								   			 ELSE CONST_ACTIONTYPE_INSERT END
 									ELSE temp.ActionType
 								END
