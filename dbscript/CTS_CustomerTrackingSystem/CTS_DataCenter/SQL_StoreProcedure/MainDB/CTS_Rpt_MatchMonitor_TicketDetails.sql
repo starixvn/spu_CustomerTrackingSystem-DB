@@ -315,7 +315,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
-						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE '1' END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -367,7 +367,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
-						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE '1' END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -419,7 +419,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
-						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE '1' END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -469,7 +469,7 @@ BEGIN
 								,	m.sporttype
 								,	b.bettype
 								,	b.custid
-								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
+								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE '1' END) AS BetteamGroup
 								,	b.betteam
 								,	st.BetChoiceHome
 								,	st.BetChoiceAway
@@ -523,7 +523,7 @@ BEGIN
 								,	m.sporttype
 								,	b.bettype
 								,	b.custid
-								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
+								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE '1' END) AS BetteamGroup
 								,	b.betteam
 								,	st.BetChoiceHome
 								,	st.BetChoiceAway
@@ -574,7 +574,7 @@ BEGIN
 								,	m.sporttype
 								,	b.bettype
 								,	b.custid
-								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
+								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE '1' END) AS BetteamGroup
 								,	b.betteam
 								,	st.BetChoiceHome
 								,	st.BetChoiceAway
@@ -665,7 +665,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
-						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE '1' END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -713,7 +713,7 @@ BEGIN
 								,	m.sporttype
 								,	b.bettype
 								,	b.custid
-								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
+								,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE '1' END) AS BetteamGroup
 								,	b.betteam
 								,	st.BetChoiceHome
 								,	st.BetChoiceAway
@@ -770,7 +770,7 @@ BEGIN
 							,	b.bettype
 							,	b.custid
 							,	b.betteam
-							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
+							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE '1' END) AS BetteamGroup
 							,	st.BetChoiceHome
 							,	st.BetChoiceAway
 							,	b.betid
@@ -887,7 +887,7 @@ BEGIN
 						,	m.sporttype
 						,	b.bettype
 						,	b.custid
-						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
+						,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE '1' END) AS BetteamGroup
 						,	b.betteam
 						,	st.BetChoiceHome
 						,	st.BetChoiceAway
@@ -935,7 +935,7 @@ BEGIN
 							,	m.sporttype
 							,	b.bettype
 							,	b.custid
-							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
+							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE '1' END) AS BetteamGroup
 							,	b.betteam
 							,	st.BetChoiceHome
 							,	st.BetChoiceAway
@@ -992,7 +992,7 @@ BEGIN
 							,	m.sporttype
 							,	b.bettype
 							,	b.custid
-							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE 1 END) AS BetteamGroup
+							,	(CASE WHEN st.BetChoiceType = 2 THEN Betteam ELSE '1' END) AS BetteamGroup
 							,	b.betteam
 							,	st.BetChoiceHome
 							,	st.BetChoiceAway
