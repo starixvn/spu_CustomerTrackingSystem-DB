@@ -94,9 +94,9 @@ BEGIN
 	SET 	temp.OldCategoryGroupID 	= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryGroupID END
 		,	temp.OldCategoryID 			= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryID END
         ,	temp.ActionType 			= CASE 	WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT 
-												WHEN temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryID <> o.OldCategoryID
+												WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryID <> o.OldCategoryID
 													THEN CONST_ACTIONTYPE_INSERT
-												WHEN temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryID = o.OldCategoryID
+												WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryID = o.OldCategoryID
 													THEN CONST_ACTIONTYPE_UPDATE
 												ELSE temp.ActionType
 										  END

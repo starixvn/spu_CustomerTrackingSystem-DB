@@ -167,9 +167,9 @@ BEGIN
 		SET 	temp.OldCategoryGroupID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryGroupID END
 			,	temp.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryID END
 			,	temp.ActionType = CASE 	WHEN temp.ActionType = CONST_ACTIONTYPE_INSERT AND o.CustID IS NULL THEN CONST_ACTIONTYPE_INSERT 
-										WHEN temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryGroupID <> o.CategoryGroupID
+										WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryGroupID <> o.CategoryGroupID
 											THEN CONST_ACTIONTYPE_INSERT
-										WHEN temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryGroupID = o.CategoryGroupID
+										WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND o.CustID IS NOT NULL AND temp.NewCategoryGroupID = o.CategoryGroupID
 											THEN CONST_ACTIONTYPE_UPDATE
 										ELSE temp.ActionType
 								  END
