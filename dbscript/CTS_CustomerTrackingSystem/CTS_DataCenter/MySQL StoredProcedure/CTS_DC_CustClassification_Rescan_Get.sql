@@ -426,8 +426,8 @@ sp: BEGIN
         ,	1 								AS IsMarkedDirectly
 		,	0 								AS IsFromTVS
         ,	0 								AS IsFromTW
-        ,   1 								AS IsFromCTS
-        ,	0 								AS IsFromAI
+        ,   0 								AS IsFromCTS
+        ,	1 								AS IsFromAI
         ,	0 								AS IsFromImperva
 		, 	s.CreatedDate 					AS CreatedDate
         ,	s.LastModifiedDate 				AS LastModifiedDate
