@@ -201,6 +201,15 @@ CREATE TABLE `FP_AssociationMapping` (
 ) ENGINE=InnoDB;
 
 /* ========= Update Schema ========= */
+DELETE FROM `DCS_DataCenter`.`RawTransaction` WHERE  IsProcessed = -1 AND CreatedDate < '2024-06-30';
+
+ALTER TABLE `DCS_DataCenter`.`RawTransaction`
+REMOVE PARTITIONING;
+
+ALTER TABLE `DCS_DataCenter`.`RawTransaction`
+DROP PRIMARY KEY,
+ADD PRIMARY KEY (TransID);
+
 ALTER TABLE `DCS_DataCenter`.`RawTransaction`
 ADD COLUMN `IsIncognitoMode` BOOLEAN,
 ADD COLUMN `ChallengeCode` VARCHAR(50) NULL,
@@ -213,7 +222,8 @@ DROP COLUMN `CookieID`,
 DROP COLUMN `RawFingerPrintID`,
 DROP COLUMN `BrowserInstanceID`,
 DROP COLUMN `RawUserAgentID`,
-DROP COLUMN `JsChallengeID`;
+DROP COLUMN `JsChallengeID`,
+ADD KEY `IX_RawTransaction_CreatedDate` (`CreatedDate`);
 
 ALTER TABLE `DCS_DataCenter`.`ProcessedTransaction`
 ADD COLUMN `IsIncognitoMode` BOOLEAN,
