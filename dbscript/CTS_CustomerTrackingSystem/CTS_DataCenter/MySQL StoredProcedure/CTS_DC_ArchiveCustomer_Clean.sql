@@ -31,6 +31,7 @@ sp: BEGIN
 	*/
     
 	DECLARE CONST_PARENTID_PA			INT;
+	DECLARE	CONST_PARENTID_WRAPPER		INT;
 	DECLARE lv_CurrentDateTime			DATETIME DEFAULT NOW();
     DECLARE lv_CustBatchSize 			INT;
     DECLARE lv_CleanTableBatchSize 		INT;
@@ -40,6 +41,7 @@ sp: BEGIN
     DECLARE lv_Count				    INT DEFAULT 0;
     
 	SET CONST_PARENTID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+	SET CONST_PARENTID_WRAPPER			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE Temp_CustInfo(
@@ -755,7 +757,7 @@ sp: BEGIN
 					SELECT cls.CustID, cls.ParentID, cls.CategoryID
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
-					WHERE cls.CustID = arc.CustID
+					WHERE cls.CustID = arc.CustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
 					ORDER BY  cate.CustomerClassPriority ASC 
 							, cls.LastModifiedDate DESC
 					LIMIT 1
