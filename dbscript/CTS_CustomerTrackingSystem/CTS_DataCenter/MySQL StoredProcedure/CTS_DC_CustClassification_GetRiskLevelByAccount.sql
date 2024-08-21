@@ -37,8 +37,8 @@ BEGIN
         ,	ltr.SabaIntelligent_RiskLevel AS RiskLevel
     FROM 	Temp_CustDCSAccount AS tmp
 		,	LATERAL(SELECT cat.CategoryName, cat.CustomerClassName, cat.CustomerClass, cat.SabaIntelligent_RiskLevel, cls.LastModifiedDate
-				FROM CTS_DataCenter.CTSCustomerClassification_Original AS cls
-					INNER JOIN CTS_DataCenter.CustomerCategory_Original AS cat ON cls.CategoryID = cat.CategoryID
+				FROM CTS_DataCenter.CTSCustomerClassification AS cls
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID
                 WHERE cls.CTSCustID = tmp.CTSCustID
                 ORDER BY cat.Priority ASC	
                 LIMIT 1) AS ltr;
