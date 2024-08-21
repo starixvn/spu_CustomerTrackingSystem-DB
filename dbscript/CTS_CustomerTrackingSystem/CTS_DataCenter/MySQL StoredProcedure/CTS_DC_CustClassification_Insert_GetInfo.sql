@@ -173,10 +173,8 @@ BEGIN
 		,	GroupName					VARCHAR(100)
 		,	IsRobot						TINYINT(1) DEFAULT 0
 		, 	PRIMARY KEY (CustID, DWCategoryID)
-		,	KEY IX_Temp_NewCC_CustID_NewCateID (CustID, NewCategoryID)
-		,	KEY IX_Temp_NewCC_CustID_ActionType (CustID, ActionType)
-		,	KEY IX_Temp_NewCC_CustID_CateGroupID (CustID, NewCategoryGroupID, RelevantCategoryGroupID, TargetCC)
-		-- ,	KEY IX_Temp_NewCC_CTSCustID (CTSCustID)
+		,	KEY IX_Temp_NewCC_CustID_NewCateID (CustID, NewCategoryGroupID)
+		,	KEY IX_Temp_NewCC_CustID_Priority (CustID,CustomerClassPriority)
 	); 
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
