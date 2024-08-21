@@ -129,9 +129,9 @@ BEGIN
 		
 		,	IsDataChanged				TINYINT(1) 	/* 0: Not Change, 1: Changed (IF call from SpecialCC function THEN 1 ELSE 0) */
 		,	DataChangeType				TINYINT DEFAULT 0	/* 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE */
-		,	SourceTypeID      			SMALLINT
-
+		, 	ActionType					SMALLINT DEFAULT 0 
 		, 	WinlossStatus				SMALLINT /*LOSING  = 0 (PROBATION), KEEPSTATE = 1 (NOT CHANGE), WINNING = 2 (NOT PROBATION);*/
+		,	SourceTypeID      			SMALLINT
 		
 		,	IsFromTVS					TINYINT(1)  DEFAULT 0
 		,	TVSRequestID				BIGINT UNSIGNED
@@ -166,7 +166,6 @@ BEGIN
 		
 		,	CreatedDate					DATETIME
 		,	LastModifiedDate			DATETIME
-		, 	ActionType					SMALLINT DEFAULT 0 
 		,	CreatedBy					INT UNSIGNED
 		,	IsMarkedDirectly			TINYINT(1) DEFAULT 0
 		,	IsReturnData				TINYINT(1) DEFAULT 1
@@ -174,8 +173,10 @@ BEGIN
 		,	GroupName					VARCHAR(100)
 		,	IsRobot						TINYINT(1) DEFAULT 0
 		, 	PRIMARY KEY (CustID, DWCategoryID)
-		,	KEY IX_Temp_NewCC_NewCateID (NewCategoryID)
-		,	KEY IX_Temp_NewCC_CTSCustID (CTSCustID)
+		,	KEY IX_Temp_NewCC_CustID_NewCateID (CustID, NewCategoryID)
+		,	KEY IX_Temp_NewCC_CustID_ActionType (CustID, ActionType)
+		,	KEY IX_Temp_NewCC_CustID_CateGroupID (CustID, NewCategoryGroupID, RelevantCategoryGroupID, TargetCC)
+		-- ,	KEY IX_Temp_NewCC_CTSCustID (CTSCustID)
 	); 
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
@@ -227,7 +228,7 @@ BEGIN
 		,	IsKeepOldCateID				TINYINT(1)
 		,	IsNew						TINYINT(1) DEFAULT 1
 		,	IsRemove					TINYINT(1) DEFAULT NULL
-		,	INDEX IX_Temp_CCOld_CustID_ParentID_CategoryGroupID (CustID,ParentID,IsNew,IsRemove)
+		,	INDEX IX_Temp_CCOld_CustID_ParentID_CategoryGroupID (ParentID,CategoryGroupID,CustID,IsNew,IsRemove)
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_LicVIPCust;

@@ -64,8 +64,18 @@ BEGIN
 		,	SourceTypeID      			SMALLINT
 		,	IsFromOld					TINYINT(1) DEFAULT 0
 		,	IsReturnData				TINYINT(1) DEFAULT 1			
-		, 	INDEX IX_Temp_NewCC_BySport_CustID_DWCategoryID (CustID, DWCategoryID)  
-		,	PRIMARY KEY (CustID, SportID)
+		,	PRIMARY KEY (CustID, SportID, DWCategoryID)
+		, 	INDEX IX_Temp_NewCC_BySport_CustID_NewCategoryID (CustID, NewCategoryID)  
+		, 	INDEX IX_Temp_NewCC_BySport_CustID_ActionType (CustID, ActionType)  
+	); 
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_Old;    
+	CREATE TEMPORARY TABLE Temp_CTSCustomerClassification_Old(	  
+			CustID										BIGINT UNSIGNED
+		,	SportID										SMALLINT UNSIGNED
+        ,	OldCategoryID 								INT UNSIGNED
+        ,	OldCategoryGroupID							INT UNSIGNED
+        ,	PRIMARY KEY (CustID, SportID)
 	); 
 
 	IF ip_InputFlowID = CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC THEN 

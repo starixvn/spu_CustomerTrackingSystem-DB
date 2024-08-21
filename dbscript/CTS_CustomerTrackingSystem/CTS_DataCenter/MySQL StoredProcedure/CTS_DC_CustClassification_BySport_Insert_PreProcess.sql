@@ -22,6 +22,7 @@ BEGIN
 	DECLARE CONST_CATEID_PROBATION		      	INT;
 	DECLARE CONST_CATEID_SMART			      	INT;
 	DECLARE CONST_CATEID_RISKY			      	INT;
+	DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
 	DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 	INT DEFAULT 5;
 	DECLARE CONST_LIST_BYSPORT				 	INT DEFAULT 23;
 	
@@ -81,6 +82,7 @@ BEGIN
 	UPDATE Temp_NewClassification AS temp
 		INNER JOIN Temp_ProbationCustomers AS pro ON pro.CustID = temp.CustID AND pro.SportID = temp.SportID
 	SET 	temp.IsDataChanged = 0
+		,	temp.ActionType = CONST_ACTIONTYPE_UPDATE
     WHERE 	temp.DWCategoryID = CONST_CATEID_PROBATION 
 		AND pro.ProbationDate < pro.LastProbationDay;
 		

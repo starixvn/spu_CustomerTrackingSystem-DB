@@ -32,15 +32,6 @@ BEGIN
 	SET CONST_CATEID_NEW		 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_NEW');
 	SET CONST_CATEID_SPECIALCC	 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
 	SET CONST_PARENTID_NORMAL	 						= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
-
-	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_Old;    
-	CREATE TEMPORARY TABLE Temp_CTSCustomerClassification_Old(	  
-			CustID										BIGINT UNSIGNED
-		,	SportID										SMALLINT UNSIGNED
-        ,	OldCategoryID 								INT UNSIGNED
-        ,	OldCategoryGroupID							INT UNSIGNED
-        ,	PRIMARY KEY (CustID, SportID)
-	); 
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_UpdateCustomerClass;    
 	CREATE TEMPORARY TABLE Temp_UpdateCustomerClass(	  
@@ -93,41 +84,19 @@ BEGIN
 		,	temp.IsFromOld				= CASE WHEN o.CustID IS NULL THEN 0 ELSE 1 END;
 
 	UPDATE Temp_NewClassification AS temp
-		INNER JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID AND temp.IsFromOld = 1
-	SET 	temp.ActionType = CASE 	WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryID <> temp.OldCategoryID
+	SET 	temp.ActionType = CASE WHEN	temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryID <> temp.OldCategoryID
 										THEN CONST_ACTIONTYPE_INSERT
 									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryID = temp.OldCategoryID
-										THEN CONST_ACTIONTYPE_UPDATE
+										THEN (CASE WHEN temp.IsFromOld = 0 
+														THEN (CASE WHEN temp.OldCategoryID = CONST_CATEID_NEW THEN CONST_ACTIONTYPE_INSERT ELSE CONST_ACTIONTYPE_UPDATE END)
+												   ELSE CONST_ACTIONTYPE_UPDATE END)
 									ELSE temp.ActionType
 								END
-		,	temp.SourceTypeID = (CASE 
-									WHEN (temp.OldCategoryGroupID IS NULL OR temp.OldCategoryGroupID = CONST_CATEID_NEW) 
-											AND temp.NewCategoryGroupID = CONST_CATEID_NEW 
-										THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
-									WHEN temp.OldCategoryGroupID = temp.NewCategoryGroupID THEN CONST_SOURCETYPE_SAMECATEGORY
-								END);
-
-	UPDATE Temp_NewClassification AS temp
-	SET 	temp.ActionType = CASE WHEN	temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) 
-											AND temp.NewCategoryID <> temp.OldCategoryID
-										THEN CONST_ACTIONTYPE_INSERT
-									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) 
-											AND temp.NewCategoryID = temp.OldCategoryID
-											AND temp.OldCategoryID <> CONST_CATEID_NEW
-										THEN CONST_ACTIONTYPE_UPDATE
-									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) 
-											AND temp.NewCategoryID = temp.OldCategoryID
-											AND temp.OldCategoryID = CONST_CATEID_NEW
-										THEN CONST_ACTIONTYPE_INSERT
-									ELSE temp.ActionType
-								END
-		,	temp.SourceTypeID = (CASE 
-									WHEN (temp.OldCategoryGroupID IS NULL OR temp.OldCategoryGroupID = CONST_CATEID_NEW) 
-											AND temp.NewCategoryGroupID = CONST_CATEID_NEW 
-										THEN CONST_SOURCETYPE_LESSTHAN10TICKETS
-									WHEN temp.OldCategoryGroupID = temp.NewCategoryGroupID THEN CONST_SOURCETYPE_SAMECATEGORY
-								END)
-	WHERE temp.IsFromOld = 0;
+		,	temp.SourceTypeID = CASE WHEN temp.OldCategoryGroupID = CONST_CATEID_NEW AND temp.NewCategoryGroupID = CONST_CATEID_NEW
+										THEN  CONST_SOURCETYPE_LESSTHAN10TICKETS
+									 WHEN temp.OldCategoryGroupID = temp.NewCategoryGroupID 
+									 	THEN CONST_SOURCETYPE_SAMECATEGORY
+								END;
 	
 	UPDATE Temp_NewClassification AS temp
 	SET 	temp.IsDataChanged = 0

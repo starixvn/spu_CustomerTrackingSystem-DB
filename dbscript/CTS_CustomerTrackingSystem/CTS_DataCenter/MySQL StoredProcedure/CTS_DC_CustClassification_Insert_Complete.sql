@@ -1010,11 +1010,10 @@ BEGIN
 			FROM Temp_NewClassification AS temp
 				LEFT JOIN CTS_DataCenter.TVSVoidRequest AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
 			WHERE temp.IsFromTVS = 1 
-				AND ((temp.IsFromOldPA = 1 AND lv_IsRescan = 0 AND lv_InsertedCount > 0)
-					OR (temp.IsDataChanged = 1 AND lv_InsertedCount > 0)
-					OR (temp.IsDataChanged = 1 AND lv_IsRescan = 1 AND lv_UpdatedCount > 0)
-					OR (temp.IsDataChanged = 1 AND DataChangeType = 1 AND lv_UpdatedCount > 0))
-				AND h.CustID IS NULL;
+				AND h.CustID IS NULL
+				AND 1 = (CASE WHEN lv_InsertedCount > 0 THEN (CASE WHEN (temp.IsFromOldPA = 1 AND lv_IsRescan = 0) OR temp.IsDataChanged = 1 THEN 1 ELSE 0 END)
+							  WHEN lv_UpdatedCount > 0 AND temp.IsDataChanged = 1 THEN (CASE WHEN lv_IsRescan = 1 OR DataChangeType = 1 THEN 1 ELSE 0 END)
+							  ELSE 0 END);
 		END IF;
 		
 		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY THEN
@@ -1032,10 +1031,10 @@ BEGIN
 				FROM Temp_NewClassification AS temp
 					LEFT JOIN CTS_DataCenter.TWRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
 				WHERE temp.IsFromTW = 1 AND temp.IsRobot = 1
-					AND ((temp.IsFromOldPA = 1 AND lv_IsRescan = 0 AND lv_InsertedCount > 0)
-						OR (temp.IsDataChanged = 1 AND lv_InsertedCount > 0)
-						OR (temp.IsDataChanged = 1 AND lv_IsRescan = 1 AND lv_UpdatedCount > 0))
-					AND h.CustID IS NULL;
+					AND h.CustID IS NULL
+					AND 1 = (CASE WHEN lv_InsertedCount > 0 THEN (CASE WHEN (temp.IsFromOldPA = 1 AND lv_IsRescan = 0) OR temp.IsDataChanged = 1 THEN 1 ELSE 0 END)
+								  WHEN lv_UpdatedCount > 0 AND temp.IsDataChanged = 1 THEN (CASE WHEN lv_IsRescan = 1 OR DataChangeType = 1 THEN 1 ELSE 0 END)
+								  ELSE 0 END);
 			END IF;
 			
 			IF EXISTS (SELECT 1 
@@ -1052,9 +1051,10 @@ BEGIN
 				FROM Temp_NewClassification AS temp
 					LEFT JOIN CTS_DataCenter.CTSRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
 				WHERE temp.IsFromCTS = 1 AND temp.IsRobot = 1
-					AND ((temp.IsDataChanged = 1 AND lv_InsertedCount > 0)
-						OR (temp.IsDataChanged = 1 AND lv_IsRescan = 1 AND lv_UpdatedCount > 0))
-					AND h.CustID IS NULL;
+					AND h.CustID IS NULL
+					AND 1 = (CASE WHEN lv_InsertedCount > 0 THEN (CASE WHEN (temp.IsFromOldPA = 1 AND lv_IsRescan = 0) OR temp.IsDataChanged = 1 THEN 1 ELSE 0 END)
+								  WHEN lv_UpdatedCount > 0 AND temp.IsDataChanged = 1 THEN (CASE WHEN lv_IsRescan = 1 OR DataChangeType = 1 THEN 1 ELSE 0 END)
+								  ELSE 0 END);
 					
 			END IF;	
 
