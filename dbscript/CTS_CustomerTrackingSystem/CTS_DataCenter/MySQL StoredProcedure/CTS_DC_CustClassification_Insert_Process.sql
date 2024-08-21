@@ -198,6 +198,7 @@ BEGIN
 												ELSE CONST_SOURCETYPE_SCANONSCHEDULE
 										  END)
 								END
+		,	temp.IsReturnData = CASE WHEN temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC AND temp.IsReturnData = 0 THEN 1 ELSE temp.IsReturnData END
 		,	temp.ActionType = CASE 	WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryGroupID <> temp.OldCategoryGroupID
 										THEN CONST_ACTIONTYPE_INSERT
 									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryGroupID = temp.OldCategoryGroupID
@@ -294,6 +295,7 @@ BEGIN
 										THEN CONST_SOURCETYPE_INACTIVEPROPUNTER
 									ELSE CONST_SOURCETYPE_SCANONSCHEDULE
 								END)
+			,	IsReturnData = CASE WHEN ActionType = CONST_ACTIONTYPE_IGNOREPROBATION AND IsReturnData = 0 THEN 1 ELSE IsReturnData END
 			,	ActionType = CONST_ACTIONTYPE_UPDATE
 		WHERE IsDataChanged = 0 
 			AND ((TargetCC <> OldTargetCC) OR (OldCategoryID <> NewCategoryID))

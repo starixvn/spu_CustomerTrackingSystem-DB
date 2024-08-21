@@ -84,7 +84,8 @@ BEGIN
 		,	temp.IsFromOld				= CASE WHEN o.CustID IS NULL THEN 0 ELSE 1 END;
 
 	UPDATE Temp_NewClassification AS temp
-	SET 	temp.ActionType = CASE WHEN	temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryID <> temp.OldCategoryID
+	SET 	temp.IsReturnData = CASE WHEN temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC AND temp.IsReturnData = 0 THEN 1 ELSE temp.IsReturnData END
+		,	temp.ActionType = CASE WHEN	temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryID <> temp.OldCategoryID
 										THEN CONST_ACTIONTYPE_INSERT
 									WHEN temp.IsDataChanged = 1 AND temp.ActionType IN (CONST_ACTIONTYPE_INSERT,CONST_ACTIONTYPE_RESCAN_CHANGECC) AND temp.NewCategoryID = temp.OldCategoryID
 										THEN (CASE WHEN temp.IsFromOld = 0 
