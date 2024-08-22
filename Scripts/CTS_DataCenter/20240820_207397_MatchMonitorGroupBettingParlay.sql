@@ -12,13 +12,14 @@ Reviewer:
 USE CTS_DataCenter;
 
 #===================1. SCHEMA=================================
+DROP TEMPORARY TABLE IF EXISTS MatchMonitorParlayStagingGroupBettingLive;
 CREATE TABLE MatchMonitorParlayStagingGroupBettingLive(
-		SequenceID 			BIGINT UNSIGNED NOT NULL
+		MainSequenceID	 	BIGINT UNSIGNED NOT NULL
+	,	MainTransID			BIGINT UNSIGNED NOT NULL
+    ,	MainRefno			BIGINT UNSIGNED NOT NULL
 	,	TransID				BIGINT UNSIGNED NOT NULL
     ,	TransDate 			DATETIME(3) NOT NULL
 	,	TransDateToSecond	BIGINT NOT NULL
-	,	Refno	 			BIGINT NOT NULL
-    ,	TransIDMain			BIGINT UNSIGNED NOT NULL
 	,	MatchID  			INT NOT NULL
 	,	SportType  			INT NOT NULL
 	,	ScoreDiff  			INT NOT NULL
@@ -26,8 +27,6 @@ CREATE TABLE MatchMonitorParlayStagingGroupBettingLive(
 	,	BetID  				BIGINT NOT NULL
 	,	Betteam  			VARCHAR(10) NOT NULL 
 	,	CustID  			BIGINT UNSIGNED NOT NULL 
-	,	CTSCustID  			BIGINT UNSIGNED
-	,	IsLicensee  		BOOLEAN NOT NULL 
 	,	GroupID 			INT DEFAULT '0'
 	,	LiveHomeScore		INT
 	,	LiveAwayScore		INT
@@ -39,12 +38,13 @@ CREATE TABLE MatchMonitorParlayStagingGroupBettingLive(
 	,	LeagueID			INT
     ,	LeagueName 			VARCHAR(500)
 	,	InsertTime 			DATETIME(3)	 
-	,	PRIMARY KEY(SequenceID,TransID)
-	,	INDEX IX_MatchMonitorStagingGroupBettingLive_TransID(TransID)
-	,	INDEX IX_MatchMonitorStagingGroupBettingLive_TransDateToSecond(TransDateToSecond)
-	,	INDEX IX_MatchMonitorStagingGroupBettingLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID)
+	,	PRIMARY KEY(TransID)
+	,	INDEX IX_MatchMonitorParlayStagingGroupBettingLive_TransID(MainSequenceID)
+	,	INDEX IX_MatchMonitorParlayStagingGroupBettingLive_TransDateToSecond(TransDateToSecond)
+	,	INDEX IX_MatchMonitorParlayStagingGroupBettingLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID)
 ) ENGINE=InnoDB;
 
+DROP TEMPORARY TABLE IF EXISTS MatchMonitorParlayStagingGroupBettingNonLive;
 CREATE TABLE MatchMonitorParlayStagingGroupBettingNonLive(
 		MainSequenceID	 	BIGINT UNSIGNED NOT NULL
 	,	MainTransID			BIGINT UNSIGNED NOT NULL
@@ -59,8 +59,6 @@ CREATE TABLE MatchMonitorParlayStagingGroupBettingNonLive(
 	,	BetID  				BIGINT NOT NULL
 	,	Betteam  			VARCHAR(10) NOT NULL 
 	,	CustID  			BIGINT UNSIGNED NOT NULL 
-	,	CTSCustID  			BIGINT UNSIGNED
-	,	IsLicensee  		BOOLEAN NOT NULL 
 	,	GroupID 			INT DEFAULT '0'
 	,	LiveHomeScore		INT
 	,	LiveAwayScore		INT
@@ -72,10 +70,10 @@ CREATE TABLE MatchMonitorParlayStagingGroupBettingNonLive(
 	,	LeagueID			INT
     ,	LeagueName 			VARCHAR(500)
 	,	InsertTime 			DATETIME(3)	 
-	,	PRIMARY KEY(SequenceID,TransID)
-	,	INDEX IX_MatchMonitorStagingGroupBettingLive_TransID(TransID)
-	,	INDEX IX_MatchMonitorStagingGroupBettingLive_TransDateToSecond(TransDateToSecond)
-	,	INDEX IX_MatchMonitorStagingGroupBettingLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID)
+	,	PRIMARY KEY(TransID)
+	,	INDEX IX_MatchMonitorParlayStagingGroupBettingNonLive_TransID(MainSequenceID)
+	,	INDEX IX_MatchMonitorParlayStagingGroupBettingNonLive_TransDateToSecond(TransDateToSecond)
+	,	INDEX IX_MatchMonitorParlayStagingGroupBettingNonLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID)
 ) ENGINE=InnoDB;
 
 ALTER TABLE MatchMonitor
