@@ -139,28 +139,15 @@ SET BetteamName = (CASE WHEN BetteamShortName = 'a' THEN 'Away'
     , BetteamShortName = CASE WHEN BetteamShortName = '' THEN NULL ELSE BetteamShortName END 
 ;
 
-CREATE TABLE SportBettypeFunctionSetting(
-		FunctionID		TINYINT NOT NULL
-	,	LeagueGroupID	INT NOT NULL DEFAULT '0'
-	,	SportTypeID		SMALLINT NOT NULL
-	,	BetTypeID		INT NOT NULL
-	,	SportName		VARCHAR(50) NOT NULL
-	,	BetTypeNameDetailsX VARCHAR(100) DEFAULT NULL
-	,	IsMMDetection		TINYINT(1) NOT NULL
-    ,	IsMMParlayDetection	TINYINT(1) NOT NULL
-	,	MMReason			VARCHAR(200) DEFAULT NULL
-	,	IsDefaultSelected	TINYINT(1) NOT NULL
-	,	PriorityOrder		INT DEFAULT NULL
-	,	Status				TINYINT NOT NULL
-	,	PRIMARY KEY PK_SportBettypeFunction(FunctionID,LeagueGroupID,SportTypeID,BetTypeID) 
-	,	INDEX IX_SportBettypeSetting_IsMMDetection(IsMMDetection) 
-) ENGINE=InnoDB; 
+ALTER TABLE SportBettypeSetting
+	ADD COLUMN IsMMParlayDetection	TINYINT(1) NOT NULL DEFAULT 0 AFTER IsMMDetection
+,	DROP COLUMN BetTypeName 
+,	DROP COLUMN BettypeNameDistplay
+,	DROP COLUMN BetChoicePattern
+,	DROP COLUMN BetChoiceType
+,	DROP COLUMN BetIDPattern;
 
-INSERT INTO CTS_DataCenter.SportBettypeFunctionSetting(FunctionID,LeagueGroupID,SportTypeID,BetTypeID,SportName,BetTypeNameDetailsX,IsMMDetection,IsMMParlayDetection,MMReason,IsDefaultSelected,PriorityOrder,Status)
-SELECT FunctionID,LeagueGroupID,SportTypeID,BetTypeID,SportName,BetTypeNameDetailsX,IsMMDetection, 0 AS IsMMParlayDetection,MMReason,IsDefaultSelected,PriorityOrder,Status
-FROM SportBettypeSetting;
-
-UPDATE CTS_DataCenter.SportBettypeFunctionSetting
+UPDATE CTS_DataCenter.SportBettypeSetting
 SET IsMMParlayDetection = 1
 	, MMReason = CONCAT(MMReason, ',5')
 WHERE FunctionID = 1
@@ -168,7 +155,7 @@ WHERE FunctionID = 1
 	AND SportTypeID = 1
     AND BettypeID IN(1,3,7,8);
 
-UPDATE CTS_DataCenter.SportBettypeFunctionSetting
+UPDATE CTS_DataCenter.SportBettypeSetting
 SET IsMMParlayDetection = 1
 	, MMReason = CONCAT(MMReason, ',5')
 WHERE FunctionID = 1
