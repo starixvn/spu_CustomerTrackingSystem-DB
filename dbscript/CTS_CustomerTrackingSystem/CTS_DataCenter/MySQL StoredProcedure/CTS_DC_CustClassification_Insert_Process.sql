@@ -645,6 +645,11 @@ BEGIN
 		SET temp_old.IsRemove = 0
 		WHERE temp_old.CustID IS NOT NULL AND temp_old.IsRemove = 1
 			AND ((temp.NewCategoryGroupID <> tmpHis.CategoryID AND temp.ParentID <> tmpHis.ParentID) OR temp.TargetCC <> tmpHis.TargetCC);
+
+		UPDATE Temp_NewClassification AS temp
+            INNER JOIN Temp_CTSCustomerClassification_Old as temp_old ON temp_old.CustID = temp.CustID AND temp_old.ExistCategoryID = temp.CategoryID
+		SET temp_old.IsRemove = 0
+		WHERE temp_old.IsNew = 0 AND temp_old.IsRemove = 1 AND temp.IsDataChanged = 0;
 			
 	END IF;
 	
