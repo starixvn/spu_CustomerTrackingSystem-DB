@@ -17,22 +17,30 @@ BEGIN
         Param's Explanation:     
         Example:
 			CALL CTS_DC_CustClassification_GetRiskLevelByAccount('1002,8652,17198,24,20896,20934,20939');
-	*/         
+	*/      
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_AccountID;    
+    CREATE TEMPORARY TABLE Temp_AccountID(
+			AccountID	BIGINT UNSIGNED PRIMARY KEY
+	);          
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_CustDCSAccount;    
     CREATE TEMPORARY TABLE Temp_CustDCSAccount(
-			AccountID	BIGINT  PRIMARY KEY
-        ,	CTSCustID 	BIGINT UNSIGNED		
+			CTSCustID 	BIGINT UNSIGNED	
+		,	AccountID	BIGINT UNSIGNED
         
-        ,	INDEX IX_Temp_CustDCSAccount_CTSCustID(CTSCustID)
+        ,	PRIMARY KEY PK_Temp_CustDCSAccount(CTSCustID, AccountID)
 	);     
-     
-	SET @sql =  CONCAT('INSERT INTO Temp_CustDCSAccount (CTSCustID, AccountID)
-						SELECT cda.CTSCustID, cda.AccountID
-						FROM CTS_DataCenter.CustDCSAccount AS cda
-						WHERE AccountID IN (',ip_AccountIDList,')');  
+    
+    SET @sql = CONCAT("INSERT IGNORE INTO Temp_AccountID(AccountID) VALUES ('", REPLACE(ip_AccountIDList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
-
+    
+    INSERT INTO Temp_CustDCSAccount (CTSCustID, AccountID)
+	SELECT cda.CTSCustID, cda.AccountID
+	FROM Temp_AccountID AS tmp
+		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON tmp.AccountID = cda.AccountID;    
+	
     SELECT  tmp.AccountID
         ,	ltr.SabaIntelligent_RiskLevel AS RiskLevel
     FROM 	Temp_CustDCSAccount AS tmp
