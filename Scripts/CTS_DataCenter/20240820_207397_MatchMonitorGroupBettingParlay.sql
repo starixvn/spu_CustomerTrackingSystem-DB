@@ -170,13 +170,24 @@ SELECT * FROM CTS_DataCenter.BettypeSetting;
 
 #=============================INITIAL===========================================================
 SELECT * FROM StaticList WHERE ListID = 16;
+
+UPDATE StaticList
+SET ListNameDisplay = 'Detect By System'
+	, PriorityOrder =  NULL
+WHERE ListID = 16 AND ItemID < 100;
+
+UPDATE StaticList
+SET ListNameDisplay = 'Detect By AI'
+	, PriorityOrder =  NULL
+WHERE ListID = 16 
+	AND ItemID = 100;
+
 INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,ItemParentItemID,PriorityOrder,Status,Description,CreatedDate)
-VALUES( 16,50,'Match Monitor Reason','Detect By System Parlay','Group Betting Parlay','GB(P)',5,0,NULL,NULL,1,NULL,NOW());
+VALUES( 16,200,'Match Monitor Reason','Detect By System Parlay','Group Betting Parlay','GB(P)',5,0,NULL,NULL,1,NULL,NOW());
 
-UPDATE CTS_DataCenter.StaticList
-SET PriorityOrder = NULL
-WHERE ListID = 16;
+CALL CTS_DC_Common_GetStaticList(16, true)
 
+SELECT * FROM StaticList WHERE ListID = 16
 #------------------------------------------------------------------------------------------------------
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
 VALUES(171,'MatchMonitorParlay_StagingLive_LastSequenceID','MatchMonitorParlay_StagingLive_LastSequenceID','BIGINT UNSIGNED','0')
