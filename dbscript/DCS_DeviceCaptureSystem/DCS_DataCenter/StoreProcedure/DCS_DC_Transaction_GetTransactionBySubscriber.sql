@@ -17,7 +17,8 @@ proc_label: BEGIN
 
 		Revisions:
 		- 20240611@Terry.Nguyen: 		Initial [Redmine ID: #206262]	           
-		
+		- 20240820@Lando.Vu: 			Add Output AccountID [RedmineID: #209435]
+        
         Param's Explanation (filtered by):
 
 		Example:
@@ -43,6 +44,7 @@ proc_label: BEGIN
 			,	tmp.TransTime		AS TransTime			
 			,	ip_SubscriberID		AS SubscriberID						
 			,	tmp.LoginName		AS UserName
+            , 	tmp.AccountID		AS AccountID
 			,	tmp.FirstDeviceCode	AS FirstDeviceCode
 			,	tmp.Action			AS Action
 			,	tmp.ActionResult	AS ActionResult
@@ -55,6 +57,7 @@ proc_label: BEGIN
 				SELECT 	trs.TransTime                   
 					,	trs.TransID
 					,	trs.LoginName                   
+                    ,	trs.AccountID
 					,	trs.FirstDeviceCode
 					,	ar.Action
 					,	ar.ActionResult
