@@ -13,7 +13,8 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20240819@Casey.Huynh: Created [RedmineID: #209345]
-            
+            - 20240822@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
+
         Param's Explanation:     
         Example:
 			CALL CTS_DC_CustClassification_GetRiskLevelByAccount('1002,8652,17198,24,20896,20934,20939');
@@ -42,13 +43,13 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON tmp.AccountID = cda.AccountID;    
 	
     SELECT  tmp.AccountID
-        ,	ltr.SabaIntelligent_RiskLevel AS RiskLevel
+        ,	ltr.Ext_SabaIntelligentRiskLevel AS RiskLevel
     FROM 	Temp_CustDCSAccount AS tmp
-		,	LATERAL(SELECT cat.CategoryName, cat.CustomerClassName, cat.CustomerClass, cat.SabaIntelligent_RiskLevel, cls.LastModifiedDate
+		,	LATERAL(SELECT cat.CategoryName, cat.CustomerClassName, cat.CustomerClass, cat.Ext_SabaIntelligentRiskLevel, cls.LastModifiedDate
 				FROM CTS_DataCenter.CTSCustomerClassification AS cls
-					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.IsActive = 1
                 WHERE cls.CTSCustID = tmp.CTSCustID
-                ORDER BY cat.Priority ASC	
+                ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC	
                 LIMIT 1) AS ltr;
     
 END$$

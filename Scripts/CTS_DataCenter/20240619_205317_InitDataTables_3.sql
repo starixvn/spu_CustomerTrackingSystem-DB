@@ -270,8 +270,8 @@ VALUES(1010,1010,1000,0,0,0,NULL),
 (40604,40600,40000,0,0,1,44),
 (40605,40600,40000,0,0,1,45),
 (40606,40600,40000,0,0,1,NULL),
-(40700,40700,40000,0,0,0,49),
-(40701,40700,40000,0,0,0,49);
+(40700,40700,40000,0,0,0,18),
+(40701,40700,40000,0,0,0,19);
 
 INSERT INTO CustomerClassification_Remark (RemarkID,RemarkTemplate,Description)
 VALUES (1,'Account has less than 10 bets for first time scan','New: New Customer'),

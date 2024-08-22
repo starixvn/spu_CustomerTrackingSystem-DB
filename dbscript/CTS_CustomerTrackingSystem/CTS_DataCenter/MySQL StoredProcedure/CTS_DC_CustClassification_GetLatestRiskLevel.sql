@@ -15,7 +15,7 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20240708@Casey.Huynh: Created [RedmineID: #206486]
-      - 20240628@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
+      - 20240822@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
 
         Param's Explanation:     
         Example:
@@ -69,7 +69,7 @@ BEGIN
     FROM 	CTE_History AS cte
 		,	LATERAL(SELECT cat.CategoryName, cat.CustomerClassName, cat.CustomerClass, cat.Ext_SabaIntelligentRiskLevel, cls.LastModifiedDate
 				FROM CTS_DataCenter.CTSCustomerClassification AS cls
-					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.IsActive = 1
                 WHERE cls.CustID = cte.CustID
                 ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC		
                 LIMIT 1) AS ltr
