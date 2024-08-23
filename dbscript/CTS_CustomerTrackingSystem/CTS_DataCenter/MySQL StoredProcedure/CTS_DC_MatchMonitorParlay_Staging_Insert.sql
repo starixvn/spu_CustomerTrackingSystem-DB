@@ -28,23 +28,22 @@ sp: BEGIN
 				2001: MatchMonitorParlayStagingGroupBettingNonLive
 
 		Example:
-			CALL CTS_DataCenter.CTS_DC_MatchMonitor_Staging_Insert(
-              @ip_LiveIndicator:=1
-            , @ip_PoolType:=1002
-            , @ip_TransList:='[{"SportType": 1,"SequenceID": 1003,"IsMajorLeague": 0,"TransID": 1003,"TransDate" : "2021-05-17 07:48:52.533","MatchID" : 43614953,"EventDate" : "2021-05-17 00:00:00","KickOffTime" : "2021-05-17 00:00:00","EventStatus" : "running","HomeID" : 953,"AwayID" : 113,"LeagueID" : 3,"Bettype" : 3, "BetID" : 0,  "LiveIndicator" : "1","CustID" : 12500792,"Stake" : 20,"Betteam" : "a", "Odds" : "0.1","LiveHomeScore" : 0,"LiveAwayScore" : 2,"LeagueName":"ABC League"}]'
-            );
-			
+			CALL CTS_DataCenter.CTS_DC_MatchMonitorParlay_Staging_Insert(
+              @ip_LiveIndicator:=0
+            , @ip_PoolType:=2001
+            , @ip_TransList:='[
+					{"SequenceID":"119785519874","MainTransID":"288117431400923136","Refno":"1000000002348096671","TransID":"288117431400923140","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673481","SportType":"1","LiveHomeScore":"56","LiveAwayScore":"55","BetType":"3","BetID":"","BetTeam":"h","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"7877","LeagueName":"*SVFG - BHYR"}
+					,{"SequenceID":"119785519879","MainTransID":"288117452875759616","Refno":"1000000002348096721","TransID":"288117452875759621","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673483","SportType":"2","LiveHomeScore":"73","LiveAwayScore":"76","BetType":"3","BetID":"","BetTeam":"a","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"78717","LeagueName":"*NBA - Number of Regular Season Wins"}
+					,{"SequenceID":"119785519901","MainTransID":"288117560249942016","Refno":"1000000002348096941","TransID":"288117560249942019","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673483","SportType":"2","LiveHomeScore":"13","LiveAwayScore":"17","BetType":"1","BetID":"","BetTeam":"a","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"78717","LeagueName":"*NBA - Number of Regular Season Wins"}
+					,{"SequenceID":"119785519908","MainTransID":"288117594609680384","Refno":"1000000002348097011","TransID":"288117594609680389","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673483","SportType":"2","LiveHomeScore":"25","LiveAwayScore":"25","BetType":"609","BetID":"803","BetTeam":"h","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"78717","LeagueName":"*NBA - Number of Regular Season Wins"}
+					,{"SequenceID":"119785519932","MainTransID":"288117710573797376","Refno":"1000000002348097251","TransID":"288117710573797381","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673483","SportType":"2","LiveHomeScore":"58","LiveAwayScore":"54","BetType":"3","BetID":"","BetTeam":"h","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"78717","LeagueName":"*NBA - Number of Regular Season Wins"}
+				]'
+            );			
 	*/
-    DECLARE CONST_LOG 						TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
-	DECLARE CONST_RULE_GROUPID_GROUPBETTING	INT DEFAULT 1;
-    DECLARE CONST_RULE_GROUPID_FIXEDGAME	INT DEFAULT 2;
-    DECLARE CONST_RULE_GROUPID_HEDGING		INT DEFAULT 3;
-    DECLARE CONST_RULE_GROUPID_IRRIGATION	INT DEFAULT 4;
-    DECLARE CONST_RULE_GROUPID_ARBITRAGE	INT DEFAULT 5;
-    DECLARE CONST_RULE_GROUPID_GROUPBETTINGSABA	INT DEFAULT 6;
+    DECLARE CONST_LOG 							TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
     
     #==================LOG=======================================================
-    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Staging_Insert';
+    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_StagingParlay_Insert';
     IF CONST_LOG = 1 THEN     
 		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
 		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,'@ip_PoolType:=',ip_PoolType);
@@ -53,540 +52,148 @@ sp: BEGIN
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Staging;
 	CREATE TEMPORARY TABLE Temp_Staging(
-			SequenceID		BIGINT UNSIGNED NOT NULL
-		,	SportType		INT NOT NULL
-        ,	IsMajorLeague	BOOLEAN NOT NULL
-        ,	Odds			DECIMAL(10,4) NOT NULL
-		,	TransID			BIGINT UNSIGNED NOT NULL
-		,	TransDate		DATETIME(3) NULL
-		,	MatchID			INT NULL		
-		,	ScoreDiff		INT NULL
-		,	BettypeID		INT NULL
-		,	BetID			BIGINT DEFAULT 0
-		,	Betteam			VARCHAR(10) NULL        
-		,	CustID			BIGINT UNSIGNED NULL
-		,	Stake			DECIMAL(20,4) NULL
-		,	GroupID			INT DEFAULT '0'
-		,	LiveHomeScore	INT NULL
-		,	LiveAwayScore	INT NULL
-		,	EventDate		DATE NULL
-		,	KickOffTime		DATETIME NULL
-		,	EventStatus		VARCHAR(50) NULL
-		,	HomeID			INT NULL
-		,	AwayID			INT NULL
-		,	LeagueID		INT NULL
-		,	LeagueName		VARCHAR(500) NULL        
-        ,	HDP				DECIMAL(8,4) NULL
-        ,	Hdp1			DECIMAL(8,4) NULL
-        ,	Hdp2			DECIMAL(8,4) NULL
-        ,	LeagueGroupID	INT
-		,	PRIMARY KEY (SportType, IsMajorLeague, Odds, SequenceID)
-		,	INDEX SequenceID(SequenceID)
+			SequenceID			BIGINT UNSIGNED NOT NULL
+		,	MainTransID			BIGINT UNSIGNED NOT NULL
+        ,	Refno				BIGINT UNSIGNED NOT NULL
+		,	TransID				BIGINT UNSIGNED NOT NULL
+        ,	TransDate			DATETIME(3) NOT NULL        
+        ,	MatchID				INT NOT NULL
+        ,	SportType			INT NOT NULL
+        ,	LiveHomeScore		INT NOT NULL
+        ,	LiveAwayScore		INT NOT NULL
+		,	BettypeID			INT NOT NULL
+        ,	BetID				BIGINT NOT NULL
+        ,	Betteam				VARCHAR(10) NOT NULL 
+        ,	CustID				BIGINT UNSIGNED NOT NULL
+        ,	EventDate			DATE NULL
+        ,	KickOffTime			DATETIME NULL
+        ,	EventStatus			VARCHAR(50) NULL
+        ,	HomeID				INT NOT NULL
+		,	AwayID				INT NOT NULL
+        ,	LeagueID			INT NOT NULL
+        ,	LeagueName			VARCHAR(500) NOT NULL
 	) ENGINE=InnoDB;
-	
-	DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorRuleSetting;
-    CREATE TEMPORARY TABLE Temp_MatchMonitorRuleSetting(
-			RuleGroupID TINYINT 
-		,	LeagueGroupID INT
-		,	SportType 	INT
-        ,	BettypeID	INT
-		,	LeagueType 	BOOLEAN
-		,	MinOdds 	DECIMAL(10,4) 
-		,	MaxOdds 	DECIMAL(10,4)
-        ,	MinStake	DECIMAL(20,4) NULL
-        
-        ,	PRIMARY KEY PK_Temp_MatchMonitorRuleSetting(RuleGroupID, SportType, BettypeID, LeagueType)
-        
-	);
 
-    INSERT INTO Temp_MatchMonitorRuleSetting(RuleGroupID, LeagueGroupID, SportType, BettypeID, LeagueType,  MinOdds, MaxOdds, MinStake)
-    SELECT 	mst.RuleGroupID
-		,	IFNULL(mst.LeagueGroupID,0)
-		,	mst.SportType
-        ,	tmp.BettypeID
-		,	mst.LeagueType
-		,	mst.MinOdds
-        ,	mst.MaxOdds
-        ,	mst.HighStake
-    FROM (	SELECT sbs.SportTypeID, sbs.BetTypeID, sbs.LeagueGroupID, js.Reason
-			FROM CTS_DataCenter.SportBettypeSetting AS sbs
-			, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(MMReason,''), ',', '","'), '"]'),
-								  '$[*]' COLUMNS (Reason VARCHAR(2) PATH '$')) js) AS tmp
-		 INNER JOIN CTS_DataCenter.MatchMonitorRuleSetting AS mst ON mst.SportType = tmp.SportTypeID AND mst.Reason = tmp.Reason AND tmp.LeagueGroupID = IFNULL(mst.LeagueGroupID,0); 
-
-    INSERT IGNORE INTO Temp_Staging(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, HDP, Hdp1, Hdp2, LeagueGroupID)
-		SELECT  js.SequenceID
-			,	js.TransID
-			,	js.TransDate
-            ,	js.LeagueName
-            ,	js.SportType
-			,	js.MatchID
-			,	js.HomeID
-			,	js.AwayID
-			,	js.EventStatus
-			,	js.KickOffTime
-			,	js.LeagueID
-			,	js.EventDate
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE (js.LiveHomeScore*10000) + js.LiveAwayScore END) AS ScoreDiff
-			,	js.BettypeID
-            ,	IFNULL(js.BetID,0)
-			,	js.CustID
-			,	js.Stake
-            ,	js.Betteam
-            ,	js.Odds
-            ,	js.IsMajorLeague
-            ,	(js.Hdp1 - js.Hdp2) AS HDP
-            ,	js.Hdp1
-            ,	js.Hdp2
-            ,	js.LeagueGroupID
-		FROM JSON_TABLE(ip_TransList,
-					 "$[*]" COLUMNS(
-								SequenceID		BIGINT UNSIGNED PATH "$.SequenceID" 	
-							,	TransID			BIGINT UNSIGNED PATH "$.TransID" 
-							,	TransDate		DATETIME(3) PATH "$.TransDate" 
-							,	LeagueName		VARCHAR(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci PATH "$.LeagueName"
-							,	SportType		INT PATH "$.SportType"
-							,	MatchID			INT PATH "$.MatchID"
-							,	HomeID			INT	PATH "$.HomeID" 
-							,	AwayID			INT	PATH "$.AwayID" 
-							,	EventStatus		VARCHAR(50)	PATH "$.EventStatus" 
-							,	KickOffTime		DATETIME PATH "$.KickOffTime" 
-							,	LeagueID		INT	PATH "$.LeagueID"
-							,	EventDate		DATE PATH "$.EventDate"
-							,	LiveHomeScore	INT	PATH "$.LiveHomeScore" 
-							,	LiveAwayScore	INT	PATH "$.LiveAwayScore" 
-							,	BettypeID		INT	PATH "$.Bettype"
-							,	BetID			BIGINT	PATH "$.BetID"
-							,	CustID			INT PATH "$.CustID"
-							,	Stake			DECIMAL(20,4) PATH "$.Stake" 
-							,	Betteam			VARCHAR(10)	PATH "$.Betteam"
-                            ,	Odds			DECIMAL(10,4) PATH "$.Odds"
-                            ,	IsMajorLeague	BOOLEAN	PATH "$.IsMajorLeague" 
-                            ,	Hdp1			DECIMAL(8,4) PATH "$.Hdp1" 
-                            ,	Hdp2			DECIMAL(8,4) PATH "$.Hdp2"
-                            ,	LeagueGroupID	INT PATH "$.LeagueGroupID"
-						)
-					) AS js;  
+    INSERT IGNORE INTO Temp_Staging(SequenceID, MainTransID, Refno, TransID, TransDate, MatchID, SportType, LiveHomeScore, LiveAwayScore, BettypeID, BetID, Betteam
+			, CustID, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName)
+	SELECT	js.SequenceID
+		,	js.MainTransID
+		,	js.Refno
+		,	js.TransID
+		,	js.TransDate
+		,	js.MatchID
+		,	js.SportType
+		,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
+		,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
+		,	js.BettypeID
+		,	(CASE WHEN js.BetID = '' THEN 0 ELSE js.BetID END) AS BetID
+		,	js.Betteam
+		,	js.CustID
+		,	js.EventDate
+		,	js.KickOffTime
+		,	js.EventStatus
+		,	js.HomeID
+		,	js.AwayID
+		,	js.LeagueID
+		,	js.LeagueName
+	FROM JSON_TABLE(ip_TransList,
+		 "$[*]" COLUMNS(
+					   SequenceID		BIGINT UNSIGNED PATH "$.SequenceID"
+					 , MainTransID		BIGINT UNSIGNED PATH "$.MainTransID"
+					 , Refno			BIGINT UNSIGNED PATH "$.Refno"
+					 , TransID			BIGINT UNSIGNED PATH "$.TransID"
+					 , TransDate		DATETIME(3) PATH "$.TransDate"
+					 , MatchID			INT PATH "$.MatchID"
+					 , SportType		INT PATH "$.SportType"
+					 , LiveHomeScore	INT PATH "$.LiveHomeScore"
+					 , LiveAwayScore	INT PATH "$.LiveAwayScore"
+					 , BettypeID		INT PATH "$.BettypeID"
+					 , BetID			BIGINT PATH "$.BetID"
+					 , Betteam			VARCHAR(10) PATH "$.Betteam"
+					 , CustID			BIGINT UNSIGNED PATH "$.CustID"
+					 , EventDate		DATE PATH "$.EventDate"
+					 , KickOffTime		DATETIME PATH "$.KickOffTime"
+					 , EventStatus		VARCHAR(50) PATH "$.EventStatus"
+					 , HomeID			INT PATH "$.HomeID"
+					 , AwayID			INT PATH "$.AwayID"
+					 , LeagueID			INT PATH "$.LeagueID"
+					 , LeagueName		VARCHAR(500) PATH "$.LeagueName"
+			)
+		) AS js;  
 
     IF ip_LiveIndicator = 1 THEN 
 		#=====GROUP BETTING===================
 		IF (ip_PoolType = 1001) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingLive(SequenceID, TransID, TransDate, TransDateToSecond, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID
-			, CustID, CTSCustID, IsLicensee, Stake, Betteam, Odds, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
+			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorParlayStagingGroupBettingLive(SequenceID, MainTransID, Refno, TransID, TransDate, MatchID, SportType, LiveHomeScore, LiveAwayScore, BettypeID, BetID, Betteam
+				, CustID, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, TransDateToSecond, ScoreDiff, GroupID,  InsertTime)
 			SELECT	tmpSt.SequenceID
+				,	tmpSt.MainTransID
+				,	tmpSt.Refno
 				,	tmpSt.TransID
 				,	tmpSt.TransDate
-				,	UNIX_TIMESTAMP(tmpSt.TransDate) AS TransDateToSecond 
-				,	tmpSt.LeagueName
-				,	tmpSt.SportType
 				,	tmpSt.MatchID
-				,	tmpSt.HomeID
-				,	tmpSt.AwayID
-				,	tmpSt.EventStatus
-				,	tmpSt.KickOffTime
-				,	tmpSt.LeagueID
-				,	tmpSt.EventDate
+				,	tmpSt.SportType
 				,	tmpSt.LiveHomeScore
 				,	tmpSt.LiveAwayScore
-				,	tmpSt.ScoreDiff
 				,	tmpSt.BettypeID
 				,	tmpSt.BetID
-				,	tmpSt.CustID
-				,	cus.CTSCustID
-				, 	cus.IsLicensee
-				,	tmpSt.Stake
 				,	tmpSt.Betteam
-				,	tmpSt.Odds
-				,	tmpSt.IsMajorLeague            
-				,	tmpSt.Hdp1
-				,	tmpSt.Hdp2
-				,	tmpSt.HDP
+				,	tmpSt.CustID
+				,	tmpSt.EventDate
+				,	tmpSt.KickOffTime
+				,	tmpSt.EventStatus
+				,	tmpSt.HomeID
+				,	tmpSt.AwayID
+				,	tmpSt.LeagueID
+				,	tmpSt.LeagueName
+                ,	UNIX_TIMESTAMP(tmpSt.TransDate) AS TransDateToSecond
+				,	(CASE WHEN tmpSt.SportType = 2 THEN 0 ELSE (tmpSt.LiveHomeScore*10000) + tmpSt.LiveAwayScore END) AS ScoreDiff
+				,	0 AS GroupID
 				,	CURRENT_TIMESTAMP(3) AS InsertTime
-			FROM Temp_Staging AS tmpSt
-				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpSt.CustID = cus.CustID
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTING
-																	AND tmpMst.SportType = tmpSt.SportType 
-																	AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
-																	AND tmpMst.BettypeID = tmpSt.BettypeID 
-			WHERE tmpSt.LeagueGroupID IS NULL;
+			FROM Temp_Staging AS tmpSt;
             
             LEAVE sp;
             
 		END IF;
-		
-        #=====GROUP BETTING SABA===================
-		IF (ip_PoolType = 1002) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, BetID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime)
-			SELECT	tmpSt.SequenceID
-				,	tmpSt.TransID
-				,	tmpSt.TransDate
-				,	UNIX_TIMESTAMP(tmpSt.TransDate) AS TransDateToSecond
-				,	tmpSt.MatchID
-				,	tmpSt.SportType
-				,	tmpSt.ScoreDiff
-				,	tmpSt.BettypeID
-				,	tmpSt.BetID
-				,	tmpSt.Betteam
-				,	tmpSt.CustID
-                ,	cus.CTSCustID
-				,	tmpSt.Stake
-				,	tmpSt.GroupID
-				,	tmpSt.LiveHomeScore
-				,	tmpSt.LiveAwayScore
-				,	tmpSt.EventDate
-				,	tmpSt.KickOffTime
-				,	tmpSt.EventStatus
-				,	tmpSt.HomeID
-				,	tmpSt.AwayID
-				,	tmpSt.LeagueID
-                ,	tmpSt.LeagueGroupID
-				,	tmpSt.LeagueName
-				,	CURRENT_TIMESTAMP(3) AS InsertTime
-			FROM Temp_Staging AS tmpSt
-				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTINGSABA 
-																	  AND tmpMst.LeagueGroupID = tmpSt.LeagueGroupID
-                                                                      AND tmpMst.SportType = tmpSt.SportType
-				WHERE tmpSt.LeagueGroupID IS NOT NULL;
-
-            LEAVE sp;
-            
-		END IF;
-
-		#=====HEDGING================================
-        IF (ip_PoolType = 1003) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingLive(SequenceID, TransID, TransDate, TransDateToSecond, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID
-			, CTSCustID, SubscriberID, Stake, Betteam, InsertTime)
-			SELECT	tmpSt.SequenceID
-				,	tmpSt.TransID
-				,	tmpSt.TransDate
-				,	UNIX_TIMESTAMP(tmpSt.TransDate) AS TransDateToSecond 
-				,	tmpSt.LeagueName
-				,	tmpSt.SportType
-				,	tmpSt.MatchID
-				,	tmpSt.HomeID
-				,	tmpSt.AwayID
-				,	tmpSt.EventStatus
-				,	tmpSt.KickOffTime
-				,	tmpSt.LeagueID
-				,	tmpSt.EventDate
-				,	tmpSt.LiveHomeScore
-				,	tmpSt.LiveAwayScore
-				,	tmpSt.ScoreDiff
-				,	tmpSt.BettypeID
-				,	tmpSt.BetID
-				,	tmpSt.CustID
-				,	cus.CTSCustID 
-				,	cus.SubscriberID
-				,	tmpSt.Stake
-				,	tmpSt.Betteam
-				,	CURRENT_TIMESTAMP(3) AS InsertTime
-			FROM Temp_Staging AS tmpSt
-				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_HEDGING
-																	AND tmpMst.SportType = tmpSt.SportType 
-																	AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
-																	AND tmpMst.BettypeID = tmpSt.BettypeID
-			WHERE 	tmpSt.Stake >= tmpMst.MinStake 
-				AND cus.IsLicensee = 0
-				AND tmpSt.LeagueGroupID IS NULL;
-            
-            LEAVE sp;
-                            
-		END IF;
-        
-        #=====Staging Fixed Game Betting================================
-        IF (ip_PoolType = 1004) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingFixedGameLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
-			SELECT	tmpSt.SequenceID
-				,	tmpSt.TransID
-				,	tmpSt.TransDate
-				,	tmpSt.LeagueName
-				,	tmpSt.SportType
-				,	tmpSt.MatchID
-				,	tmpSt.HomeID
-				,	tmpSt.AwayID
-				,	tmpSt.EventStatus
-				,	tmpSt.KickOffTime
-				,	tmpSt.LeagueID
-				,	tmpSt.EventDate
-				,	tmpSt.LiveHomeScore
-				,	tmpSt.LiveAwayScore
-				,	tmpSt.ScoreDiff
-				,	tmpSt.BettypeID
-				,	tmpSt.BetID
-				,	tmpSt.CustID
-				,	tmpSt.Stake
-				,	tmpSt.Betteam
-				,	tmpSt.Odds
-				,	tmpSt.IsMajorLeague
-				,	tmpSt.Hdp1
-				,	tmpSt.Hdp2
-				,	tmpSt.HDP
-				,	CURRENT_TIMESTAMP(3) AS InsertTime
-			FROM Temp_Staging AS tmpSt
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME
-							AND tmpMst.SportType = tmpSt.SportType AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
-							AND tmpMst.BettypeID = tmpSt.BettypeID  
-							AND ABS(tmpSt.Odds) >= tmpMst.MinOdds
-			WHERE tmpSt.LeagueGroupID IS NULL;  
-            
-            LEAVE sp;
-            		
-		END IF;  
-        
-        LEAVE sp;		
+	
     END IF; 
     
 	IF ip_LiveIndicator = 0 THEN
-        #=====GROUP BETTING===================
+        #=====PARLAY GROUP BETTING===================
         IF (ip_PoolType = 2001) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive(SequenceID, TransID, TransDate, TransDateToSecond, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID
-			, CustID, CTSCustID, IsLicensee, Stake, Betteam, Odds, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
+
+			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorParlayStagingGroupBettingNonLive(SequenceID, MainTransID, Refno, TransID, TransDate, MatchID, SportType, LiveHomeScore, LiveAwayScore, BettypeID, BetID, Betteam
+				, CustID, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, TransDateToSecond, ScoreDiff, GroupID,  InsertTime)
 			SELECT	tmpSt.SequenceID
+				,	tmpSt.MainTransID
+				,	tmpSt.Refno
 				,	tmpSt.TransID
 				,	tmpSt.TransDate
-				,	UNIX_TIMESTAMP(tmpSt.TransDate) AS TransDateToSecond 
-				,	tmpSt.LeagueName
-				,	tmpSt.SportType
 				,	tmpSt.MatchID
-				,	tmpSt.HomeID
-				,	tmpSt.AwayID
-				,	tmpSt.EventStatus
-				,	tmpSt.KickOffTime
-				,	tmpSt.LeagueID
-				,	tmpSt.EventDate
+				,	tmpSt.SportType
 				,	tmpSt.LiveHomeScore
 				,	tmpSt.LiveAwayScore
-				,	tmpSt.ScoreDiff
 				,	tmpSt.BettypeID
 				,	tmpSt.BetID
-				,	tmpSt.CustID
-				,	cus.CTSCustID
-				, 	cus.IsLicensee
-				,	tmpSt.Stake
-				,	tmpSt.Betteam
-				,	tmpSt.Odds
-				,	tmpSt.IsMajorLeague            
-				,	tmpSt.Hdp1
-				,	tmpSt.Hdp2
-				,	tmpSt.HDP
-				,	CURRENT_TIMESTAMP(3) AS InsertTime
-			FROM Temp_Staging AS tmpSt
-				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpSt.CustID = cus.CustID
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTING
-																	AND tmpMst.SportType = tmpSt.SportType 
-																	AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
-																	AND tmpMst.BettypeID = tmpSt.BettypeID		
-			WHERE tmpSt.LeagueGroupID IS NULL;
-			
-			LEAVE sp;
-            
-        END IF;
-        
-		#=====GROUP BETTING SABA===================
-		IF (ip_PoolType = 2002) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, BetID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime)
-			SELECT	tmpSt.SequenceID
-				,	tmpSt.TransID
-				,	tmpSt.TransDate
-				,	UNIX_TIMESTAMP(tmpSt.TransDate) AS TransDateToSecond
-				,	tmpSt.MatchID
-				,	tmpSt.SportType
-				,	tmpSt.ScoreDiff
-				,	tmpSt.BettypeID
-                ,	tmpSt.BetID
 				,	tmpSt.Betteam
 				,	tmpSt.CustID
-                ,	cus.CTSCustID
-				,	tmpSt.Stake
-				,	tmpSt.GroupID
-				,	tmpSt.LiveHomeScore
-				,	tmpSt.LiveAwayScore
 				,	tmpSt.EventDate
 				,	tmpSt.KickOffTime
 				,	tmpSt.EventStatus
 				,	tmpSt.HomeID
 				,	tmpSt.AwayID
 				,	tmpSt.LeagueID
-                ,	tmpSt.LeagueGroupID
 				,	tmpSt.LeagueName
+                ,	UNIX_TIMESTAMP(tmpSt.TransDate) AS TransDateToSecond
+				,	(CASE WHEN tmpSt.SportType = 2 THEN 0 ELSE (tmpSt.LiveHomeScore*10000) + tmpSt.LiveAwayScore END) AS ScoreDiff
+				,	0 AS GroupID
 				,	CURRENT_TIMESTAMP(3) AS InsertTime
-			FROM Temp_Staging AS tmpSt
-				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTINGSABA 
-																	  AND tmpMst.LeagueGroupID = tmpSt.LeagueGroupID
-                                                                      AND tmpMst.SportType = tmpSt.SportType
-            WHERE tmpSt.LeagueGroupID IS NOT NULL;
-
+			FROM Temp_Staging AS tmpSt;
+            
             LEAVE sp;
             
 		END IF;
-
-		#=====HEDGING================================
-		IF (ip_PoolType = 2003) THEN	
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingHedgingNonLive(SequenceID, TransID, TransDate, TransDateToSecond, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, CTSCustID, SubscriberID, Stake, Betteam, InsertTime)
-			SELECT	tmpSt.SequenceID
-				,	tmpSt.TransID
-				,	tmpSt.TransDate
-				,	UNIX_TIMESTAMP(tmpSt.TransDate) AS TransDateToSecond 
-				,	tmpSt.LeagueName
-				,	tmpSt.SportType
-				,	tmpSt.MatchID
-				,	tmpSt.HomeID
-				,	tmpSt.AwayID
-				,	tmpSt.EventStatus
-				,	tmpSt.KickOffTime
-				,	tmpSt.LeagueID
-				,	tmpSt.EventDate
-				,	tmpSt.LiveHomeScore
-				,	tmpSt.LiveAwayScore
-				,	tmpSt.ScoreDiff
-				,	tmpSt.BettypeID
-				,	tmpSt.BetID
-				,	tmpSt.CustID
-				,	cus.CTSCustID 
-				,	cus.SubscriberID
-				,	tmpSt.Stake
-				,	tmpSt.Betteam
-				,	CURRENT_TIMESTAMP(3) AS InsertTime
-			FROM Temp_Staging AS tmpSt
-				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_HEDGING
-																	AND tmpMst.SportType = tmpSt.SportType 
-																	AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
-																	AND tmpMst.BettypeID = tmpSt.BettypeID
-			WHERE	tmpSt.Stake >= tmpMst.MinStake 
-				AND cus.IsLicensee = 0
-				AND tmpSt.LeagueGroupID IS NULL; 
-				
-			LEAVE sp;
-			
-		END IF;    
         
-		#=====ARBITRAGE================================
-        IF (ip_PoolType = 2004) THEN        
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingArbitrageNonLive(SequenceID, TransID, TransDate, TransDateToSecond
-            , LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore
-            , ScoreDiff, BettypeID, BetID, CustID, CTSCustID, SubscriberID, Stake, Betteam, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
-			SELECT	tmpSt.SequenceID
-				,	tmpSt.TransID
-				,	tmpSt.TransDate
-                ,	UNIX_TIMESTAMP(tmpSt.TransDate) AS TransDateToSecond 
-				,	tmpSt.LeagueName
-				,	tmpSt.SportType
-				,	tmpSt.MatchID
-				,	tmpSt.HomeID
-				,	tmpSt.AwayID
-				,	tmpSt.EventStatus
-				,	tmpSt.KickOffTime
-				,	tmpSt.LeagueID
-				,	tmpSt.EventDate
-				,	tmpSt.LiveHomeScore
-				,	tmpSt.LiveAwayScore
-				,	tmpSt.ScoreDiff
-				,	tmpSt.BettypeID
-				,	tmpSt.BetID
-				,	tmpSt.CustID
-                ,	cus.CTSCustID 
-				,	cus.SubscriberID
-				,	tmpSt.Stake
-				,	tmpSt.Betteam
-				,	tmpSt.IsMajorLeague
-				,	tmpSt.Hdp1
-				,	tmpSt.Hdp2
-				,	tmpSt.HDP
-				,	CURRENT_TIMESTAMP(3) AS InsertTime
-			FROM Temp_Staging AS tmpSt
-				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_ARBITRAGE
-														AND tmpMst.SportType = tmpSt.SportType 
-														AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
-														AND tmpMst.BettypeID = tmpSt.BettypeID
-			WHERE tmpSt.LeagueGroupID IS NULL;			
-			LEAVE sp;
-			
-		END IF;  
-        
-        #=====FIXED GAME================================
-        IF (ip_PoolType = 2005) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingFixedGameNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, Hdp1, Hdp2, HDP, InsertTime)
-			SELECT	tmpSt.SequenceID
-				,	tmpSt.TransID
-				,	tmpSt.TransDate
-				,	tmpSt.LeagueName
-				,	tmpSt.SportType
-				,	tmpSt.MatchID
-				,	tmpSt.HomeID
-				,	tmpSt.AwayID
-				,	tmpSt.EventStatus
-				,	tmpSt.KickOffTime
-				,	tmpSt.LeagueID
-				,	tmpSt.EventDate
-				,	tmpSt.LiveHomeScore
-				,	tmpSt.LiveAwayScore
-				,	tmpSt.ScoreDiff
-				,	tmpSt.BettypeID
-				,	tmpSt.BetID
-				,	tmpSt.CustID
-				,	tmpSt.Stake
-				,	tmpSt.Betteam
-				,	tmpSt.Odds
-				,	tmpSt.IsMajorLeague
-				,	tmpSt.Hdp1
-				,	tmpSt.Hdp2
-				,	tmpSt.HDP
-				,	CURRENT_TIMESTAMP(3) AS InsertTime
-			FROM Temp_Staging AS tmpSt
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_FIXEDGAME
-														AND tmpMst.SportType = tmpSt.SportType 
-														AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
-														AND tmpMst.BettypeID = tmpSt.BettypeID
-														AND ABS(tmpSt.Odds) >= tmpMst.MinOdds
-			WHERE tmpSt.LeagueGroupID IS NULL; 
-			
-			LEAVE sp;           
-		END IF;
-        #=====IRRIGATION================================        
-		IF (ip_PoolType = 2006) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingIrrigationNonLive(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, Hdp, InsertTime)
-			SELECT	tmpSt.SequenceID
-				,	tmpSt.TransID
-				,	tmpSt.TransDate
-				,	tmpSt.LeagueName
-				,	tmpSt.SportType
-				,	tmpSt.MatchID
-				,	tmpSt.HomeID
-				,	tmpSt.AwayID
-				,	tmpSt.EventStatus
-				,	tmpSt.KickOffTime
-				,	tmpSt.LeagueID
-				,	tmpSt.EventDate
-				,	tmpSt.LiveHomeScore
-				,	tmpSt.LiveAwayScore
-				,	tmpSt.ScoreDiff
-				,	tmpSt.BettypeID
-				,	tmpSt.BetID
-				,	tmpSt.CustID
-				,	tmpSt.Stake
-				,	tmpSt.Betteam
-				,	tmpSt.Odds
-				,	tmpSt.HDP
-				,	CURRENT_TIMESTAMP(3) AS InsertTime
-			FROM Temp_Staging AS tmpSt
-				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_IRRIGATION
-														AND tmpMst.SportType = tmpSt.SportType 
-														AND (tmpMst.LeagueType = 2 OR (tmpMst.LeagueType = tmpSt.IsMajorLeague))
-														AND tmpMst.BettypeID = tmpSt.BettypeID
-			WHERE tmpSt.LeagueGroupID IS NULL; 
-			
-			LEAVE sp;
-			
-		END IF;     		
-        
-        LEAVE sp;		
 	END IF;
     
 END$$

@@ -10,13 +10,14 @@ Revisions:
 Reviewer:
 */
 USE CTS_DataCenter;
+#Error Code: 1146. Table 'CTS_DataCenter.MatchMonitorParlayStagingGroupBettingLive' doesn't exist
 
 #===================1. SCHEMA=================================
-DROP TEMPORARY TABLE IF EXISTS MatchMonitorParlayStagingGroupBettingLive;
+DROP TABLE IF EXISTS MatchMonitorParlayStagingGroupBettingLive;
 CREATE TABLE MatchMonitorParlayStagingGroupBettingLive(
-		MainSequenceID	 	BIGINT UNSIGNED NOT NULL
+		SequenceID	 		BIGINT UNSIGNED NOT NULL
 	,	MainTransID			BIGINT UNSIGNED NOT NULL
-    ,	MainRefno			BIGINT UNSIGNED NOT NULL
+    ,	Refno				BIGINT UNSIGNED NOT NULL
 	,	TransID				BIGINT UNSIGNED NOT NULL
     ,	TransDate 			DATETIME(3) NOT NULL
 	,	TransDateToSecond	BIGINT NOT NULL
@@ -39,16 +40,16 @@ CREATE TABLE MatchMonitorParlayStagingGroupBettingLive(
     ,	LeagueName 			VARCHAR(500)
 	,	InsertTime 			DATETIME(3)	 
 	,	PRIMARY KEY(TransID)
-	,	INDEX IX_MatchMonitorParlayStagingGroupBettingLive_TransID(MainSequenceID)
-	,	INDEX IX_MatchMonitorParlayStagingGroupBettingLive_TransDateToSecond(TransDateToSecond)
-	,	INDEX IX_MatchMonitorParlayStagingGroupBettingLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID)
+	,	INDEX IX_MMParlayStagingGroupBettingLive_TransID(SequenceID)
+	,	INDEX IX_MMParlayStagingGroupBettingLive_TransDateToSecond(TransDateToSecond)
+	,	INDEX IX_MMParlayStagingGroupBettingLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID)
 ) ENGINE=InnoDB;
 
-DROP TEMPORARY TABLE IF EXISTS MatchMonitorParlayStagingGroupBettingNonLive;
+DROP  TABLE IF EXISTS MatchMonitorParlayStagingGroupBettingNonLive;
 CREATE TABLE MatchMonitorParlayStagingGroupBettingNonLive(
-		MainSequenceID	 	BIGINT UNSIGNED NOT NULL
+		SequenceID	 		BIGINT UNSIGNED NOT NULL
 	,	MainTransID			BIGINT UNSIGNED NOT NULL
-    ,	MainRefno			BIGINT UNSIGNED NOT NULL
+    ,	Refno				BIGINT UNSIGNED NOT NULL
 	,	TransID				BIGINT UNSIGNED NOT NULL
     ,	TransDate 			DATETIME(3) NOT NULL
 	,	TransDateToSecond	BIGINT NOT NULL
@@ -71,9 +72,9 @@ CREATE TABLE MatchMonitorParlayStagingGroupBettingNonLive(
     ,	LeagueName 			VARCHAR(500)
 	,	InsertTime 			DATETIME(3)	 
 	,	PRIMARY KEY(TransID)
-	,	INDEX IX_MatchMonitorParlayStagingGroupBettingNonLive_TransID(MainSequenceID)
-	,	INDEX IX_MatchMonitorParlayStagingGroupBettingNonLive_TransDateToSecond(TransDateToSecond)
-	,	INDEX IX_MatchMonitorParlayStagingGroupBettingNonLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID)
+	,	INDEX IX_MMParlayStagingGroupBettingNonLive_TransID(SequenceID)
+	,	INDEX IX_MMParlayStagingGroupBettingNonLive_TransDateToSecond(TransDateToSecond)
+	,	INDEX IX_MMParlayStagingGroupBettingNonLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID)
 ) ENGINE=InnoDB;
 
 ALTER TABLE MatchMonitor
