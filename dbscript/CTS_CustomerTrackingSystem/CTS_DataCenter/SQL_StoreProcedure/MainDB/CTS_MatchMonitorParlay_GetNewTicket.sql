@@ -43,74 +43,101 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
+	IF	OBJECT_ID('tempdb..#tmpParlayTrans') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpParlayTrans;
+	END;
+
+	CREATE TABLE #tmpParlayTrans(
+			Refno		BIGINT
+		,	SequenceID	BIGINT		
+		,	TransID		BIGINT
+	)
+	
+	--===========================================================================
 	IF	OBJECT_ID('tempdb..#tmpSportBettype') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpSportBettype;
 	END;
 
 	CREATE TABLE #tmpSportBettype(
-			SportTypeID				SMALLINT
-		,	BetTypeID				INT
-	);
+			SportTypeID	SMALLINT
+		,	BetTypeID	INT 
+	)
+	
+	CREATE CLUSTERED INDEX CIX_tmpSportBettype ON #tmpSportBettype(SportTypeID,BetTypeID);
 	
 	--==================================================================
 	IF @ListSportBettype <> ''
-		BEGIN
-			INSERT INTO #tmpSportBettype(SportTypeID,BetTypeID)
-			SELECT DISTINCT	j.SportTypeID
-						,	j.BetTypeID
-			FROM OPENJSON (@ListSportBettype) WITH (
-					SportTypeID			SMALLINT		'$.SportTypeID'
-				,	BetTypeID			INT				'$.BetTypeID'
-				) AS j;
-				
-			CREATE INDEX IX_tmpSportBettype_SportTypeIDBetTypeID ON #tmpSportBettype(SportTypeID, BetTypeID);
-		END;
-	
-	--==========================================================================================		
-		SELECT	TOP (@BatchSize) 
-				bt.sequenceid 				AS MainSequenceId
-			,	bt.transid 					AS MainTransId
-			,	b.Refno						AS Refno
-			,	b.transid 					AS TransId
-			,	b.transdate 				AS TransDate
-			,	b.matchid 					AS MatchId
-			,	m.sporttype 				AS SportType
-			,	b.livehomescore 			AS LiveHomeScore
-			,	b.liveawayscore 			AS LiveAwayScore
-			,	b.bettype 					AS BetType
-			,	b.BetCheck 					AS BetId			
-			,	b.betteam 					AS BetTeam
-			,	b.custid 					AS CustId
-			,	m.eventdate 				AS EventDate
-			,	m.GlobalShowTime 			AS KickOffTime
-			,	m.Eventstatus 				AS EventStatus			
-			,	m.homeid 					AS HomeId
-			,	m.awayid 					AS AwayId
-			,	m.leagueid 					AS LeagueId
-			,	l.leaguename 				AS LeagueName
-		FROM bodb02.dbo.bettrans AS bt WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.bettransm AS b WITH(NOLOCK) ON b.Refno = bt.Refno
-			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-			INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-			INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON bt.recommend = c.custid
-			INNER JOIN #tmpSportBettype AS tmp WITH(NOLOCK) ON m.sporttype = tmp.SportTypeID AND b.bettype = tmp.BetTypeID
-		WHERE	bt.sequenceid > @LastScannedSequenceID
-			AND	m.eventstatus <> 'completed'
-			AND b.LiveIndicator = @IsLive
-			AND bt.Currency NOT IN (20,27,28)
-			AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-			AND bt.Username NOT LIKE '%Cashout%'
-			AND bt.srecommend NOT IN (41430709) 
-			AND bt.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND bt.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398) AND b.statusID <> 101 -- Reject		
-			AND c.site NOT IN ('Nextbet','9wickets','9wsports')
-			AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
-			AND CONVERT(int,bt.BetCheck) = 6		-- '0110:Combo 2 and 3'
-			AND bt.Betteam = 1						-- 1:Mix Parlay
-			AND bt.Bettype = 29
-			AND bt.MatchID = 29
-		ORDER BY bt.sequenceid ASC;
+	BEGIN
+		INSERT INTO #tmpSportBettype(SportTypeID,BetTypeID)
+		SELECT DISTINCT	j.SportTypeID
+					,	j.BetTypeID
+		FROM OPENJSON (@ListSportBettype) WITH (
+				SportTypeID	SMALLINT	'$.SportTypeID'
+			,	BetTypeID	INT			'$.BetTypeID'
+			) AS j;
+	END;
+	--========================================================================================
+	INSERT INTO #tmpParlayTrans(Refno,SequenceId,Transid)
+	SELECT TOP(@BatchSize)
+			bt.refno		AS Refno	
+		,	bt.sequenceid 	AS SequenceId
+		,	bt.transid 		AS TransId
+	FROM bodb02.dbo.bettrans AS bt WITH(NOLOCK)
+		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON bt.recommend = c.custid
+	WHERE	bt.sequenceid > @LastScannedSequenceID
+		AND bt.Currency NOT IN (20,27,28)
+		AND bt.Username NOT LIKE '%Cashout%'
+		AND bt.srecommend NOT IN (41430709) 
+		AND bt.mrecommend NOT IN (27899314,11656504,12146012) 
+		AND bt.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398) 	
+		AND c.site NOT IN ('Nextbet','9wickets','9wsports')
+		AND (CAST(bt.BetCheck AS INT) & 2 = 2  -- Combo 2 bit 2
+			OR CAST(bt.BetCheck AS INT) & 4 = 4) -- Combo 2 bit 3
+		AND bt.Betteam = 1						-- 1:Mix Parlay
+		AND bt.Bettype = 29
+		AND bt.MatchID = 29
+	ORDER BY bt.sequenceid ASC;
+
+	CREATE CLUSTERED INDEX CIX_tmpSportBettype ON #tmpParlayTrans(refno);
+
+	--==========================================================================================
+	SELECT Max(pt.SequenceId) AS MaxSequenceID 
+	FROM #tmpParlayTrans AS pt WITH(NOLOCK);
+
+	SELECT	
+			pt.sequenceid 				AS SequenceId
+		,	pt.transid 					AS MainTransId
+		,	b.Refno						AS Refno
+		,	b.transid 					AS TransId
+		,	b.transdate 				AS TransDate
+		,	b.matchid 					AS MatchId
+		,	m.sporttype 				AS SportType
+		,	b.livehomescore 			AS LiveHomeScore
+		,	b.liveawayscore 			AS LiveAwayScore
+		,	b.bettype 					AS BetType
+		,	b.BetCheck 					AS BetId			
+		,	b.betteam 					AS BetTeam
+		,	b.custid 					AS CustId
+		,	m.eventdate 				AS EventDate
+		,	m.GlobalShowTime 			AS KickOffTime
+		,	m.Eventstatus 				AS EventStatus			
+		,	m.homeid 					AS HomeId
+		,	m.awayid 					AS AwayId
+		,	m.leagueid 					AS LeagueId
+		,	l.leaguename 				AS LeagueName
+	FROM #tmpParlayTrans AS pt WITH(NOLOCK)
+		INNER JOIN bodb02.dbo.bettransm AS b WITH(NOLOCK) ON b.Refno = pt.Refno
+		INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+		INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
+		INNER JOIN #tmpSportBettype AS tmp WITH(NOLOCK) ON m.sporttype = tmp.SportTypeID AND b.bettype = tmp.BetTypeID
+	WHERE	pt.sequenceid > @LastScannedSequenceID
+		AND	m.eventstatus <> 'completed'
+		AND b.LiveIndicator = @IsLive
+		AND b.BetFrom NOT IN ('p','m','w','0','3','6')
+		AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
+	ORDER BY pt.sequenceid, b.refno;
 
 	DROP TABLE IF EXISTS #tmpSportBettype;
 
