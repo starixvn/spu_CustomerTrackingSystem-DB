@@ -14,7 +14,8 @@ BEGIN
 		Original: 
 
 		Revisions:
-			- 20240820@Long.Luu: Created [Redmine ID: #209403]
+			- 20240820@Long.Luu: 			Created [Redmine ID: #209403]
+			- 20240822@Victoria.Le: 		Renovate CC phase 2 [Redmine ID: #205317]
             
 		Param's Explanation:
 
@@ -35,7 +36,18 @@ BEGIN
     SELECT b.CustID, b.CategoryID, c.CustomerClass, b.CreatedDate
     FROM Temp_InputCustomers AS a
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS b ON a.CustID = b.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS c ON b.CategoryID = c.CategoryID; 
+        INNER JOIN CTS_DataCenter.CustomerCategory AS c ON b.CategoryID = c.CategoryID AND cat.IsActive = 1 AND c.CustomerClass IS NOT NULL
+		,	LATERAL (
+				SELECT cs.ParentID, cs.IsParallelParentID
+				FROM CTS_DataCenter.CTSCustomerClassification AS cls
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID 
+																			AND cat.IsActive = 1 AND cat.CustomerClass IS NOT NULL
+					INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cat.CategoryID
+				WHERE cls.CTSCustID = b.CTSCustID
+				ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+				LIMIT 1
+			) AS ltr
+	WHERE c.ParentID = CASE WHEN cs.IsParallelParentID = 0 THEN ltr.ParentID ELSE c.ParentID END;
    
 END$$
 

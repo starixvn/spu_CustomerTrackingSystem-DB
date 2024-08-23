@@ -12,15 +12,15 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20240819@Casey.Huynh: Created [RedmineID: #209345]
+			- 20240819@Casey.Huynh: Created [RedmineID: #209435]
             - 20240822@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
 
         Param's Explanation:     
         Example:
 			CALL CTS_DC_CustClassification_GetRiskLevelByAccount('1002,8652,17198,24,20896,20934,20939');
 	*/      
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_AccountID;    
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_AccountID;    
     CREATE TEMPORARY TABLE Temp_AccountID(
 			AccountID	BIGINT UNSIGNED PRIMARY KEY
 	);          
@@ -46,11 +46,12 @@ BEGIN
         ,	ltr.Ext_SabaIntelligentRiskLevel AS RiskLevel
     FROM 	Temp_CustDCSAccount AS tmp
 		,	LATERAL(SELECT cat.CategoryName, cat.CustomerClassName, cat.CustomerClass, cat.Ext_SabaIntelligentRiskLevel, cls.LastModifiedDate
-				FROM CTS_DataCenter.CTSCustomerClassification AS cls
-					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.IsActive = 1
-                WHERE cls.CTSCustID = tmp.CTSCustID
-                ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC	
-                LIMIT 1) AS ltr;
+					FROM CTS_DataCenter.CTSCustomerClassification AS cls
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID 
+																				AND cat.IsActive = 1 AND cat.CustomerClass IS NOT NULL
+					WHERE cls.CTSCustID = tmp.CTSCustID
+					ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC	
+					LIMIT 1) AS ltr;
     
 END$$
 DELIMITER ;

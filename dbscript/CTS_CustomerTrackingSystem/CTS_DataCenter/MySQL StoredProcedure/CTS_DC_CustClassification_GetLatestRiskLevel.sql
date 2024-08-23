@@ -22,7 +22,10 @@ BEGIN
 			CALL CTS_DC_CustClassification_GetLatestRiskLevel(4400, 1016629001, 1000);
 	*/ 
 
-    DECLARE lv_LastModifiedDate BIGINT UNSIGNED;
+    DECLARE lv_LastModifiedDate         BIGINT UNSIGNED;
+    DECLARE CONST_CATEID_SPECIALCC      INT;
+
+    SET CONST_CATEID_SPECIALCC					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
         
     DROP TEMPORARY TABLE IF EXISTS Temp_ClassificationHistory;    
     CREATE TEMPORARY TABLE Temp_ClassificationHistory(
@@ -43,6 +46,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON  cls.SubscriberID = ip_SubscriberID AND cls.CustID = clh.CustID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = clh.CustID AND cus.CustSubID = 0 AND cus.RegisterName IS NOT NULL AND cus.RoleID = 1
 	WHERE	clh.ID > ip_LastID
+    AND clh.CategoryID <> CONST_CATEID_SPECIALCC
 		AND clh.LastModifiedDate <= lv_LastModifiedDate
 	ORDER BY clh.ID
 	LIMIT ip_BatchSize;
@@ -68,11 +72,11 @@ BEGIN
         ,	ltr.LastModifiedDate
     FROM 	CTE_History AS cte
 		,	LATERAL(SELECT cat.CategoryName, cat.CustomerClassName, cat.CustomerClass, cat.Ext_SabaIntelligentRiskLevel, cls.LastModifiedDate
-				FROM CTS_DataCenter.CTSCustomerClassification AS cls
-					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.IsActive = 1
-                WHERE cls.CustID = cte.CustID
-                ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC		
-                LIMIT 1) AS ltr
+              FROM CTS_DataCenter.CTSCustomerClassification AS cls
+                INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.IsActive = 1 AND cat.CustomerClass IS NOT NULL
+              WHERE cls.CustID = cte.CustID
+              ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC		
+              LIMIT 1) AS ltr
 	ORDER BY cte.ID ASC;
     
 END$$
