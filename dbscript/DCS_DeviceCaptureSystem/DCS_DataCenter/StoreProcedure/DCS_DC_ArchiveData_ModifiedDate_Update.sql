@@ -23,8 +23,9 @@ sp:BEGIN
 		Example:
 			CALL DCS_DC_ArchiveData_ModifiedDate_Update(100);
 	*/ 
-    DECLARE CONST_TRANS07_SYSTEMARCHIVEID INT DEFAULT 4963733;
-    DECLARE lv_MaxTransID BIGINT UNSIGNED;
+    DECLARE CONST_TRANS07_SYSTEMARCHIVEID 	INT DEFAULT 4963733;
+    DECLARE lv_MaxTransID 					BIGINT UNSIGNED;
+    DECLARE lv_CurrentDate 					TIMESTAMP DEFAULT CURRENT_TIMESTAMP();
     
     SELECT VValue
     INTO lv_MaxTransID
@@ -152,7 +153,7 @@ sp:BEGIN
 		,	MaxCreatedDate	AS LastModifiedDate
 	FROM Temp_BotComponent
     ON DUPLICATE KEY UPDATE LastModifiedDate = VALUES(LastModifiedDate),
-							ModifiedTime = NOW();
+							ModifiedTime = lv_CurrentDate;
 
     /*******UPDATE FP_Tagging********************/
     DELETE tmp
@@ -167,7 +168,7 @@ sp:BEGIN
 		,	MaxCreatedDate	AS LastModifiedDate
 	FROM Temp_FP_Tagging
     ON DUPLICATE KEY UPDATE LastModifiedDate = VALUES(LastModifiedDate),
-							ModifiedTime = NOW();
+							ModifiedTime = lv_CurrentDate;
 
     /*******UPDATE FP_FingerPrint********************/
     DELETE tmp
@@ -182,7 +183,7 @@ sp:BEGIN
 		,	MaxCreatedDate	AS LastModifiedDate
 	FROM Temp_FP_FingerPrint
     ON DUPLICATE KEY UPDATE LastModifiedDate = VALUES(LastModifiedDate),
-							ModifiedTime = NOW();
+							ModifiedTime = lv_CurrentDate;
 
     /*******UPDATE FP_FingerPrintExtra********************/
     DELETE tmp
@@ -197,7 +198,7 @@ sp:BEGIN
 		,	MaxCreatedDate	AS LastModifiedDate
 	FROM Temp_FP_FingerPrintExtra
     ON DUPLICATE KEY UPDATE LastModifiedDate = VALUES(LastModifiedDate),
-							ModifiedTime = NOW();
+							ModifiedTime = lv_CurrentDate;
 
     /*******UPDATE FP_UserAgent********************/
     DELETE tmp
@@ -212,7 +213,7 @@ sp:BEGIN
 		,	MaxCreatedDate	AS LastModifiedDate
 	FROM Temp_FP_UserAgent
     ON DUPLICATE KEY UPDATE LastModifiedDate = VALUES(LastModifiedDate),
-							ModifiedTime = NOW();
+							ModifiedTime = lv_CurrentDate;
 
     /*******UPDATE FP_Device********************/
     DELETE tmp
@@ -227,7 +228,7 @@ sp:BEGIN
 		,	MaxCreatedDate	AS LastModifiedDate
 	FROM Temp_FP_Device
     ON DUPLICATE KEY UPDATE LastModifiedDate = VALUES(LastModifiedDate),
-							ModifiedTime = NOW();
+							ModifiedTime = lv_CurrentDate;
     
     /*******UPDATE SystemSetting MaxTransID********************/
     SELECT MAX(TransID)
