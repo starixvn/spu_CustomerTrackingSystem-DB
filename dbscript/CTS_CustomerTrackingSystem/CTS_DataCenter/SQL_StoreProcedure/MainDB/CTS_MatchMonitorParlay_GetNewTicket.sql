@@ -17,7 +17,7 @@ AS
 	DB	 : bodb02
 
 	Revisions:
-		- 20240822@Casey.Huynh: Created
+		- 20240822@Casey.Huynh: Created [Redmine ID: 152883]
 
 	Params Explaination:
 
@@ -94,7 +94,7 @@ BEGIN
 		AND bt.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398) 	
 		AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 		AND (CAST(bt.BetCheck AS INT) & 2 = 2  -- Combo 2 bit 2
-			OR CAST(bt.BetCheck AS INT) & 4 = 4) -- Combo 2 bit 3
+			OR CAST(bt.BetCheck AS INT) & 4 = 4) -- Combo 3 bit 3
 		AND bt.Betteam = 1						-- 1:Mix Parlay
 		AND bt.Bettype = 29
 		AND bt.MatchID = 29

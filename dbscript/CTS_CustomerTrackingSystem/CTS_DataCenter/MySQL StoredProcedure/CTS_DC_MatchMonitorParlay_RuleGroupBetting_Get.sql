@@ -10,7 +10,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitorParlay_RuleGroupBett
 sp: BEGIN
 	/*
 		Created:	20240826@Casey.Huynh
-		Task :		Match Monitor Rule - Clean Stagging Service
+		Task :		Match Monitor Rule - Get
 		DB:			CTS_DataCenter
 		Original:
 
@@ -26,8 +26,8 @@ sp: BEGIN
     DECLARE CONST_LOG								TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
     DECLARE CONST_MMRULEGROUP_GROUPBETTINGPARLAY	INT DEFAULT 7;
     DECLARE CONST_MMREASON_GROUPBETTINGPARLAY		INT DEFAULT 5;
-    DECLARE CONST_SYSPARAM_LASTSEQUENCEID_LIVE		INT DEFAULT 173;
-    DECLARE CONST_SYSPARAM_LASTSEQUENCEID_NONLIVE	INT DEFAULT 174;
+    DECLARE CONST_LASTSEQUENCE_SYSPARAMETERID_LIVE		INT DEFAULT 173;
+    DECLARE CONST_LASTSEQUENCE_SYSPARAMETERID_NONLIVE	INT DEFAULT 174;
     
 	DECLARE lv_LastSequenceID	BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxSequenceID	BIGINT UNSIGNED DEFAULT 0;
@@ -69,7 +69,7 @@ sp: BEGIN
 		SELECT sys.ParameterValue
         INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS sys
-        WHERE ParameterID = CONST_SYSPARAM_LASTSEQUENCEID_LIVE;      
+        WHERE ParameterID = CONST_LASTSEQUENCE_SYSPARAMETERID_LIVE;      
 
 		INSERT INTO Temp_OldGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID)
         SELECT	mms.MatchID
@@ -133,7 +133,7 @@ sp: BEGIN
 		SELECT sys.ParameterValue
         INTO lv_LastSequenceID
         FROM CTS_DataCenter.SystemParameter AS sys
-        WHERE ParameterID = CONST_SYSPARAM_LASTSEQUENCEID_NONLIVE;      
+        WHERE ParameterID = CONST_LASTSEQUENCE_SYSPARAMETERID_NONLIVE;      
         
 		INSERT INTO Temp_OldGroup(MatchID, ScoreDiff, BettypeID, BetID, Betteam, GroupID)
         SELECT	mms.MatchID
