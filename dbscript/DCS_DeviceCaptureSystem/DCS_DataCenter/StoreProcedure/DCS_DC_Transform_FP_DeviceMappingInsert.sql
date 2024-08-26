@@ -22,6 +22,8 @@ BEGIN
 	*/
     DECLARE CONST_MIN_TRANSACTION_TRANSID	INT DEFAULT 24;
     DECLARE CONST_MINUTE_TO_WAIT_EVOLUTION	INT DEFAULT 25;
+    DECLARE CONST_RECOVERTYPE_FIRSTRULE		SMALLINT DEFAULT 1;
+    DECLARE CONST_RECOVERTYPE_SECONDRULE	SMALLINT DEFAULT 5;
     
 	DECLARE lv_Min_Transaction_TransID  	BIGINT UNSIGNED;
 	DECLARE lv_Minute_To_Wait_Evolution  	INT;
@@ -48,6 +50,7 @@ BEGIN
 		,	FP_DeviceFingerprintAccountOldID			BIGINT UNSIGNED
         
 		,	FP_DeviceFingerprintAccount_InsertedTime	TIMESTAMP
+        ,	RecoverType									SMALLINT UNSIGNED DEFAULT 0 /* SELECT * FROM DCS_DataCenter.StaticList WHERE ListID = 4; */
         
 		,	FP_DeviceMappingID							BIGINT UNSIGNED DEFAULT 0
 	);
@@ -66,6 +69,7 @@ BEGIN
 			RawTransID									BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	SameDeviceWithRawTransID					BIGINT UNSIGNED DEFAULT 0
 		,	FP_DeviceID									BIGINT UNSIGNED DEFAULT 0
+		,	RecoverType									SMALLINT UNSIGNED DEFAULT 0
         
 		,	FirstDeviceID								BIGINT UNSIGNED
 		,	SecondDeviceID								BIGINT UNSIGNED
@@ -127,13 +131,19 @@ BEGIN
 		AND FP_TaggingID > 0;
     
     UPDATE Temp_TaggingDevice AS tmp
-		INNER JOIN DCS_DataCenter.FP_DeviceMapping AS dm ON dm.FP_TaggingID = tmp.FP_TaggingID
-	SET tmp.FP_DeviceID = dm.FP_DeviceID;
+	SET tmp.FP_DeviceID = (
+		SELECT dm.FP_DeviceID
+		FROM DCS_DataCenter.FP_DeviceMapping AS dm
+		WHERE dm.FP_TaggingID = tmp.FP_TaggingID
+		ORDER BY dm.ID DESC
+        LIMIT 1
+	);
     
     /********************** Update Temp ***********************************/
     UPDATE Temp_DeviceMapping AS tmp
 		INNER JOIN Temp_TaggingDevice AS tmpTg ON tmpTg.FP_TaggingID = tmp.FP_TaggingID
-	SET tmp.FP_DeviceID = tmpTg.FP_DeviceID
+	SET tmp.FP_DeviceID = tmpTg.FP_DeviceID,
+		tmp.RecoverType = CONST_RECOVERTYPE_FIRSTRULE
     WHERE tmp.FP_DeviceMappingID = 0;
     
     
@@ -146,13 +156,19 @@ BEGIN
 		AND FP_DeviceID = 0;
     
     UPDATE Temp_DeviceFingerprintAccountOld AS tmp
-		INNER JOIN DCS_DataCenter.FP_DeviceMapping AS dm ON dm.FP_DeviceFingerprintAccountOldID = tmp.FP_DeviceFingerprintAccountOldID
-	SET tmp.FP_DeviceID = dm.FP_DeviceID;
+	SET tmp.FP_DeviceID = (
+		SELECT dm.FP_DeviceID
+		FROM DCS_DataCenter.FP_DeviceMapping AS dm
+		WHERE dm.FP_DeviceFingerprintAccountOldID = tmp.FP_DeviceFingerprintAccountOldID
+		ORDER BY dm.ID DESC
+        LIMIT 1
+	);
     
     /********************** Update Temp ***********************************/
     UPDATE Temp_DeviceMapping AS tmp
 		INNER JOIN Temp_DeviceFingerprintAccountOld AS tmpDfa ON tmpDfa.FP_DeviceFingerprintAccountOldID = tmp.FP_DeviceFingerprintAccountOldID
-	SET tmp.FP_DeviceID = tmpDfa.FP_DeviceID
+	SET tmp.FP_DeviceID = tmpDfa.FP_DeviceID,
+		tmp.RecoverType = CONST_RECOVERTYPE_SECONDRULE
     WHERE tmp.FP_DeviceMappingID = 0
 		AND tmp.FP_DeviceID = 0;
     
@@ -181,11 +197,12 @@ BEGIN
     
     UPDATE Temp_DeviceMapping AS tmp
 		INNER JOIN Temp_NewDevice AS tmpNd ON tmpNd.RawTransID = tmp.RawTransID
-	SET tmp.FP_DeviceID = tmpNd.FP_DeviceID
+	SET tmp.FP_DeviceID = tmpNd.FP_DeviceID,
+		tmp.RecoverType = tmpNd.RecoverType
     WHERE tmp.FP_DeviceMappingID = 0
 		AND tmp.FP_DeviceID = 0;
     
-    INSERT IGNORE INTO DCS_DataCenter.FP_DeviceMapping(FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccountOldID, FP_DeviceID, FirstRawTransID)
+    INSERT IGNORE INTO DCS_DataCenter.FP_DeviceMapping(FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccountOldID, FP_DeviceID, FirstRawTransID, RecoverType)
     SELECT 	FP_TaggingID
 		,	FP_FingerPrintID
         ,	FP_DeviceFingerprintAccountID
@@ -193,6 +210,7 @@ BEGIN
         ,	FP_DeviceFingerprintAccountOldID
         ,	MIN(FP_DeviceID) AS FP_DeviceID
         ,	MIN(RawTransID) AS FirstRawTransID
+        ,	MIN(RecoverType) AS RecoverType
     FROM Temp_DeviceMapping
     WHERE FP_DeviceID > 0
     GROUP BY FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccountOldID;

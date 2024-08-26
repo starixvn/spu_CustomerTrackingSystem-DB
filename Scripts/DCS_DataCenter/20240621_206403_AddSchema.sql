@@ -144,6 +144,7 @@ CREATE TABLE `FP_DeviceMapping` (
   `FP_DeviceFingerprintAccountOldID` BIGINT UNSIGNED NOT NULL,
   `FP_DeviceID` BIGINT UNSIGNED NOT NULL,
   `FirstRawTransID` BIGINT UNSIGNED NOT NULL,
+  `RecoverType` SMALLINT UNSIGNED NOT NULL,
   `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
   UNIQUE KEY `UX_FP_DeviceMapping_Group` (`FP_TaggingID`,`FP_FingerPrintID`,`FP_DeviceFingerprintAccountID`,`FP_DeviceFingerprintAccount_EvolutionID`,`FP_DeviceFingerprintAccountOldID`),

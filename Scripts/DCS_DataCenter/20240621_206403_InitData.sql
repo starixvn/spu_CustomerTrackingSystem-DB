@@ -13,11 +13,11 @@ VALUES 	(23, 'DeviceEvolution', 'Max_FP_DeviceFingerprintAccountID', 0, NOW()),
 		(25, 'DeviceMapping', 'Minute_To_Wait_Evolution', 10, NOW());
 
 INSERT INTO `DCS_DataCenter`.`StaticList`(`ListID`, `ItemID`, `ListCode`, `ListName`, `ItemCode`, `ItemName`, `Status`, `Description`, `CreatedDate`)
-VALUES 	(4, 1, 'DeviceMapping', 'DeviceMapping', 'Tagging', 'Tagging', 1, 'Rule 1', NOW()),
-		(4, 2, 'DeviceMapping', 'DeviceMapping', 'RawFingerprint', 'RawFingerprint', 1, 'Rule 2', NOW()),
-		(4, 3, 'DeviceMapping', 'DeviceMapping', 'DeviceFingerprintAccount', 'DeviceFingerprintAccount', 1, 'Rule 3', NOW()),
-		(4, 4, 'DeviceMapping', 'DeviceMapping', 'DeviceFingerprintAccountEvolution', 'DeviceFingerprintAccountEvolution', 1, 'Rule 4', NOW()),
-		(4, 5, 'DeviceMapping', 'DeviceMapping', 'DeviceFingerprintAccountOld', 'DeviceFingerprintAccountOld', 1, 'Rule 5', NOW());
+VALUES 	(4, 1, 'DeviceMapping_RecoverType', 'DeviceMapping RecoverType', 'FP_Tagging', 'FP_Tagging', 1, 'Rule 1', NOW()),
+		(4, 2, 'DeviceMapping_RecoverType', 'DeviceMapping RecoverType', 'FP_FingerPrint', 'FP_FingerPrint', 1, 'Rule 2', NOW()),
+		(4, 3, 'DeviceMapping_RecoverType', 'DeviceMapping RecoverType', 'FP_DeviceFingerprintAccount', 'FP_DeviceFingerprintAccount', 1, 'Rule 3', NOW()),
+		(4, 4, 'DeviceMapping_RecoverType', 'DeviceMapping RecoverType', 'FP_DeviceFingerprintAccount_Evolution', 'FP_DeviceFingerprintAccount_Evolution', 1, 'Rule 4', NOW()),
+		(4, 5, 'DeviceMapping_RecoverType', 'DeviceMapping RecoverType', 'FP_DeviceFingerprintAccountOld', 'FP_DeviceFingerprintAccountOld', 1, 'Rule 5', NOW());
 
 UPDATE DCS_DataCenter.SystemSetting
 SET VValue = 0

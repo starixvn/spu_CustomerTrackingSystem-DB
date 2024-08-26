@@ -18,23 +18,32 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
+			DROP TABLE Temp_NewDevice;
 			CREATE TEMPORARY TABLE Temp_NewDevice(
 					RawTransID									BIGINT UNSIGNED NOT NULL PRIMARY KEY
 				,	SameDeviceWithRawTransID					BIGINT UNSIGNED DEFAULT 0
-				,	FP_DeviceID									BIGINT UNSIGNED DEFAULT 0
+				,	RecoverType									SMALLINT UNSIGNED DEFAULT 0
 				
-				,	FP_TaggingID								BIGINT UNSIGNED
-				,	FP_DeviceFingerprintAccountID				BIGINT UNSIGNED
+				,	FirstDeviceID								BIGINT UNSIGNED
+				,	SecondDeviceID								BIGINT UNSIGNED
 			);
+            
+            INSERT INTO Temp_NewDevice(RawTransID, FirstDeviceID, SecondDeviceID)
+            VALUES(1, 1, 1),(2, 1, 1),(3, 2, 2),(4, 2, 3);
+            
+			SET sql_safe_updates = 0;
 			CALL DCS_DC_Transform_FP_DeviceMappingUpdateTheSameDevice('Temp_NewDevice');
+            select * from Temp_NewDevice;
 	*/
+    DECLARE CONST_RECOVERTYPE_FIRSTRULE		SMALLINT DEFAULT 1;
+    DECLARE CONST_RECOVERTYPE_SECONDRULE	SMALLINT DEFAULT 2;
     
-    DECLARE lv_CurrentID 				INT DEFAULT 0;
-    DECLARE lv_MaxID 					INT;
-    DECLARE lv_CurrentFirstDeviceID 	INT;
-    DECLARE lv_CurrentSecondDeviceID 	INT;
-    DECLARE lv_SameDeviceWithID 		INT;
-    DECLARE done 						INT DEFAULT 0;
+    DECLARE lv_CurrentID 					INT DEFAULT 0;
+    DECLARE lv_MaxID 						INT;
+    DECLARE lv_CurrentFirstDeviceID 		INT;
+    DECLARE lv_CurrentSecondDeviceID 		INT;
+    DECLARE lv_SameDeviceWithID 			INT;
+    DECLARE lv_RecoverType		 			SMALLINT; /* 1: FirstRule, 2: SecondRule */
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_SameDevice;
 	DROP TEMPORARY TABLE IF EXISTS Temp_SameDevice1;
@@ -42,6 +51,7 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_SameDevice(
 			ID									BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	SameDeviceWithID					BIGINT UNSIGNED
+		,	RecoverType							SMALLINT UNSIGNED DEFAULT 0
 
 		,	FirstDeviceID						BIGINT UNSIGNED
 		,	SecondDeviceID						BIGINT UNSIGNED
@@ -65,21 +75,24 @@ BEGIN
 			,	FirstDeviceID
             ,	SecondDeviceID
             ,	SameDeviceWithID
-        INTO lv_CurrentID, lv_CurrentFirstDeviceID, lv_CurrentSecondDeviceID, lv_SameDeviceWithID
+            ,	RecoverType
+        INTO lv_CurrentID, lv_CurrentFirstDeviceID, lv_CurrentSecondDeviceID, lv_SameDeviceWithID, lv_RecoverType
         FROM Temp_SameDevice
         WHERE ID > lv_CurrentID
         ORDER BY ID ASC
         LIMIT 1;
 
-        SELECT MIN(SameDeviceWithID)
-        INTO lv_SameDeviceWithID
+        SELECT	MIN(SameDeviceWithID)
+			,	MAX(CASE WHEN ID IS NOT NULL THEN CONST_RECOVERTYPE_FIRSTRULE ELSE 0 END) AS RecoverType
+        INTO lv_SameDeviceWithID, lv_RecoverType
         FROM Temp_SameDevice
         WHERE FirstDeviceID = lv_CurrentFirstDeviceID
           AND ID < lv_CurrentID;
-
+		
         IF lv_SameDeviceWithID IS NULL THEN
-			SELECT MIN(SameDeviceWithID)
-			INTO lv_SameDeviceWithID
+			SELECT 	MIN(SameDeviceWithID)
+				,	MAX(CASE WHEN ID IS NOT NULL THEN CONST_RECOVERTYPE_SECONDRULE ELSE 0 END) AS RecoverType
+			INTO lv_SameDeviceWithID, lv_RecoverType
 			FROM Temp_SameDevice
 			WHERE SecondDeviceID = lv_CurrentSecondDeviceID
 			  AND ID < lv_CurrentID;
@@ -88,14 +101,16 @@ BEGIN
 				SET lv_SameDeviceWithID = lv_CurrentID;
 			END IF;
         END IF;
-
+        
         UPDATE Temp_SameDevice
-        SET SameDeviceWithID = lv_SameDeviceWithID
+        SET SameDeviceWithID = lv_SameDeviceWithID,
+			RecoverType = lv_RecoverType
         WHERE ID = lv_CurrentID;
         
 		SET @sql = CONCAT('UPDATE ', ip_TableName,' AS tmp
 								INNER JOIN Temp_SameDevice AS tmpNd ON tmpNd.ID = tmp.RawTransID
-							SET tmp.SameDeviceWithRawTransID = IFNULL(tmpNd.SameDeviceWithID, 0)');
+							SET tmp.SameDeviceWithRawTransID = IFNULL(tmpNd.SameDeviceWithID, 0),
+								tmp.RecoverType = IFNULL(tmpNd.RecoverType, 0)');
 		PREPARE stmt FROM @sql;
 		EXECUTE stmt;
 		DEALLOCATE PREPARE stmt;
