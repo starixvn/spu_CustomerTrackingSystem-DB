@@ -61,7 +61,7 @@ BEGIN
 	--==========================================================================================
     
 	SELECT	TOP (1) 
-			bt.sequenceid  AS InitialLiveSequenceId_Live
+			bt.sequenceid-1  AS InitialLiveSequenceId_Live
 	FROM bodb02.dbo.bettrans AS bt WITH(NOLOCK)
 		INNER JOIN bodb02.dbo.bettransm AS b WITH(NOLOCK) ON b.Refno = bt.Refno
 		INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
@@ -87,7 +87,7 @@ BEGIN
 	ORDER BY bt.sequenceid ASC;
 
     SELECT	TOP (1) 
-			bt.sequenceid 	AS InitialSequenceId_NonLive
+			bt.sequenceid -1 	AS InitialSequenceId_NonLive
 	FROM bodb02.dbo.bettrans AS bt WITH(NOLOCK)
 		INNER JOIN bodb02.dbo.bettransm AS b WITH(NOLOCK) ON b.Refno = bt.Refno
 		INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid

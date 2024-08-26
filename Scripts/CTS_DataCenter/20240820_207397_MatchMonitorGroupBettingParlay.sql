@@ -10,7 +10,6 @@ Revisions:
 Reviewer:
 */
 USE CTS_DataCenter;
-#Error Code: 1146. Table 'CTS_DataCenter.MatchMonitorParlayStagingGroupBettingLive' doesn't exist
 
 #===================1. SCHEMA=================================
 DROP TABLE IF EXISTS MatchMonitorParlayStagingGroupBettingLive;
@@ -27,7 +26,8 @@ CREATE TABLE MatchMonitorParlayStagingGroupBettingLive(
 	,	BettypeID  			INT NOT NULL
 	,	BetID  				BIGINT NOT NULL
 	,	Betteam  			VARCHAR(10) NOT NULL 
-	,	CustID  			BIGINT UNSIGNED NOT NULL 
+	,	CustID  			BIGINT UNSIGNED NOT NULL
+    ,	CTSCustID			BIGINT UNSIGNED NOT NULL
 	,	GroupID 			INT DEFAULT '0'
 	,	LiveHomeScore		INT
 	,	LiveAwayScore		INT
@@ -59,7 +59,8 @@ CREATE TABLE MatchMonitorParlayStagingGroupBettingNonLive(
 	,	BettypeID  			INT NOT NULL
 	,	BetID  				BIGINT NOT NULL
 	,	Betteam  			VARCHAR(10) NOT NULL 
-	,	CustID  			BIGINT UNSIGNED NOT NULL 
+	,	CustID  			BIGINT UNSIGNED NOT NULL
+    ,	CTSCustID			BIGINT UNSIGNED NOT NULL
 	,	GroupID 			INT DEFAULT '0'
 	,	LiveHomeScore		INT
 	,	LiveAwayScore		INT
@@ -177,24 +178,28 @@ WHERE ListID = 16 AND ItemID < 100;
 
 UPDATE StaticList
 SET ListNameDisplay = 'Detect By AI'
-	, PriorityOrder =  NULL
+	, PriorityOrder =  NULL #remove PriorityOrder due to Web ordered by Alphabet
 WHERE ListID = 16 
 	AND ItemID = 100;
 
 INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,ItemParentItemID,PriorityOrder,Status,Description,CreatedDate)
 VALUES( 16,200,'Match Monitor Reason','Detect By System Parlay','Group Betting Parlay','GB(P)',5,0,NULL,NULL,1,NULL,NOW());
 
-CALL CTS_DC_Common_GetStaticList(16, true)
+SELECT * FROM StaticList WHERE ListID = 16;
 
-SELECT * FROM StaticList WHERE ListID = 16
 #------------------------------------------------------------------------------------------------------
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
 VALUES(171,'MatchMonitorParlay_StagingLive_LastSequenceID','MatchMonitorParlay_StagingLive_LastSequenceID','BIGINT UNSIGNED','0')
-, (172,'MatchMonitorParlay_StagingLive_LastSequenceID','MatchMonitorParlay_StagingLive_LastSequenceID','BIGINT UNSIGNED','0')
+, (172,'MatchMonitorParlay_StagingNonLive_LastSequenceID','MatchMonitorParlay_StagingNonLive_LastSequenceID','BIGINT UNSIGNED','0')
 , (173,'MatchMonitorParlay_GB_Live_LastSequenceID','MatchMonitorParlay_GB_Live_LastSequenceID','BIGINT UNSIGNED','0')
 , (174,'MatchMonitorParlay_GB_NonLive_LastSequenceID','MatchMonitorParlay_GB_NonLive_LastSequenceID','BIGINT UNSIGNED','0');
 
 SELECT * FROM CTS_DataCenter.SystemParameter WHERe ParameterID IN (171,172,173,174);
 
+#------------------------------------------------------------------------------------------------------
+SELECT * FROM MatchMonitorRuleSetting;
 
+INSERT INTO `CTS_DataCenter`.`MatchMonitorRuleSetting` (RuleGroupID, RuleStatus, RuleGroupDesc, Reason, SportType, LeagueGroupID, LeagueType, ReasonName, SportName, TimeStep, TotalStake, CustStake, TotalTicket, HighStake, HighStakeTicketPercent, MinOdds, MaxOdds, OddsSpread, ModifiedDate, Comments)
+VALUES(7, 1, 'Group Betting Parlay Detect', 5, 0, NULL, 2, 'Group Betting Parlay', NULL, 180, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NOW(), NULL);
 
+SELECT * FROM MatchMonitorRuleSetting;
