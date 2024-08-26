@@ -123,6 +123,7 @@ BEGIN
 	ALTER TABLE Temp_DeviceMapping
 	ADD INDEX IX_Temp_DeviceMapping_FP_DeviceMappingID (FP_DeviceMappingID);	
     
+    
     /********************** Check Rule 1 ***********************************/
     INSERT INTO Temp_TaggingDevice(FP_TaggingID)
     SELECT DISTINCT FP_TaggingID
@@ -131,13 +132,14 @@ BEGIN
 		AND FP_TaggingID > 0;
     
     UPDATE Temp_TaggingDevice AS tmp
-	SET tmp.FP_DeviceID = (
+	SET tmp.FP_DeviceID = IFNULL((
 		SELECT dm.FP_DeviceID
 		FROM DCS_DataCenter.FP_DeviceMapping AS dm
 		WHERE dm.FP_TaggingID = tmp.FP_TaggingID
 		ORDER BY dm.ID DESC
         LIMIT 1
-	);
+	), 0);
+    
     
     /********************** Update Temp ***********************************/
     UPDATE Temp_DeviceMapping AS tmp
@@ -156,13 +158,13 @@ BEGIN
 		AND FP_DeviceID = 0;
     
     UPDATE Temp_DeviceFingerprintAccountOld AS tmp
-	SET tmp.FP_DeviceID = (
+	SET tmp.FP_DeviceID = IFNULL((
 		SELECT dm.FP_DeviceID
 		FROM DCS_DataCenter.FP_DeviceMapping AS dm
 		WHERE dm.FP_DeviceFingerprintAccountOldID = tmp.FP_DeviceFingerprintAccountOldID
 		ORDER BY dm.ID DESC
         LIMIT 1
-	);
+	), 0);
     
     /********************** Update Temp ***********************************/
     UPDATE Temp_DeviceMapping AS tmp
