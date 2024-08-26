@@ -25,7 +25,7 @@ AS
 
 		EXEC [CTS_MatchMonitorParlay_GetNewTicket] 
 			 @LastScannedSequenceID=1
-			,@IsLive=1
+			,@IsLive=0
 			,@BatchSize=500
 			,@ListSportBettype='[		{"SportTypeID":1, "BetTypeID":1}
 									,	{"SportTypeID":1, "BetTypeID":3}
@@ -107,25 +107,25 @@ BEGIN
 	FROM #tmpParlayTrans AS pt WITH(NOLOCK);
 
 	SELECT	
-			pt.sequenceid 				AS SequenceId
-		,	pt.transid 					AS MainTransId
+			pt.sequenceid 				AS SequenceID
+		,	pt.transid 					AS TransID
 		,	b.Refno						AS Refno
-		,	b.transid 					AS TransId
+		,	b.transid 					AS TransIDm
 		,	b.transdate 				AS TransDate
-		,	b.matchid 					AS MatchId
+		,	b.matchid 					AS MatchID
 		,	m.sporttype 				AS SportType
 		,	b.livehomescore 			AS LiveHomeScore
 		,	b.liveawayscore 			AS LiveAwayScore
-		,	b.bettype 					AS BetType
-		,	b.BetCheck 					AS BetId			
+		,	b.bettype 					AS BetTypeID
+		,	b.BetCheck 					AS BetID			
 		,	b.betteam 					AS BetTeam
-		,	b.custid 					AS CustId
+		,	b.custid 					AS CustID
 		,	m.eventdate 				AS EventDate
 		,	m.GlobalShowTime 			AS KickOffTime
 		,	m.Eventstatus 				AS EventStatus			
-		,	m.homeid 					AS HomeId
-		,	m.awayid 					AS AwayId
-		,	m.leagueid 					AS LeagueId
+		,	m.homeid 					AS HomeID
+		,	m.awayid 					AS AwayID
+		,	m.leagueid 					AS LeagueID
 		,	l.leaguename 				AS LeagueName
 	FROM #tmpParlayTrans AS pt WITH(NOLOCK)
 		INNER JOIN bodb02.dbo.bettransm AS b WITH(NOLOCK) ON b.Refno = pt.Refno

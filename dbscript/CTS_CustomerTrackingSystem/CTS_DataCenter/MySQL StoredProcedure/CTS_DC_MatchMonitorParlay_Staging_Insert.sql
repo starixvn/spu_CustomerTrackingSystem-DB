@@ -32,11 +32,11 @@ sp: BEGIN
               @ip_LiveIndicator:=0
             , @ip_PoolType:=2001
             , @ip_TransList:='[
-					{"SequenceID":"119785519874","MainTransID":"288117431400923136","Refno":"1000000002348096671","TransID":"288117431400923140","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673481","SportType":"1","LiveHomeScore":"56","LiveAwayScore":"55","BettypeID":"3","BetID":"","Betteam":"h","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"7877","LeagueName":"*SVFG - BHYR"}
-					,{"SequenceID":"119785519879","MainTransID":"288117452875759616","Refno":"1000000002348096721","TransID":"288117452875759621","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673483","SportType":"2","LiveHomeScore":"73","LiveAwayScore":"76","BettypeID":"3","BetID":"","Betteam":"a","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"78717","LeagueName":"*NBA - Number of Regular Season Wins"}
-					,{"SequenceID":"119785519901","MainTransID":"288117560249942016","Refno":"1000000002348096941","TransID":"288117560249942019","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673483","SportType":"2","LiveHomeScore":"13","LiveAwayScore":"17","BettypeID":"1","BetID":"","Betteam":"a","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"78717","LeagueName":"*NBA - Number of Regular Season Wins"}
-					,{"SequenceID":"119785519908","MainTransID":"288117594609680384","Refno":"1000000002348097011","TransID":"288117594609680389","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673483","SportType":"2","LiveHomeScore":"25","LiveAwayScore":"25","BettypeID":"609","BetID":"803","Betteam":"h","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"78717","LeagueName":"*NBA - Number of Regular Season Wins"}
-					,{"SequenceID":"119785519932","MainTransID":"288117710573797376","Refno":"1000000002348097251","TransID":"288117710573797381","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673483","SportType":"2","LiveHomeScore":"58","LiveAwayScore":"54","BettypeID":"3","BetID":"","Betteam":"h","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"78717","LeagueName":"*NBA - Number of Regular Season Wins"}
+					{"SequenceID":"119785519874","TransID":"288117431400923136","Refno":"1000000002348096671","TransIDm":"288117431400923140","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673481","SportType":"1","LiveHomeScore":"56","LiveAwayScore":"55","BetTypeID":"3","BetID":"","BetTeam":"h","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"7877","LeagueName":"*SVFG - BHYR"}
+					,{"SequenceID":"119785519879","TransID":"288117452875759616","Refno":"1000000002348096721","TransIDm":"288117452875759621","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673483","SportType":"2","LiveHomeScore":"73","LiveAwayScore":"76","BetTypeID":"3","BetID":"","BetTeam":"a","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"78717","LeagueName":"*NBA - Number of Regular Season Wins"}
+					,{"SequenceID":"119785519901","TransID":"288117560249942016","Refno":"1000000002348096941","TransIDm":"288117560249942019","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673483","SportType":"2","LiveHomeScore":"13","LiveAwayScore":"17","BetTypeID":"1","BetID":"","BetTeam":"a","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"78717","LeagueName":"*NBA - Number of Regular Season Wins"}
+					,{"SequenceID":"119785519908","TransID":"288117594609680384","Refno":"1000000002348097011","TransIDm":"288117594609680389","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673483","SportType":"2","LiveHomeScore":"25","LiveAwayScore":"25","BetTypeID":"609","BetID":"803","BetTeam":"h","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"78717","LeagueName":"*NBA - Number of Regular Season Wins"}
+					,{"SequenceID":"119785519932","TransID":"288117710573797376","Refno":"1000000002348097251","TransIDm":"288117710573797381","TransDate":"2024-08-15 06:01:46.733","MatchID":"83673483","SportType":"2","LiveHomeScore":"58","LiveAwayScore":"54","BetTypeID":"3","BetID":"","BetTeam":"h","CustID":"3167530","EventDate":"2024-08-14 00:00:00.000","KickOffTime":"2024-08-14 06:03:00","EventStatus":"running","HomeID":"1975","AwayID":"18486","LeagueID":"78717","LeagueName":"*NBA - Number of Regular Season Wins"}
 				]'
             );		
             
@@ -55,9 +55,9 @@ sp: BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Staging;
 	CREATE TEMPORARY TABLE Temp_Staging(
 			SequenceID			BIGINT UNSIGNED NOT NULL
-		,	MainTransID			BIGINT UNSIGNED NOT NULL
+		,	TransID			BIGINT UNSIGNED NOT NULL
         ,	Refno				BIGINT UNSIGNED NOT NULL
-		,	TransID				BIGINT UNSIGNED NOT NULL
+		,	TransIDm				BIGINT UNSIGNED NOT NULL
         ,	TransDate			DATETIME(3) NOT NULL        
         ,	MatchID				INT NOT NULL
         ,	SportType			INT NOT NULL
@@ -76,12 +76,12 @@ sp: BEGIN
         ,	LeagueName			VARCHAR(500) NOT NULL
 	) ENGINE=InnoDB;
 
-    INSERT IGNORE INTO Temp_Staging(SequenceID, MainTransID, Refno, TransID, TransDate, MatchID, SportType, LiveHomeScore, LiveAwayScore, BettypeID, BetID, Betteam
+    INSERT IGNORE INTO Temp_Staging(SequenceID, TransID, Refno, TransIDm, TransDate, MatchID, SportType, LiveHomeScore, LiveAwayScore, BettypeID, BetID, Betteam
 			, CustID, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName)
 	SELECT	js.SequenceID
-		,	js.MainTransID
-		,	js.Refno
 		,	js.TransID
+		,	js.Refno
+		,	js.TransIDm
 		,	js.TransDate
 		,	js.MatchID
 		,	js.SportType
@@ -101,17 +101,17 @@ sp: BEGIN
 	FROM JSON_TABLE(ip_TransList,
 		 "$[*]" COLUMNS(
 					   SequenceID		BIGINT UNSIGNED PATH "$.SequenceID"
-					 , MainTransID		BIGINT UNSIGNED PATH "$.MainTransID"
-					 , Refno			BIGINT UNSIGNED PATH "$.Refno"
 					 , TransID			BIGINT UNSIGNED PATH "$.TransID"
+					 , Refno			BIGINT UNSIGNED PATH "$.Refno"
+					 , TransIDm			BIGINT UNSIGNED PATH "$.TransIDm"
 					 , TransDate		DATETIME(3) PATH "$.TransDate"
 					 , MatchID			INT PATH "$.MatchID"
 					 , SportType		INT PATH "$.SportType"
 					 , LiveHomeScore	INT PATH "$.LiveHomeScore"
 					 , LiveAwayScore	INT PATH "$.LiveAwayScore"
-					 , BettypeID		INT PATH "$.BettypeID"
+					 , BetTypeID		INT PATH "$.BetTypeID"
 					 , BetID			BIGINT PATH "$.BetID"
-					 , Betteam			VARCHAR(10) PATH "$.Betteam"
+					 , Betteam			VARCHAR(10) PATH "$.BetTeam"
 					 , CustID			BIGINT UNSIGNED PATH "$.CustID"
 					 , EventDate		DATE PATH "$.EventDate"
 					 , KickOffTime		DATETIME PATH "$.KickOffTime"
@@ -126,12 +126,12 @@ sp: BEGIN
     IF ip_LiveIndicator = 1 THEN 
 		#=====GROUP BETTING===================
 		IF (ip_PoolType = 1001) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorParlayStagingGroupBettingLive(SequenceID, MainTransID, Refno, TransID, TransDate, MatchID, SportType, LiveHomeScore, LiveAwayScore, BettypeID, BetID, Betteam
+			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorParlayStagingGroupBettingLive(SequenceID, TransID, Refno, TransIDm, TransDate, MatchID, SportType, LiveHomeScore, LiveAwayScore, BettypeID, BetID, Betteam
 				, CustID, CTSCustID, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, TransDateToSecond, ScoreDiff, GroupID,  InsertTime)
 			SELECT	tmpSt.SequenceID
-				,	tmpSt.MainTransID
-				,	tmpSt.Refno
 				,	tmpSt.TransID
+				,	tmpSt.Refno
+				,	tmpSt.TransIDm
 				,	tmpSt.TransDate
 				,	tmpSt.MatchID
 				,	tmpSt.SportType
@@ -166,12 +166,12 @@ sp: BEGIN
         #=====PARLAY GROUP BETTING===================
         IF (ip_PoolType = 2001) THEN
 
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorParlayStagingGroupBettingNonLive(SequenceID, MainTransID, Refno, TransID, TransDate, MatchID, SportType, LiveHomeScore, LiveAwayScore, BettypeID, BetID, Betteam
+			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorParlayStagingGroupBettingNonLive(SequenceID, TransID, Refno, TransIDm, TransDate, MatchID, SportType, LiveHomeScore, LiveAwayScore, BettypeID, BetID, Betteam
 				, CustID, CTSCustID, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, TransDateToSecond, ScoreDiff, GroupID,  InsertTime)
 			SELECT	tmpSt.SequenceID
-				,	tmpSt.MainTransID
-				,	tmpSt.Refno
 				,	tmpSt.TransID
+				,	tmpSt.Refno
+				,	tmpSt.TransIDm
 				,	tmpSt.TransDate
 				,	tmpSt.MatchID
 				,	tmpSt.SportType

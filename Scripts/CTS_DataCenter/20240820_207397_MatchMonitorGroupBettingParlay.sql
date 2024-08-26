@@ -15,9 +15,9 @@ USE CTS_DataCenter;
 DROP TABLE IF EXISTS MatchMonitorParlayStagingGroupBettingLive;
 CREATE TABLE MatchMonitorParlayStagingGroupBettingLive(
 		SequenceID	 		BIGINT UNSIGNED NOT NULL
-	,	MainTransID			BIGINT UNSIGNED NOT NULL
-    ,	Refno				BIGINT UNSIGNED NOT NULL
 	,	TransID				BIGINT UNSIGNED NOT NULL
+    ,	Refno				BIGINT UNSIGNED NOT NULL
+	,	TransIDm			BIGINT UNSIGNED NOT NULL	COMMENT 'bettransm.transId'
     ,	TransDate 			DATETIME(3) NOT NULL
 	,	TransDateToSecond	BIGINT NOT NULL
 	,	MatchID  			INT NOT NULL
@@ -39,8 +39,7 @@ CREATE TABLE MatchMonitorParlayStagingGroupBettingLive(
 	,	LeagueID			INT
     ,	LeagueName 			VARCHAR(500)
 	,	InsertTime 			DATETIME(3)	 
-	,	PRIMARY KEY(TransID)
-	,	INDEX IX_MMParlayStagingGroupBettingLive_TransID(SequenceID)
+	,	PRIMARY KEY(SequenceID,TransIDm)
 	,	INDEX IX_MMParlayStagingGroupBettingLive_TransDateToSecond(TransDateToSecond)
 	,	INDEX IX_MMParlayStagingGroupBettingLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID)
 ) ENGINE=InnoDB;
@@ -48,9 +47,9 @@ CREATE TABLE MatchMonitorParlayStagingGroupBettingLive(
 DROP  TABLE IF EXISTS MatchMonitorParlayStagingGroupBettingNonLive;
 CREATE TABLE MatchMonitorParlayStagingGroupBettingNonLive(
 		SequenceID	 		BIGINT UNSIGNED NOT NULL
-	,	MainTransID			BIGINT UNSIGNED NOT NULL
-    ,	Refno				BIGINT UNSIGNED NOT NULL
 	,	TransID				BIGINT UNSIGNED NOT NULL
+    ,	Refno				BIGINT UNSIGNED NOT NULL
+	,	TransIDm			BIGINT UNSIGNED NOT NULL	COMMENT 'bettransm.transId'
     ,	TransDate 			DATETIME(3) NOT NULL
 	,	TransDateToSecond	BIGINT NOT NULL
 	,	MatchID  			INT NOT NULL
@@ -72,20 +71,23 @@ CREATE TABLE MatchMonitorParlayStagingGroupBettingNonLive(
 	,	LeagueID			INT
     ,	LeagueName 			VARCHAR(500)
 	,	InsertTime 			DATETIME(3)	 
-	,	PRIMARY KEY(TransID)
-	,	INDEX IX_MMParlayStagingGroupBettingNonLive_TransID(SequenceID)
+	,	PRIMARY KEY(SequenceID,TransIDm)
 	,	INDEX IX_MMParlayStagingGroupBettingNonLive_TransDateToSecond(TransDateToSecond)
 	,	INDEX IX_MMParlayStagingGroupBettingNonLive_RuleGroup(MatchID,ScoreDiff,BettypeID,BetID,Betteam,GroupID)
 ) ENGINE=InnoDB;
 
 ALTER TABLE MatchMonitor
-ADD COLUMN TicketType SMALLINT ;#COMMENT '1:Single Ticket, 2: Parlay';
+ADD COLUMN TicketType SMALLINT DEFAULT 1;#COMMENT '1:Single Ticket, 2: Parlay';
 
 ALTER TABLE MatchMonitorDetails
-ADD COLUMN TicketType SMALLINT;
+	ADD COLUMN ListRefno LONGTEXT
+,	ADD COLUMN ListTransIDm LONGTEXT
+,	ADD COLUMN TicketType SMALLINT DEFAULT 1;
 
 ALTER TABLE MatchMonitorDetailsVerifiedTrans
-ADD COLUMN TicketType SMALLINT;
+	ADD COLUMN ListRefno LONGTEXT
+,	ADD COLUMN ListTransIDm LONGTEXT
+,	ADD COLUMN TicketType SMALLINT DEFAULT 1;
 
 #==========Enhance SportBettype Setting================================
 	DROP TABLE BettypeSetting;
