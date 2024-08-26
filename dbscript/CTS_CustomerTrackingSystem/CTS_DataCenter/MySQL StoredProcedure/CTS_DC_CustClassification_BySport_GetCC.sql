@@ -51,7 +51,7 @@ BEGIN
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass_BySport AS sb ON sb.CustID = tmp.CustID AND sb.SportID = tmp.SportGroup
 		LEFT JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS clss 
 			ON tmp.CustID = clss.CustID AND tmp.SportGroup = clss.SportID AND clss.ParentID <> CONST_PARENTID_WRAPPER AND clss.CategoryID <> CONST_CATEID_SPECIALCC
-		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID;
+		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID AND cate.IsActive = 1;
 
 END$$
 

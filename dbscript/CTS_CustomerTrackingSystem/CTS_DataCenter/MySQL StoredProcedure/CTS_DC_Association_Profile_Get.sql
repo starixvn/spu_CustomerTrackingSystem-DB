@@ -406,7 +406,7 @@ sp : BEGIN
 	FROM	Temp_AssociatedAccount AS tmpAcc
 		,	LATERAL (	SELECT cat.CategoryID
 						FROM CTS_DataCenter.CTSCustomerClassification AS clss
-							INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
+							INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
 						WHERE clss.CTSCustID = tmpAcc.CTSCustID
 						ORDER BY cat.CategoryPriority ASC, clss.LastModifiedDate DESC) AS cate
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID

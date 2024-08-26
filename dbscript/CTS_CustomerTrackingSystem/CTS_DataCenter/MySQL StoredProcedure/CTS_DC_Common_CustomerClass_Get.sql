@@ -38,7 +38,7 @@ BEGIN
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerClass;
     CREATE TEMPORARY TABLE Temp_CustomerClass(
-		  	CustomerClass 		SMALLINT UNSIGNED
+		  	CustomerClass 		INT UNSIGNED
         ,  	CustomerClassGroup 	VARCHAR(50)
         ,	CategoryIDs			TEXT
         ,  	OrderID 			SMALLINT DEFAULT 0

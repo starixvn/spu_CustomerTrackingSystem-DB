@@ -531,7 +531,7 @@ BEGIN
 	FROM Temp_Cust AS cus
 	,	LATERAL (	SELECT cus.CustID, clss.ParentID
 					FROM CTS_DataCenter.CTSCustomerClassification AS clss
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
 					WHERE clss.CustID = cus.CustID AND clss.ParentID <> CONST_PARENTID_WRAPPER
 					ORDER BY cat.CustomerClassPriority ASC
 					LIMIT 1	) AS tmpcls
