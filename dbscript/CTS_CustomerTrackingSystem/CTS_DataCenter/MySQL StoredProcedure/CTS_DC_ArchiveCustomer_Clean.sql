@@ -1206,45 +1206,9 @@ sp: BEGIN
             SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
-        SET lv_Table = 'CTS_DataCenter.RobotClassification';
+        SET lv_Table = 'CTS_DataCenter.SmartGroupHistory';
 	 END IF; 
      
-	/*************************************** 27. CTS_DataCenter.RobotClassification ***************************/
-	IF (lv_Table = 'CTS_DataCenter.RobotClassification') THEN
-		IF EXISTS (SELECT 1  FROM CTS_DataCenter.RobotClassification AS ro WHERE ro.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
-			DROP TEMPORARY TABLE IF EXISTS Temp_RobotClassification_Clean;
-			CREATE TEMPORARY TABLE Temp_RobotClassification_Clean(
-					ID   BIGINT UNSIGNED  PRIMARY KEY
-			);
-            
-            INSERT IGNORE INTO Temp_RobotClassification_Clean(ID)
-            SELECT 	ro.ID
-			FROM CTS_DataCenter.RobotClassification AS ro
-			WHERE  ro.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
-			LIMIT lv_CleanTableBatchSize;
-            
-            DELETE ro
-			FROM CTS_DataCenter.RobotClassification AS ro
-				INNER JOIN Temp_RobotClassification_Clean AS tmp ON tmp.ID = ro.ID;
-			
-			UPDATE  CTS_DataCenter.SystemParameter 
-			SET ParameterValue = 'CTS_DataCenter.RobotClassification'
-			WHERE ParameterID = 46;
-		
-			SELECT COUNT(1)
-            INTO lv_Count
-            FROM Temp_RobotClassification_Clean;
-            
-            IF lv_Count >= lv_CleanTableBatchSize THEN
-				LEAVE sp;
-            END IF;
-			
-            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
-        END IF;
-        
-        SET lv_Table = 'CTS_DataCenter.SmartGroupHistory';
-	 END IF;
-	
     /*************************************** 28. CTS_DataCenter.SmartGroupHistory *****************************/
 	IF (lv_Table = 'CTS_DataCenter.SmartGroupHistory') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SmartGroupHistory As his WHERE his.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
