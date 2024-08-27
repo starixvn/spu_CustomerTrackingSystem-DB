@@ -97,30 +97,9 @@ BEGIN
 
 		DELETE tmp
 		FROM Temp_LatestRecordOfCategory AS tmp
-		WHERE tmp.CustomerClassPriority > lv_LowestParentIDPriority;
+		WHERE tmp.CustomerClassPriority > lv_LowestParentIDPriority AND tmp.ParentID <> CONST_PARENTID_POTENTIALPA;
     END IF;
-/*
-	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory_Duplicate;
-	CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory_Duplicate LIKE Temp_LatestRecordOfCategory;
-	INSERT INTO Temp_LatestRecordOfCategory_Duplicate SELECT * FROM Temp_LatestRecordOfCategory;
 
-	IF (SELECT COUNT(DISTINCT CategoryPriority)	FROM Temp_LatestRecordOfCategory GROUP BY ParentID) > 1 THEN
-		WITH CTELowestCategoryPriority AS (
-			SELECT ParentID, MIN(CategoryPriority) AS LowestPriority
-			FROM Temp_LatestRecordOfCategory_Duplicate
-			GROUP BY ParentID
-		)
-		DELETE tmp
-		FROM Temp_LatestRecordOfCategory AS tmp
-		INNER JOIN CTELowestCategoryPriority AS cte ON cte.ParentID = tmp.ParentID
-		WHERE tmp.CategoryPriority > cte.LowestPriority;
-	END IF;	
-*/	
-/*
-    IF (SELECT COUNT(DISTINCT ParentID) FROM Temp_LatestRecordOfCategory) > 1 THEN
-		DELETE FROM Temp_LatestRecordOfCategory WHERE ParentID = CONST_PARENTID_NORMAL;
-    END IF;
-*/        
 	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CTSCustID = ip_CTSCustID) THEN 
 		SELECT 1 AS IsExcludedTagAssPA;
 	ELSE 
@@ -130,11 +109,8 @@ BEGIN
 	SELECT	CategoryID
 		,	CategoryName
         ,	CategoryGroupID
-		/*,	ParentID*/
-		/*,	IsProbation */
 		,	CASE WHEN CategoryID = CONST_CATEID_VVIP THEN 1 ELSE 0 END AS IsVVIP
 		,	CASE WHEN ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
-		/*,	CASE WHEN ParentID = CONST_PARENTID_POTENTIALPA THEN 1 ELSE 0 END AS IsPotentialPA*/
 		,	ColorTypeID
 	FROM Temp_LatestRecordOfCategory;
 END$$
