@@ -33,14 +33,14 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
     CREATE TEMPORARY TABLE Temp_CustomerCategory(
-			CustomerClass 			SMALLINT UNSIGNED PRIMARY KEY
+			CustomerClass 			INT UNSIGNED PRIMARY KEY
         ,  	CategoryName 			VARCHAR(50)
         ,	CustomerClassGroupID	SMALLINT
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_SpecialCustomerClass;
     CREATE TEMPORARY TABLE Temp_SpecialCustomerClass(
-			CustomerClass 			SMALLINT UNSIGNED PRIMARY KEY
+			CustomerClass 			INT UNSIGNED PRIMARY KEY
 		,	CategoryName			VARCHAR(50)
     );
     

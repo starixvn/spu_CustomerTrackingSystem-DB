@@ -20,7 +20,7 @@ sp: BEGIN
             - 20240718@Jonas.Huynh: Renovate CC [Redmine ID: #205317]
             
 		Param's Explanation (filtered by):
-			- CALL CTS_DC_CustClassification_BySport_ProbationScan_Get (@op_LastCustID, @op_LastCategoryID);
+			- CALL CTS_DC_CustClassification_BySport_ProbationScan_Get (@op_LastCustID);
 	*/
     
 	DECLARE	CONST_PARENTID_NORMAL			INT;
@@ -76,7 +76,7 @@ sp: BEGIN
 		AND (tmplc.CreatedDate < lv_ToLastDay)
 		AND EXISTS (SELECT 1
 			FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
-			WHERE arc.CustID = clss.CustID AND arc.LastTicketDate >= lv_From30Date)
+			WHERE arc.CTSCustID = clss.CTSCustID AND arc.LastTicketDate >= lv_From30Date)
 	ORDER BY clss.CustID ASC
 	LIMIT	lv_BatchSize;
     
