@@ -34,8 +34,8 @@ BEGIN
 			ID				 			INT UNSIGNED AUTO_INCREMENT		NOT NULL
 		,	ChallengeCode				VARCHAR(50) 					NOT NULL
 		,	ChallengeIds				VARCHAR(50) 					NULL DEFAULT ''
-		,	Expect		 				VARCHAR(100) 					NULL DEFAULT ''
-		,	Actual		 				VARCHAR(100) 					NULL DEFAULT ''
+		,	Expect		 				VARCHAR(1000) 					NULL DEFAULT ''
+		,	Actual		 				VARCHAR(1000) 					NULL DEFAULT ''
 		,	Parameters	 				VARCHAR(300) 					NULL DEFAULT ''
 		,	ExeServerTimeInSecond		INT UNSIGNED  					NOT NULL DEFAULT 0
 		,	ExeClientTimeInSecond		INT UNSIGNED  					NOT NULL DEFAULT 0
@@ -61,8 +61,8 @@ BEGIN
 			 "$[*]" COLUMNS(
 						ChallengeCode			VARCHAR(50) 	PATH "$.ChallengeCode"
 					,	ChallengeIds			VARCHAR(50) 	PATH "$.ChallengeIds"
-					,	Expect					VARCHAR(100) 	PATH "$.Expect"
-					,	Actual					VARCHAR(100) 	PATH "$.Actual"
+					,	Expect					VARCHAR(1000) 	PATH "$.Expect"
+					,	Actual					VARCHAR(1000) 	PATH "$.Actual"
 					,	Parameters				VARCHAR(300) 	PATH "$.Parameters"
 					,	ExeServerTimeInSecond	INT UNSIGNED 	PATH "$.ExeServerTimeInSecond"
 					,	ExeClientTimeInSecond	INT UNSIGNED 	PATH "$.ExeClientTimeInSecond"

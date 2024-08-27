@@ -272,4 +272,7 @@ DROP COLUMN `FPDeviceID`,
 DROP COLUMN `RecoverType`;
 
 ALTER TABLE `DCS_DataCenter`.`JSChallengeInfo`
-CHANGE COLUMN `ChallengeCode` `ChallengeCode` VARCHAR(50) NOT NULL;
+CHANGE COLUMN `ChallengeCode` `ChallengeCode` VARCHAR(50) NOT NULL,
+CHANGE COLUMN `Expect` `Expect` VARCHAR(1000) NULL DEFAULT '' ,
+CHANGE COLUMN `Actual` `Actual` VARCHAR(1000) NULL DEFAULT '' ;
+
