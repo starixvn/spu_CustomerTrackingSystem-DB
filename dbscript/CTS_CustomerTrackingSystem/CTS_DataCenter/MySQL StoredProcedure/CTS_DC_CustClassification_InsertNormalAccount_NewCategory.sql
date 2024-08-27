@@ -47,14 +47,14 @@ BEGIN
 		,	IsInternal		BOOLEAN
         ,	SiteID			INT
         ,	CategoryID		INT DEFAULT NULL
-        ,	CustomerClass	SMALLINT
+        ,	CustomerClass	INT
         ,	INDEX			IX_Temp_Customer_CategoryID(CategoryID)
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustomerHistory;
     CREATE TEMPORARY TABLE Temp_CustomerHistory(
 			CustID			INT PRIMARY KEY
-		,	CustomerClass	SMALLINT NOT NULL
+		,	CustomerClass	INT NOT NULL
         ,   CategoryID		INT NOT NULL
 	);
     
