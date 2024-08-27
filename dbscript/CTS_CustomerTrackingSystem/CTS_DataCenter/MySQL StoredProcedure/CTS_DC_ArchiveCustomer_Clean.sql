@@ -750,14 +750,14 @@ sp: BEGIN
 			WHERE arc.CategoryID IS NULL;
             
 			INSERT IGNORE INTO Temp_CustLatestCate(CustID, ParentID, LatestCateID)
-			SELECT arc.CustID, cate.ParentID, cate.CategoryID
-			FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc,
+			SELECT tmp.CustID, cate.ParentID, cate.CategoryID
+			FROM Temp_CustInfo AS tmp,
 			LATERAL
 				(
 					SELECT cls.CustID, cls.ParentID, cls.CategoryID
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
-					WHERE cls.CustID = arc.CustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID AND cate.IsActive = 1
+					WHERE cls.CustID = tmp.CustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
 					ORDER BY  cate.CustomerClassPriority ASC 
 							, cls.LastModifiedDate DESC
 					LIMIT 1
