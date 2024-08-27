@@ -549,87 +549,9 @@ sp: BEGIN
             SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
-        SET lv_Table = 'CTS_DataCenter.AssociationByManual-From';
+        SET lv_Table = 'CTS_DataCenter.AssociationRemove-From';
 	 END IF;   
      
-    /*************************************** 12. CTS_DataCenter.AssociationByManual ***************************/
-    IF (lv_Table = 'CTS_DataCenter.AssociationByManual-From') THEN
-		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationByManual AS ma WHERE ma.FromCTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
-			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByManual_Clean;
-			CREATE TEMPORARY TABLE Temp_AssociationByManual_Clean(
-					FromCTSCustID   	BIGINT UNSIGNED  
-				,	ToCTSCustID			BIGINT UNSIGNED
-                ,	PRIMARY KEY(FromCTSCustID, ToCTSCustID)
-			);
-            
-            INSERT IGNORE INTO Temp_AssociationByManual_Clean(FromCTSCustID, ToCTSCustID)
-            SELECT 	ma.FromCTSCustID
-				,	ma.ToCTSCustID
-			FROM CTS_DataCenter.AssociationByManual AS ma
-			WHERE  ma.FromCTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)
-            LIMIT lv_CleanTableBatchSize;
-            
-			DELETE ass
-			FROM CTS_DataCenter.AssociationByManual AS ass
-				INNER JOIN Temp_AssociationByManual_Clean AS tmp ON tmp.FromCTSCustID = ass.FromCTSCustID AND tmp.ToCTSCustID = ass.ToCTSCustID;
-			
-        
-			UPDATE  CTS_DataCenter.SystemParameter 
-			SET ParameterValue = 'CTS_DataCenter.AssociationByManual-From'
-			WHERE ParameterID = 46;
-        
-			SELECT COUNT(1)
-            INTO lv_Count
-            FROM Temp_AssociationByManual_Clean;
-            
-            IF lv_Count >= lv_CleanTableBatchSize THEN
-				LEAVE sp;
-            END IF;
-			
-            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
-        END IF;
-        
-        SET lv_Table = 'CTS_DataCenter.AssociationByManual-To';
-	 END IF;  
-     
-    IF (lv_Table = 'CTS_DataCenter.AssociationByManual-To') THEN
-		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociationByManual AS ma WHERE ma.ToCTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
-			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByManual_Clean;
-			CREATE TEMPORARY TABLE Temp_AssociationByManual_Clean(
-					FromCTSCustID   	BIGINT UNSIGNED  
-				,	ToCTSCustID			BIGINT UNSIGNED
-                ,	PRIMARY KEY(FromCTSCustID, ToCTSCustID)
-			);
-            
-            INSERT IGNORE INTO Temp_AssociationByManual_Clean(FromCTSCustID, ToCTSCustID)
-            SELECT 	ma.FromCTSCustID
-				,	ma.ToCTSCustID
-			FROM CTS_DataCenter.AssociationByManual AS ma
-			WHERE  ma.ToCTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)
-            LIMIT lv_CleanTableBatchSize;
-            
-			DELETE ass
-			FROM CTS_DataCenter.AssociationByManual AS ass
-				INNER JOIN Temp_AssociationByManual_Clean AS tmp ON tmp.FromCTSCustID = ass.FromCTSCustID AND tmp.ToCTSCustID = ass.ToCTSCustID;
-			
-			
-			UPDATE  CTS_DataCenter.SystemParameter 
-			SET ParameterValue = 'CTS_DataCenter.AssociationByManual-To'
-			WHERE ParameterID = 46;
-			
-			SELECT COUNT(1)
-            INTO lv_Count
-            FROM Temp_AssociationByManual_Clean;
-            
-            IF lv_Count >= lv_CleanTableBatchSize THEN
-				LEAVE sp;
-            END IF;
-			
-            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
-        END IF;
-        
-        SET lv_Table = 'CTS_DataCenter.AssociationRemove-From';
-	 END IF;    
      
     /*************************************** 13. CTS_DataCenter.AssociationRemove ****************************/
     IF (lv_Table = 'CTS_DataCenter.AssociationRemove-From') THEN
@@ -1666,81 +1588,8 @@ sp: BEGIN
             SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
-        SET lv_Table = 'CTS_Archive.AssociationByManual_Arc-From';
-	 END IF;   
-	
-	/*************************************** 35. CTS_DataCenter.AssociationByManual_Arc ************************/
-    IF (lv_Table = 'CTS_Archive.AssociationByManual_Arc-From') THEN
-		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByManual_Arc AS ma WHERE ma.FromCTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
-			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByManual_Clean;
-			CREATE TEMPORARY TABLE Temp_AssociationByManual_Clean(
-					ID  BIGINT UNSIGNED  PRIMARY KEY
-			);
-            
-            INSERT IGNORE INTO Temp_AssociationByManual_Clean(ID)
-            SELECT 	ma.ID
-			FROM CTS_Archive.AssociationByManual_Arc AS ma
-			WHERE  ma.FromCTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)
-            LIMIT lv_CleanTableBatchSize;
-            
-			DELETE ass
-			FROM CTS_Archive.AssociationByManual_Arc AS ass
-				INNER JOIN Temp_AssociationByManual_Clean AS tmp ON tmp.ID = ass.ID;
-			
-        
-			UPDATE  CTS_DataCenter.SystemParameter 
-			SET ParameterValue = 'CTS_Archive.AssociationByManual_Arc-From'
-			WHERE ParameterID = 46;
-        
-			SELECT COUNT(1)
-            INTO lv_Count
-            FROM Temp_AssociationByManual_Clean;
-            
-            IF lv_Count >= lv_CleanTableBatchSize THEN
-				LEAVE sp;
-            END IF;
-			
-            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
-        END IF;
-        
-        SET lv_Table = 'CTS_Archive.AssociationByManual_Arc-To';
-	 END IF;  
-     
-    IF (lv_Table = 'CTS_Archive.AssociationByManual_Arc-To') THEN
-		IF EXISTS (SELECT 1  FROM CTS_Archive.AssociationByManual_Arc AS ma  WHERE ma.ToCTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
-			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByManual_Clean;
-			CREATE TEMPORARY TABLE Temp_AssociationByManual_Clean(
-					ID  BIGINT UNSIGNED PRIMARY KEY
-			);
-            
-            INSERT IGNORE INTO Temp_AssociationByManual_Clean(ID)
-            SELECT 	ma.ID
-			FROM CTS_Archive.AssociationByManual_Arc AS ma 
-			WHERE  ma.ToCTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)
-            LIMIT lv_CleanTableBatchSize;
-            
-			DELETE ass
-			FROM CTS_Archive.AssociationByManual_Arc AS ass
-				INNER JOIN Temp_AssociationByManual_Clean AS tmp ON tmp.ID = ass.ID;
-			
-			
-			UPDATE  CTS_DataCenter.SystemParameter 
-			SET ParameterValue = 'CTS_Archive.AssociationByManual_Arc-To'
-			WHERE ParameterID = 46;
-			
-			SELECT COUNT(1)
-            INTO lv_Count
-            FROM Temp_AssociationByManual_Clean;
-            
-            IF lv_Count >= lv_CleanTableBatchSize THEN
-				LEAVE sp;
-            END IF;
-			
-            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
-        END IF;
-        
         SET lv_Table = 'CTS_DataCenter.SpecialCustomerClass_BySport';
-	 END IF;    
+	 END IF;   
 
 	/*************************************** 36. CTS_DataCenter.SpecialCustomerClass_BySport **************************/
     IF (lv_Table = 'CTS_DataCenter.SpecialCustomerClass_BySport') THEN
