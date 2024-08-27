@@ -97,7 +97,7 @@ BEGIN
 
 		DELETE tmp
 		FROM Temp_LatestRecordOfCategory AS tmp
-		WHERE tmp.CustomerClassPriority > lv_LowestParentIDPriority AND tmp.ParentID <> CONST_PARENTID_POTENTIALPA;
+		WHERE tmp.CustomerClassPriority > lv_LowestParentIDPriority;
     END IF;
 
 	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CTSCustID = ip_CTSCustID) THEN 
