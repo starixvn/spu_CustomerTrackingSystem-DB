@@ -705,6 +705,11 @@ sp: BEGIN
 					,	cru.ArchivedDate = lv_CurrentDateTime
 				WHERE cru.IsDisabled = 0;
 
+				UPDATE CTS_DataCenter.RobotDetection AS rd
+					INNER JOIN Temp_CustLatestCate AS cate ON cate.CustID = rd.CustID AND cate.ParentID = CONST_PARENTID_PA
+				SET		rd.IsDisabled = 1
+				WHERE rd.IsDisabled = 0;
+
 				UPDATE CTS_DataCenter.TWRobotUser AS tru
 					INNER JOIN Temp_CustLatestCate AS cate ON cate.CustID = tru.CustID AND cate.ParentID = CONST_PARENTID_PA
 				SET		tru.IsDisabled = 1
