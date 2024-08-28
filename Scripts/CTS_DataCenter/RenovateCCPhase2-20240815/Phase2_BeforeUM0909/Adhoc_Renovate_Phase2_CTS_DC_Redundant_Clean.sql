@@ -51,8 +51,8 @@ BEGIN
 	INTO lv_FromCustID, lv_ToCustID
 	FROM CTE AS c;
 	
-	INSERT INTO Temp_Customer_Archive (ArchiveID, CustID, AccountID, TypeCC, RoleID)
-	SELECT ar.ID, ad.CustID, ar.AccountID, ad.TypeCC, ar.RoleID
+	INSERT INTO Temp_Customer_Archive (ArchiveID, CustID, CTSCustID, AccountID, TypeCC, RoleID)
+	SELECT ar.ID, ad.CustID, ar.CTSCustID, ar.AccountID, ad.TypeCC, ar.RoleID
 	FROM CTS_DataCenter.AdhocVic_Customer AS ad 
 		INNER JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar ON ar.CustID = ad.CustID 
 																		AND ar.CustSubID = 0
