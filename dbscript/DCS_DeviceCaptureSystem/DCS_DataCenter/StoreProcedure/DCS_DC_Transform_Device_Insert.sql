@@ -401,7 +401,7 @@ BEGIN
     SET lv_NewAccountDeviceJson = IFNULL(lv_NewAccountDeviceJson,'[{}]');
 	CALL DCS_DC_Transform_NewAccountDevice_Insert(lv_NewAccountDeviceJson);
 	
-	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FP_TaggingID, FP_FingerPrintID, FP_FingerPrintExtraID, FP_FingerPrintOldID, FP_UserAgentID, FP_MappingDeviceID, FP_DeviceID)
+	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FP_UserAgentID, FP_DeviceMappingID, FP_DeviceID)
 	SELECT 	ts.RawTransID
 		,	ts.LoginName
 		,	ts.TransTime
@@ -427,10 +427,6 @@ BEGIN
 		,	ts.FakeIP
 		,	ts.IsIncognitoMode
 		,	ts.JSChallengeInfoID
-		,	ts.FP_TaggingID
-		,	ts.FP_FingerPrintID
-		,	ts.FP_FingerPrintExtraID
-		,	ts.FP_FingerPrintOldID
 		,	ts.FP_UserAgentID
 		,	tmp.FP_DeviceMappingID
 		,	tmp.FP_DeviceID
