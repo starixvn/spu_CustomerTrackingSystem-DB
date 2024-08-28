@@ -15,7 +15,8 @@
 										4. CTSCustomerClassification - Current: CC = PA - From CTSCustomerClassificationOldCategory
 										5. RobotDetection - Update IsDisable = 1 - Customers have been archived
 										6. RobotImperva - Update IsDisable = 1 - Customers have been archived
-										7. TWRobotUser / CTSRobotUser - From CTSCustomerClassification: IsFromTVS / IsFromCTS = 1
+										7. TWRobotUser/CTSRobotUser - From CTSCustomerClassification: IsFromTW/IsFromCTS = 1
+										8. 
 		
 	Param's Explanation (filtered by):
 
@@ -327,9 +328,17 @@ WHERE temp.IsUpdated = 1
 ;
 
 ---------------------------------
-
+/* 7. TWRobotUser/CTSRobotUser - From CTSCustomerClassification: IsFromTW/IsFromCTS = 1 */
 ---------------------------------
+INSERT INTO SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+VALUES (994, 'Adhoc_Renovate_Phase2_Robot_InitialData', 'Initial Data - ID - Table History','BIGINT',?)
+;
 
+CALL CTS_DataCenter.Adhoc_Renovate_Phase2_Robot_InitialData (ip_Batchsize,ip_MinID,@NextID);
+SELECT @NextID;
+
+CALL CTS_DataCenter.Adhoc_Renovate_Phase2_Robot_InitialData (ip_Batchsize,@NextID,@NextID);
+CALL CTS_DataCenter.Adhoc_Renovate_Phase2_Robot_InitialData (ip_Batchsize,@NextID,@NextID);
 
 ---------------------------------
 ---------------------------------

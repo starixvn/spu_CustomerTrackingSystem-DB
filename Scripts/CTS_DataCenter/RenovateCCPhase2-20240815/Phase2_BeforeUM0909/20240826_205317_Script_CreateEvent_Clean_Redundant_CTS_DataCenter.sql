@@ -49,7 +49,7 @@ CREATE EVENT EV_CTS_DC_Adhoc_Renovate_Phase2_Clean_Redundant
 				,	LastExecTime = NOW()
 			WHERE EventName = 'EV_CTS_DC_Adhoc_Renovate_Phase2_Clean_Redundant';
 			
-            CAll CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_History_Clean(lv_BatchSize,lv_MinCustID,lv_NextCustID); 
+            CAll CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_Redundant_Clean(lv_BatchSize,lv_MinCustID,lv_NextCustID); 
             
 			IF lv_MinCustID < lv_NextCustID THEN
 				UPDATE CTS_DataCenter.SystemParameter 
