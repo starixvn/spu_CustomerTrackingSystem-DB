@@ -41,10 +41,12 @@ sp : BEGIN
 	DECLARE	CONST_PARENTID_PA 					INT;
 	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
 	DECLARE	CONST_PARENTID_NORMAL 				INT;
+	DECLARE	CONST_PARENTID_WRAPPER				INT;
 
-	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
-    SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
-	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_PARENTID_POTENTIALPA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
+	SET CONST_PARENTID_NORMAL 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 
 	IF (ip_SubscriberIDs IS NULL OR ip_SubscriberIDs = '' OR ip_SubscriberIDs = -1) 
 		OR (ip_AssociationStatus IS NULL OR ip_AssociationStatus = -1)
@@ -413,7 +415,7 @@ sp : BEGIN
 			SELECT ev.CustID, cls.ParentID
 			FROM CTS_DataCenter.CTSCustomerClassification AS cls
 				INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = cls.CategoryID
-			WHERE cls.CustID = ev.CustID AND cls.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL) AND cate.IsActive = 1
+			WHERE cls.CustID = ev.CustID AND cate.IsActive = 1 AND cls.ParentID <> CONST_PARENTID_WRAPPER
 			ORDER BY cate.CustomerClassPriority ASC, cls.LastModifiedDate DESC
 			LIMIT 1
 		) AS clss;
@@ -428,7 +430,7 @@ sp : BEGIN
         ,	cc.CategoryName
 	FROM Temp_CustEvidence AS ev
 		INNER JOIN CTS_DataCenter.StaticList AS stl ON ev.CustStatusID = stl.ItemID AND stl.ListID = 1
-		LEFT JOIN Temp_CustLatestCate AS cls ON cls.CustID = ev.CustID
+		LEFT JOIN Temp_CustLatestCate AS cls ON cls.CustID = ev.CustID AND cls.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL)
         LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS custClass ON custClass.CustID = cls.CustID AND custClass.ParentID = cls.ParentID
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = custClass.CategoryID
         LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = ev.SubscriberID
