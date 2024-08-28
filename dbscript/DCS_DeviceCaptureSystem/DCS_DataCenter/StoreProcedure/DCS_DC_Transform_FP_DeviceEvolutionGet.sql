@@ -53,7 +53,7 @@ BEGIN
 		,	AccountID
     FROM DCS_DataCenter.FP_DeviceFingerprintAccount
     WHERE ID > lv_Max_FP_DeviceEvolutionID
-		AND DeviceID = 0
+		AND EvolveID = 0
     ORDER BY ID ASC
     LIMIT ip_BatchSize;
     
@@ -73,7 +73,7 @@ BEGIN
 			   ROW_NUMBER() OVER (PARTITION BY dfaMain.AccountID ORDER BY dfaMain.ID DESC) AS rn
 		FROM Temp_GroupAccount tmpGA
 			INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccount dfaMain ON dfaMain.AccountID = tmpGA.AccountID
-		WHERE dfaMain.DeviceID > 0
+		WHERE dfaMain.EvolveID > 0
 	)
 	SELECT 	DISTINCT 
 			AccountID

@@ -27,7 +27,7 @@ BEGIN
     
     DECLARE lv_CurrentID 					INT DEFAULT 0;
     DECLARE lv_EvolveByID					BIGINT UNSIGNED;
-    DECLARE lv_DeviceID						BIGINT UNSIGNED;
+    DECLARE lv_EvolveID						BIGINT UNSIGNED;
     DECLARE lv_MaxID 						INT;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceEvolution;
@@ -36,12 +36,12 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_DeviceEvolution(
 			FPDeviceFingerprintAccountID	BIGINT UNSIGNED    	NOT NULL PRIMARY KEY
 		,	EvolveByID		 				BIGINT UNSIGNED    	NOT NULL DEFAULT 0
-		,	DeviceID 						BIGINT UNSIGNED 	NOT NULL DEFAULT 0
+		,	EvolveID 						BIGINT UNSIGNED 	NOT NULL DEFAULT 0
     );
     
 	CREATE TEMPORARY TABLE Temp_DeviceEvolutionSequential(
 			FPDeviceFingerprintAccountID	BIGINT UNSIGNED    	NOT NULL PRIMARY KEY
-		,	DeviceID 						BIGINT UNSIGNED 	NOT NULL DEFAULT 0
+		,	EvolveID 						BIGINT UNSIGNED 	NOT NULL DEFAULT 0
     );
     
     
@@ -62,14 +62,14 @@ BEGIN
 	
 	
     UPDATE Temp_DeviceEvolution AS tmp
-	SET tmp.DeviceID = tmp.FPDeviceFingerprintAccountID
+	SET tmp.EvolveID = tmp.FPDeviceFingerprintAccountID
     WHERE EvolveByID = 0
-		AND DeviceID = 0;
+		AND EvolveID = 0;
 	
     UPDATE Temp_DeviceEvolution AS tmp
 		INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa ON dfa.ID = tmp.EvolveByID
-	SET tmp.DeviceID = dfa.DeviceID
-    WHERE tmp.DeviceID = 0;
+	SET tmp.EvolveID = dfa.EvolveID
+    WHERE tmp.EvolveID = 0;
     
     SELECT 	MIN(FPDeviceFingerprintAccountID) AS MinID
 		,	MAX(FPDeviceFingerprintAccountID) AS MaxID
@@ -79,12 +79,12 @@ BEGIN
     WHILE lv_CurrentID < lv_MaxID DO
 		UPDATE Temp_DeviceEvolution AS t1
 			INNER JOIN Temp_DeviceEvolutionSequential AS t2 ON t1.EvolveByID = t2.FPDeviceFingerprintAccountID
-		SET t1.DeviceID = t2.DeviceID
-		WHERE t1.DeviceID = 0;
+		SET t1.EvolveID = t2.EvolveID
+		WHERE t1.EvolveID = 0;
         
-        INSERT INTO Temp_DeviceEvolutionSequential(FPDeviceFingerprintAccountID, DeviceID)
+        INSERT INTO Temp_DeviceEvolutionSequential(FPDeviceFingerprintAccountID, EvolveID)
         SELECT	FPDeviceFingerprintAccountID
-            ,	DeviceID
+            ,	EvolveID
         FROM Temp_DeviceEvolution
         WHERE FPDeviceFingerprintAccountID = lv_CurrentID;
         
@@ -96,14 +96,14 @@ BEGIN
     
 	UPDATE Temp_DeviceEvolution AS t1
 		INNER JOIN Temp_DeviceEvolutionSequential AS t2 ON t1.EvolveByID = t2.FPDeviceFingerprintAccountID
-	SET t1.DeviceID = t2.DeviceID
-	WHERE t1.DeviceID = 0;
+	SET t1.EvolveID = t2.EvolveID
+	WHERE t1.EvolveID = 0;
     
     /*==== Update Main Table ====*/
     UPDATE DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa
 		INNER JOIN Temp_DeviceEvolution AS tmp ON tmp.FPDeviceFingerprintAccountID = dfa.ID
 	SET dfa.EvolveByID = tmp.EvolveByID,
-		dfa.DeviceID = tmp.DeviceID;
+		dfa.EvolveID = tmp.EvolveID;
     
     /*****UPDATE MaxTransID in SystemSetting****************************************************/
     SET lv_Max_FP_DeviceEvolutionID = (SELECT MAX(FPDeviceFingerprintAccountID) FROM Temp_DeviceEvolution);

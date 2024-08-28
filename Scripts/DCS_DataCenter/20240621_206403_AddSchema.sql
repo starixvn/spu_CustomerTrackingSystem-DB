@@ -110,11 +110,11 @@ CREATE TABLE `FP_DeviceFingerprintAccount` (
   `FP_FingerPrintID` BIGINT UNSIGNED NOT NULL,
   `AccountID` BIGINT UNSIGNED NOT NULL,
   `EvolveByID` BIGINT UNSIGNED DEFAULT 0,
-  `DeviceID` BIGINT UNSIGNED DEFAULT 0,
+  `EvolveID` BIGINT UNSIGNED DEFAULT 0,
   `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
   UNIQUE KEY `UX_FP_DeviceFingerprintAccount_FP_FingerPrintID_AccountID` (`FP_FingerPrintID`,`AccountID`),
-  KEY `IX_FP_DeviceFingerprintAccount_DeviceID` (`DeviceID`)
+  KEY `IX_FP_DeviceFingerprintAccount_EvolveID` (`EvolveID`)
 ) ENGINE=InnoDB;
 
 CREATE TABLE `FP_EvolvedMapping` (
@@ -140,18 +140,18 @@ CREATE TABLE `FP_DeviceMapping` (
   `FP_TaggingID` BIGINT UNSIGNED NOT NULL,
   `FP_FingerPrintID` BIGINT UNSIGNED NOT NULL,
   `FP_DeviceFingerprintAccountID` BIGINT UNSIGNED NOT NULL,
-  `FP_DeviceFingerprintAccount_EvolutionID` BIGINT UNSIGNED NOT NULL,
+  `FP_DeviceFingerprintAccount_EvolveID` BIGINT UNSIGNED NOT NULL,
   `FP_DeviceFingerprintAccountOldID` BIGINT UNSIGNED NOT NULL,
   `FP_DeviceID` BIGINT UNSIGNED NOT NULL,
   `FirstRawTransID` BIGINT UNSIGNED NOT NULL,
   `RecoverType` SMALLINT UNSIGNED NOT NULL,
   `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
-  UNIQUE KEY `UX_FP_DeviceMapping_Group` (`FP_TaggingID`,`FP_FingerPrintID`,`FP_DeviceFingerprintAccountID`,`FP_DeviceFingerprintAccount_EvolutionID`,`FP_DeviceFingerprintAccountOldID`),
+  UNIQUE KEY `UX_FP_DeviceMapping_Group` (`FP_TaggingID`,`FP_FingerPrintID`,`FP_DeviceFingerprintAccountID`,`FP_DeviceFingerprintAccount_EvolveID`,`FP_DeviceFingerprintAccountOldID`),
   KEY `UK_FP_DeviceMapping_FP_TaggingID` (`FP_TaggingID`),
   KEY `UK_FP_DeviceMapping_FP_FingerPrintID` (`FP_FingerPrintID`),
   KEY `UK_FP_DeviceMapping_FP_DeviceFingerprintAccountID` (`FP_DeviceFingerprintAccountID`),
-  KEY `UK_FP_DeviceMapping_FP_DeviceFingerprintAccount_EvolutionID` (`FP_DeviceFingerprintAccount_EvolutionID`),
+  KEY `UK_FP_DeviceMapping_FP_DeviceFingerprintAccount_EvolveID` (`FP_DeviceFingerprintAccount_EvolveID`),
   KEY `UK_FP_DeviceMapping_FP_DeviceFingerprintAccountOldID` (`FP_DeviceFingerprintAccountOldID`)
 ) ENGINE=InnoDB;
 

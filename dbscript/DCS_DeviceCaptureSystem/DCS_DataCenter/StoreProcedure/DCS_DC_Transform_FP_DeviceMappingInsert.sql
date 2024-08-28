@@ -46,7 +46,7 @@ BEGIN
 		,	FP_TaggingID								BIGINT UNSIGNED
 		,	FP_FingerPrintID							BIGINT UNSIGNED
 		,	FP_DeviceFingerprintAccountID				BIGINT UNSIGNED
-		,	FP_DeviceFingerprintAccount_EvolutionID		BIGINT UNSIGNED
+		,	FP_DeviceFingerprintAccount_EvolveID		BIGINT UNSIGNED
 		,	FP_DeviceFingerprintAccountOldID			BIGINT UNSIGNED
         
 		,	FP_DeviceFingerprintAccount_InsertedTime	TIMESTAMP
@@ -76,13 +76,13 @@ BEGIN
 	);
     
     /********************** Get Data ***********************************/
-    INSERT IGNORE INTO Temp_DeviceMapping(TransID, RawTransID, FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccount_InsertedTime, FP_DeviceFingerprintAccountOldID)
+    INSERT IGNORE INTO Temp_DeviceMapping(TransID, RawTransID, FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolveID, FP_DeviceFingerprintAccount_InsertedTime, FP_DeviceFingerprintAccountOldID)
     SELECT 	trans.TransID
 		,	trans.RawTransID
 		,	IFNULL(trans.FP_TaggingID,0) AS FP_TaggingID
 		,	IFNULL(trans.FP_FingerPrintID,0) AS FP_FingerPrintID
 		,	IFNULL(dfa.ID,0) AS FP_DeviceFingerprintAccountID
-		,	IFNULL(dfa.DeviceID,0) AS FP_DeviceFingerprintAccount_EvolutionID
+		,	IFNULL(dfa.EvolveID,0) AS FP_DeviceFingerprintAccount_EvolveID
 		,	dfa.InsertedTime AS FP_DeviceFingerprintAccount_InsertedTime
 		,	IFNULL(dfao.ID,0) AS FP_DeviceFingerprintAccountOldID
     FROM DCS_DataCenter.Transaction AS trans
@@ -95,7 +95,7 @@ BEGIN
     WHERE FP_TaggingID = 0
 		AND FP_FingerPrintID = 0
 		AND FP_DeviceFingerprintAccountID = 0
-		AND FP_DeviceFingerprintAccount_EvolutionID = 0
+		AND FP_DeviceFingerprintAccount_EvolveID = 0
 		AND FP_DeviceFingerprintAccountOldID = 0;
     
     SET lv_Min_Transaction_TransID = (SELECT MIN(TransID) FROM Temp_DeviceMapping);
@@ -104,18 +104,18 @@ BEGIN
     DELETE tmp
     FROM Temp_DeviceMapping AS tmp
     WHERE FP_DeviceFingerprintAccountID > 0
-		AND FP_DeviceFingerprintAccount_EvolutionID = 0
+		AND FP_DeviceFingerprintAccount_EvolveID = 0
 		AND FP_DeviceFingerprintAccount_InsertedTime >= DATE_ADD(NOW(), INTERVAL (-1)*lv_Minute_To_Wait_Evolution MINUTE);
     
     
 	ALTER TABLE Temp_DeviceMapping
-	ADD INDEX IX_Temp_DeviceMapping_GroupIndex (FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccountOldID);
+	ADD INDEX IX_Temp_DeviceMapping_GroupIndex (FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolveID, FP_DeviceFingerprintAccountOldID);
     
     UPDATE Temp_DeviceMapping AS tmp
 		INNER JOIN DCS_DataCenter.FP_DeviceMapping AS dm ON dm.FP_TaggingID 							= tmp.FP_TaggingID
 														AND dm.FP_FingerPrintID 						= tmp.FP_FingerPrintID
 														AND dm.FP_DeviceFingerprintAccountID 			= tmp.FP_DeviceFingerprintAccountID
-														AND dm.FP_DeviceFingerprintAccount_EvolutionID 	= tmp.FP_DeviceFingerprintAccount_EvolutionID
+														AND dm.FP_DeviceFingerprintAccount_EvolveID 	= tmp.FP_DeviceFingerprintAccount_EvolveID
 														AND dm.FP_DeviceFingerprintAccountOldID 		= tmp.FP_DeviceFingerprintAccountOldID
 	SET tmp.FP_DeviceMappingID  = dm.ID,
 		tmp.FP_DeviceID = dm.FP_DeviceID;
@@ -204,24 +204,24 @@ BEGIN
     WHERE tmp.FP_DeviceMappingID = 0
 		AND tmp.FP_DeviceID = 0;
     
-    INSERT IGNORE INTO DCS_DataCenter.FP_DeviceMapping(FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccountOldID, FP_DeviceID, FirstRawTransID, RecoverType)
+    INSERT IGNORE INTO DCS_DataCenter.FP_DeviceMapping(FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolveID, FP_DeviceFingerprintAccountOldID, FP_DeviceID, FirstRawTransID, RecoverType)
     SELECT 	FP_TaggingID
 		,	FP_FingerPrintID
         ,	FP_DeviceFingerprintAccountID
-        ,	FP_DeviceFingerprintAccount_EvolutionID
+        ,	FP_DeviceFingerprintAccount_EvolveID
         ,	FP_DeviceFingerprintAccountOldID
         ,	MIN(FP_DeviceID) AS FP_DeviceID
         ,	MIN(RawTransID) AS FirstRawTransID
         ,	MIN(RecoverType) AS RecoverType
     FROM Temp_DeviceMapping
     WHERE FP_DeviceID > 0
-    GROUP BY FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolutionID, FP_DeviceFingerprintAccountOldID;
+    GROUP BY FP_TaggingID, FP_FingerPrintID, FP_DeviceFingerprintAccountID, FP_DeviceFingerprintAccount_EvolveID, FP_DeviceFingerprintAccountOldID;
     
     UPDATE Temp_DeviceMapping AS tmp
 		INNER JOIN DCS_DataCenter.FP_DeviceMapping AS dm ON dm.FP_TaggingID 							= tmp.FP_TaggingID
 														AND dm.FP_FingerPrintID 						= tmp.FP_FingerPrintID
 														AND dm.FP_DeviceFingerprintAccountID 			= tmp.FP_DeviceFingerprintAccountID
-														AND dm.FP_DeviceFingerprintAccount_EvolutionID 	= tmp.FP_DeviceFingerprintAccount_EvolutionID
+														AND dm.FP_DeviceFingerprintAccount_EvolveID 	= tmp.FP_DeviceFingerprintAccount_EvolveID
 														AND dm.FP_DeviceFingerprintAccountOldID 		= tmp.FP_DeviceFingerprintAccountOldID
 	SET tmp.FP_DeviceMappingID  = dm.ID,
 		tmp.FP_DeviceID = dm.FP_DeviceID
