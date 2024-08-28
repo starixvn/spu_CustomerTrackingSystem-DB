@@ -36,6 +36,7 @@ BEGIN
     SELECT b.CustID, c.OldCategoryID AS CategoryID, c.CustomerClass, b.CreatedDate
     FROM Temp_InputCustomers AS a
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS b ON a.CustID = b.CustID
+		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = b.CategoryID
         INNER JOIN CTS_DataCenter.CustomerCategory AS c ON b.CategoryID = c.CategoryID AND c.IsActive = 1 AND c.CustomerClass IS NOT NULL
 		,	LATERAL (
 				SELECT cs.ParentID, cs.IsParallelParentID
@@ -44,10 +45,10 @@ BEGIN
 																			AND cat.IsActive = 1 AND cat.CustomerClass IS NOT NULL
 					INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cat.CategoryID
 				WHERE cls.CTSCustID = b.CTSCustID
-				ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+				ORDER BY cat.CategoryPriority ASC, cls.LastModifiedDate DESC
 				LIMIT 1
 			) AS ltr
-	WHERE c.ParentID = CASE WHEN ltr.IsParallelParentID = 0 THEN ltr.ParentID ELSE c.ParentID END;
+	WHERE (ltr.IsParallelParentID = 0 AND c.ParentID = ltr.ParentID) OR (ltr.IsParallelParentID = 1 AND cs.IsMultiCateIDSameParentID = 1);
    
 END$$
 
