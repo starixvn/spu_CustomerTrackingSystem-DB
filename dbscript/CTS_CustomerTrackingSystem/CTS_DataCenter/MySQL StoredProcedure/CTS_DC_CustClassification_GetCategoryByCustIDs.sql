@@ -33,10 +33,10 @@ BEGIN
 	EXECUTE stmt1;    
     
     
-    SELECT b.CustID, b.CategoryID, c.CustomerClass, b.CreatedDate
+    SELECT b.CustID, c.OldCategoryID AS CategoryID, c.CustomerClass, b.CreatedDate
     FROM Temp_InputCustomers AS a
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS b ON a.CustID = b.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS c ON b.CategoryID = c.CategoryID AND cat.IsActive = 1 AND c.CustomerClass IS NOT NULL
+        INNER JOIN CTS_DataCenter.CustomerCategory AS c ON b.CategoryID = c.CategoryID AND c.IsActive = 1 AND c.CustomerClass IS NOT NULL
 		,	LATERAL (
 				SELECT cs.ParentID, cs.IsParallelParentID
 				FROM CTS_DataCenter.CTSCustomerClassification AS cls
@@ -47,7 +47,7 @@ BEGIN
 				ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC
 				LIMIT 1
 			) AS ltr
-	WHERE c.ParentID = CASE WHEN cs.IsParallelParentID = 0 THEN ltr.ParentID ELSE c.ParentID END;
+	WHERE c.ParentID = CASE WHEN ltr.IsParallelParentID = 0 THEN ltr.ParentID ELSE c.ParentID END;
    
 END$$
 

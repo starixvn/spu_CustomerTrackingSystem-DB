@@ -533,7 +533,7 @@ BEGIN
 					FROM CTS_DataCenter.CTSCustomerClassification AS clss
 						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
 					WHERE clss.CustID = cus.CustID AND clss.ParentID <> CONST_PARENTID_WRAPPER
-					ORDER BY cat.CustomerClassPriority ASC
+					ORDER BY cat.CustomerClassPriority ASC, clss.LastModifiedDate DESC
 					LIMIT 1	) AS tmpcls
 	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss	ON clss.CustID = tmpcls.CustID AND clss.ParentID = tmpcls.ParentID
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID;

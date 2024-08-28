@@ -102,6 +102,13 @@ sp : BEGIN
         , 	CategoryName	VARCHAR(300)
 	);
     
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustLatestCate;
+	CREATE TEMPORARY TABLE 		Temp_CustLatestCate (
+			CustID				BIGINT UNSIGNED
+		,	ParentID			INT UNSIGNED
+		,	PRIMARY KEY(CustID)
+	);  
+
     DROP TEMPORARY TABLE IF EXISTS Temp_Device;
 	CREATE TEMPORARY TABLE 		Temp_Device (
 				DCSDeviceID 		BIGINT UNSIGNED PRIMARY KEY 
@@ -399,6 +406,18 @@ sp : BEGIN
 			OR ev.CustStatusID NOT IN (SELECT CustStatusID FROM Temp_CustStatusID);
     END IF;
     
+	INSERT IGNORE INTO Temp_CustLatestCate (CustID, ParentID)
+	SELECT clss.CustID, clss.ParentID
+	FROM Temp_CustEvidence AS ev
+	,	LATERAL (
+			SELECT ev.CustID, cls.ParentID
+			FROM CTS_DataCenter.CTSCustomerClassification AS cls
+				INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = cls.CategoryID
+			WHERE cls.CustID = ev.CustID AND cls.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL) AND cate.IsActive = 1
+			ORDER BY cate.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+			LIMIT 1
+		) AS clss;
+
     INSERT IGNORE INTO Temp_Result (CTSCustID, UserName, SubscriberID, SubscriberName, AccountStatus, EvidenceCode, CategoryName)
 	SELECT ev.CTSCustID
 		,	ev.UserName
@@ -408,10 +427,11 @@ sp : BEGIN
         ,	ev.EvidenceCode
         ,	cc.CategoryName
 	FROM Temp_CustEvidence AS ev
-		INNER JOIN CTS_DataCenter.StaticList stl ON ev.CustStatusID = stl.ItemID AND stl.ListID = 1
-        LEFT JOIN CTS_DataCenter.CTSCustomerClassification custClass ON custClass.CustID = ev.CustID
-        LEFT JOIN CTS_DataCenter.CustomerCategory cc ON cc.CategoryID = custClass.CategoryID AND cc.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL)
-        LEFT JOIN CTS_Admin.Subscriber sub ON sub.SubscriberID = ev.SubscriberID
+		INNER JOIN CTS_DataCenter.StaticList AS stl ON ev.CustStatusID = stl.ItemID AND stl.ListID = 1
+		LEFT JOIN Temp_CustLatestCate AS cls ON cls.CustID = ev.CustID
+        LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS custClass ON custClass.CustID = cls.CustID AND custClass.ParentID = cls.ParentID
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = custClass.CategoryID
+        LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = ev.SubscriberID
 	 ON DUPLICATE KEY UPDATE Temp_Result.CategoryName = CASE WHEN Temp_Result.CategoryName LIKE CONCAT('%',cc.CategoryName,'%') THEN Temp_Result.CategoryName
 															 ELSE CONCAT(Temp_Result.CategoryName, ', ', cc.CategoryName)
 														END;
