@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
@@ -10,7 +10,7 @@ ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
 	,	@FromDateTime		DATETIME
 	,	@ToDateTime			DATETIME
 	,	@MatchSection		VARCHAR(20)
-	,	@Event				VARCHAR(200)
+	,	@Event				VARCHAR(200) = ''
 AS
 /*
 	Created: 20230214@Victoria.Le
@@ -29,14 +29,31 @@ AS
 			+ @MatchIds <> ''	==> Get Match Info by List MatchId
 	
 	Filter by ScanDate:
-		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo] @MatchIds = '40391219,40391223,1207560', @FromDateTime = '', @ToDateTime = '', @MatchSection = '1,2,3,4'
+		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
+				@MatchIds = '83677751,83677753,83677755'
+			,	@FromDateTime = ''
+			,	@ToDateTime = ''
+			,	@MatchSection = '1,2,3,4'
+			,	@Event='TA'
 	Filter by EventDate:
-		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo] @MatchIds = '', @FromDateTime = '2023-02-21', @ToDateTime = '2023-02-25', @MatchSection = '1,2,3,4'
+		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo] 
+				@MatchIds = ''
+			,	@FromDateTime = '2024-08-30'
+			,	@ToDateTime = '2024-08-30'
+			,	@MatchSection = '1,2,3,4'
+			--,	@Event= NULL
+			--,	@Event= ''
+			,	@Event= 'TA'
 */
 BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @Today			DATE = GETDATE()
+
+	IF @Event IS NULL
+	BEGIN
+		SET @Event = ''
+	END
 
 	IF	OBJECT_ID('tempdb..#tmpMatchSection') IS NOT NULL
 	BEGIN
