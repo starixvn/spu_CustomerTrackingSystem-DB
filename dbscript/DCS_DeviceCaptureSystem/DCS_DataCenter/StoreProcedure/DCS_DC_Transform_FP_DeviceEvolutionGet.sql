@@ -91,6 +91,7 @@ BEGIN
 	SET tmp.IDRef = tmpRef.concatenatedIDs;
     
 	SELECT 	tmp.ID AS FPDeviceFingerprintAccountID
+		,	tmp.AccountID
 		,	tmp.IDRef AS FPDeviceFingerprintAccountIDRef
 		,	fpe.Attribute->>'$.UserAgent' AS UserAgent
 		,	fpe.Attribute->>'$.OSName' AS OSName
@@ -121,6 +122,7 @@ BEGIN
 		FROM Temp_DeviceFingerprintAccount_Ref
     )
     SELECT 	dfa.ID AS FPDeviceFingerprintAccountID
+		,	dfa.AccountID
 		,	fpe.Attribute->>'$.UserAgent' AS UserAgent
 		,	fpe.Attribute->>'$.OSName' AS OSName
 		,	fpe.Attribute->>'$.BrowserName' AS BrowserName
