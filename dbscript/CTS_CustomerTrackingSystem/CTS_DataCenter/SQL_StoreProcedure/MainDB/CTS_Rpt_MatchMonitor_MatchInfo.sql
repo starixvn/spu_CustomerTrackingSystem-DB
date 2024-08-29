@@ -369,10 +369,10 @@ BEGIN
 		,	tmi.KickOffTime
 		,	tmi.MatchSection
 		,	tmi.IsGetDataFromOrigin
-		,	tmi.DataSource
 		,	h.teamname AS HomeName
 		,	a.teamname AS AwayName
 		,	l.leaguename
+		,	tmi.DataSource
 	FROM #tmpMatchesInfo AS tmi
 		INNER JOIN #tmpMatchSection AS tms ON tmi.MatchSection = tms.MatchSection
 		INNER JOIN bodb02.dbo.Team AS h WITH(NOLOCK) ON h.teamid = tmi.homeid
