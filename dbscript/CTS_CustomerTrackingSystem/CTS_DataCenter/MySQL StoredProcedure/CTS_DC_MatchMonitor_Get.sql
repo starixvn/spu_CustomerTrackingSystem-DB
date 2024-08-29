@@ -48,7 +48,7 @@ BEGIN
 			- ip_SabaLeagueGroupID: NULL: NOT Saba ELSE Saba LeagueGroupID
 		Example:
 			SELECT * FROM MatchMonitor ORDER BY ID DESC
-			CALL CTS_DC_MatchMonitor_Get_xtest(@ip_MatchInfos:=NULL,@ip_FromDate:='2024-08-28 00:00:00',@ip_ToDate:='2024-08-28 00:00:00'
+			CALL CTS_DC_MatchMonitor_Get(@ip_MatchInfos:=NULL,@ip_FromDate:='2024-08-28 00:00:00',@ip_ToDate:='2024-08-28 00:00:00'
 				,@ip_SportType:='[{"LeagueGroupID":0,"SportType":1}]',@ip_Market:=1,@ip_IsVerified:=NULL
 				,@ip_Bettypes:='[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]',@ip_Reason:='5'
                 ,@ip_TicketType:=2);
@@ -101,7 +101,10 @@ BEGIN
         ,	BettypeID		INT
         ,	BetID			BIGINT
         ,	FraudTrans		LONGTEXT
-        ,	PRIMARY KEY PK_Temp_MatchFraudTrans(MatchID,LiveIndicator,BettypeID, BetID)
+        ,	Refno			LONGTEXT
+        ,	FraudTransm		LONGTEXT
+        ,	TicketType		SMALLINT
+        ,	PRIMARY KEY PK_Temp_MatchFraudTrans(MatchID,LiveIndicator,BettypeID, BetID,TicketType)
     );
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Bettype;
@@ -307,14 +310,16 @@ BEGIN
 						) js
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_VerfiedTrans AS tmpVt WHERE js.TransID = tmpVt.TransID);    
 
-	INSERT INTO Temp_MatchFraudTrans(MatchID,LiveIndicator,BettypeID,BetID,FraudTrans)
-	SELECT 	t.MatchID, t.LiveIndicator, t.BettypeID, t.BetID
+	INSERT INTO Temp_MatchFraudTrans(MatchID,LiveIndicator,BettypeID,BetID,TicketType,FraudTrans,Refno,FraudTransm)
+	SELECT 	t.MatchID, t.LiveIndicator, t.BettypeID, t.BetID, t.TicketType
 		,	GROUP_CONCAT(DISTINCT d.ListTransID) AS FraudTrans
+        ,	GROUP_CONCAT(DISTINCT d.ListRefno) AS ListRefno
+        ,	GROUP_CONCAT(DISTINCT d.ListTransIDm) AS FraudTransm
     FROM Temp_MatchMonitor AS t
 		INNER JOIN CTS_DataCenter.MatchMonitorDetails AS d ON t.MatchID = d.MatchID 
-			AND t.LiveIndicator = d.LiveIndicator AND t.BettypeID = d.BettypeID AND t.BetID = d.BetID
+			AND t.LiveIndicator = d.LiveIndicator AND t.BettypeID = d.BettypeID AND t.BetID = d.BetID AND  t.TicketType = d.TicketType 
 		INNER JOIN Temp_Reason AS r ON d.Reason = r.ReasonID
-	GROUP BY t.MatchID, t.LiveIndicator, t.BettypeID, t.BetID;
+	GROUP BY t.MatchID, t.LiveIndicator, t.BettypeID, t.BetID, t.TicketType;
         
     IF (ip_IsVerified IS NULL)
     THEN
@@ -331,18 +336,19 @@ BEGIN
             ,	tmpMm.BetID
             ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END)) AS BettypeNameDisplay
 			,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
-            ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY
-		
+            ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY		
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	NOT EXISTS(SELECT 1 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
 					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID LIMIT 1) IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
             ,	t.FraudTrans
+            ,	t.Refno
+            ,	t.FraudTransm
             ,	tmpMm.TicketType
 		FROM Temp_MatchMonitor AS tmpMm
 			INNER JOIN CTS_DataCenter.BettypeSetting AS sbs ON sbs.BetTypeID = tmpMm.BettypeID
 			INNER JOIN Temp_MatchFraudTrans AS t ON tmpMm.MatchID = t.MatchID AND tmpMm.LiveIndicator = t.LiveIndicator 
-					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID 
+					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID and tmpMm.TicketType = t.TicketType
 			LEFT JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
 					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID 
 		GROUP BY tmpMm.MatchID
@@ -380,11 +386,13 @@ BEGIN
 			,	0 AS IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
             ,	t.FraudTrans
+            ,	t.Refno
+            ,	t.FraudTransm
             ,	tmpMm.TicketType
 		FROM Temp_MatchMonitor AS tmpMm
 			INNER JOIN CTS_DataCenter.BettypeSetting AS sbs ON sbs.BetTypeID = tmpMm.BettypeID
 			INNER JOIN Temp_MatchFraudTrans AS t ON tmpMm.MatchID = t.MatchID AND tmpMm.LiveIndicator = t.LiveIndicator 
-					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID 
+					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID AND tmpMm.TicketType = t.TicketType
 			INNER JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
 					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID AND tmpMm.Reason = tmpMg.Reason
 		WHERE EXISTS(SELECT 1 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
@@ -424,11 +432,13 @@ BEGIN
 			,	1 AS IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
             ,	t.FraudTrans
+            ,	t.Refno
+            ,	t.FraudTransm
             ,	tmpMm.TicketType
 		FROM Temp_MatchMonitor AS tmpMm
 			INNER JOIN CTS_DataCenter.SportBettypeSetting AS sbs ON sbs.SportTypeID = tmpMm.SporttypeID AND sbs.BetTypeID = tmpMm.BettypeID
 			INNER JOIN Temp_MatchFraudTrans AS t ON tmpMm.MatchID = t.MatchID AND tmpMm.LiveIndicator = t.LiveIndicator 
-					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID 
+					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID AND tmpMm.TicketType = t.TicketType
 			INNER JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
 					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID AND tmpMm.Reason = tmpMg.Reason
 		WHERE NOT EXISTS(SELECT 1 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
@@ -457,9 +467,9 @@ FROM MatchMonitor mm
 INNER JOIN MatchMonitorDetails mmd on mm.MatchID = mmd.MatchID and mm.LiveIndicator = mmd.LiveIndicator
 	and mm.BettypeID = mmd.BettypeID and mm.BetID = mmd.BetID; 
 
-CALL CTS_DC_MatchMonitor_Get_xtest(
+CALL CTS_DC_MatchMonitor_Get(
 	 @ip_MatchInfos:='[{"MatchId":83677751,"EventDate":"2024-08-30","KickOffTime":"2024-08-30","MatchSection":"1"}]'
-     ,@ip_FromDate:='2024-08-28 00:00:00',@ip_ToDate:='2024-08-30 00:00:00'
+	,@ip_FromDate:='2024-08-28 00:00:00',@ip_ToDate:='2024-08-30 00:00:00'
 	,@ip_SportType:='[{"LeagueGroupID":0,"SportTypeID":1}]'
     ,@ip_Market:=0,@ip_IsVerified:=NULL
 	,@ip_Bettypes:='[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]',@ip_Reason:='0,5');
