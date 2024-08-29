@@ -8,6 +8,7 @@
 USE DCS_DataCenter;
 
 /* ========= NEW TABLES ========= */
+DROP TABLE IF EXISTS FP_LastModifiedDate;
 CREATE TABLE `FP_LastModifiedDate` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `TableName` VARCHAR(255) NOT NULL,
@@ -19,6 +20,7 @@ CREATE TABLE `FP_LastModifiedDate` (
   UNIQUE KEY `UX_FP_LastModifiedDate_TableName_RecordID` (`TableName`,`RecordID`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_Tagging;
 CREATE TABLE `FP_Tagging` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Tagging` VARCHAR(32) NOT NULL,
@@ -27,6 +29,7 @@ CREATE TABLE `FP_Tagging` (
   UNIQUE KEY `UX_FP_Tagging_Tagging` (`Tagging`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_FingerPrint;
 CREATE TABLE `FP_FingerPrint` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Code` VARCHAR(32) NOT NULL,
@@ -36,6 +39,7 @@ CREATE TABLE `FP_FingerPrint` (
   UNIQUE KEY `UX_FP_FingerPrint_Code` (`Code`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_FingerPrintExtra;
 CREATE TABLE `FP_FingerPrintExtra` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Code` VARCHAR(32) NOT NULL,
@@ -45,6 +49,7 @@ CREATE TABLE `FP_FingerPrintExtra` (
   UNIQUE KEY `UX_FP_FingerPrintExtra_Code` (`Code`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_FingerPrintOld;
 CREATE TABLE `FP_FingerPrintOld` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Code` VARCHAR(32) NOT NULL,
@@ -53,6 +58,7 @@ CREATE TABLE `FP_FingerPrintOld` (
   UNIQUE KEY `UX_FP_FingerPrintOld_Code` (`Code`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_UserAgent;
 CREATE TABLE `FP_UserAgent` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Code` VARCHAR(32) NOT NULL,
@@ -68,6 +74,7 @@ CREATE TABLE `FP_UserAgent` (
   KEY `IX_FP_UserAgent_DeviceTypeID` (`DeviceTypeID`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_Browser;
 CREATE TABLE `FP_Browser` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `BrowserCode` VARCHAR(32) NOT NULL,
@@ -80,6 +87,7 @@ CREATE TABLE `FP_Browser` (
   KEY `IX_FP_Browser_BrowserName_BrowserVersion` (`BrowserName`,`BrowserVersion`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_OS;
 CREATE TABLE `FP_OS` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `OSCode` VARCHAR(32) NOT NULL,
@@ -92,6 +100,7 @@ CREATE TABLE `FP_OS` (
   KEY `IX_FP_OS_OSName_OSVersion` (`OSName`,`OSVersion`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_DeviceType;
 CREATE TABLE `FP_DeviceType` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `DeviceTypeCode` VARCHAR(32) NOT NULL,
@@ -105,6 +114,7 @@ CREATE TABLE `FP_DeviceType` (
   KEY `IX_FP_DeviceType_Brand` (`Brand`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_DeviceFingerprintAccount;
 CREATE TABLE `FP_DeviceFingerprintAccount` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `FP_FingerPrintID` BIGINT UNSIGNED NOT NULL,
@@ -117,6 +127,7 @@ CREATE TABLE `FP_DeviceFingerprintAccount` (
   KEY `IX_FP_DeviceFingerprintAccount_EvolveID` (`EvolveID`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_EvolvedMapping;
 CREATE TABLE `FP_EvolvedMapping` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `FP_DeviceFingerprintAccountID` BIGINT UNSIGNED NOT NULL,
@@ -126,6 +137,7 @@ CREATE TABLE `FP_EvolvedMapping` (
   UNIQUE KEY `UX_FP_EvolvedMapping_FP_DeviceFingerprintAccountID` (`FP_DeviceFingerprintAccountID`,`FP_FingerPrintExtraID`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_DeviceFingerprintAccountOld;
 CREATE TABLE `FP_DeviceFingerprintAccountOld` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `FP_FingerPrintOldID` BIGINT UNSIGNED NOT NULL,
@@ -135,6 +147,7 @@ CREATE TABLE `FP_DeviceFingerprintAccountOld` (
   UNIQUE KEY `UX_FP_DeviceFingerprintAccount_FP_FingerPrintOldID_AccountID` (`FP_FingerPrintOldID`,`AccountID`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_DeviceMapping;
 CREATE TABLE `FP_DeviceMapping` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `FP_TaggingID` BIGINT UNSIGNED NOT NULL,
@@ -155,6 +168,7 @@ CREATE TABLE `FP_DeviceMapping` (
   KEY `UK_FP_DeviceMapping_FP_DeviceFingerprintAccountOldID` (`FP_DeviceFingerprintAccountOldID`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_TransactionDeviceMapping;
 CREATE TABLE `FP_TransactionDeviceMapping` (
   `RawTransID` BIGINT UNSIGNED NOT NULL,
   `FP_DeviceMappingID` BIGINT UNSIGNED NOT NULL,
@@ -163,6 +177,7 @@ CREATE TABLE `FP_TransactionDeviceMapping` (
   PRIMARY KEY (`RawTransID`)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS FP_Device;
 CREATE TABLE `FP_Device` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `FirstRawTransID` BIGINT UNSIGNED NOT NULL,
@@ -171,6 +186,7 @@ CREATE TABLE `FP_Device` (
   UNIQUE KEY `UX_FP_Device_FirstRawTransID` (`FirstRawTransID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=300000001;
 
+DROP TABLE IF EXISTS FP_Association;
 CREATE TABLE `FP_Association` (
   `AssociationID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `AccountID` BIGINT UNSIGNED NOT NULL,
@@ -189,6 +205,7 @@ CREATE TABLE `FP_Association` (
 ) ENGINE=InnoDB;
 
 
+DROP TABLE IF EXISTS FP_AssociationMapping;
 CREATE TABLE `FP_AssociationMapping` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `AccountID` BIGINT UNSIGNED NOT NULL,

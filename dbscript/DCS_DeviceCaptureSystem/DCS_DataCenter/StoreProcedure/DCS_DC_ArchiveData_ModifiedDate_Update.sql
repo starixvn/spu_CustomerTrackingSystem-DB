@@ -37,12 +37,12 @@ sp:BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction07;
 	CREATE TEMPORARY TABLE Temp_Transaction07(
         	TransID					BIGINT UNSIGNED PRIMARY KEY
-        ,	BotComponentID			BIGINT UNSIGNED DEFAULT NULL
-        ,	FP_TaggingID			BIGINT UNSIGNED DEFAULT NULL
-        ,	FP_FingerPrintID		BIGINT UNSIGNED DEFAULT NULL
-        ,	FP_FingerPrintExtraID	BIGINT UNSIGNED DEFAULT NULL
-        ,	FP_UserAgentID			BIGINT UNSIGNED DEFAULT NULL
-        ,	FP_DeviceID				BIGINT UNSIGNED DEFAULT NULL
+        ,	BotComponentID			BIGINT UNSIGNED
+        ,	FP_TaggingID			BIGINT UNSIGNED
+        ,	FP_FingerPrintID		BIGINT UNSIGNED
+        ,	FP_FingerPrintExtraID	BIGINT UNSIGNED
+        ,	FP_UserAgentID			BIGINT UNSIGNED
+        ,	FP_DeviceID				BIGINT UNSIGNED
         ,	CreatedDate				DATE
         , 	INDEX IX_Temp_Transaction07_CreatedDate(CreatedDate)
     );
@@ -85,16 +85,18 @@ sp:BEGIN
     
     /*******GET DATA Transaction07********************/
     INSERT INTO Temp_Transaction07(TransID, BotComponentID, FP_TaggingID, FP_FingerPrintID, FP_FingerPrintExtraID, FP_UserAgentID, FP_DeviceID, CreatedDate)
-    SELECT 	TransID
-        ,	BotComponentID
-        ,	FP_TaggingID
-        ,	FP_FingerPrintID
-        ,	FP_FingerPrintExtraID
-        ,	FP_UserAgentID
-        ,	FP_DeviceID
-        ,	CreatedDate
-	FROM DCS_DataCenter.Transaction07
-	WHERE TransID > lv_MaxTransID
+    SELECT 	trans.TransID
+        ,	IFNULL(trans.BotComponentID, 0) 		AS BotComponentID
+        ,	IFNULL(dm.FP_TaggingID, 0) 				AS FP_TaggingID
+        ,	IFNULL(dm.FP_FingerPrintID, 0) 			AS FP_FingerPrintID
+        ,	IFNULL(em.FP_FingerPrintExtraID, 0) 	AS FP_FingerPrintExtraID
+        ,	IFNULL(trans.FP_UserAgentID, 0) 		AS FP_UserAgentID
+        ,	IFNULL(trans.FP_DeviceID, 0) 			AS FP_DeviceID
+        ,	trans.CreatedDate
+	FROM DCS_DataCenter.Transaction07 AS trans
+		LEFT JOIN DCS_DataCenter.FP_DeviceMapping AS dm ON dm.ID = trans.FP_DeviceMappingID
+		LEFT JOIN DCS_DataCenter.FP_EvolvedMapping AS em ON em.FP_DeviceFingerprintAccountID = dm.FP_DeviceFingerprintAccountID
+	WHERE trans.TransID > lv_MaxTransID
 	LIMIT ip_BatchSize;
     
     /*******INIT DATA********************/
@@ -238,7 +240,8 @@ sp:BEGIN
     IF lv_MaxTransID IS NOT NULL
     THEN
 		UPDATE DCS_DataCenter.SystemSetting
-		SET VValue = lv_MaxTransID
+		SET VValue = lv_MaxTransID,
+			UpdatedTime = lv_CurrentDate
 		WHERE ID = CONST_TRANS07_SYSTEMARCHIVEID;
     END IF;
 END$$
