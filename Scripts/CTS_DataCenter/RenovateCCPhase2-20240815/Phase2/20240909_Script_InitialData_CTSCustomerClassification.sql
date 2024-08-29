@@ -7,7 +7,7 @@
 	Description: 
 
 	Revisions:	
-		- 20240826@Victoria.Le: 	Initial Writing [Redmine ID: #185793]
+		- 20240826@Victoria.Le: 	Initial Writing [Redmine ID: #205317]
 									Tables:
 										1. SpecialCustomerClass
 										2. SpecialCustomerClass_BySport
