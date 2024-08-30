@@ -35,9 +35,9 @@ BEGIN
         
 	DECLARE CONS_LOG 							TINYINT DEFAULT 0; #0:LogOff, 1:LogOn
     DECLARE CONS_MMREASON_GROUPBETTINGPARLAY	INT DEFAULT 5;
-    DECLARE	CONS_TICKETTYPE						SMALLINT DEFAULT 2;
+    DECLARE CONST_TICKETTYPE_PARLAY 			SMALLINT DEFAULT 2;
     
-	DECLARE lv_LogTime			DATETIME(4) DEFAULT current_timestamp(4);
+	DECLARE lv_LogTime			DATETIME(4) DEFAULT CURRENT_TIMESTAMP(4);
     DECLARE lv_GroupID 			INT;
     DECLARE lv_TransIDList 		LONGTEXT;
     DECLARE lv_OldTransIDmList 	LONGTEXT;    
@@ -67,16 +67,7 @@ BEGIN
     END IF;
     #==================LOG=======================================================  
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_TransGroup;
-    CREATE TEMPORARY TABLE Temp_TransGroup
-    (
-			GroupID 		INT PRIMARY KEY
-        ,	CustIDList 		LONGTEXT
-        ,	TransIDList		LONGTEXT 
-        ,	RefnoList		LONGTEXT
-        ,	TransIDmList	LONGTEXT
-    );    
-    
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_GroupBettingGroup;
     CREATE TEMPORARY TABLE Temp_GroupBettingGroup
     (
@@ -112,14 +103,7 @@ BEGIN
                             ,	TransIDmList			LONGTEXT PATH "$.TransIDmList"
 						)
 				) AS js;     
-	/*
-    INSERT INTO Temp_GroupBettingGroup(GroupID, CustIDList, TransIDList, RefnoList, TransIDmList)
-    SELECT  tmpTg.GroupID
-		,	tmpTg.CustIDList
-        ,	tmpTg.TransIDList
-        ,	tmpTg.HighStakeLicCustList
-	FROM Temp_TransGroup AS tmpTg;
-	*/
+
     #======Update MatchMonitorDetails====================================  
 
     IF (ip_LiveIndicator = 1) THEN
@@ -200,7 +184,7 @@ BEGIN
 				INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, ScoreDiff, BettypeID, BetID, Betteam, EventDate, GroupID, LiveHomeScore, LiveAwayScore
                 , ListCustID, ListTransID, ListTransIDm, ListRefno, Reason, TicketType)##LOG185793
 				VALUES(ip_MatchID, ip_LiveIndicator, ip_ScoreDiff, ip_BettypeID, ip_BetID, ip_Betteam, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore
-				, lv_CustIDList, lv_TransIDList, lv_TransIDmList, lv_RefnoList, CONS_MMREASON_GROUPBETTINGPARLAY, CONS_TICKETTYPE);      
+				, lv_CustIDList, lv_TransIDList, lv_TransIDmList, lv_RefnoList, CONS_MMREASON_GROUPBETTINGPARLAY, CONST_TICKETTYPE_PARLAY);      
 
 			END IF; 
 	

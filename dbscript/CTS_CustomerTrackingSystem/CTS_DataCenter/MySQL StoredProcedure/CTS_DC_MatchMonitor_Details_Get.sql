@@ -23,9 +23,11 @@ BEGIN
             -	20220110@Casey.Huynh: Enhance MM, BetID, Reason [Redmine ID: 166986]
             -	20221027@Casey.Huynh: Update Verify By Reason and Betteam [RedmineID: 179439]
             - 	20221122@Casey.Huynh: Update TotalScore to ScoreDiff [Redmine ID: #179499]
-             -	20230109@Casey.Huynh: UpdateSoreDiff [Redmine ID: #182637]
-             -	20230105@Casey.Huynh: Enhance Report, Seperate CustID List and TransID List [Redmine ID: #181995]
+			-	20230109@Casey.Huynh: UpdateSoreDiff [Redmine ID: #182637]
+			-	20230105@Casey.Huynh: Enhance Report, Seperate CustID List and TransID List [Redmine ID: #181995]
             - 	20230222@Casey.Huynh: For Merge Reason Group, Return All Trans [Redmine ID: 181995]
+            - 	20240829@Casey.Huynh: Handle TicketType Single [Redmine ID: #152883]
+            
 		Param's Explanation (filtered by):
 		
 		Example:
@@ -46,8 +48,8 @@ BEGIN
 		AND mmd.BetID = ip_BetID
 		AND mmd.MatchID = ip_MatchID
 		AND mmd.LiveIndicator = ip_LiveIndicator
-        AND mmt.TicketType = CONST_TICKETTYPE_SINGLE
-	ORDER BY CustID;
+        AND mmd.TicketType = CONST_TICKETTYPE_SINGLE
+	ORDER BY cus.CustID;
 	
 	SELECT 	js.TransID
 		,	mmd.Reason		
@@ -61,7 +63,7 @@ BEGIN
 		AND mmd.BetID = ip_BetID
 		AND mmd.MatchID = ip_MatchID
 		AND mmd.LiveIndicator = ip_LiveIndicator
-        AND mmt.TicketType = CONST_TICKETTYPE_SINGLE;
+        AND mmd.TicketType = CONST_TICKETTYPE_SINGLE;
     
 	SELECT	js.TransID AS VerifiedTransID
 	FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
@@ -72,7 +74,7 @@ BEGIN
 		AND mdv.LiveIndicator = ip_LiveIndicator
         AND	mdv.BettypeID = ip_BettypeID
         AND	mdv.BetID = ip_BetID
-        AND mmt.TicketType = CONST_TICKETTYPE_SINGLE;          
+        AND mdv.TicketType = CONST_TICKETTYPE_SINGLE;          
 	
 END$$
 DELIMITER ;

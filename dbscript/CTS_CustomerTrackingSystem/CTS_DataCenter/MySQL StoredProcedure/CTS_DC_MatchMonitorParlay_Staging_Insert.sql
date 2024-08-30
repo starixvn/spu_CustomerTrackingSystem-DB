@@ -11,13 +11,13 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitorParlay_Staging_Inser
     SQL SECURITY INVOKER
 sp: BEGIN
 	/*
-		Created:	20210526@Casey.Huynh
+		Created:	20240823@Casey.Huynh
 		Task :		Match Monitor Insert trans ticket to Staging table
 		DB:			CTS_DataCenter
 		Original:
 
 		Revisions:
-			- 	20210526@Casey.Huynh: Created [Redmine ID: 152883]
+			- 	20240823@Casey.Huynh: Created [Redmine ID: 152883]
             
            
 		Param's Explanation (filtered by):		

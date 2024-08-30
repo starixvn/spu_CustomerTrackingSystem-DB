@@ -14,11 +14,11 @@ AS
 	DB	 : bodb02
 
 	Revisions:
-		- 20240822@Casey.Huynh: Created [Redmine ID: 152883]
+		- 20240822@Casey.Huynh: Created [Redmine ID: 207397]
 
-		Params Explaination:
-		-	@FraudTickets is in Json format
-			'[{"MatchID":10,"DataSource":0,"IsLive":1,"Bettype":1,"BetID":0,"FraudTrans":"1,2,3","FraudRefno":"4,5,6","FraudTransm":",11,12,13,21,22,31,32,"},etc]'
+	Params Explaination:
+	-	@FraudTickets is in Json format
+		'[{"MatchID":10,"DataSource":0,"IsLive":1,"Bettype":1,"BetID":0,"FraudTrans":"1,2,3","FraudRefno":"4,5,6","FraudTransm":",11,12,13,21,22,31,32,"},etc]'
 			
 	Example:
 
