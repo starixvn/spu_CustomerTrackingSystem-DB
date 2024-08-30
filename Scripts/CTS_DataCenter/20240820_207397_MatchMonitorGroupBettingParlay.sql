@@ -80,14 +80,12 @@ ALTER TABLE MatchMonitor
 ADD COLUMN TicketType SMALLINT DEFAULT 1;#COMMENT '1:Single Ticket, 2: Parlay';
 
 ALTER TABLE MatchMonitorDetails
-	ADD COLUMN ListRefno LONGTEXT
-,	ADD COLUMN ListTransIDm LONGTEXT
+	ADD COLUMN ListTransIDm LONGTEXT AFTER ListTransID
+,   ADD COLUMN ListRefno LONGTEXT AFTER ListTransID
 ,	ADD COLUMN TicketType SMALLINT DEFAULT 1;
 
 ALTER TABLE MatchMonitorDetailsVerifiedTrans
-	ADD COLUMN ListRefno LONGTEXT
-,	ADD COLUMN ListTransIDm LONGTEXT
-,	ADD COLUMN TicketType SMALLINT DEFAULT 1;
+	ADD COLUMN TicketType SMALLINT DEFAULT 1;
 
 #==========Enhance SportBettype Setting================================
 	DROP TABLE BettypeSetting;
