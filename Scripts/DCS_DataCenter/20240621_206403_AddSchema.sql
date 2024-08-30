@@ -121,6 +121,7 @@ CREATE TABLE `FP_DeviceFingerprintAccount` (
   `AccountID` BIGINT UNSIGNED NOT NULL,
   `EvolveByID` BIGINT UNSIGNED DEFAULT 0,
   `EvolveID` BIGINT UNSIGNED DEFAULT 0,
+  `EvolveTime` TIMESTAMP DEFAULT NULL,
   `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
   UNIQUE KEY `UX_FP_DeviceFingerprintAccount_FP_FingerPrintID_AccountID` (`FP_FingerPrintID`,`AccountID`),

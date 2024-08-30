@@ -18,7 +18,8 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_FP_DeviceEvolutionInsert('[{"FPDeviceFingerprintAccountID":27,"EvolveByID":0},{"FPDeviceFingerprintAccountID":28,"EvolveByID":27},{"FPDeviceFingerprintAccountID":29,"EvolveByID":28}]');
+			SET sql_safe_updates = 0;
+			CALL DCS_DC_Transform_FP_DeviceEvolutionInsert('[{"FPDeviceFingerprintAccountID":2,"EvolveByID":1}]');
 	*/
     DECLARE CONST_MINID_FP_DEVICEEVOLUTION	INT DEFAULT 23;
     
@@ -73,7 +74,7 @@ BEGIN
     
     SELECT 	MIN(FPDeviceFingerprintAccountID) AS MinID
 		,	MAX(FPDeviceFingerprintAccountID) AS MaxID
-    INTO lv_CurrentID, lv_MaxID 
+    INTO lv_CurrentID, lv_MaxID
     FROM Temp_DeviceEvolution;
     
     WHILE lv_CurrentID < lv_MaxID DO
@@ -103,7 +104,8 @@ BEGIN
     UPDATE DCS_DataCenter.FP_DeviceFingerprintAccount AS dfa
 		INNER JOIN Temp_DeviceEvolution AS tmp ON tmp.FPDeviceFingerprintAccountID = dfa.ID
 	SET dfa.EvolveByID = tmp.EvolveByID,
-		dfa.EvolveID = tmp.EvolveID;
+		dfa.EvolveID = tmp.EvolveID,
+		dfa.EvolveTime = lv_CurrentDate;
     
     /*****UPDATE MaxTransID in SystemSetting****************************************************/
     SET lv_Max_FP_DeviceEvolutionID = (SELECT MAX(FPDeviceFingerprintAccountID) FROM Temp_DeviceEvolution);
