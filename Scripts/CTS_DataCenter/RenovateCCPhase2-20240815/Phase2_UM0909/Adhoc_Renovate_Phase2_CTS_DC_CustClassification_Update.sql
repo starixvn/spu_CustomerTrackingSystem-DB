@@ -32,8 +32,6 @@ BEGIN
 	DECLARE lv_TotalCustUpdated				BIGINT DEFAULT 0;
 	DECLARE lv_UpdatedCount					BIGINT DEFAULT 0;
 	DECLARE lv_TotalCust					BIGINT;
-	DECLARE	CONST_SPORTGROUP_NORMAL			INT DEFAULT 200;
-	DECLARE CONST_CATEGORYGROUP_PROBATION	INT DEFAULT 206;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE Temp_Customer (
@@ -73,8 +71,8 @@ BEGIN
 												AND cc.CategoryID = ip_CategoryID
 		SET 	cc.ParentID 		= cc.ParentID_new
 			,	cc.CategoryID 		= cc.CategoryID_new
-			,	cc.CreatedDate 		= cc.CreatedDate_new
-			,	cc.LastScannedDate 	= cc.LastScannedDate_new
+			,	cc.CreatedDate 		= IFNULL(cc.CreatedDate_new,cc.CreatedDate)
+			,	cc.LastScannedDate 	= IFNULL(cc.LastScannedDate_new,cc.LastScannedDate)
 		WHERE temp.ID BETWEEN lv_FromID AND lv_ToID;
 		
 		SET lv_UpdatedCount = FOUND_ROWS();
@@ -100,7 +98,7 @@ BEGIN
 			SET lv_ToID = lv_ToID_Next;
 		
 		ELSE
-			
+		
 			SET lv_FromID = 0;
 			SET lv_ToID = 0;
 			

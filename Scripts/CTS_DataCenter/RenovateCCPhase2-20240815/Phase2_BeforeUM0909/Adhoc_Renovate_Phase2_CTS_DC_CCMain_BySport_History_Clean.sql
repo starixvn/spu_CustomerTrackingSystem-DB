@@ -46,7 +46,7 @@ BEGIN
 	
 	SELECT hadhoc.ID
 	INTO op_MaxHistoryID
-	FROM CTS_Adhoc.Adhoc_CustIDID AS hadhoc 
+	FROM AdhocVic_History_Bysport_DELETE AS hadhoc 
 	WHERE hadhoc.ID > lv_ToID
 	ORDER BY hadhoc.ID
 	LIMIT 1;

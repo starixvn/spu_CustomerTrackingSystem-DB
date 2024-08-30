@@ -40,15 +40,18 @@ BEGIN
 			ID					BIGINT UNSIGNED AUTO_INCREMENT
 		,	CustID				BIGINT UNSIGNED
 		,	RoleID				TINYINT
+		,	ParentID			INT
+		,	CategoryID			INT
 		,	CreatedDate			DATETIME
 		,	LastScannedDate		DATETIME
 		,	PRIMARY KEY (ID)
 	);
 	
-	INSERT INTO Temp_Customer (CustID,RoleID,CreatedDate,LastScannedDate)
-	SELECT cc.CustID,cust.RoleID,cc.CreatedDate,cc.LastScannedDate
+	INSERT INTO Temp_Customer (CustID,RoleID,ParentID,CategoryID,CreatedDate,LastScannedDate)
+	SELECT cc.CustID,cust.RoleID,curcate.ParentID,curcate.CategoryID,cc.CreatedDate,cc.LastScannedDate
 	FROM CTS_DataCenter.CTSCustomerClassification AS cc
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = cc.CustID AND cust.CustSubID = 0
+		INNER JOIN CTS_DataCenter.CustomerCategory AS curcate ON curcate.OldCategoryID = cc.CategoryID 
 	WHERE cc.SportGroupID = ip_SportGroupID
 		AND cc.CategoryID = ip_CategoryID
 		AND cc.CustID >= ip_MinCustID
@@ -77,10 +80,9 @@ BEGIN
 			INNER JOIN Temp_Customer AS temp ON cc.CustID = temp.CustID 
 												AND cc.SportGroupID = ip_SportGroupID
 												AND cc.CategoryID = ip_CategoryID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS newcate ON newcate.OldCategoryID = cc.CategoryID
 		SET 	cc.RoleID		 		= temp.RoleID
-			,	cc.ParentID_new 		= newcate.ParentID
-			,	cc.CategoryID_new 		= newcate.CategoryID
+			,	cc.ParentID_new 		= temp.ParentID
+			,	cc.CategoryID_new 		= temp.CategoryID
 			,	cc.CreatedDate_new 		= temp.CreatedDate
 			,	cc.LastScannedDate_new 	= temp.LastScannedDate
 			,	cc.SportGroupID_bk 		= cc.SportGroupID
