@@ -33,6 +33,8 @@ BEGIN
 
 	*/   
     
+    DECLARE CONST_TICKETTYPE_SINGLE SMALLINT DEFAULT 1;
+    
 	SELECT 	DISTINCT cus.CTSCustID
         ,	cus.CustID
 	FROM   CTS_DataCenter.MatchMonitorDetails AS mmd
@@ -44,6 +46,7 @@ BEGIN
 		AND mmd.BetID = ip_BetID
 		AND mmd.MatchID = ip_MatchID
 		AND mmd.LiveIndicator = ip_LiveIndicator
+        AND mmt.TicketType = CONST_TICKETTYPE_SINGLE
 	ORDER BY CustID;
 	
 	SELECT 	js.TransID
@@ -57,7 +60,8 @@ BEGIN
 	WHERE 	mmd.BettypeID = ip_BettypeID
 		AND mmd.BetID = ip_BetID
 		AND mmd.MatchID = ip_MatchID
-		AND mmd.LiveIndicator = ip_LiveIndicator;
+		AND mmd.LiveIndicator = ip_LiveIndicator
+        AND mmt.TicketType = CONST_TICKETTYPE_SINGLE;
     
 	SELECT	js.TransID AS VerifiedTransID
 	FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
@@ -67,7 +71,8 @@ BEGIN
 	WHERE  	mdv.MatchID = ip_MatchID
 		AND mdv.LiveIndicator = ip_LiveIndicator
         AND	mdv.BettypeID = ip_BettypeID
-        AND	mdv.BetID = ip_BetID;          
+        AND	mdv.BetID = ip_BetID
+        AND mmt.TicketType = CONST_TICKETTYPE_SINGLE;          
 	
 END$$
 DELIMITER ;
