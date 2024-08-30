@@ -39,7 +39,7 @@ BEGIN
 		,	KEY IX_ToCategoryID (ToCategoryID_bk)
 	);
 	
-	INSERT INTO Temp_History (ID, SportGroupID_bk, CategoryID_bk, FromCategoryID_bk, ToCategoryID_bk, ParentID_new, CategoryID_new, OldCategoryID_new)
+	INSERT INTO Temp_History (ID, SportGroupID_bk, CategoryID_bk, FromCategoryID_bk, ToCategoryID_bk, ParentID_new, CategoryID_new, OldCategoryID_new, DWCategoryID_new)
 	SELECT 	h.ID
 		, 	h.SportGroupID AS SportGroupID_bk
 		, 	h.CategoryID AS CategoryID_bk
@@ -51,9 +51,11 @@ BEGIN
 				 ELSE cate.ParentID END AS ParentID_new
 		, 	cate.CategoryID AS CategoryID_new
 		, 	cateF.CategoryID AS OldCategoryID_new
+		, 	cateT.CategoryID AS DWCategoryID_new
 	FROM CTS_DataCenter.CTSCustomerClassification_History AS h -- USE INDEX (PRIMARY)
 		LEFT JOIN CTS_DataCenter.CustomerCategory_new AS cate ON cate.OldCategoryID = h.CategoryID
 		LEFT JOIN CTS_DataCenter.CustomerCategory_new AS cateF ON cateF.OldCategoryID = h.FromCategoryID
+		LEFT JOIN CTS_DataCenter.CustomerCategory_new AS cateT ON cateT.OldCategoryID = h.ToCategoryID
 	WHERE h.ID >= ip_MinID
 	ORDER BY h.ID
 	LIMIT ip_Batchsize;
@@ -67,6 +69,7 @@ BEGIN
 		LIMIT 1
     ) AS cateT1
 	SET 	h.DWCategoryID_new = cateT1.CategoryID
+	WHERE 	h.DWCategoryID_new IS NULL AND cateT1.CategoryID IS NOT NULL
 	;
 	
 	UPDATE CTS_DataCenter.CTSCustomerClassification_History AS h
