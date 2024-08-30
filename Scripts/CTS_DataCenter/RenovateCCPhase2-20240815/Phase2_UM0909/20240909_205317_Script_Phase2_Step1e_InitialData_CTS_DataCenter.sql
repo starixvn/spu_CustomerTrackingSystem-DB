@@ -27,12 +27,42 @@ USE CTS_DataCenter;
 /*1. CTSCustomerClassification*/
 ---------------------------------
 	---------------------------------
-	/*Probation - FIRST*/
+	/*Initialize and Backup - Probation - FIRST*/
 	---------------------------------
+	SELECT ParameterValue
+	INTO @lv_Batchsize_Init_Probation
+	FROM SystemParameter
+	WHERE ParameterID = 992;
+	
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Probation(@lv_Batchsize_Init_Probation,200,206,402076,140714);
 	
 	---------------------------------
-	/*Other - FIRST*/
+	/*Initialize and Backup - Other*/
 	---------------------------------
+	SELECT ParameterValue
+	INTO @lv_Batchsize_Init_Other
+	FROM SystemParameter
+	WHERE ParameterID = 991;
+	
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,206,402076,140714);
+	
+	---------------------------------
+	/*Rename columns*/
+	---------------------------------
+	ALTER TABLE CTSCustomerClassification
+	RENAME COLUMN SportGroupID TO ParentID
+,	RENAME COLUMN IsDirect TO IsMarkedDirectly;
+
+	---------------------------------
+	/*Update new data*/
+	---------------------------------
+	SELECT ParameterValue
+	INTO @lv_Batchsize_Init_Other
+	FROM SystemParameter
+	WHERE ParameterID = 990;
+	
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Update(10000,200,201,402076,140714);
+	
 
 ---------------------------------
 /*2. CTSCustomerClassification_BySport*/

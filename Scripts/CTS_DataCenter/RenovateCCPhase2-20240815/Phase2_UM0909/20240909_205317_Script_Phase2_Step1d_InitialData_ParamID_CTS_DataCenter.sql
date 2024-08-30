@@ -13,6 +13,7 @@ Revisions:
 USE CTS_DataCenter;
 
 INSERT INTO SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
-VALUES 	(992, 'CTS_DC_CustClassification', 'CTS_DC_CustClassification Batchsize','BIGINT', 1000)
--- ,		(993, 'Backup_Initial_History_BySport', 'Backup_Initial_History_BySport_Batchsize','INT',1000)
+VALUES 	(992, 'CTS_DC_CustClassification_Probation', 'CTS_DC_CustClassification_Probation Batchsize','BIGINT', 1000)
+,		(991, 'CTS_DC_CustClassification_Other', 'CTS_DC_CustClassification_Other Batchsize','BIGINT',1000)
+,		(990, 'CTS_DC_CustClassification_Update', 'CTS_DC_CustClassification_Update Batchsize','BIGINT',1000)
 ;
