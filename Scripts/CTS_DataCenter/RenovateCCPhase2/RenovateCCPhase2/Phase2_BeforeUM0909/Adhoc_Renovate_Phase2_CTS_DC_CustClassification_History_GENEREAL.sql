@@ -52,7 +52,6 @@ BEGIN
 	INTO lv_MaxID
 	FROM CTE;
 	
-	
     INSERT INTO Temp_History (ID, SportGroupID_bk, CategoryID_bk, FromCategoryID_bk, ToCategoryID_bk, ParentID_new, CategoryID_new, OldCategoryID_new, DWCategoryID_new)
     SELECT  h.ID
         ,   h.SportGroupID AS SportGroupID_bk
@@ -64,7 +63,7 @@ BEGIN
                          WHEN h.SportGroupID = 200 AND h.TargetCC = -1 THEN 1000 END
                  ELSE cate.ParentID END AS ParentID_new
         ,   cate.CategoryID AS CategoryID_new
-        ,   cateF.CategoryID AS OldCategoryID_new
+        ,   CASE WHEN cateF.CategoryID IS NULL AND h.FromCategoryID IS NOT NULL THEN h.FromCategoryID ELSE cateF.CategoryID END AS OldCategoryID_new
         ,   cateT.CategoryID AS DWCategoryID_new
     FROM CTS_DataCenter.CTSCustomerClassification_History AS h -- USE INDEX (PRIMARY)
         LEFT JOIN CTS_DataCenter.CustomerCategory_new AS cate ON cate.OldCategoryID = h.CategoryID
@@ -104,6 +103,10 @@ BEGIN
 	LIMIT 1;
 
 	SET op_NextID = lv_NextID;
+
+	IF op_NextID IS NULL THEN
+		SET op_NextID = ip_MinID;
+	END IF;
 	
 END$$
 DELIMITER ;
