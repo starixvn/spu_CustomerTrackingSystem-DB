@@ -54,7 +54,7 @@ CREATE EVENT EV_CTS_DC_Adhoc_RenovateCC_BySport_InitCCHistory
 			IF lv_MinHistoryID < lv_NextHistoryID THEN
 				UPDATE CTS_DataCenter.SystemParameter 
 				SET ParameterValue = lv_NextHistoryID
-				WHERE ParameterID = 776;
+				WHERE ParameterID = 777;
 				
 				UPDATE CTS_DataCenter.SystemEventStatus 
 				SET 	Status = 'Stop' 
