@@ -11,7 +11,7 @@ CREATE PROCEDURE [dbo].[CTS_TicketDetails_Info]
 	,	@ListSportBettype			VARCHAR(MAX)
 	,	@IsLive						BIT = 0
 	,	@ListSuspiciousTransId		VARCHAR(MAX) = ''
-	,	@TicketType					TINYINT = 0
+	,	@ViewMode					TINYINT = 0
 	,	@IsExclTestCurr				BIT = 0
 	,	@FromTransDate				DATETIME = NULL
 	,	@ToTransDate				DATETIME = NULL
@@ -40,14 +40,15 @@ AS
 		- 20240129@Thomas.Nguyen:	Return more column IsCashout [Redmine ID: #199634]
 		- 20240322@Vitoria.Le: 		Exclude Internal Account for Danger Monitor [Redmine ID: #201380]
 		- 20240521@Thomas.Nguyen:	Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
+		- 20240904@Casey.Huynh:		Rename @TicketType To @ViewMode [Redmine ID: #207397]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
 			@ListSuspiciousTransId = '[{"TransId":1, "Reason":'HED', "GroupId":1},{"TransId":1, "Reason":'GB', "GroupId":1},{"TransId":2, "Reason":'GB', "GroupId":1},{"TransId":3, "Reason":'HED', "Group":1}]'
-		@TicketType	: TINYINT
-			@TicketType=0: Ticket Type = 'All-MatchMonitor'			
-			@TicketType=1: Ticket Type = 'Suspicious'
-			@TicketType=2: Ticket Type = 'All-Danger Monitor'
+		@ViewMode	: TINYINT
+			@ViewMode=0: Ticket Type = 'All-MatchMonitor'			
+			@ViewMode=1: Ticket Type = 'Suspicious'
+			@ViewMode=2: Ticket Type = 'All-Danger Monitor'
 		@ListSportBettype: JSON
 			,@ListSportBettype='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
 								,	{"SportTypeID":2, "BetTypeID":3, "BetChoiceType":2}
@@ -64,7 +65,7 @@ AS
 		--,	1 -- @BetType
 		,	1 -- @IsLive
 		,	'' -- @ListSuspiciousTransId
-		,	0  --@TicketType (0:All, 1: Suspicious)
+		,	0  --@ViewMode (0:All, 1: Suspicious)
 		,	0 -- @IsExclTestCurr
 		--,	0 -- @BetID
 		,	@MaxSequenceId OUTPUT
@@ -228,7 +229,7 @@ BEGIN
 		
 	END;
 	
-	IF @TicketType = 1 --GET Suspicious Ticket Only
+	IF @ViewMode = 1 --GET Suspicious Ticket Only
 	BEGIN
 		IF @IsGetDataFromOrigin = 1
 		BEGIN
@@ -352,7 +353,7 @@ BEGIN
 
 	END;
 	
-	IF @TicketType = 0 --GET All Ticket - MM
+	IF @ViewMode = 0 --GET All Ticket - MM
 	BEGIN
 		INSERT INTO #tmpTrans (
 				TransId
@@ -393,7 +394,7 @@ BEGIN
 			AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 	END;
 	
-	IF @TicketType = 2 --GET All Ticket - Danger Monitor
+	IF @ViewMode = 2 --GET All Ticket - Danger Monitor
 	BEGIN
 		IF @IsGetDataFromOrigin = 1
 		BEGIN

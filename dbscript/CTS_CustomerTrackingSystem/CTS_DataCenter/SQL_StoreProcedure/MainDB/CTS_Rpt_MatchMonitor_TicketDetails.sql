@@ -15,7 +15,7 @@ CREATE PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 	,	@EventDate					DATETIME = '1900-09-22'
 	,	@MatchID					INT = 0
 	,	@ListSportBettype			VARCHAR(MAX)
-	,	@TicketType					TINYINT = 1	
+	,	@ViewMode				TINYINT = 1	
 	,	@IsLicensee					BIT = NULL
 	,	@IsExclTestCurr				BIT = 0
 	,	@ListCurrency				VARCHAR(MAX) = NULL
@@ -78,6 +78,7 @@ AS
 									And Separate between QueryType = 1 and QueryType in (2,3) [Redmine ID: #201380]
 		- 20240521@Thomas.Nguyen: Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
 		- 20240802@Casey.Huynh:	Enhance Filter Amount Sum by all Selected BetChoice  [Redmine ID: #207528]
+		- 20240904@Casey.Huynh: Rename @TicketType To @ViewMode [Redmine ID: #207397]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize) >> refer to new SP CTS_Rpt_MatchMonitor_GetTicketInfo
