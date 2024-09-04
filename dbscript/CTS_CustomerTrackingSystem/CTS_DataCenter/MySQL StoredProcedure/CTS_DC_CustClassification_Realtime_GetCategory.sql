@@ -90,8 +90,7 @@ BEGIN
 				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
                 LIMIT 1
 		   ) tmplc 
-        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS s ON s.CategoryID = tmplc.CategoryID
-	WHERE s.ParentID IN (CONST_PARENTID_NORMAL, CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
+	WHERE tmplc.ParentID IN (CONST_PARENTID_NORMAL, CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
 	
     -- #2: Return customer category for realtime classification
     SELECT DISTINCT temp.CustID AS CustID

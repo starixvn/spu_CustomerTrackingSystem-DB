@@ -51,9 +51,8 @@ sp:BEGIN
 	);
     
     INSERT INTO Temp_Category(CategoryID)
-    SELECT s.CategoryID
-	FROM CTS_DataCenter.CustomerCategorySettings AS s
-		INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = s.CategoryID
+    SELECT ca.CategoryID
+	FROM CTS_DataCenter.CustomerCategory AS ca
 	WHERE ca.CategoryGroupID = CONST_CATEGROUPID_NEW 
 		AND ca.IsActive = 1;
   
