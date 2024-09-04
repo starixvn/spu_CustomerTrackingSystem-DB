@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Probation`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Update`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Probation`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Update`(
 		IN		ip_Batchsize			INT
 	,	IN		ip_SportID				SMALLINT
 	,	IN		ip_CategoryID			INT
@@ -19,12 +19,11 @@ BEGIN
 		Param's Expanation:
 		
 		Example:
-			- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Probation(10000,200,206,402076,140714);
+			- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Update(10000,1,201,402076,140714);
 			
 		Revisions: 
 			- 20240829@Victoria.Le:			Initial Writing [Redmine ID: #205317]
 */
-
 	
 	DECLARE lv_FromID						BIGINT DEFAULT 0;
 	DECLARE lv_ToID							BIGINT DEFAULT 0;
@@ -33,32 +32,27 @@ BEGIN
 	DECLARE lv_TotalCustUpdated				BIGINT DEFAULT 0;
 	DECLARE lv_UpdatedCount					BIGINT DEFAULT 0;
 	DECLARE lv_TotalCust					BIGINT;
-    DECLARE CONST_CATEGORYID_PROBATION		INT DEFAULT 206;
+	DECLARE CONST_CATEGORYID_PROBATION		INT DEFAULT 206;
+	DECLARE lv_IsProbation					TINYINT(1) DEFAULT 0;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE Temp_Customer (
 			ID					BIGINT UNSIGNED AUTO_INCREMENT
 		,	CustID				BIGINT UNSIGNED
-		,	CreatedDate			DATETIME
-		,	LastScannedDate		DATETIME
 		,	PRIMARY KEY (ID)
 	);
 	
-	INSERT INTO Temp_Customer (CustID,CreatedDate,LastScannedDate)
-	SELECT cc.CustID,pro.CreatedDate,pro.LastScannedDate
-	FROM CTS_DataCenter.CTSCustomerClassification AS cc
+	IF ip_CategoryID = CONST_CATEGORYID_PROBATION THEN
+		SET lv_IsProbation = 1;
+	END IF;
+	
+	INSERT INTO Temp_Customer (CustID)
+	SELECT cc.CustID
+	FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cc
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = cc.CustID AND cust.CustSubID = 0
-		INNER JOIN CTS_DataCenter.CustomerCategory AS curcate ON curcate.OldCategoryID = cc.CategoryID
-																AND curcate.CategoryID = CONST_CATEGORYID_PROBATION
-		INNER JOIN CTS_DataCenter.ProbationAccountMonitor_BySport AS pro ON pro.CustID = cc.CustID AND pro.SportID = cc.SportID
 	WHERE cc.SportID = ip_SportID
 		AND cc.CustID >= ip_MinCustID
 		AND cc.CategoryID = ip_CategoryID
-		AND (cc.ParentID IS NULL
-			OR (cc.CategoryID = cc.CategoryID_bk AND (cc.LastScannedDate <> pro.LastScannedDate	
-														OR cc.CreatedDate_new <> pro.CreatedDate 
-														OR cc.LastScannedDate_new <> pro.LastScannedDate))
-			OR (cc.CategoryID <> cc.CategoryID_bk))
 	ORDER BY cc.CustID;
 	
 	WITH CTE AS
@@ -76,19 +70,28 @@ BEGIN
 	WHILE (lv_TotalCust > 0 AND lv_FromID > 0 AND lv_ToID > 0)
 	DO
 		SET lv_UpdatedCount = 0;
-	
+		
+		-- OPTION 1: ONLY UPDATE CreatedDate/LastScannedDate for PROBATION
 		UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS cc
 			INNER JOIN Temp_Customer AS temp ON cc.CustID = temp.CustID 
 												AND cc.SportID = ip_SportID
 												AND cc.CategoryID = ip_CategoryID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS newcate ON newcate.OldCategoryID = cc.CategoryID
-		SET 	cc.ParentID		 		= newcate.ParentID
-			,	cc.CategoryID_new 		= newcate.CategoryID
-			,	cc.CreatedDate_new		= temp.CreatedDate
-			,	cc.LastScannedDate_new 	= temp.LastScannedDate
-			,	cc.CategoryID_bk 		= cc.CategoryID
-			,	cc.CreatedDate_bk 		= cc.CreatedDate
-			,	cc.LastScannedDate_bk 	= cc.LastScannedDate_bk
+		SET 	cc.CreatedDate 			= CASE WHEN lv_IsProbation = 1 THEN cc.CreatedDate_new ELSE cc.CreatedDate END
+			,	cc.LastScannedDate 		= CASE WHEN lv_IsProbation = 1 THEN cc.LastScannedDate_new ELSE cc.LastScannedDate END
+			,	cc.CreatedDate_new 		= CASE WHEN lv_IsProbation = 1 THEN cc.CreatedDate_new ELSE NULL END
+			,	cc.LastScannedDate_new 	= CASE WHEN lv_IsProbation = 1 THEN cc.LastScannedDate_new ELSE NULL END
+		WHERE temp.ID BETWEEN lv_FromID AND lv_ToID;
+		
+		-- OPTION 2: UPDATE COLUMNS suffix _new >> existing
+		UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS cc
+			INNER JOIN Temp_Customer AS temp ON cc.CustID = temp.CustID 
+												AND cc.SportID = ip_SportID
+												AND cc.CategoryID = ip_CategoryID
+		SET 	cc.CategoryID 			= cc.CategoryID_new
+			,	cc.CreatedDate 			= CASE WHEN lv_IsProbation = 1 THEN cc.CreatedDate_new ELSE cc.CreatedDate END
+			,	cc.LastScannedDate 		= CASE WHEN lv_IsProbation = 1 THEN cc.LastScannedDate_new ELSE cc.LastScannedDate END
+			,	cc.CreatedDate_new 		= CASE WHEN lv_IsProbation = 1 THEN cc.CreatedDate_new ELSE NULL END
+			,	cc.LastScannedDate_new 	= CASE WHEN lv_IsProbation = 1 THEN cc.LastScannedDate_new ELSE NULL END
 		WHERE temp.ID BETWEEN lv_FromID AND lv_ToID;
 		
 		SET lv_UpdatedCount = FOUND_ROWS();
@@ -114,7 +117,7 @@ BEGIN
 			SET lv_ToID = lv_ToID_Next;
 		
 		ELSE
-			
+		
 			SET lv_FromID = 0;
 			SET lv_ToID = 0;
 			

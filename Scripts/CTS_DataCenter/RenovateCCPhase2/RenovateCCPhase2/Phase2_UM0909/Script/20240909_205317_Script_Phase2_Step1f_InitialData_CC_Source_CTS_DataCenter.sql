@@ -15,8 +15,7 @@
 										4. CTSCustomerClassification - Current: CC = PA - From CTSCustomerClassificationOldCategory
 										5. RobotDetection - Update IsDisable = 1 - Customers have been archived
 										6. RobotImperva - Update IsDisable = 1 - Customers have been archived
-										7. TWRobotUser/CTSRobotUser - From CTSCustomerClassification: IsFromTW/IsFromCTS = 1
-										8. 
+										7. 
 		
 	Param's Explanation (filtered by):
 
@@ -167,7 +166,8 @@ where cc.CategoryID = @CONST_CATEID_VVIP
 ;
 
 INSERT INTO Temp_Customer_VVIP_Old (CTSCustID, CustID, RoleID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-	, LastScannedDate, IsFromTVS, IsFromCTS, IsFromAI, IsMarkedDirectly, IsFromImperva, IsParlay, TVSRequestID, IssueTypeId, SportType)
+	, LastScannedDate, IsFromTVS, IsFromCTS, IsFromAI, IsMarkedDirectly, IsFromImperva, IsParlay, TVSRequestID, IssueTypeId, SportType
+	, IsRobot, IsInsertSource)
 SELECT oc.CTSCustID, oc.CustID, c.RoleID, oc.SubscriberID, cate.ParentID, cate.CategoryID, oc.Remark, oc.CreatedDate, oc.CreatedBy, oc.LastModifiedDate, oc.LastModifiedBy
 	, oc.LastScannedDate, oc.IsFromTVS, oc.IsFromCTS, oc.IsFromAI, oc.IsDirect, oc.IsFromImperva, oc.IsParlay, oc.TVSRequestID, oc.IssueTypeId, oc.SportType
 	, CASE WHEN cate.CustomerClass = 'Robot' THEN 1 ELSE 0 END AS IsRobot
@@ -204,7 +204,8 @@ INSERT INTO TVSVoidRequest (TVSRequestID, CustID, CategoryID, TVSReasonID, Issue
 SELECT o.TVSRequestID, o.CustID, o.CategoryID, h.TVSReasonID, o.IssueTypeID, o.CreatedBy, o.IsParlay, o.SportType, 1, o.CreatedDate, NOW()
 FROM Temp_Customer_VVIP_Old AS o
 	LEFT JOIN TVSVoidRequest_History AS h ON h.TVSReasonID = o.TVSReasonID
-WHERE o.IsInsertSource = 1;
+WHERE o.IsInsertSource = 1
+	AND h.TVSReasonID IS NULL;
 
 ---------------------------------
 /*4. CTSCustomerClassification - Current: CC = PA - From CTSCustomerClassificationOldCategory*/
@@ -328,17 +329,7 @@ WHERE temp.IsUpdated = 1
 ;
 
 ---------------------------------
-/* 7. TWRobotUser/CTSRobotUser - From CTSCustomerClassification: IsFromTW/IsFromCTS = 1 */
----------------------------------
-INSERT INTO SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
-VALUES (994, 'Adhoc_Renovate_Phase2_Robot_InitialData', 'Initial Data - ID - Table History','BIGINT',?)
-;
-
-CALL CTS_DataCenter.Adhoc_Renovate_Phase2_Robot_InitialData (ip_Batchsize,ip_MinID,@NextID);
-SELECT @NextID;
-
-CALL CTS_DataCenter.Adhoc_Renovate_Phase2_Robot_InitialData (ip_Batchsize,@NextID,@NextID);
-CALL CTS_DataCenter.Adhoc_Renovate_Phase2_Robot_InitialData (ip_Batchsize,@NextID,@NextID);
+/* 7. */
 
 ---------------------------------
 ---------------------------------

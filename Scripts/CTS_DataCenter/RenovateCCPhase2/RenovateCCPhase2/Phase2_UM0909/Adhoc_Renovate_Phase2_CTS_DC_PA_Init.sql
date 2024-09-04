@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`Adhoc_Renovate_Phase2_Robot_InitialData`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`Adhoc_Renovate_Phase2_CTS_DC_PA_Init`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_Renovate_Phase2_PA_InitialData`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_Renovate_Phase2_CTS_DC_PA_Init`(
 		IN		ip_Batchsize			INT
 	,	IN		ip_CustID				BIGINT
 	,	IN		ip_CategoryID			BIGINT
@@ -18,7 +18,7 @@ sp:BEGIN
 		Param's Expanation:
 		
 		Example:
-			- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_Robot_InitialData(9);
+			- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_PA_Init(9);
 			
 		Revisions: 
 			- 20240809@Victoria.Le:			Initial Writing [Redmine ID: #205317]

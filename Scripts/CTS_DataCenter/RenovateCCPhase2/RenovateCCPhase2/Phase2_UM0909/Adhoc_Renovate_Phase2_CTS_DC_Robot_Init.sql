@@ -1,12 +1,9 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`Adhoc_Renovate_Phase2_Robot_InitialData`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`Adhoc_Renovate_Phase2_CTS_DC_Robot_Init`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_Renovate_Phase2_Robot_InitialData`(
-		IN		ip_Batchsize			INT
-	,	IN		ip_Mode					TINYINT
-	,	IN		ip_MinID				BIGINT
-	,	OUT		op_NextID				BIGINT
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_Renovate_Phase2_CTS_DC_Robot_Init`(
+		OUT		op_NextCustID				BIGINT
 )
     SQL SECURITY INVOKER
 sp:BEGIN 
@@ -18,18 +15,21 @@ sp:BEGIN
 		Param's Expanation:
 		
 		Example:
-			- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_Robot_InitialData(9);
+			- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_Robot_Init(9);
 			
 		Revisions: 
 			- 20240809@Victoria.Le:			Initial Writing [Redmine ID: #205317]
 */
 
-	DECLARE lv_NextID						BIGINT DEFAULT 0;
-
-	DECLARE CONST_PARENTID_PA				INT;
+	DECLARE lv_NextID							BIGINT DEFAULT 0;
+	DECLARE lv_Batchsize						BIGINT DEFAULT 0;
+	DECLARE lv_MinID							BIGINT DEFAULT 0;
+	DECLARE CONST_PARAMID_HISTORY_BATCHSIZE		BIGINT DEFAULT 896;
+	DECLARE CONST_PARAMID_HISTORY_MINID			BIGINT DEFAULT 890;
+	DECLARE CONST_PARENTID_PA					INT;
 	
-	SET op_NextID							= 0;
-	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+	SET op_NextID								= 0;
+	SET CONST_PARENTID_PA 						= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Robot;    
 	CREATE TEMPORARY TABLE Temp_Robot(	  
@@ -45,6 +45,16 @@ sp:BEGIN
 	);
 
 	IF ip_Mode = 1 THEN
+	
+		SELECT ParameterValue
+		INTO lv_Batchsize
+		FROM SystemParameter
+		WHERE ParameterID = CONST_PARAMID_HISTORY_BATCHSIZE;
+		
+		SELECT ParameterValue
+		INTO lv_MinID
+		FROM SystemParameter
+		WHERE ParameterID = CONST_PARAMID_HISTORY_MINID;
 
 		INSERT INTO Temp_Robot (ID, CustID, CategoryID, RobotCounter, Remark, CreatedDate, IsFromCTS, IsFromTW)
 		SELECT h.ID, h.CustID, h.CategoryID, h.RobotCounter, h.Remark, h.CreatedDate, h.IsFromCTS, h.IsFromTW

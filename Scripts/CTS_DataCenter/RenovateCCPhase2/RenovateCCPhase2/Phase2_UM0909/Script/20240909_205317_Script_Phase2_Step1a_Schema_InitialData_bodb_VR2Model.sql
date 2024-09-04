@@ -25,7 +25,10 @@
 		,	cc.CurrentCategory	 	= cc.CurrentCategory_new
 	FROM dbo.CustomerClassification_BySport_Rule AS cc;
 	
-	/************************* II. Tables Classification - Initialize and backup  ******************************/
+	/************************* II. Tables Classification - Create new table  ******************************/
+	
+	
+	/************************* III. Tables Classification - Initialize and backup  ******************************/
 	
 	DROP TABLE IF EXISTS #tmpRawData;
 	CREATE TABLE #tmpRawData (CategoryID INT, OldCategoryID INT);
