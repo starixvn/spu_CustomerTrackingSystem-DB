@@ -277,6 +277,7 @@ BEGIN
 												,	Remark			VARCHAR(500)	PATH "$.Remark"
 											 )) AS tmpJs
 				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpJs.CustID = cls.CustID 
+																				AND cls.ParentID = CONST_PARENTID_VVIP
 																				AND cls.CategoryID = CONST_CATEID_VVIP;
 																				
 		/*2 - SpecialCC*/
@@ -302,6 +303,7 @@ BEGIN
 											 )) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpJs.CustID
+																				AND cls.ParentID = CONST_PARENTID_WRAPPER
 																				AND cls.CategoryID = CONST_CATEID_SPECIALCC;
 			
 		/*3 - LicVIP*/
@@ -743,6 +745,7 @@ BEGIN
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						WHERE temp.CustID = cls.CustID
+							AND cls.ParentID = CONST_PARENTID_VVIP
 							AND cls.CategoryID = CONST_CATEID_VVIP
 					 );
 
