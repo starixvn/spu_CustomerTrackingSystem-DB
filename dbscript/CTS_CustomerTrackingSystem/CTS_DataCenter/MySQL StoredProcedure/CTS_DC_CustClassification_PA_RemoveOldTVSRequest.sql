@@ -38,7 +38,7 @@ BEGIN
 			CTSCustID					BIGINT UNSIGNED 
         ,	Ext_EvidenceID_Licensee 	SMALLINT	        
         ,	Ext_EvidenceID_Credit 		SMALLINT	
-        ,  	INDEX IX_Temp_ExistedEvidence_CTSCustIDEvidenceID(Ext_EvidenceID_Credit)
+        ,  	KEY IX_Temp_ExistedEvidence_CTSCustIDEvidenceID(Ext_EvidenceID_Credit)
     );
     
     /* REMOVE FROM QUEUE  */
@@ -70,11 +70,12 @@ BEGIN
 	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
 	
 	/* REMOVE FROM TVSVoidRequest  */   
+	/*
 	UPDATE Temp_NewClassification AS temp
 		INNER JOIN CTS_DataCenter.TVSVoidRequest AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID AND d.IsDisabled = 0
 	SET d.IsDisabled = 1
 	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
- 	
+ 	*/
 	DELETE d
     FROM Temp_NewClassification AS temp
 		INNER JOIN CTS_DataCenter.TVSVoidRequest AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID AND d.IsDisabled = 0
@@ -109,7 +110,7 @@ BEGIN
 		SELECT	temp.CTSCustID
 			,	CASE WHEN d.IsLicensee = 1 THEN Ext_EvidenceID_Licensee ELSE Ext_EvidenceID_Credit END
 		FROM Temp_ExistedEvidence AS temp
-			INNER JOIN CTSCustomer AS d ON temp.CTSCustID = d.CTSCustID
+			INNER JOIN CTS_DataCenter.CTSCustomer AS d ON temp.CTSCustID = d.CTSCustID
 	)   
     SELECT CTSCustID, EvidenceID, NOW() 
     FROM CTE_data
