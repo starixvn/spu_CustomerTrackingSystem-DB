@@ -16,6 +16,7 @@
 
 USE CTS_DataCenter;
 
+/*
 INSERT INTO SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
 VALUES (777, 'InitForCCHistory_BySport_RenovateCC_BatchSize', 'InitForCCHistory_BySport_RenovateCC_BatchSize','BIGINT',3000)
 ,	(776, 'InitForCCHistory_BySport_RenovateCC_NextID2run', 'InitForCCHistory_BySport_RenovateCC_NextID2run','INT',0);
@@ -23,3 +24,14 @@ VALUES (777, 'InitForCCHistory_BySport_RenovateCC_BatchSize', 'InitForCCHistory_
 -- Event
 INSERT INTO SystemEventStatus(EventName,Status,LastExecTime)
 VALUES('EV_CTS_DC_Adhoc_RenovateCC_BySport_InitCCHistory','Stop', NOW());
+*/
+
+SELECT * FROM SystemParameter WHERE ParameterID IN (777,776);
+
+DELETE FROM SystemParameter WHERE ParameterID IN (777,776);
+
+INSERT INTO SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+VALUES (777, 'InitForCCHistory_BySport_RenovateCC_NextID2run', 'InitForCCHistory_BySport_RenovateCC_NextID2run','BIGINT',0)
+,	(776, 'InitForCCHistory_BySport_RenovateCC_BatchSize', 'InitForCCHistory_BySport_RenovateCC_BatchSize','INT',3000);
+
+UPDATE SystemEventStatus SET Status = 'Stop' WHERE EventName = 'EV_CTS_DC_Adhoc_RenovateCC_BySport_InitCCHistory';

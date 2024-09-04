@@ -1,12 +1,13 @@
-CREATE TABLE Adhoc_TVSCustomer
+DROP TEMPORARY TABLE IF EXISTS Adhoc_TVSCustomer;
+CREATE TEMPORARY TABLE Adhoc_TVSCustomer
 (
 		ID 					BIGINT
 	,	CustID				BIGINT
-	, 	PRIMARY (ID, CustID)
-)
+	, 	PRIMARY KEY (ID, CustID)
+);
 
-
-CREATE TABLE Adhoc_TVSVoidRequest_CC
+DROP TEMPORARY TABLE IF EXISTS Adhoc_TVSVoidRequest_CC;
+CREATE TEMPORARY TABLE Adhoc_TVSVoidRequest_CC
 (
 		ID 					BIGINT
 	,	CustID				BIGINT
@@ -21,22 +22,23 @@ CREATE TABLE Adhoc_TVSVoidRequest_CC
 	,	IssueTypeID 		TINYINT
 	,	IsCheck		 		TINYINT(1) DEFAULT 0
 	,	IsDisable			TINYINT(1) DEFAULT 0
-	, 	PRIMARY (ID)
+	, 	PRIMARY KEY (ID)
 	,	KEY IX_Temp_CustID_CategoryID (CustID, CategoryID)
 );
 
 INSERT IGNORE INTO Adhoc_TVSCustomer (ID, CustID)
 SELECT h.ID, js.CustID
 FROM TVSVoidRequest_History AS h
-	INNER JOIN JSON_TABLE(REPLACE(JSON_ARRAY(c.CustIDs), ',', '","'), 
+	INNER JOIN JSON_TABLE(REPLACE(JSON_ARRAY(h.CustIDs), ',', '","'), 
 									'$[*]' COLUMNS (CustID BIGINT UNSIGNED PATH '$')
 									) js
 	INNER JOIN CTSCustomer AS cust ON cust.CustID = js.CustID AND cust.CustSubID = 0
-WHERE h.ReasonID NOT IN (36,10500)
+WHERE h.ID IN (173982,173983)
+	AND h.ReasonID NOT IN (36,10500)
 ORDER BY h.ID DESC;
 
 INSERT INTO Adhoc_TVSVoidRequest_CC (ID, CustID, CategoryID, TVSRequestID, IsParlay, SportType, IssueTypeID, IsCheck)
-SELECT 	tvshis.ID
+SELECT 	tvs.ID
 	, 	h.CustID
 	, 	h.CategoryID
 	, 	h.TVSRequestID
@@ -64,5 +66,7 @@ SET tvscc.ReasonID = tvshis.ReasonID
 							 ELSE 1 END
 WHERE tvscc.IsCheck = 1;
 ;
+
+select * from Adhoc_TVSVoidRequest_CC;
 
 										

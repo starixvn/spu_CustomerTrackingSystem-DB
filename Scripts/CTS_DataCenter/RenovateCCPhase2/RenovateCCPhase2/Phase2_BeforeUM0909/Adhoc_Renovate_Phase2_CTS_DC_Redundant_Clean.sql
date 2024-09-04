@@ -66,7 +66,7 @@ BEGIN
 	
 	SELECT ad.CustID
 	INTO op_MaxCustID
-	FROM CTS_Adhoc.AdhocVic_Customer AS ad 
+	FROM CTS_DataCenter.AdhocVic_Customer AS ad 
 	WHERE ad.CustID > lv_ToCustID
 	ORDER BY ad.CustID
 	LIMIT 1;
