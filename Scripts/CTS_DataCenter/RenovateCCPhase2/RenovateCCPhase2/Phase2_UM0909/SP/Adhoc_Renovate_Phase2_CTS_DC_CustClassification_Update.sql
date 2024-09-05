@@ -113,7 +113,7 @@ BEGIN
 	INTO lv_FromID, lv_ToID
 	FROM CTE AS c;
 	
-	WHILE (lv_ToID < lv_MaxID)
+	WHILE (lv_ToID <= lv_MaxID)
 	DO
 		SET lv_UpdatedCount = 0;
 		SET lv_InsertedCount_RobotCTS = 0;
@@ -220,7 +220,7 @@ BEGIN
 		ELSE IF lv_IsRobot = 0 AND ip_SportGroupID = 0 THEN
 				IF EXISTS (SELECT 1 FROM Temp_Customer AS temp WHERE temp.ID BETWEEN lv_FromID AND lv_ToID AND temp.IsFromTVS = 1) THEN
 					
-					INSERT INTO TVSVoidRequest (CustID, CategoryID, TVSRequestID, IsParlay, SportType, IssueTypeID, ReasonID, CreatedBy, CreatedDate, RequestTypeID, IsDisable)
+					INSERT IGNORE INTO TVSVoidRequest (CustID, CategoryID, TVSRequestID, IsParlay, SportType, IssueTypeID, TVSReasonID, CreatedBy, CreatedDate, RequestTypeID, IsDisabled)
 					SELECT tvs.CustID, tvs.CategoryID_new , tvs.TVSRequestID, tvs.IsParlay, tvs.SportType, tvs.IssueTypeID, tvs.ReasonID, tvs.CreatedBy, tvs.CreatedDate, 1, tvs.IsDisable
 					FROM Temp_Customer AS cust
 						INNER JOIN AdhocVic_TVSVoidRequest_CC AS tvs ON cust.CustID = tvs.CustID

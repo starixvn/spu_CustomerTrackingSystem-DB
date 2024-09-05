@@ -221,7 +221,7 @@ USE CTS_DataCenter;
 ,	ADD COLUMN InsertedTime DATETIME DEFAULT CURRENT_TIMESTAMP()
 ,	ADD COLUMN ArchivedDate DATETIME;
 
-	ALTER TABLE CustomerLoginInfoDetection
+	ALTER TABLE CustomerLoginInfoDetection 
 	ADD KEY IX_CustLoginInfoDetection_CustID_InsertedTime (CustID, InsertedTime);
 
 ---------------------------------
@@ -397,15 +397,14 @@ USE CTS_DataCenter;
 ---------------------------------
 /* 11. CTSCustomerClassificationQueue*/
 ---------------------------------
-	UPDATE CTS_DataCenter.CTSCustomerClassificationQueue AS cc
-		INNER JOIN CTS_DataCenter.CustomerCategory AS newcate ON newcate.OldCategoryID = cc.CategoryID
-	SET 		cc.CategoryGroup_bk		= cc.CategoryGroup
-			,	cc.CategoryID_bk 		= cc.CategoryID
-			,	cc.CategoryGroupID		= CASE WHEN cc.CategoryGroup IS NOT NULL THEN newcate.CategoryGroupID ELSE cc.CategoryGroup END
-			,	cc.CategoryID 			= newcate.CategoryID
-	;
-	
 	ALTER TABLE CTSCustomerClassificationQueue
 	RENAME COLUMN CategoryGroup TO CategoryGroupID
 ,	RENAME COLUMN IsDirect TO IsMarkedDirectly;
 
+	UPDATE CTS_DataCenter.CTSCustomerClassificationQueue AS cc
+		INNER JOIN CTS_DataCenter.CustomerCategory AS newcate ON newcate.OldCategoryID = cc.CategoryID
+	SET 		cc.CategoryGroup_bk		= cc.CategoryGroupID
+			,	cc.CategoryID_bk 		= cc.CategoryID
+			,	cc.CategoryGroupID		= CASE WHEN cc.CategoryGroupID IS NOT NULL THEN newcate.CategoryGroupID ELSE cc.CategoryGroupID END
+			,	cc.CategoryID 			= newcate.CategoryID
+	;
