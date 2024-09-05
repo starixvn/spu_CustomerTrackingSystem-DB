@@ -37,9 +37,8 @@ AS
 			@ListSuspiciousTransIdm = '[{"TransId":1, "Reason":'HED', "GroupId":1},{"TransId":1, "Reason":'GB', "GroupId":1},{"TransId":2, "Reason":'GB', "GroupId":1},{"TransId":3, "Reason":'HED', "Group":1}]'
 		
 		@ViewMode	: TINYINT
-			@ViewMode=0: Ticket Type = 'All-MatchMonitor'			
-			@ViewMode=1: Ticket Type = 'Suspicious'
-			@ViewMode=2: Ticket Type = 'All-Danger Monitor'
+			@ViewMode=0: Ticket Type = 'All Ticket'			
+			@ViewMode=1: Ticket Type = 'Suspicious Ticket'
 
 		@ListSportBettype: JSON
 			,@ListSportBettype='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
@@ -48,13 +47,13 @@ AS
 
 	Example:
 		DECLARE @MaxSequenceId BIGINT,@TotalTicketAll BIGINT, @TotalTicketLicensee BIGINT,@TotalTicketCredit BIGINT;
-		EXEC CTS_MatchMonitorParlay_Details_GetFilter
+		EXEC CTS_MatchMonitorParlay_Details_GetFilter_xtest
 			@ViewMode = 0
-			, @MatchID = 83551981
+			, @MatchID = 83679714
 			, @EventDate = NULL
-			, @ListSportBettype = '[{"SportTypeID":1,"BetTypeID":1,"BetChoiceType":2,"BetChoiceHome":"h","BetChoiceAway":"a","BetIDPattern":null,"BetID":0}]'
+			, @ListSportBettype = '[{"SportTypeID":1,"BetTypeID":3,"BetChoiceType":2,"BetChoiceHome":"h","BetChoiceAway":"a","BetIDPattern":null,"BetID":0}]'
 			, @IsLive = 0
-			, @ListSuspiciousTransIdm = '[{"TransId":280213141093089280,"Reason":"GB","GroupId":1},{"TransId":280213141093089281,"Reason":"GB","GroupId":2}]'
+			, @ListSuspiciousTransIdm = '[{"TransId":295826442430709761,"Reason":"GB(P)","GroupId":1},{"TransId":295826481085415425,"Reason":"GB(P)","GroupId":1}]'
 
 			, @IsExclTestCurr = 0
 			, @FromTransDate = NULL
