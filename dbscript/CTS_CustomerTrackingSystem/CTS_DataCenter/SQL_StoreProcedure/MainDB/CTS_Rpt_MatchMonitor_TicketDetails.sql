@@ -78,7 +78,7 @@ AS
 									And Separate between QueryType = 1 and QueryType in (2,3) [Redmine ID: #201380]
 		- 20240521@Thomas.Nguyen: Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
 		- 20240802@Casey.Huynh:	Enhance Filter Amount Sum by all Selected BetChoice  [Redmine ID: #207528]
-		- 20240904@Casey.Huynh: Rename @TicketType To @ViewMode [Redmine ID: #207397]
+		- 20240904@Casey.Huynh: Rename @ViewMode To @ViewMode [Redmine ID: #207397]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize) >> refer to new SP CTS_Rpt_MatchMonitor_GetTicketInfo
@@ -114,7 +114,7 @@ AS
 		,	@EventDate='2024-08-17 00:00:00'
 		,	@ListSportBettype='[{"SportTypeID":1,"BetTypeID":6,"BetChoiceType":1,"BetChoiceHome":null,"BetChoiceAway":null,"BetIDPattern":null,"BetID":0}]'
 		,	@MatchID=83674467
-		,	@TicketType=0
+		,	@ViewMode=0
 		,	@ListCurrency='2,13,9'
 		,	@ListHDPBetTeam='7&over'
 		,	@ListScore='0 - 0'
@@ -299,7 +299,7 @@ BEGIN
 			----==================GET Trans==================
 			IF @IsGetDataFromBK = 1
 			BEGIN
-				IF (@ListTransId <> '' AND @TicketType = 1) 
+				IF (@ListTransId <> '' AND @ViewMode = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
@@ -351,7 +351,7 @@ BEGIN
 
 			IF	@IsGetDataFrom14 = 1
 			BEGIN
-				IF (@ListTransId <> '' AND @TicketType = 1) 
+				IF (@ListTransId <> '' AND @ViewMode = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
@@ -403,7 +403,7 @@ BEGIN
 
 			IF	@IsGetDataFromOrigin = 1
 			BEGIN
-				IF (@ListTransId <> '' AND @TicketType = 1) 
+				IF (@ListTransId <> '' AND @ViewMode = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
@@ -450,7 +450,7 @@ BEGIN
 						INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 				END
-				ELSE IF (@TicketType = 0)
+				ELSE IF (@ViewMode = 0)
 				BEGIN	
 					IF (@CustAmountRM > 0) 
 					BEGIN	
@@ -649,7 +649,7 @@ BEGIN
 			----==================GET Trans==================
 			IF	@IsGetDataFrom14 = 1
 			BEGIN
-				IF (@ListTransId <> '' AND @TicketType = 1) 
+				IF (@ListTransId <> '' AND @ViewMode = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
@@ -695,7 +695,7 @@ BEGIN
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 
 				END;
-				ELSE IF (@TicketType = 0)
+				ELSE IF (@ViewMode = 0)
 				BEGIN	
 					IF (@CustAmountRM > 0) 
 					BEGIN	
@@ -871,7 +871,7 @@ BEGIN
 
 			IF	@IsGetDataFromOrigin = 1
 			BEGIN
-				IF (@ListTransId <> '' AND @TicketType = 1) 
+				IF (@ListTransId <> '' AND @ViewMode = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
@@ -917,7 +917,7 @@ BEGIN
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 					;
 				END
-				ELSE IF (@TicketType = 0)
+				ELSE IF (@ViewMode = 0)
 				BEGIN	
 					IF (@CustAmountRM > 0) 
 					BEGIN
