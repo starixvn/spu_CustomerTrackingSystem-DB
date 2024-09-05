@@ -7,7 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_Renovate_Phase2_CTS_DC_CustClassi
 	,	IN		ip_SportID				SMALLINT
 	,	IN		ip_CategoryID			INT
 	,	IN		ip_MinCustID			BIGINT
-	,	IN		ip_TotalCust			BIGINT
+	,	IN		ip_TotalCount			BIGINT
 )
     SQL SECURITY INVOKER
 BEGIN 
@@ -29,7 +29,7 @@ BEGIN
 	DECLARE lv_ToID							BIGINT DEFAULT 0;
 	DECLARE lv_FromID_Next					BIGINT DEFAULT 0;
 	DECLARE lv_ToID_Next					BIGINT DEFAULT 0;
-	DECLARE lv_TotalCustUpdated				BIGINT DEFAULT 0;
+	DECLARE lv_TotalUpdated					BIGINT DEFAULT 0;
 	DECLARE lv_UpdatedCount					BIGINT DEFAULT 0;
 	DECLARE lv_TotalCust					BIGINT;
 	DECLARE CONST_CATEGORYID_PROBATION		INT DEFAULT 206;
@@ -65,7 +65,7 @@ BEGIN
 	INTO lv_FromID, lv_ToID
 	FROM CTE AS c;
 	
-	SET lv_TotalCust = ip_TotalCust;
+	SET lv_TotalCust = ip_TotalCount;
 	
 	WHILE (lv_TotalCust > 0 AND lv_FromID > 0 AND lv_ToID > 0)
 	DO
@@ -76,12 +76,12 @@ BEGIN
 			INNER JOIN Temp_Customer AS temp ON cc.CustID = temp.CustID 
 												AND cc.SportID = ip_SportID
 												AND cc.CategoryID = ip_CategoryID
-		SET 	cc.CreatedDate 			= CASE WHEN lv_IsProbation = 1 THEN cc.CreatedDate_new ELSE cc.CreatedDate END
-			,	cc.LastScannedDate 		= CASE WHEN lv_IsProbation = 1 THEN cc.LastScannedDate_new ELSE cc.LastScannedDate END
-			,	cc.CreatedDate_new 		= CASE WHEN lv_IsProbation = 1 THEN cc.CreatedDate_new ELSE NULL END
-			,	cc.LastScannedDate_new 	= CASE WHEN lv_IsProbation = 1 THEN cc.LastScannedDate_new ELSE NULL END
-		WHERE temp.ID BETWEEN lv_FromID AND lv_ToID;
+		SET 	cc.CreatedDate 			= cc.CreatedDate_new
+			,	cc.LastScannedDate 		= cc.LastScannedDate_new
+		WHERE temp.ID BETWEEN lv_FromID AND lv_ToID
+			AND lv_IsProbation = 1;
 		
+		/*
 		-- OPTION 2: UPDATE COLUMNS suffix _new >> existing
 		UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS cc
 			INNER JOIN Temp_Customer AS temp ON cc.CustID = temp.CustID 
@@ -90,12 +90,11 @@ BEGIN
 		SET 	cc.CategoryID 			= cc.CategoryID_new
 			,	cc.CreatedDate 			= CASE WHEN lv_IsProbation = 1 THEN cc.CreatedDate_new ELSE cc.CreatedDate END
 			,	cc.LastScannedDate 		= CASE WHEN lv_IsProbation = 1 THEN cc.LastScannedDate_new ELSE cc.LastScannedDate END
-			,	cc.CreatedDate_new 		= CASE WHEN lv_IsProbation = 1 THEN cc.CreatedDate_new ELSE NULL END
-			,	cc.LastScannedDate_new 	= CASE WHEN lv_IsProbation = 1 THEN cc.LastScannedDate_new ELSE NULL END
 		WHERE temp.ID BETWEEN lv_FromID AND lv_ToID;
+		*/
 		
 		SET lv_UpdatedCount = FOUND_ROWS();
-		SET lv_TotalCustUpdated = lv_TotalCustUpdated + lv_UpdatedCount;
+		SET lv_TotalUpdated = lv_TotalUpdated + lv_UpdatedCount;
 		SET lv_TotalCust = lv_TotalCust - lv_UpdatedCount;
 		
 		WITH CTE AS
@@ -129,8 +128,8 @@ BEGIN
 		,	ip_SportID AS SportID
 		,	ip_CategoryID AS CategoryID
 		,	ip_MinCustID AS MinCustID
-		,	ip_TotalCust AS TotalCust
-		,	lv_TotalCustUpdated AS TotalCustUpdated;
+		,	ip_TotalCount AS TotalRow_Estimated
+		,	lv_TotalUpdated AS TotalRow_Updated;
 
 END$$
 DELIMITER ;

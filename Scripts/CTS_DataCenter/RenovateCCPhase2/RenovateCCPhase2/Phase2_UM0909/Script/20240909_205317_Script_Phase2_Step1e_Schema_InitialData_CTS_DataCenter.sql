@@ -54,10 +54,13 @@ USE CTS_DataCenter;
 	FROM SystemParameter
 	WHERE ParameterID = 990;
 	
+	-- PROBATION
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Update(@lv_Batchsize_Init_Update,200,201,402076,140714);
+	
+	-- OTHER >> INSERT SOURCE TABLE
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Update(@lv_Batchsize_Init_Update,200,201,402076,140714);
+	
 	-- OPTION 1: RENAME AND ONLY UPDATE CreatedDate/LastScannedDate for PROBATION
-	ALTER TABLE CTSCustomerClassification
-	DROP PRIMARY KEY;
-
 	ALTER TABLE CTSCustomerClassification
 	RENAME COLUMN CategoryID 		TO CategoryID_arc
 ,	RENAME COLUMN SportGroupID 		TO SportGroupID_arc
@@ -65,14 +68,58 @@ USE CTS_DataCenter;
 ,	RENAME COLUMN CategoryID_new  	TO CategoryID
 ,	RENAME COLUMN IsDirect 			TO IsMarkedDirectly;
 
-	ALTER TABLE CTSCustomerClassification
+	ALTER TABLE CTSCustomerClassification DROP PRIMARY KEY,
 	ADD PRIMARY KEY (CustID,ParentID,CategoryID);
 	
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Update(@lv_Batchsize_Init_Update,200,201,402076,140714);
+	ALTER TABLE CTSCustomerClassification 
+	DROP INDEX IX_CTSCustomerClassification_CustSportGroup
+,	DROP INDEX IX_CTSCustomerClassification_SubscriberID_SportGroupID
+,	DROP INDEX IX_CTSCustomerClassification_SportGroupID_CreatedDate
+,	DROP INDEX IX_CTSCustomerClassification_CategoryID_CustID
+	;
 	
+	ALTER TABLE CTSCustomerClassification 
+	ADD INDEX IX_CTSCC_CTSCustID_ParentID_LastModifiedDate (CTSCustID,ParentID,LastModifiedDate)
+,	ADD INDEX IX_CTSCC_SubscriberID_ParentID (SubscriberID,ParentID)
+,	ADD INDEX IX_CTSCC_ParentID_CreatedDate (ParentID,CreatedDate)
+,	ADD INDEX IX_CTSCC_CategoryID_CustID_LastScannedDate (CategoryID,CustID,LastScannedDate)
+	;
+	
+	/*
 	-- OPTION 2: UPDATE COLUMNS suffix _new >> existing
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Update(@lv_Batchsize_Init_Update,200,201,402076,140714);
+	*/
+
+---------------------------------
+/*3. CTSCustomerClassification_History*/
+---------------------------------
+	---------------------------------
+	/*Initialize and Backup*/
+	---------------------------------
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_History_Init(@op_History_General_NextID);
+
+	---------------------------------
+	/*Rename columns*/
+	---------------------------------
+	ALTER TABLE CTSCustomerClassification_History
+	RENAME COLUMN CategoryID 		TO CategoryID_arc
+,	RENAME COLUMN SportGroupID 		TO SportGroupID_arc
+,	RENAME COLUMN FromCategoryID	TO FromCategoryID_arc
+,	RENAME COLUMN ToCategoryID 		TO ToCategoryID_arc
+,	RENAME COLUMN ParentID_new 		TO ParentID
+,	RENAME COLUMN CategoryID_new  	TO CategoryID
+,	RENAME COLUMN OldCategoryID_new	TO OldCategoryID
+,	RENAME COLUMN DWCategoryID_new 	TO DWCategoryID
+,	RENAME COLUMN IsDirect 			TO IsMarkedDirectly;
+
+
+	ALTER TABLE CTSCustomerClassification_History 
+	DROP INDEX IX_CTSCustomerClassification_History_CustID_Infor
+	;
 	
+	ALTER TABLE CTSCustomerClassification_History 
+	ADD INDEX IX_CTSCC_History_CustID_Infor (CustID,ParentID,LastModifiedDate,IsDataChanged)
+	;
 
 ---------------------------------
 /*2. CTSCustomerClassification_BySport*/
@@ -105,42 +152,28 @@ USE CTS_DataCenter;
 	WHERE ParameterID = 897;
 	
 	-- OPTION 1: RENAME AND ONLY UPDATE CreatedDate/LastScannedDate for PROBATION
-	ALTER TABLE CTSCustomerClassification_BySport
-	DROP PRIMARY KEY;
-
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Update(@lv_Batchsize_BySport_Init_Update,200,201,402076,140714);
+	
 	ALTER TABLE CTSCustomerClassification_BySport
 	RENAME COLUMN CategoryID 		TO CategoryID_arc
 ,	RENAME COLUMN CategoryID_new  	TO CategoryID;
 
-	ALTER TABLE CTSCustomerClassification_BySport
+	ALTER TABLE CTSCustomerClassification_BySport DROP PRIMARY KEY,
 	ADD PRIMARY KEY (CustID,SportID,ParentID,CategoryID);
 	
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Update(@lv_Batchsize_BySport_Init_Update,200,201,402076,140714);
+	ALTER TABLE CTSCustomerClassification_BySport 
+	DROP INDEX IX_CTSCustomerClassification_BySport_CategoryID_CustID
+	;
 	
+	ALTER TABLE CTSCustomerClassification_BySport 
+	ADD INDEX IX_CTSCC_BySport_CategoryID_CustID_LastScannedDate (CategoryID,CustID,LastScannedDate)
+	;
+	
+	/*
 	-- OPTION 2: UPDATE COLUMNS suffix _new >> existing
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Update(@lv_Batchsize_BySport_Init_Update,200,201,402076,140714);
-	
----------------------------------
-/*3. CTSCustomerClassification_History*/
----------------------------------
-	---------------------------------
-	/*Initialize and Backup*/
-	---------------------------------
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_History_Init(@op_History_General_NextID);
+	*/
 
-	---------------------------------
-	/*Rename columns*/
-	---------------------------------
-	ALTER TABLE CTSCustomerClassification_History
-	RENAME COLUMN CategoryID 		TO CategoryID_arc
-,	RENAME COLUMN SportGroupID 		TO SportGroupID_arc
-,	RENAME COLUMN FromCategoryID	TO FromCategoryID_arc
-,	RENAME COLUMN ToCategoryID 		TO ToCategoryID_arc
-,	RENAME COLUMN ParentID_new 		TO ParentID
-,	RENAME COLUMN CategoryID_new  	TO CategoryID
-,	RENAME COLUMN OldCategoryID_new	TO OldCategoryID
-,	RENAME COLUMN DWCategoryID_new 	TO DWCategoryID
-,	RENAME COLUMN IsDirect 			TO IsMarkedDirectly;
 
 ---------------------------------
 /*4. CTSCustomerClassification_BySport_History*/
