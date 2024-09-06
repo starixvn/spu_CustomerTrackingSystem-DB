@@ -224,6 +224,28 @@ USE CTS_DataCenter;
 	ALTER TABLE CustomerLoginInfoDetection 
 	ADD KEY IX_CustLoginInfoDetection_CustID_InsertedTime (CustID, InsertedTime);
 
+	-- -------------------------------
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustUnauthorizedLogin;
+	CREATE TEMPORARY TABLE Temp_CustUnauthorizedLogin
+	(
+			CustID 						BIGINT UNSIGNED PRIMARY KEY
+		,	CCMain_CreatedDate 			DATETIME
+		,	CCMain_LastModifiedDate 	DATETIME
+		,	CCHistory_LastModifiedDate 	DATETIME
+	);
+
+	INSERT IGNORE INTO Temp_CustUnauthorizedLogin (CustID, CCMain_CreatedDate, CCMain_LastModifiedDate, CCHistory_LastModifiedDate)
+	SELECT cd.CustID, cc.CreatedDate, cc.LastModifiedDate, CASE WHEN h.CustID IS NOT NULL THEN h.LastModifiedDate ELSE LEAST(cc.LastModifiedDate,cc.CreatedDate) END
+	FROM CTS_DataCenter.CustomerLoginInfoDetection AS cd
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CustID = cd.CustID 
+		LEFT JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON h.CustID = cd.CustID AND h.CategoryID = cc.CategoryID
+	AND cc.CategoryID IN (64,104);
+
+	UPDATE CTS_DataCenter.CustomerLoginInfoDetection AS cd
+		INNER JOIN Temp_CustUnauthorizedLogin AS tmp ON tmp.CustID = cd.CustID
+	SET cd.InsertedTime  = LEAST(CCMain_CreatedDate,CCMain_LastModifiedDate,CCHistory_LastModifiedDate)
+	;
+
 ---------------------------------
 /*6. RobotImperva*/
 ---------------------------------

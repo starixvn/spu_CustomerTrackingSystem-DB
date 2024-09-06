@@ -79,6 +79,11 @@ USE CTS_DataCenter;
 	;
 	
 	ALTER TABLE CTSCustomerClassification 
+	MODIFY COLUMN SportGroupID_arc INT DEFAULT NULL
+,	MODIFY COLUMN CategoryID_arc INT DEFAULT NULL
+;
+	
+	ALTER TABLE CTSCustomerClassification 
 	ADD INDEX IX_CTSCC_CTSCustID_ParentID_LastModifiedDate (CTSCustID,ParentID,LastModifiedDate)
 ,	ADD INDEX IX_CTSCC_SubscriberID_ParentID (SubscriberID,ParentID)
 ,	ADD INDEX IX_CTSCC_ParentID_CreatedDate (ParentID,CreatedDate)
@@ -163,6 +168,10 @@ USE CTS_DataCenter;
 	
 	ALTER TABLE CTSCustomerClassification_BySport 
 	DROP INDEX IX_CTSCustomerClassification_BySport_CategoryID_CustID
+	;
+	
+	ALTER TABLE CTSCustomerClassification_BySport 
+	MODIFY COLUMN CategoryID_arc INT DEFAULT NULL
 	;
 	
 	ALTER TABLE CTSCustomerClassification_BySport 

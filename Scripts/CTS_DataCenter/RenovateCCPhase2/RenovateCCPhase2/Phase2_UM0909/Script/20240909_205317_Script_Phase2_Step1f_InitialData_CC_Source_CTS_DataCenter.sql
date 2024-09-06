@@ -94,7 +94,7 @@ CREATE TEMPORARY TABLE Temp_Customer_SpecialCC_BySport(
 );
 
 INSERT INTO Temp_Customer_SpecialCC_BySport (CTSCustID, CustID, SportID, CreatedDate, LastModifiedBy, LastScannedDate, Remark)
-SELECT 	sp.CTSCustID, sp.CustID, sp.SportID, sp.CreatedDate, sp.LastModifiedBy, sp.LastScannedDate
+SELECT 	sp.CTSCustID, sp.CustID, sp.SportID, sp.CreatedDate, sp.LastModifiedBy, sp.CreatedDate
 	, 	(SELECT Remark FROM SpecialCustomerClass_BySport_History AS h WHERE h.CustID = sp.CustID AND h.SportID = sp.SportID ORDER BY h.CreatedDate DESC LIMIT 1) AS Remark
 FROM SpecialCustomerClass_BySport as sp
 	INNER JOIN CTSCustomer as cust on cust.CTSCustID = sp.CTSCustID 
@@ -155,8 +155,8 @@ CREATE TEMPORARY TABLE Temp_Customer_VVIP_Old(
 	,	SportType				SMALLINT
 	,	IsRobot					TINYINT(1)
 	,	IsInsertSource			TINYINT(1)
-	,	SportGroupID_arc		SMALLINT
-	,	CategoryID_arc			SMALLINT
+	,	SportGroupID_arc		INT
+	,	CategoryID_arc			INT
 	,	PRIMARY KEY (CustID,ParentID,CategoryID)
 );
 
@@ -193,7 +193,7 @@ SET 	cc.RoleID = c.RoleID
 WHERE cc.CategoryID = @CONST_CATEID_VVIP;
 
 
-INSERT INTO CTSCustomerClassification (CTSCustID, CustID, RoleID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
+INSERT IGNORE INTO CTSCustomerClassification (CTSCustID, CustID, RoleID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
 	, LastScannedDate, IsFromTVS, IsFromCTS, IsFromAI, IsMarkedDirectly, IsFromImperva, IsParlay, TVSRequestID, IssueTypeId, SportType,SportGroupID_arc,CategoryID_arc)
 SELECT CTSCustID, CustID, RoleID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
 	, LastScannedDate, IsFromTVS, IsFromCTS, IsFromAI, IsMarkedDirectly, IsFromImperva, IsParlay, TVSRequestID, IssueTypeId, SportType
@@ -280,7 +280,7 @@ WHERE cust.CustID IS NULL AND rd.IsDisabled = 0
 ;
 
 DROP TEMPORARY TABLE IF EXISTS Temp_RobotDetection_Duplicate;
-CREATE TEMPORARY TABLE Temp_RobotDetection_Duplicate LIKE Temp_RobotDetection;
+CREATE TEMPORARY TABLE Temp_RobotDetection_Duplicate AS SELECT * FROM Temp_RobotDetection;
 
 
 UPDATE Temp_RobotDetection AS rd
@@ -320,7 +320,7 @@ WHERE cust.CustID IS NULL AND rd.IsDisabled = 0
 ;
 
 DROP TEMPORARY TABLE IF EXISTS Temp_RobotImperva_Duplicate;
-CREATE TEMPORARY TABLE Temp_RobotImperva_Duplicate LIKE Temp_RobotImperva;
+CREATE TEMPORARY TABLE Temp_RobotImperva_Duplicate AS SELECT * FROM Temp_RobotImperva;
 
 
 UPDATE Temp_RobotImperva AS rd
