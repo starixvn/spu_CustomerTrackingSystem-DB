@@ -227,7 +227,8 @@ REMOVE PARTITIONING;
 
 ALTER TABLE `DCS_DataCenter`.`RawTransaction`
 DROP PRIMARY KEY,
-ADD PRIMARY KEY (TransID);
+ADD PRIMARY KEY (TransID),
+ADD KEY `IX_RawTransaction_CreatedDate` (`CreatedDate`);
 
 ALTER TABLE `DCS_DataCenter`.`RawTransaction`
 ADD COLUMN `IsIncognitoMode` BOOLEAN,
@@ -241,8 +242,7 @@ DROP COLUMN `CookieID`,
 DROP COLUMN `RawFingerPrintID`,
 DROP COLUMN `BrowserInstanceID`,
 DROP COLUMN `RawUserAgentID`,
-DROP COLUMN `JsChallengeID`,
-ADD KEY `IX_RawTransaction_CreatedDate` (`CreatedDate`);
+DROP COLUMN `JsChallengeID`;
 
 ALTER TABLE `DCS_DataCenter`.`ProcessedTransaction`
 ADD COLUMN `IsIncognitoMode` BOOLEAN,
@@ -283,7 +283,8 @@ DROP COLUMN `RawUserAgentID`,
 DROP COLUMN `RawFingerPrintID`,
 DROP COLUMN `BrowserInstanceID`,
 DROP COLUMN `FPDeviceID`,
-DROP COLUMN `RecoverType`;
+DROP COLUMN `RecoverType`,
+ADD KEY `IX_Transaction07_FP_DeviceMappingID` (`FP_DeviceMappingID`);
 
 ALTER TABLE `DCS_DataCenter`.`JSChallengeInfo`
 CHANGE COLUMN `ChallengeCode` `ChallengeCode` VARCHAR(50) NOT NULL,
