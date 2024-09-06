@@ -56,6 +56,8 @@ BEGIN
         , 	UserAgentKey			VARCHAR(32)
 		, 	DeviceCode				VARCHAR(32) 
 		, 	FingerprintCode			VARCHAR(620)
+		, 	FingerprintCode1		VARCHAR(300)
+		, 	FingerprintCode2		VARCHAR(300)
 		, 	CreatedDate				DATETIME
 		, 	TransTime				TIMESTAMP(4) 
         , 	DeviceCodeID			BIGINT UNSIGNED
@@ -68,31 +70,32 @@ BEGIN
 	);
     
     CREATE TEMPORARY TABLE Temp_ExistedDevice(
-			DeviceID			BIGINT NOT NULL
-        , 	DeviceCode   		VARCHAR(32) NOT NULL
-        , 	DeviceCodeID  		BIGINT NOT NULL
-        , 	FirstTransID  		BIGINT
-        , 	FirstDeviceCode 	VARCHAR(32)
-        , 	IsNew				TINYINT DEFAULT 0
-        , 	PRIMARY KEY 		PK_Temp_ExistedDevice(DeviceCode, DeviceID)
+			DeviceID				BIGINT NOT NULL
+        , 	DeviceCode   			VARCHAR(32) NOT NULL
+        , 	DeviceCodeID  			BIGINT NOT NULL
+        , 	FirstTransID  			BIGINT
+        , 	FirstDeviceCode 		VARCHAR(32)
+        , 	IsNew					TINYINT DEFAULT 0
+        , 	PRIMARY KEY 			PK_Temp_ExistedDevice(DeviceCode, DeviceID)
 	);
     
     CREATE TEMPORARY TABLE Temp_RecoveredDevice(
-			AccountID			BIGINT UNSIGNED
-        ,	DeviceCode   		VARCHAR(32)
-		,	FingerprintCode		VARCHAR(620)
-        ,	DeviceID			BIGINT UNSIGNED
-        ,	RecoverCode 		VARCHAR(32)
-        ,	PRIMARY KEY 		PK_Temp_RecoveredDevice(AccountID, DeviceCode,FingerprintCode)
-        ,	INDEX 				IX_Temp_RecoveredDevice_DeviceCode_DeviceID_RecoverCode(DeviceCode, DeviceID, RecoverCode)
+			AccountID				BIGINT UNSIGNED
+        ,	DeviceCode   			VARCHAR(32)
+		,	FingerprintCode			VARCHAR(620)
+        ,	DeviceID				BIGINT UNSIGNED
+        ,	RecoverCode 			VARCHAR(32)
+        ,	PRIMARY KEY 			PK_Temp_RecoveredDevice(AccountID, DeviceCode,FingerprintCode)
+        ,	INDEX 					IX_Temp_RecoveredDevice_DeviceCode_DeviceID_RecoverCode(DeviceCode, DeviceID, RecoverCode)
 	);
     
     CREATE TEMPORARY TABLE Temp_RecoverDeviceByBet(
-			TransID				BIGINT PRIMARY KEY
-        ,	AccountID			BIGINT UNSIGNED
-        ,	DeviceCode			VARCHAR(32)
-        ,	FingerprintCode 	VARCHAR(620)
-        ,	INDEX 				IX_Temp_RecoverDeviceByBet_AccountID_DeviceCode_FingerprintCode(AccountID,DeviceCode,FingerprintCode)
+			TransID							BIGINT PRIMARY KEY
+        ,	AccountID						BIGINT UNSIGNED
+        ,	DeviceCode						VARCHAR(32)
+        ,	FingerprintCode 				VARCHAR(620)
+		, 	FingerprintCode_CommaSeparated	VARCHAR(620)
+        ,	INDEX 							IX_Temp_RecoverDeviceByBet_AccountID_DeviceCode_FingerprintCode(AccountID,DeviceCode,FingerprintCode)
     );
 	
     
@@ -119,6 +122,11 @@ BEGIN
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = cte.TransID
     ORDER BY cte.TransID ASC;
     
+    UPDATE Temp_Transaction
+	SET FingerprintCode1 = SUBSTRING_INDEX(FingerprintCode, ';', 1),
+		FingerprintCode2 = SUBSTRING_INDEX(FingerprintCode, ';', -1)
+    WHERE FingerprintCode IS NOT NULL;
+
     # START
     -- existed device
     INSERT INTO Temp_ExistedDevice (DeviceID, DeviceCode, DeviceCodeID)
@@ -141,6 +149,8 @@ BEGIN
 				AccountID
 			,	DeviceCode
             ,	FingerprintCode
+            ,	FingerprintCode1
+            ,	FingerprintCode2
         FROM Temp_Transaction AS tmpT
         WHERE NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice td WHERE td.DeviceCode = tmpT.DeviceCode)
 	)
@@ -154,17 +164,19 @@ BEGIN
         FROM DCS_DataCenter.Association AS ass
 			INNER JOIN	DCS_DataCenter.DeviceFingerprint AS df ON ass.DeviceID = df.DeviceID
         WHERE ass.AccountID = cte.AccountID
-			AND DCS_DC_IsListsMatchByItem(';',cte.FingerprintCode, df.FingerprintCode) = 1
+			AND (FIND_IN_SET(cte.FingerprintCode1, REPLACE(df.FingerprintCode,';',',')) > 0
+				OR FIND_IN_SET(cte.FingerprintCode2, REPLACE(df.FingerprintCode,';',',')) > 0)
 		ORDER BY ass.DeviceID ASC
         LIMIT 1
     ) AS rc;
 
 	# UPDATE recover level 2 from incoming deviceid
-    INSERT INTO Temp_RecoverDeviceByBet(TransID, AccountID, DeviceCode, FingerprintCode)
+    INSERT INTO Temp_RecoverDeviceByBet(TransID, AccountID, DeviceCode, FingerprintCode, FingerprintCode_CommaSeparated)
     SELECT 	TransID
 		,	AccountID
         ,	DeviceCode
         ,	FingerprintCode
+        ,	REPLACE(FingerprintCode,';',',') AS FingerprintCode_CommaSeparated
 	FROM Temp_Transaction AS tts
 	WHERE tts.DeviceCode IS NOT NULL
 		AND tts.FingerprintCode IS NOT NULL
@@ -186,7 +198,11 @@ BEGIN
 			AND rb.TransId > ts.TransId
 			AND (
 				rb.DeviceCode = ts.DeviceCode #--> exists from incoming deviceid
-				OR (rb.DeviceCode <> ts.DeviceCode AND DCS_DC_IsListsMatchByItem(';',ts.FingerprintCode, rb.FingerprintCode) = 1) #--> recover from incoming deviceid
+				OR (rb.DeviceCode <> ts.DeviceCode
+					AND (FIND_IN_SET(ts.FingerprintCode1, rb.FingerprintCode_CommaSeparated) > 0
+						OR FIND_IN_SET(ts.FingerprintCode2, rb.FingerprintCode_CommaSeparated) > 0
+                        )
+					) #--> recover from incoming deviceid
 			)
 		ORDER BY ts.TransId ASC
         LIMIT 1
