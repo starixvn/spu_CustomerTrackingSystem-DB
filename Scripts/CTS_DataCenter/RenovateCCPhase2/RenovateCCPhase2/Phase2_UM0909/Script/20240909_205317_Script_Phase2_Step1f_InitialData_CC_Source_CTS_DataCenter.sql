@@ -52,7 +52,8 @@ CREATE TEMPORARY TABLE Temp_Customer_SpecialCC(
 );
 
 INSERT INTO Temp_Customer_SpecialCC (CTSCustID, CustID, SubscriberID, RoleID, CreatedDate, LastModifiedBy, LastScannedDate, Remark)
-SELECT sp.CTSCustID, sp.CustID, cust.SubscriberID, cust.RoleID, sp.CreatedDate, sp.LastModifiedBy, sp.LastScannedDate, sp.Remark
+SELECT 	sp.CTSCustID, sp.CustID, cust.SubscriberID, cust.RoleID, sp.CreatedDate, sp.LastModifiedBy, sp.CreatedDate 
+	,	(SELECT Remark FROM SpecialCustomerClass_History AS h WHERE h.CustID = sp.CustID ORDER BY h.CreatedDate DESC LIMIT 1) AS Remark
 FROM SpecialCustomerClass as sp
 	INNER JOIN CTSCustomer as cust on cust.CTSCustID = sp.CTSCustID
 WHERE NOT EXISTS (SELECT 1 FROM CTSCustomerClassification AS cc WHERE cc.CTSCustID = sp.CTSCustID AND cc.CategoryID = @CONST_CATEID_VVIP) 
@@ -93,7 +94,8 @@ CREATE TEMPORARY TABLE Temp_Customer_SpecialCC_BySport(
 );
 
 INSERT INTO Temp_Customer_SpecialCC_BySport (CTSCustID, CustID, SportID, CreatedDate, LastModifiedBy, LastScannedDate, Remark)
-SELECT sp.CTSCustID, sp.CustID, sp.SportID, sp.CreatedDate, sp.LastModifiedBy, sp.LastScannedDate, sp.Remark
+SELECT 	sp.CTSCustID, sp.CustID, sp.SportID, sp.CreatedDate, sp.LastModifiedBy, sp.LastScannedDate
+	, 	(SELECT Remark FROM SpecialCustomerClass_BySport_History AS h WHERE h.CustID = sp.CustID AND h.SportID = sp.SportID ORDER BY h.CreatedDate DESC LIMIT 1) AS Remark
 FROM SpecialCustomerClass_BySport as sp
 	INNER JOIN CTSCustomer as cust on cust.CTSCustID = sp.CTSCustID 
 ;
@@ -153,12 +155,14 @@ CREATE TEMPORARY TABLE Temp_Customer_VVIP_Old(
 	,	SportType				SMALLINT
 	,	IsRobot					TINYINT(1)
 	,	IsInsertSource			TINYINT(1)
+	,	SportGroupID_arc		SMALLINT
+	,	CategoryID_arc			SMALLINT
 	,	PRIMARY KEY (CustID,ParentID,CategoryID)
 );
 
 
 INSERT INTO Temp_Customer_VVIP (CTSCustID, CustID, RoleID, IsMarkedDirectly, IsAffectToDownline)
-SELECT cc.CTSCustID, cc.CustID, cc.RoleID, IFNULL(cc.IsDirect,1), cc.IsAffectToDownline
+SELECT cc.CTSCustID, cc.CustID, sp.RoleID, IFNULL(sp.IsDirect,1), sp.IsAffectToDownline
 FROM CTSCustomerClassification AS cc
 	INNER JOIN CTSCustomerClassificationVVIP AS sp ON cc.CustID = sp.CustID 
 	INNER JOIN CTSCustomer AS cust ON cust.CustID = sp.CustID 
@@ -167,17 +171,18 @@ where cc.CategoryID = @CONST_CATEID_VVIP
 
 INSERT INTO Temp_Customer_VVIP_Old (CTSCustID, CustID, RoleID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
 	, LastScannedDate, IsFromTVS, IsFromCTS, IsFromAI, IsMarkedDirectly, IsFromImperva, IsParlay, TVSRequestID, IssueTypeId, SportType
-	, IsRobot, IsInsertSource)
+	, IsRobot, IsInsertSource,SportGroupID_arc,CategoryID_arc)
 SELECT oc.CTSCustID, oc.CustID, c.RoleID, oc.SubscriberID, cate.ParentID, cate.CategoryID, oc.Remark, oc.CreatedDate, oc.CreatedBy, oc.LastModifiedDate, oc.LastModifiedBy
 	, oc.LastScannedDate, oc.IsFromTVS, oc.IsFromCTS, oc.IsFromAI, oc.IsDirect, oc.IsFromImperva, oc.IsParlay, oc.TVSRequestID, oc.IssueTypeId, oc.SportType
-	, CASE WHEN cate.CustomerClass = 'Robot' THEN 1 ELSE 0 END AS IsRobot
-	, CASE WHEN cate.ParentID = @CONST_PARENTID_PA AND cate.CustomerClass <> 'Robot' AND oc.IsFromTVS = 1 THEN 1 ELSE 0 END AS IsInsertSource
+	, CASE WHEN cate.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot
+	, CASE WHEN cate.ParentID = @CONST_PARENTID_PA AND cate.CustomerClassName <> 'Robot' AND oc.IsFromTVS = 1 THEN 1 ELSE 0 END AS IsInsertSource
+    , oc.SportGroupID, oc.CategoryID
 FROM Temp_Customer_VVIP AS c
 	INNER JOIN CTSCustomerClassificationOldCategory AS oc ON oc.CustID = c.CustID
 	INNER JOIN CustomerCategory AS cate ON cate.OldCategoryID = oc.CategoryID AND cate.IsActive = 1
-WHERE cate.ParentID = @CONST_PARENTID_NORMAL AND cate.CategoryGroupID IN (@CONST_CATEGROUPID_SMART,@CONST_CATEGROUPID_RISKY)
-	OR (cate.ParentID = @CONST_PARENTID_PA AND cate.CustomerClass = 'Robot' AND oc.IsFromCTS = 1)
-	OR (cate.ParentID = @CONST_PARENTID_PA AND cate.CustomerClass <> 'Robot' AND (oc.IsFromCTS = 1 OR oc.IsFromTVS = 1))
+WHERE cate.ParentID = @CONST_PARENTID_NORMAL AND cate.Ext_CategoryGroupID IN (203,204)
+	OR (cate.ParentID = @CONST_PARENTID_PA AND cate.CustomerClassName = 'Robot' AND oc.IsFromCTS = 1)
+	OR (cate.ParentID = @CONST_PARENTID_PA AND cate.CustomerClassName <> 'Robot' AND (oc.IsFromCTS = 1 OR oc.IsFromTVS = 1))
 ;
 
 UPDATE CTSCustomerClassification AS cc
@@ -189,9 +194,10 @@ WHERE cc.CategoryID = @CONST_CATEID_VVIP;
 
 
 INSERT INTO CTSCustomerClassification (CTSCustID, CustID, RoleID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-	, LastScannedDate, IsFromTVS, IsFromCTS, IsFromAI, IsMarkedDirectly, IsFromImperva, IsParlay, TVSRequestID, IssueTypeId, SportType)
+	, LastScannedDate, IsFromTVS, IsFromCTS, IsFromAI, IsMarkedDirectly, IsFromImperva, IsParlay, TVSRequestID, IssueTypeId, SportType,SportGroupID_arc,CategoryID_arc)
 SELECT CTSCustID, CustID, RoleID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
 	, LastScannedDate, IsFromTVS, IsFromCTS, IsFromAI, IsMarkedDirectly, IsFromImperva, IsParlay, TVSRequestID, IssueTypeId, SportType
+    , SportGroupID_arc,CategoryID_arc
 FROM Temp_Customer_VVIP_Old;
 
 INSERT INTO CTSRobotUser (CustID, CategoryID, Remark, CreatedDate, InsertedTime)
@@ -199,13 +205,14 @@ SELECT CustID, CategoryID, Remark, CreatedDate, NOW()
 FROM Temp_Customer_VVIP_Old
 WHERE IsRobot = 1;
 
-
+/*
 INSERT INTO TVSVoidRequest (TVSRequestID, CustID, CategoryID, TVSReasonID, IssueTypeID, CreatedBy, IsParlay, SportType, RequestTypeID, CreatedDate, InsertedTime)
 SELECT o.TVSRequestID, o.CustID, o.CategoryID, h.TVSReasonID, o.IssueTypeID, o.CreatedBy, o.IsParlay, o.SportType, 1, o.CreatedDate, NOW()
 FROM Temp_Customer_VVIP_Old AS o
 	LEFT JOIN TVSVoidRequest_History AS h ON h.TVSReasonID = o.TVSReasonID
 WHERE o.IsInsertSource = 1
 	AND h.TVSReasonID IS NULL;
+*/
 
 ---------------------------------
 /*4. CTSCustomerClassification - Current: CC = PA - From CTSCustomerClassificationOldCategory*/
@@ -226,25 +233,32 @@ CREATE TEMPORARY TABLE Temp_Customer_PA_Old(
 	,	LastModifiedBy			BIGINT
 	,	LastScannedDate			DATETIME
 	,	IsMarkedDirectly		TINYINT(1)
+	,	SportGroupID_arc		SMALLINT
+	,	CategoryID_arc			SMALLINT
 	,	PRIMARY KEY (CustID,ParentID,CategoryID)
 );
 
 INSERT INTO Temp_Customer_PA_Old (CTSCustID, CustID, RoleID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-	, LastScannedDate, IsMarkedDirectly)
+	, LastScannedDate, IsMarkedDirectly, SportGroupID_arc,	CategoryID_arc)
 SELECT DISTINCT oc.CTSCustID, oc.CustID, cust.RoleID, oc.SubscriberID, cate.ParentID, cate.CategoryID, oc.Remark, oc.CreatedDate, oc.CreatedBy, oc.LastModifiedDate, oc.LastModifiedBy
-	, oc.LastScannedDate, oc.IsDirect
+	, oc.LastScannedDate, oc.IsDirect, oc.SportGroupID, oc.CategoryID
 FROM CTSCustomerClassification AS c
 	INNER JOIN CTSCustomer as cust on cust.CustID = c.CustID 
 	INNER JOIN CTSCustomerClassificationOldCategory AS oc ON oc.CustID = c.CustID
 	INNER JOIN CustomerCategory AS cate ON cate.OldCategoryID = oc.CategoryID AND cate.IsActive = 1
 WHERE c.ParentID = @CONST_PARENTID_PA
-	AND cate.ParentID = @CONST_PARENTID_NORMAL AND cate.CategoryGroupID IN (@CONST_CATEGROUPID_SMART,@CONST_CATEGROUPID_RISKY)
+	AND cate.ParentID = @CONST_PARENTID_NORMAL AND cate.Ext_CategoryGroupID IN (203,204)
 ;
 
-INSERT INTO CTSCustomerClassification (CTSCustID, CustID, RoleID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-	, LastScannedDate, IsMarkedDirectly)
+DELETE c
+FROM Temp_Customer_PA_Old AS c
+WHERE EXISTS (SELECT 1 FROM CTSCustomerClassification AS cVVIP WHERE cVVIP.CustID = c.CustID AND cVVIP.CategoryID = @CONST_CATEID_VVIP)
+;
+
+INSERT IGNORE INTO CTSCustomerClassification (CTSCustID, CustID, RoleID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
+	, LastScannedDate, IsMarkedDirectly, SportGroupID_arc,	CategoryID_arc)
 SELECT CTSCustID, CustID, RoleID, SubscriberID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy
-	, LastScannedDate, IsMarkedDirectly
+	, LastScannedDate, IsMarkedDirectly, SportGroupID_arc,	CategoryID_arc
 FROM Temp_Customer_PA_Old;
 
 ---------------------------------
@@ -315,7 +329,7 @@ UPDATE Temp_RobotImperva AS rd
 			SELECT ar.IsReactivated 
 			FROM ArchiveCustomer_CTSCustomer AS ar
 			WHERE ar.CustID = temp.CustID
-			ORDER BY ar.InsertTime DESC, ar.LogID DESC
+			ORDER BY ar.InsertTime DESC, ar.ID DESC
 			LIMIT 1
 		) AS latest
 SET rd.IsUpdated = 1
