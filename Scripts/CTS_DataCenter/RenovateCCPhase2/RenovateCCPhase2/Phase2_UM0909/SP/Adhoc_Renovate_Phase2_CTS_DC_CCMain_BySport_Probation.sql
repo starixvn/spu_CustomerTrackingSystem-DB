@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Probation`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Probation`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Probation`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Probation`(
 		IN		ip_Batchsize			INT
 	,	IN		ip_SportID				SMALLINT
 	,	IN		ip_CategoryID			INT
@@ -19,7 +19,7 @@ BEGIN
 		Param's Expanation:
 		
 		Example:
-			- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Probation(10000,1,206,402076,140714);
+			- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Probation(10000,1,206,402076,140714);
 			
 		Revisions: 
 			- 20240829@Victoria.Le:			Initial Writing [Redmine ID: #205317]
@@ -51,7 +51,7 @@ BEGIN
 	FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cc
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = cc.CustID AND cust.CustSubID = 0
 		INNER JOIN CTS_DataCenter.CustomerCategory AS curcate ON curcate.OldCategoryID = cc.CategoryID
-																AND curcate.CategoryID = CONST_CATEGORYID_PROBATION
+																AND cc.CategoryID = CONST_CATEGORYID_PROBATION
 		INNER JOIN CTS_DataCenter.ProbationAccountMonitor_BySport AS pro ON pro.CustID = cc.CustID AND pro.SportID = cc.SportID
 	WHERE cc.SportID = ip_SportID
 		AND cc.CustID >= ip_MinCustID

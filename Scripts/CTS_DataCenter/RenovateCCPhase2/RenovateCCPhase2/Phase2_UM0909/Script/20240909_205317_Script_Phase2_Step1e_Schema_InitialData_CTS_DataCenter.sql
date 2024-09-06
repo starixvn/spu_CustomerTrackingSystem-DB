@@ -131,7 +131,7 @@ USE CTS_DataCenter;
 	FROM SystemParameter
 	WHERE ParameterID = 899;
 	
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Probation(@lv_Batchsize_BySport_Init_Probation,1,206,402076,140714);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Probation(@lv_Batchsize_BySport_Init_Probation,1,206,402076,140714);
 	
 	---------------------------------
 	/*Initialize and Backup - Other*/
@@ -141,7 +141,7 @@ USE CTS_DataCenter;
 	FROM SystemParameter
 	WHERE ParameterID = 898;
 	
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Other(@lv_Batchsize_BySport_Init_Other,1,201,402076,140714);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,1,201,402076,140714);
 
 	---------------------------------
 	/*Update new data*/
@@ -152,7 +152,7 @@ USE CTS_DataCenter;
 	WHERE ParameterID = 897;
 	
 	-- OPTION 1: RENAME AND ONLY UPDATE CreatedDate/LastScannedDate for PROBATION
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Update(@lv_Batchsize_BySport_Init_Update,200,201,402076,140714);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Update(@lv_Batchsize_BySport_Init_Update,200,201,402076,140714);
 	
 	ALTER TABLE CTSCustomerClassification_BySport
 	RENAME COLUMN CategoryID 		TO CategoryID_arc

@@ -1,13 +1,13 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Other`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Update`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Other`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Update`(
 		IN		ip_Batchsize			INT
 	,	IN		ip_SportID				SMALLINT
 	,	IN		ip_CategoryID			INT
 	,	IN		ip_MinCustID			BIGINT
-	,	IN		ip_TotalCust			BIGINT
+	,	IN		ip_TotalCount			BIGINT
 )
     SQL SECURITY INVOKER
 BEGIN 
@@ -19,42 +19,40 @@ BEGIN
 		Param's Expanation:
 		
 		Example:
-			- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_BySport_Other(10000,1,201,402076,140714);
+			- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Update(10000,1,201,402076,140714);
 			
 		Revisions: 
 			- 20240829@Victoria.Le:			Initial Writing [Redmine ID: #205317]
 */
-
 	
 	DECLARE lv_FromID						BIGINT DEFAULT 0;
 	DECLARE lv_ToID							BIGINT DEFAULT 0;
 	DECLARE lv_FromID_Next					BIGINT DEFAULT 0;
 	DECLARE lv_ToID_Next					BIGINT DEFAULT 0;
-	DECLARE lv_TotalCustUpdated				BIGINT DEFAULT 0;
+	DECLARE lv_TotalUpdated					BIGINT DEFAULT 0;
 	DECLARE lv_UpdatedCount					BIGINT DEFAULT 0;
-	DECLARE lv_TotalCust					BIGINT;
+	DECLARE lv_TotalRow						BIGINT;
+	DECLARE CONST_CATEGORYID_PROBATION		INT DEFAULT 206;
+	DECLARE lv_IsProbation					TINYINT(1) DEFAULT 0;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE Temp_Customer (
 			ID					BIGINT UNSIGNED AUTO_INCREMENT
 		,	CustID				BIGINT UNSIGNED
-		,	ParentID			INT
-		,	CategoryID			INT
-		,	CreatedDate			DATETIME
-		,	LastScannedDate		DATETIME
 		,	PRIMARY KEY (ID)
 	);
 	
-	INSERT INTO Temp_Customer (CustID,ParentID,CategoryID,CreatedDate,LastScannedDate)
-	SELECT cc.CustID,curcate.ParentID,curcate.CategoryID,pro.CreatedDate,pro.LastScannedDate
+	IF ip_CategoryID = CONST_CATEGORYID_PROBATION THEN
+		SET lv_IsProbation = 1;
+	END IF;
+	
+	INSERT INTO Temp_Customer (CustID)
+	SELECT cc.CustID
 	FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cc
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = cc.CustID AND cust.CustSubID = 0
-		INNER JOIN CTS_DataCenter.CustomerCategory AS curcate ON curcate.OldCategoryID = cc.CategoryID
 	WHERE cc.SportID = ip_SportID
 		AND cc.CustID >= ip_MinCustID
 		AND cc.CategoryID = ip_CategoryID
-		AND (cc.ParentID IS NULL
-			OR (cc.CategoryID <> cc.CategoryID_bk))
 	ORDER BY cc.CustID;
 	
 	WITH CTE AS
@@ -67,28 +65,37 @@ BEGIN
 	INTO lv_FromID, lv_ToID
 	FROM CTE AS c;
 	
-	SET lv_TotalCust = ip_TotalCust;
+	SET lv_TotalRow = ip_TotalCount;
 	
-	WHILE (lv_TotalCust > 0 AND lv_FromID > 0 AND lv_ToID > 0)
+	WHILE (lv_TotalRow > 0 AND lv_FromID > 0 AND lv_ToID > 0)
 	DO
 		SET lv_UpdatedCount = 0;
-	
+		
+		-- OPTION 1: ONLY UPDATE CreatedDate/LastScannedDate for PROBATION
 		UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS cc
 			INNER JOIN Temp_Customer AS temp ON cc.CustID = temp.CustID 
 												AND cc.SportID = ip_SportID
 												AND cc.CategoryID = ip_CategoryID
-		SET 	cc.ParentID		 		= temp.ParentID
-			,	cc.CategoryID_new 		= temp.CategoryID
-			,	cc.CreatedDate_new		= temp.CreatedDate
-			,	cc.LastScannedDate_new 	= temp.LastScannedDate
-			,	cc.CategoryID_bk 		= cc.CategoryID
-			,	cc.CreatedDate_bk 		= cc.CreatedDate
-			,	cc.LastScannedDate_bk 	= cc.LastScannedDate
+		SET 	cc.CreatedDate 			= cc.CreatedDate_new
+			,	cc.LastScannedDate 		= cc.LastScannedDate_new
+		WHERE temp.ID BETWEEN lv_FromID AND lv_ToID
+			AND lv_IsProbation = 1;
+		
+		/*
+		-- OPTION 2: UPDATE COLUMNS suffix _new >> existing
+		UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS cc
+			INNER JOIN Temp_Customer AS temp ON cc.CustID = temp.CustID 
+												AND cc.SportID = ip_SportID
+												AND cc.CategoryID = ip_CategoryID
+		SET 	cc.CategoryID 			= cc.CategoryID_new
+			,	cc.CreatedDate 			= CASE WHEN lv_IsProbation = 1 THEN cc.CreatedDate_new ELSE cc.CreatedDate END
+			,	cc.LastScannedDate 		= CASE WHEN lv_IsProbation = 1 THEN cc.LastScannedDate_new ELSE cc.LastScannedDate END
 		WHERE temp.ID BETWEEN lv_FromID AND lv_ToID;
+		*/
 		
 		SET lv_UpdatedCount = FOUND_ROWS();
-		SET lv_TotalCustUpdated = lv_TotalCustUpdated + lv_UpdatedCount;
-		SET lv_TotalCust = lv_TotalCust - lv_UpdatedCount;
+		SET lv_TotalUpdated = lv_TotalUpdated + lv_UpdatedCount;
+		SET lv_TotalRow = lv_TotalRow - lv_UpdatedCount;
 		
 		WITH CTE AS
 		(	SELECT temp.ID
@@ -109,7 +116,7 @@ BEGIN
 			SET lv_ToID = lv_ToID_Next;
 		
 		ELSE
-			
+		
 			SET lv_FromID = 0;
 			SET lv_ToID = 0;
 			
@@ -121,8 +128,8 @@ BEGIN
 		,	ip_SportID AS SportID
 		,	ip_CategoryID AS CategoryID
 		,	ip_MinCustID AS MinCustID
-		,	ip_TotalCust AS TotalCust
-		,	lv_TotalCustUpdated AS TotalCustUpdated;
+		,	ip_TotalCount AS TotalRow_Estimated
+		,	lv_TotalUpdated AS TotalRow_Updated;
 
 END$$
 DELIMITER ;
