@@ -233,6 +233,10 @@ USE CTS_DataCenter;
 ---------------------------------
 /*7. CustomerCategory*/
 ---------------------------------
+	UPDATE CustomerCategory
+	SET IsActive = 0
+	WHERE CategoryID = 21303;
+
 	RENAME TABLE CustomerCategory TO CustomerCategory_Arc;
 	RENAME TABLE CustomerCategory_new TO CustomerCategory;
 

@@ -95,7 +95,7 @@ BEGIN
 
     INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
 	SELECT clss.CustID, clss.CategoryID
-	FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
+	FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCC_CategoryID_CustID_LastScannedDate)
 	,	LATERAL (
 			SELECT cls.CustID, cls.CategoryID, cat.CategoryGroupID, cat.ParentID
 			FROM CTS_DataCenter.CTSCustomerClassification AS cls 
@@ -150,7 +150,7 @@ BEGIN
 		
 		INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
 		SELECT clss.CustID, clss.CategoryID
-		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCC_CategoryID_CustID_LastScannedDate)
 		,	LATERAL (
 				SELECT cls.CategoryID, cat.CategoryGroupID, cat.ParentID
 				FROM CTS_DataCenter.CTSCustomerClassification AS cls 

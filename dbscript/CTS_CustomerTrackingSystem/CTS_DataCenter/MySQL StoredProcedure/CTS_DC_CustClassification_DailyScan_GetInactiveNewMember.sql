@@ -81,7 +81,7 @@ sp:BEGIN
 	
     INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
 	SELECT 	tmplc.CustID
-	FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
+	FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCC_CategoryID_CustID_LastScannedDate)
 		,	LATERAL	
 			(	SELECT cc.CustID, cc.CategoryID
 				FROM CTS_DataCenter.CTSCustomerClassification AS cc 
@@ -133,7 +133,7 @@ sp:BEGIN
     IF lv_NextCategoryID IS NOT NULL THEN
 		INSERT IGNORE INTO Temp_InactiveNewMember (CustID)
 		SELECT 	tmplc.CustID
-		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCustomerClassification_CategoryID_CustID)
+		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCC_CategoryID_CustID_LastScannedDate)
 			,	LATERAL	
 				(	SELECT cc.CustID, cc.CategoryID
 					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
