@@ -371,7 +371,7 @@ BEGIN
 		,	tmi.IsGetDataFromOrigin
 		,	h.teamname AS HomeName
 		,	a.teamname AS AwayName
-		,	l.leaguename
+		,	l.leaguename AS LeagueName
 		,	tmi.DataSource
 	FROM #tmpMatchesInfo AS tmi
 		INNER JOIN #tmpMatchSection AS tms ON tmi.MatchSection = tms.MatchSection
