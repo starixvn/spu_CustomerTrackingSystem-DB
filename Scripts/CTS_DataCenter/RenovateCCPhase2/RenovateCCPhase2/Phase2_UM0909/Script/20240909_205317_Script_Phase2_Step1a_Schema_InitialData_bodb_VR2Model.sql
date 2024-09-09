@@ -13,6 +13,8 @@
 */
 	USE bodb_VR2Model;
 
+/* STEP 3.1.1 */	
+
 	/************************* I. Tables Rule - Must be deployed priority ******************************/
 
 	UPDATE cc WITH(ROWLOCK, UPDLOCK)
@@ -24,6 +26,7 @@
 	SET 	cc.CategoryID	 		= cc.CategoryID_new
 		,	cc.CurrentCategory	 	= cc.CurrentCategory_new
 	FROM dbo.CustomerClassification_BySport_Rule AS cc;
+	
 	
 	/************************* II. Tables Classification - Create new table  ******************************/
 	/*CustomerClassification*/

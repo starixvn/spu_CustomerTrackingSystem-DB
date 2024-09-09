@@ -12,7 +12,9 @@ Revisions:
 
 USE CTS_DataCenter;
 
-INSERT INTO SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+/* STEP 3.1.4 + 3.1.11 */	
+
+INSERT IGNORE INTO SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
 VALUES 	(992, 'CTS_DC_CustClassification_Probation', 'CTS_DC_CustClassification_Probation Batchsize','BIGINT', 1000)
 ,		(991, 'CTS_DC_CustClassification_Other', 'CTS_DC_CustClassification_Other Batchsize','BIGINT',1000)
 ,		(990, 'CTS_DC_CustClassification_Update', 'CTS_DC_CustClassification_Update Batchsize','BIGINT',1000)
@@ -31,9 +33,9 @@ VALUES 	(992, 'CTS_DC_CustClassification_Probation', 'CTS_DC_CustClassification_
 ,		(887, 'CTS_DC_CC_History_RobotCTS_MaxID', 'CTS_DC_CC_History_RobotCTS_MaxID','BIGINT',1075172195)
 ;
 
-SELECT COUNT(1) FROM SystemParameter WHERE ParameterID >= 887 AND  ParameterID <= 992;
+-- SELECT COUNT(1) FROM SystemParameter WHERE ParameterID >= 887 AND  ParameterID <= 992;
 
-INSERT INTO SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+INSERT IGNORE INTO SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
 VALUES	(165, 'CC_ProbationScan_BatchSize', 'CC_ProbationScan_BatchSize', 'BIGINT', 5000)
 ,		(166, 'CC_ProbationScan_LastCategoryID', 'CC_ProbationScan_LastCategoryID', 'BIGINT', 0)
 ,		(167, 'CC_ProbationScan_LastCustID', 'CC_ProbationScan_LastCustID', 'BIGINT', 0)
@@ -41,7 +43,7 @@ VALUES	(165, 'CC_ProbationScan_BatchSize', 'CC_ProbationScan_BatchSize', 'BIGINT
 ,		(169, 'CC_BySport_ProbationScan_LastCustID', 'CC_BySport_ProbationScan_LastCustID', 'BIGINT', 0)
 ;
 
-SELECT COUNT(1) FROM SystemParameter WHERE ParameterID >= 165 AND  ParameterID <= 169;
+-- SELECT COUNT(1) FROM SystemParameter WHERE ParameterID >= 165 AND  ParameterID <= 169;
 
 UPDATE SystemParameter AS s
 	INNER JOIN CustomerCategory AS c ON c.OldCategoryID = s.ParameterValue

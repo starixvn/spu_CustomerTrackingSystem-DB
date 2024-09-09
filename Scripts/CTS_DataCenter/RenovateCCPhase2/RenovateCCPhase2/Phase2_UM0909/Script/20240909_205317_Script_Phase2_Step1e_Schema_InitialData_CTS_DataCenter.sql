@@ -26,8 +26,11 @@ USE CTS_DataCenter;
 ---------------------------------
 /*1. CTSCustomerClassification*/
 ---------------------------------
+/* STEP 3.1.5 */
+
 	---------------------------------
 	/*Initialize and Backup - Probation - FIRST*/
+	/* STEP 3.1.5.a */
 	---------------------------------
 	SELECT ParameterValue
 	INTO @lv_Batchsize_Init_Probation
@@ -38,6 +41,7 @@ USE CTS_DataCenter;
 	
 	---------------------------------
 	/*Initialize and Backup - Other*/
+	/* STEP 3.1.5.b */
 	---------------------------------
 	SELECT ParameterValue
 	INTO @lv_Batchsize_Init_Other
@@ -48,6 +52,7 @@ USE CTS_DataCenter;
 
 	---------------------------------
 	/*Update new data*/
+	/* STEP 3.1.5.c */
 	---------------------------------
 	SELECT ParameterValue
 	INTO @lv_Batchsize_Init_Update
@@ -98,13 +103,17 @@ USE CTS_DataCenter;
 ---------------------------------
 /*3. CTSCustomerClassification_History*/
 ---------------------------------
+/* STEP 3.1.6 */
+
 	---------------------------------
 	/*Initialize and Backup*/
+	/* STEP 3.1.6.a */
 	---------------------------------
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_History_Init(@op_History_General_NextID);
 
 	---------------------------------
 	/*Rename columns*/
+	/* STEP 3.1.6.b */
 	---------------------------------
 	ALTER TABLE CTSCustomerClassification_History
 	RENAME COLUMN CategoryID 		TO CategoryID_arc
@@ -129,7 +138,11 @@ USE CTS_DataCenter;
 ---------------------------------
 /*2. CTSCustomerClassification_BySport*/
 ---------------------------------
+/* STEP 3.1.7 */
+	
+	---------------------------------
 	/*Initialize and Backup - Probation - FIRST*/
+	/* STEP 3.1.7.a */
 	---------------------------------
 	SELECT ParameterValue
 	INTO @lv_Batchsize_BySport_Init_Probation
@@ -140,6 +153,7 @@ USE CTS_DataCenter;
 	
 	---------------------------------
 	/*Initialize and Backup - Other*/
+	/* STEP 3.1.7.b */
 	---------------------------------
 	SELECT ParameterValue
 	INTO @lv_Batchsize_BySport_Init_Other
@@ -150,6 +164,7 @@ USE CTS_DataCenter;
 
 	---------------------------------
 	/*Update new data*/
+	/* STEP 3.1.7.c */
 	---------------------------------
 	SELECT ParameterValue
 	INTO @lv_Batchsize_BySport_Init_Update
@@ -187,13 +202,17 @@ USE CTS_DataCenter;
 ---------------------------------
 /*4. CTSCustomerClassification_BySport_History*/
 ---------------------------------
+/* STEP 3.1.8 */
+
 	---------------------------------
 	/*Initialize and Backup*/
+	/* STEP 3.1.8.a */
 	---------------------------------
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_BySport_History_Init(@op_History_BySport_NextID);
 
 	---------------------------------
 	/*Rename columns*/
+	/* STEP 3.1.8.b */
 	---------------------------------
 	ALTER TABLE CTSCustomerClassification_BySport_History
 	RENAME COLUMN CategoryID 		TO CategoryID_arc
@@ -201,14 +220,17 @@ USE CTS_DataCenter;
 
 ---------------------------------
 /*5. ArchiveCustomer_CTSCustomer*/
+/* STEP 3.1.9 */
 ---------------------------------
 	---------------------------------
 	/*Initialize and Backup*/
+	/* STEP 3.1.9.a */
 	---------------------------------
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_ArchiveCustomer_Init(@op_ArchiveCustomer_NextID);
 
 	---------------------------------
 	/*Rename columns*/
+	/* STEP 3.1.9.b */
 	---------------------------------
 	ALTER TABLE ArchiveCustomer_CTSCustomer
 	RENAME COLUMN CategoryID 		TO CategoryID_arc

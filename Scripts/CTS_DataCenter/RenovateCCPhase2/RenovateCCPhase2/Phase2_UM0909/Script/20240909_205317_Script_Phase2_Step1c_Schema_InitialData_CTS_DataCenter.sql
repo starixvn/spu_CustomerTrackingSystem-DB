@@ -28,6 +28,7 @@
 
 USE CTS_DataCenter;
 
+/* STEP 3.1.3 */	
 ---------------------------------
 /*1. CTSCustomerClassification_Log*/
 ---------------------------------

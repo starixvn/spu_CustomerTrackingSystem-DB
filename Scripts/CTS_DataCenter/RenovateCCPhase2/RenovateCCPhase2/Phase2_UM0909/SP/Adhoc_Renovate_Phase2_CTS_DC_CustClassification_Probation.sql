@@ -60,9 +60,7 @@ BEGIN
 		AND cc.CustID >= ip_MinCustID
 		AND (cc.ParentID_new IS NULL 
 			OR (cc.SportGroupID <> cc.SportGroupID_bk) -- issue: update 10 million to estimate
-			OR (cc.CategoryID = cc.CategoryID_bk AND (cc.LastScannedDate <> pro.LastScannedDate	
-														OR cc.CreatedDate_new <> pro.CreatedDate 
-														OR cc.LastScannedDate_new <> pro.LastScannedDate))
+			OR (cc.CategoryID = cc.CategoryID_bk AND (cc.CreatedDate_new <> pro.CreatedDate OR cc.LastScannedDate_new <> pro.LastScannedDate))
 			OR (cc.CategoryID <> cc.CategoryID_bk))
 	ORDER BY cc.CustID;
 	

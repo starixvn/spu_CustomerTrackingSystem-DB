@@ -15,7 +15,8 @@
 										4. CTSCustomerClassification - Current: CC = PA - From CTSCustomerClassificationOldCategory
 										5. RobotDetection - Update IsDisable = 1 - Customers have been archived
 										6. RobotImperva - Update IsDisable = 1 - Customers have been archived
-										7. 
+										7. CustomerLoginInfoDetection - Add 17 cust "Site Migration"
+										8. CTSCustomerClassification/History - CTSCustID = 0
 		
 	Param's Explanation (filtered by):
 
@@ -36,6 +37,7 @@ SET @CONST_PARENTID_PA 				:= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA'
 ---------------------------------
 /*1. SpecialCustomerClass - 20240827: 158 cust*/
 ---------------------------------
+/* STEP 3.3.1.a */
 
 DROP TEMPORARY TABLE IF EXISTS Temp_Customer_SpecialCC;    
 CREATE TEMPORARY TABLE Temp_Customer_SpecialCC(	  
@@ -264,6 +266,7 @@ FROM Temp_Customer_PA_Old;
 ---------------------------------
 /* 5. RobotDetection - Update IsDisable = 1 - Customers have been archived */
 ---------------------------------
+/* STEP 3.3.1.b */
 
 DROP TEMPORARY TABLE IF EXISTS Temp_RobotDetection;    
 CREATE TEMPORARY TABLE Temp_RobotDetection(	  
@@ -274,8 +277,8 @@ CREATE TEMPORARY TABLE Temp_RobotDetection(
 
 INSERT INTO Temp_RobotDetection (ID, CustID)
 SELECT rd.ID, rd.CustID
-FROM RobotDetection AS rd
-	LEFT JOIN CTSCustomer as cust on cust.CustID = rd.CustID
+FROM CTS_DataCenter.RobotDetection AS rd
+	LEFT JOIN CTS_DataCenter.CTSCustomer as cust on cust.CustID = rd.CustID
 WHERE cust.CustID IS NULL AND rd.IsDisabled = 0
 ;
 
@@ -286,8 +289,8 @@ CREATE TEMPORARY TABLE Temp_RobotDetection_Duplicate AS SELECT * FROM Temp_Robot
 UPDATE Temp_RobotDetection AS rd
 	INNER JOIN Temp_RobotDetection_Duplicate AS temp ON temp.CustID = rd.CustID
 	,	LATERAL (
-			SELECT ar.IsReactivated 
-			FROM ArchiveCustomer_CTSCustomer AS ar
+			SELECT ar.IsReactivated
+			FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar
 			WHERE ar.CustID = temp.CustID
 			ORDER BY ar.InsertTime DESC, ar.ID DESC
 			LIMIT 1
@@ -296,7 +299,7 @@ SET rd.IsUpdated = 1
 WHERE latest.IsReactivated = 0
 ;
 
-UPDATE RobotDetection AS rd
+UPDATE CTS_DataCenter.RobotDetection AS rd
 	INNER JOIN Temp_RobotDetection AS temp ON temp.ID = rd.ID
 SET rd.IsDisabled = 1
 WHERE temp.IsUpdated = 1
@@ -314,8 +317,8 @@ CREATE TEMPORARY TABLE Temp_RobotImperva(
 
 INSERT INTO Temp_RobotImperva (LogID, CustID)
 SELECT rd.LogID, rd.CustID
-FROM RobotImperva AS rd
-	LEFT JOIN CTSCustomer as cust on cust.CustID = rd.CustID
+FROM CTS_DataCenter.RobotImperva AS rd
+	LEFT JOIN CTS_DataCenter.CTSCustomer as cust on cust.CustID = rd.CustID
 WHERE cust.CustID IS NULL AND rd.IsDisabled = 0
 ;
 
@@ -326,25 +329,122 @@ CREATE TEMPORARY TABLE Temp_RobotImperva_Duplicate AS SELECT * FROM Temp_RobotIm
 UPDATE Temp_RobotImperva AS rd
 	INNER JOIN Temp_RobotImperva_Duplicate AS temp ON temp.CustID = rd.CustID
 	,	LATERAL (
-			SELECT ar.IsReactivated 
-			FROM ArchiveCustomer_CTSCustomer AS ar
+			SELECT ar.IsReactivated
+			FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar
 			WHERE ar.CustID = temp.CustID
 			ORDER BY ar.InsertTime DESC, ar.ID DESC
 			LIMIT 1
 		) AS latest
-SET rd.IsUpdated = 1
+SET 	rd.IsUpdated = 1
 WHERE latest.IsReactivated = 0
 ;
 
-UPDATE RobotImperva AS rd
+UPDATE CTS_DataCenter.RobotImperva AS rd
 	INNER JOIN Temp_RobotImperva AS temp ON temp.LogID = rd.LogID
 SET rd.IsDisabled = 1
 WHERE temp.IsUpdated = 1
 ;
 
 ---------------------------------
-/* 7. */
+/* 7. CustomerLoginInfoDetection - Add 17 cust "Site Migration" */
+---------------------------------
+DROP TEMPORARY TABLE IF EXISTS Temp_CustSiteMigration;    
+CREATE TEMPORARY TABLE Temp_CustSiteMigration(	  
+		FromCustID					BIGINT 
+	,	ToCustID					BIGINT
+	,	PRIMARY KEY (FromCustID,ToCustID)
+);
 
+INSERT INTO Temp_CustSiteMigration (FromCustID,ToCustID)
+VALUES 	(112709838,155216141),
+		(124532110,155288860),
+		(113752679,155307912),
+		(112536863,155490796),
+		(147730883,155631283),
+		(123870924,155833954),
+		(123782205,155955167),
+		(121704844,156385317),
+		(126878136,156565452),
+		(113154312,156927898),
+		(122056231,156965201),
+		(124660053,156993005),
+		(114166895,157104184),
+		(112744027,158423648),
+		(122633655,158778024),
+		(147020428,159400189),
+		(123575124,159535507)
+;
+
+INSERT IGNORE INTO CTS_DataCenter.CustomerLoginInfoDetection(CTSCustID, CustID, FirstBetDate, Bot, InvalidBrowser, BotTransPercentage, InvalidBrowserInfoTransPercentage, SourceCreatedDate) 
+SELECT cust.CTSCustID, cust.CustID, ct.FirstBetDate, ct.Bot, ct.InvalidBrowser, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage, ct.SourceCreatedDate, LEAST(cc.CreatedDate,cc.LastModifiedDate)
+FROM CTS_DataCenter.CustomerLoginInfoDetection AS ct
+	INNER JOIN Temp_CustSiteMigration AS temp ON temp.FromCustID = ct.CustID
+	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CustID = temp.ToCustID
+	INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.ToCustID AND cust.CustSubID = 0
+WHERE cc.CategoryID IN (21000,26000)
+;
+
+---------------------------------
+/* 8. CTSCustomerClassification/History - CTSCustID = 0 
+- GENERAL: 5201  - History: Count=1342	MinID=360532378	MaxID=1082372260
+- BYSPORT: 360  - History: Count=400	MinID=269779	MaxID=21242290
+*/
+---------------------------------
+/* STEP 3.3.1.b */
+
+DROP TEMPORARY TABLE IF EXISTS Temp_Customer_CTSCustID0_GENERAL;    
+CREATE TEMPORARY TABLE Temp_Customer_CTSCustID0_GENERAL(	  
+		CustID						BIGINT 
+	,	CTSCustID					BIGINT
+	,	PRIMARY KEY (CustID,CTSCustID)
+);
+
+DROP TEMPORARY TABLE IF EXISTS Temp_Customer_CTSCustID0_BYSPORT;    
+CREATE TEMPORARY TABLE Temp_Customer_CTSCustID0_BYSPORT(	  
+		CustID						BIGINT 
+	,	CTSCustID					BIGINT
+	,	PRIMARY KEY (CustID,CTSCustID)
+);
+
+INSERT IGNORE INTO Temp_Customer_CTSCustID0_GENERAL(CustID,CTSCustID)
+SELECT cust.CustID, cust.CTSCustID
+FROM CTS_DataCenter.CTSCustomerClassification AS cc
+	INNER JOIN CTS_DataCenter.CTSCustomer as cust on cust.CustID = cc.CustID AND cust.CustSubID = 0
+WHERE cc.CTSCustID = 0
+;
+
+INSERT IGNORE INTO Temp_Customer_CTSCustID0_BYSPORT(CustID,CTSCustID)
+SELECT cust.CustID, cust.CTSCustID
+FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cc
+	INNER JOIN CTS_DataCenter.CTSCustomer as cust on cust.CustID = cc.CustID AND cust.CustSubID = 0
+WHERE cc.CTSCustID = 0
+;
+
+UPDATE CTS_DataCenter.CTSCustomerClassification AS cc
+	INNER JOIN Temp_Customer_CTSCustID0_GENERAL AS temp ON temp.CustID = cc.CustID
+SET cc.CTSCustID = temp.CTSCustID
+WHERE cc.CTSCustID = 0
+;
+
+UPDATE CTS_DataCenter.CTSCustomerClassification_History AS cc
+	INNER JOIN Temp_Customer_CTSCustID0_GENERAL AS temp ON temp.CustID = cc.CustID
+SET cc.CTSCustID = temp.CTSCustID
+WHERE cc.CTSCustID = 0
+;
+
+UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS cc
+	INNER JOIN Temp_Customer_CTSCustID0_BYSPORT AS temp ON temp.CustID = cc.CustID
+SET cc.CTSCustID = temp.CTSCustID
+WHERE cc.CTSCustID = 0
+;
+
+UPDATE CTS_DataCenter.CTSCustomerClassification_BySport_History AS cc
+	INNER JOIN Temp_Customer_CTSCustID0_BYSPORT AS temp ON temp.CustID = cc.CustID
+SET cc.CTSCustID = temp.CTSCustID
+WHERE cc.CTSCustID = 0
+;
+
+---------------------------------
 ---------------------------------
 ---------------------------------
 ---------------------------------

@@ -66,6 +66,7 @@ BEGIN
 		,	IssueTypeID			TINYINT	
 		,	IsParlay			TINYINT(1)		
 		,	SportType			INT	
+		,	Remark				VARCHAR(500)	
 		,	PRIMARY KEY (ID)
 	);
 	
@@ -88,9 +89,11 @@ BEGIN
 	END IF;
 	
 	INSERT INTO Temp_Customer (CustID,CategoryID,CreatedDate,LastScannedDate
-		,	IsFromTW,IsFromCTS,IsFromTVS,TVSRequestID,IssueTypeID,IsParlay,SportType)
+		,	IsFromTW,IsFromCTS,IsFromTVS,TVSRequestID,IssueTypeID,IsParlay,SportType
+		,	Remark)
 	SELECT cc.CustID,cc.CategoryID,cc.CreatedDate,cc.LastScannedDate
 		,	cc.IsFromTW,cc.IsFromCTS,cc.IsFromTVS,cc.TVSRequestID,cc.IssueTypeID,cc.IsParlay,cc.SportType
+		,	cc.Remark
 	FROM CTS_DataCenter.CTSCustomerClassification AS cc
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = cc.CustID AND cust.CustSubID = 0
 	WHERE cc.SportGroupID = ip_SportGroupID
@@ -181,6 +184,22 @@ BEGIN
 					AND h.IsFromTW = 1
 				ORDER BY h.ID DESC;
 				
+				SET lv_InsertedCount_RobotTW = 0;
+				SET lv_InsertedCount_RobotTW = FOUND_ROWS();
+				SET lv_TotalInserted_RobotTW = lv_TotalInserted_RobotTW + lv_InsertedCount_RobotTW;
+				
+				INSERT IGNORE INTO TWRobotUser (CustID, CategoryID, RobotCounter, CreatedDate, InsertedTime)
+				SELECT 	cust.CustID
+					, 	cate.CategoryID
+					, 	NULL AS RobotCounter
+					, 	cust.CreatedDate AS CreatedDate
+					, 	NOW() AS InsertedTime
+				FROM Temp_Customer AS cust	
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.OldCategoryID = cust.CategoryID
+					LEFT JOIN CTS_DataCenter.TWRobotUser AS r ON r.CustID = cust.CustID AND r.CategoryID = cate.CategoryID AND r.IsDisabled = 0
+				WHERE cust.ID BETWEEN lv_FromID AND lv_ToID AND cust.IsFromTW = 1 
+					AND r.CustID IS NULL;
+					
 				SET lv_InsertedCount_RobotTW = FOUND_ROWS();
 				SET lv_TotalInserted_RobotTW = lv_TotalInserted_RobotTW + lv_InsertedCount_RobotTW;
 				
@@ -219,6 +238,22 @@ BEGIN
 				SET lv_InsertedCount_RobotCTS = FOUND_ROWS();
 				SET lv_TotalInserted_RobotCTS = lv_TotalInserted_RobotCTS + lv_InsertedCount_RobotCTS;
 				
+				INSERT IGNORE INTO CTSRobotUser (CustID, CategoryID, Remark, CreatedDate, InsertedTime)
+				SELECT 	cust.CustID
+					, 	cate.CategoryID
+					, 	cust.Remark
+					, 	cust.CreatedDate
+					, 	NOW() AS InsertedTime
+				FROM Temp_Customer AS cust
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.OldCategoryID = cust.CategoryID
+					LEFT JOIN CTS_DataCenter.CTSRobotUser AS r ON r.CustID = cust.CustID AND r.CategoryID = cate.CategoryID AND r.IsDisabled = 0
+				WHERE cust.ID BETWEEN lv_FromID AND lv_ToID AND cust.IsFromCTS = 1 
+					AND r.CustID IS NULL;
+					
+				SET lv_InsertedCount_RobotCTS = 0;
+				SET lv_InsertedCount_RobotCTS = FOUND_ROWS();
+				SET lv_TotalInserted_RobotCTS = lv_TotalInserted_RobotCTS + lv_InsertedCount_RobotCTS;
+				
 			END IF;
 		
 		ELSE IF lv_IsRobot = 0 AND ip_SportGroupID = 0 THEN
@@ -231,7 +266,7 @@ BEGIN
 						LEFT JOIN CTS_DataCenter.TVSVoidRequest AS r ON r.CustID = cust.CustID AND r.CategoryID = tvs.CategoryID_new AND r.IsDisabled = 0
 					WHERE cust.ID BETWEEN lv_FromID AND lv_ToID AND cust.IsFromTVS = 1
 						AND r.CustID IS NULL
-						AND tvs.CheckType > 0
+						AND tvs.CheckType NOT IN (0,-1)
 					ORDER BY tvs.ID ASC;
 					
 					SET lv_InsertedCount_PATVS = FOUND_ROWS();

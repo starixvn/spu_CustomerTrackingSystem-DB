@@ -12,6 +12,8 @@ Reviewer:
 
 USE CTS_DataCenter;
 
+/* STEP 3.1.10 */
+
 DELETE FROM StaticList WHERE ListID = 6;
 
 SET @CURRENTDATE := NOW();

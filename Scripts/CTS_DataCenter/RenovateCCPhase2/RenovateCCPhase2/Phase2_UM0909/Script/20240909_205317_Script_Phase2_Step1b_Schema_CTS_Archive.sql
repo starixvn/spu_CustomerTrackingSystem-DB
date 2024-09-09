@@ -17,6 +17,8 @@ Revisions:
 
 USE CTS_Archive;
 
+/* STEP 3.1.2 */
+
 /******************** I. Get Max ID of table ********************/
 SELECT `AUTO_INCREMENT`
 INTO @lv_MAXID_History_General_Archive
