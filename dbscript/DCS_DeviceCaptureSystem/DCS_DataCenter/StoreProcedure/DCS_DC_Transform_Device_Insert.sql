@@ -138,6 +138,11 @@ BEGIN
 	ADD INDEX IX_Temp_Transaction_RawTransID (RawTransID),
 	ADD INDEX IX_Temp_Transaction_DeviceCode (DeviceCode),
 	ADD INDEX IX_Temp_Transaction_AccountID_DeviceCode_FingerprintCode (AccountID, DeviceCode, FingerprintCode);
+        
+    UPDATE Temp_Transaction
+	SET FingerprintCode1 = SUBSTRING_INDEX(FingerprintCode, ';', 1),
+		FingerprintCode2 = SUBSTRING_INDEX(FingerprintCode, ';', -1)
+    WHERE FingerprintCode IS NOT NULL;
     
     # START
     -- existed device
