@@ -1691,7 +1691,7 @@ sp: BEGIN
 	WHERE ParameterID = 45;
 
 	UPDATE CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar 
-	SET	ar.ProcessedDate = NOW()
+	SET	ar.ProcessedDate = lv_CurrentDateTime
     WHERE EXISTS (SELECT 1 FROM Temp_CustInfo AS tmp WHERE ar.ID = tmp.ArchiveID);
     
 END$$
