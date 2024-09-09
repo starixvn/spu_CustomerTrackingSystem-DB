@@ -173,7 +173,9 @@ BEGIN
 				FROM Temp_Customer AS cust
 					INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON h.CustID = cust.CustID		
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.OldCategoryID = h.CategoryID
+					LEFT JOIN CTS_DataCenter.TWRobotUser AS r ON r.CustID = cust.CustID AND r.CategoryID = cate.CategoryID AND r.IsDisabled = 0
 				WHERE cust.ID BETWEEN lv_FromID AND lv_ToID AND cust.IsFromTW = 1 
+					AND r.CustID IS NULL
 					AND h.ID >= lv_RobotTW_MinID AND h.ID <= lv_RobotTW_MaxID
 					AND h.CategoryID IN (ip_CategoryID,lv_RelevantCateID)
 					AND h.IsFromTW = 1
@@ -206,7 +208,9 @@ BEGIN
 				FROM Temp_Customer AS cust
 					INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON h.CustID = cust.CustID		
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.OldCategoryID = h.CategoryID
+					LEFT JOIN CTS_DataCenter.CTSRobotUser AS r ON r.CustID = cust.CustID AND r.CategoryID = cate.CategoryID AND r.IsDisabled = 0
 				WHERE cust.ID BETWEEN lv_FromID AND lv_ToID AND cust.IsFromCTS = 1 
+					AND r.CustID IS NULL
 					AND h.ID >= lv_RobotCTS_MinID AND h.ID <= lv_RobotCTS_MaxID
 					AND h.CategoryID IN (ip_CategoryID,lv_RelevantCateID)
 					AND h.IsFromCTS = 1
@@ -223,9 +227,11 @@ BEGIN
 					INSERT IGNORE INTO TVSVoidRequest (CustID, CategoryID, TVSRequestID, IsParlay, SportType, IssueTypeID, TVSReasonID, CreatedBy, CreatedDate, RequestTypeID, IsDisabled)
 					SELECT tvs.CustID, tvs.CategoryID_new , tvs.TVSRequestID, tvs.IsParlay, tvs.SportType, tvs.IssueTypeID, tvs.ReasonID, tvs.CreatedBy, tvs.CreatedDate, 1, tvs.IsDisable
 					FROM Temp_Customer AS cust
-						INNER JOIN AdhocVic_TVSVoidRequest_CC AS tvs ON cust.CustID = tvs.CustID
+						INNER JOIN CTS_DataCenter.AdhocVic_TVSVoidRequest_CC AS tvs ON cust.CustID = tvs.CustID
+						LEFT JOIN CTS_DataCenter.TVSVoidRequest AS r ON r.CustID = cust.CustID AND r.CategoryID = tvs.CategoryID_new AND r.IsDisabled = 0
 					WHERE cust.ID BETWEEN lv_FromID AND lv_ToID AND cust.IsFromTVS = 1
-						AND tvs.IsCheck = 1
+						AND r.CustID IS NULL
+						AND tvs.CheckType > 0
 					ORDER BY tvs.ID ASC;
 					
 					SET lv_InsertedCount_PATVS = FOUND_ROWS();
