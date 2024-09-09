@@ -54,6 +54,9 @@ BEGIN
 		,	TransID		BIGINT
 	)
 	
+	CREATE CLUSTERED INDEX CIX_tmpParlayTrans_Refno ON #tmpParlayTrans(Refno);
+	CREATE NONCLUSTERED INDEX IX_tmpParlayTrans_SequenceID ON #tmpParlayTrans(SequenceID);
+
 	--===========================================================================
 	IF	OBJECT_ID('tempdb..#tmpSportBettype') IS NOT NULL
 	BEGIN
@@ -65,7 +68,7 @@ BEGIN
 		,	BetTypeID	INT 
 	)
 	
-	CREATE CLUSTERED INDEX CIX_tmpSportBettype ON #tmpSportBettype(SportTypeID,BetTypeID);
+	CREATE CLUSTERED INDEX CIX_tmpSportBettype_SportTypeIDBetTypeID ON #tmpSportBettype(SportTypeID,BetTypeID);
 	
 	--==================================================================
 	IF @ListSportBettype <> ''
@@ -78,6 +81,7 @@ BEGIN
 			,	BetTypeID	INT			'$.BetTypeID'
 			) AS j;
 	END;
+
 	--========================================================================================
 	INSERT INTO #tmpParlayTrans(Refno,SequenceId,Transid)
 	SELECT TOP(@BatchSize)
@@ -99,9 +103,6 @@ BEGIN
 		AND bt.Bettype = 29
 		AND bt.MatchID = 29
 	ORDER BY bt.sequenceid ASC;
-
-	CREATE CLUSTERED INDEX CIX_tmpSportBettype ON #tmpParlayTrans(refno);
-
 	--==========================================================================================
 	SELECT Max(pt.SequenceId) AS MaxSequenceID 
 	FROM #tmpParlayTrans AS pt WITH(NOLOCK);

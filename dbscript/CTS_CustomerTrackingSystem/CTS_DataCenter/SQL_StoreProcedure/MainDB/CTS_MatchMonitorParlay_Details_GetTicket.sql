@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[CTS_MatchMonitorParlay_Details_GetTicket]
+ALTER PROCEDURE [dbo].[CTS_MatchMonitorParlay_Details_GetTicket]
 		@ViewMode				TINYINT = 1
 	,	@EventDate				DATETIME = '1900-09-22'
 	,	@ListRefno				VARCHAR(MAX)
@@ -176,10 +176,10 @@ BEGIN
 		,	Danger4			TINYINT
 		,	Danger5			TINYINT
 		,	CustomerClass	SMALLINT
-
-
 	);
 	
+	CREATE CLUSTER INDEX
+	--===========================================================
 	IF	OBJECT_ID('tempdb..#tmpSubTicket') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpSubTicket;
@@ -216,7 +216,9 @@ BEGIN
 		,	TicketStatus		VARCHAR(50)
 		
 	);	
+	CREATE CLUSTERED INDEX CIX_tmpSubTicket_Refno ON #tmpSubTicket(Refno);
 
+	--=================================================================================
 	IF	OBJECT_ID('tempdb..#tmpMainTicketOdds') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpMainTicketOdds;
@@ -318,8 +320,8 @@ BEGIN
 			,	e.Currency AS CurrencyName
 			,	e.ExchangeId AS CurrencyID
 		FROM #tmpInputRefno AS rn WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.bettrans bt WITH(NOLOCK) on rn.Refno = bt.Refno
-			INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.currency
+			INNER JOIN bodb02.dbo.bettrans AS bt WITH(NOLOCK) ON rn.Refno = bt.Refno
+			INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = bt.currency
 		WHERE (@FromTransDate IS NULL OR (bt.TransDate >= @FromTransDate AND bt.TransDate < @ToTransDate));
 		
 		INSERT INTO #tmpSubTicket(Refno,DBSource,TransID,CustID,OrderTicket,BetType,BetTeam,BetId,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,MatchId,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
@@ -348,7 +350,7 @@ BEGIN
 			,	m.LeagueId
 			,	m.SportType
 		FROM	#tmpInputRefno AS rn WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.bettransm b WITH(NOLOCK) on rn.Refno = b.Refno	
+			INNER JOIN bodb02.dbo.bettransm AS b WITH(NOLOCK) ON rn.Refno = b.Refno	
 			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 
 		--================Get From 14======================
@@ -370,10 +372,11 @@ BEGIN
 			,	e.Currency AS CurrencyName
 			,	e.ExchangeId AS CurrencyID
 		FROM #tmpInputRefno AS rn WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.bettrans14 bt WITH(NOLOCK) on rn.Refno = bt.Refno
-			INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.currency
+			INNER JOIN bodb02.dbo.bettrans14 bt WITH(NOLOCK) ON rn.Refno = bt.Refno
+			INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = bt.currency
 			LEFT JOIN #tmpMainTicket AS mt WITH(NOLOCK) ON mt.Refno = rn.Refno
 		WHERE (@FromTransDate IS NULL OR (bt.TransDate >= @FromTransDate AND bt.TransDate < @ToTransDate));
+
 		INSERT INTO #tmpSubTicket(Refno,DBSource,TransID,CustID,OrderTicket,BetType,BetTeam,BetId,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,MatchId,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
 		SELECT 	b.refno
 			,	@DBSource_14 AS DBSource
@@ -400,7 +403,7 @@ BEGIN
 			,	m.LeagueId
 			,	m.SportType
 		FROM	#tmpInputRefno AS rn WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.bettransm14 b WITH(NOLOCK) on rn.Refno = b.Refno	
+			INNER JOIN bodb02.dbo.bettransm14 b WITH(NOLOCK) ON rn.Refno = b.Refno	
 			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 			LEFT JOIN #tmpSubTicket AS st WITH(NOLOCK) ON st.Refno = rn.Refno
 		WHERE st.Refno IS NULL; 
@@ -424,8 +427,8 @@ BEGIN
 			,	e.Currency AS CurrencyName
 			,	e.ExchangeId AS CurrencyID
 		FROM #tmpInputRefno AS rn WITH(NOLOCK)
-			INNER JOIN bodb_Archive.dbo.bettrans_bk bt WITH(NOLOCK) on rn.Refno = bt.Refno
-			INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.currency
+			INNER JOIN bodb_Archive.dbo.bettrans_bk AS bt WITH(NOLOCK) ON rn.Refno = bt.Refno
+			INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = bt.currency
 			LEFT JOIN #tmpMainTicket AS mt WITH(NOLOCK) ON mt.Refno = rn.Refno
 		WHERE (@FromTransDate IS NULL OR (bt.TransDate >= @FromTransDate AND bt.TransDate < @ToTransDate));
 
@@ -455,7 +458,7 @@ BEGIN
 			,	m.LeagueId
 			,	m.SportType
 		FROM	#tmpInputRefno AS rn WITH(NOLOCK)
-			INNER JOIN bodb_Archive.dbo.bettrans_bk b WITH(NOLOCK) on rn.Refno = b.Refno	
+			INNER JOIN bodb_Archive.dbo.bettrans_bk b WITH(NOLOCK) ON rn.Refno = b.Refno	
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
 			LEFT JOIN #tmpSubTicket AS st WITH(NOLOCK) ON st.Refno = rn.Refno
 		WHERE st.Refno IS NULL; 
@@ -481,28 +484,6 @@ BEGIN
 
 	IF @ViewMode = 0 --Get ALL Ticket from orig
 	BEGIN
-		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Amount,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
-		SELECT	bt.Refno
-			,	bt.TransID
-			,	bt.TransDate
-			,	CASE WHEN CAST(bt.BetCheck AS INT) & 2 = 2 THEN 2 -- Combo 2 bit 2
-					 WHEN CAST(bt.BetCheck AS INT) & 4 = 4 THEN 3 -- Combo 3 bit 3 
-				END AS Combinition
-			,	2 AS TicketType
-			,	bt.Stake * bt.ActualRate AS Amount
-			,	bt.BetFrom
-			,	rn.Reason
-			,	rn.Reason AS ListReason
-			,	rn.AGroup
-			,	rn.MGroup
-			,	bt.CustID
-			,	e.Currency AS CurrencyName
-			,	e.ExchangeId AS CurrencyID
-		FROM #tmpInputRefno AS rn WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.bettrans bt WITH(NOLOCK) on rn.Refno = bt.Refno
-			INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.currency
-		WHERE (@FromTransDate IS NULL OR (bt.TransDate >= @FromTransDate AND bt.TransDate < @ToTransDate));
-		
 		INSERT INTO #tmpSubTicket(Refno,DBSource,TransID,CustID,OrderTicket,BetType,BetTeam,BetId,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,MatchId,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
 		SELECT 	b.refno
 			,	@DBSource_Orig AS DBSource
@@ -528,9 +509,149 @@ BEGIN
 			,	m.AwayId
 			,	m.LeagueId
 			,	m.SportType
-		FROM	#tmpInputRefno AS rn WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.bettransm b WITH(NOLOCK) on rn.Refno = b.Refno	
-			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid					
+		FROM bodb02.dbo.bettransm AS b WITH(NOLOCK)
+			INNER JOIN bodb02.dbo.Bettrans bt WITH(NOLOCK) ON b.Refno = bt.Refno
+			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid	
+		WHERE b.MatchID = @MatchID
+			AND (CAST(bt.BetCheck AS INT) & 2 = 2  -- Combo 2 bit 2
+				OR CAST(bt.BetCheck AS INT) & 4 = 4) -- Combo 3 bit 3
+			AND bt.Betteam = 1						-- 1:Mix Parlay
+			AND bt.Bettype = 29
+			AND bt.MatchID = 29
+			AND bt.SequenceID = ISNULL(@LastScannedSequenceID,bt.SequenceID)
+		
+		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Amount,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
+		SELECT	bt.Refno
+			,	bt.TransID
+			,	bt.TransDate
+			,	CASE WHEN CAST(bt.BetCheck AS INT) & 2 = 2 THEN 2 -- Combo 2 bit 2
+					 WHEN CAST(bt.BetCheck AS INT) & 4 = 4 THEN 3 -- Combo 3 bit 3 
+				END AS Combinition
+			,	2 AS TicketType
+			,	bt.Stake * bt.ActualRate AS Amount
+			,	bt.BetFrom
+			,	rn.Reason
+			,	rn.Reason AS ListReason
+			,	rn.AGroup
+			,	rn.MGroup
+			,	bt.CustID
+			,	e.Currency AS CurrencyName
+			,	e.ExchangeId AS CurrencyID
+		FROM #tmpSubTicket AS st WITH(NOLOCK)
+			INNER JOIN bodb02.dbo.bettrans AS bt WITH(NOLOCK) ON st.Refno = bt.Refno
+			INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = bt.currency
+			LEFT JOIN #tmpInputRefno AS rn WITH(NOLOCK) ON rn.Refno = bt.Refno
+		WHERE (@FromTransDate IS NULL OR (bt.TransDate >= @FromTransDate AND bt.TransDate < @ToTransDate));
+		
+		----=======================================================================================
+		INSERT INTO #tmpSubTicket(Refno,DBSource,TransID,CustID,OrderTicket,BetType,BetTeam,BetId,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,MatchId,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
+		SELECT 	b.refno
+			,	@DBSource_Orig AS DBSource
+			,	b.TransID
+			,	b.CustID
+			,	(CASE WHEN b.MatchID = @MatchID THEN @Order_SubMainMatch 
+					 ELSE @Order_SubOtherMatch	END) AS  OrderTicket
+			,	b.BetType
+			,	b.BetTeam
+			,	b.BetCheck AS BetId
+			,	b.Odds
+			,	b.Hdp1
+			,	b.Hdp2
+			,	b.LiveHomeScore
+			,	b.LiveAwayScore
+			,	b.LiveIndicator
+			,	b.Status AS TicketStatus
+			,	m.MatchId
+			,	m.EventDate
+			,	m.EventStatus
+			,	m.GlobalShowTime
+			,	m.HomeId
+			,	m.AwayId
+			,	m.LeagueId
+			,	m.SportType
+		FROM #tmpSubTicket AS st WITH(NOLOCK)
+			INNER JOIN bodb02.dbo.bettransm14 AS b WITH(NOLOCK) ON b.refno = st.refno
+			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid;
+
+		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Amount,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
+		SELECT	bt.Refno
+			,	bt.TransID
+			,	bt.TransDate
+			,	CASE WHEN CAST(bt.BetCheck AS INT) & 2 = 2 THEN 2 -- Combo 2 bit 2
+					 WHEN CAST(bt.BetCheck AS INT) & 4 = 4 THEN 3 -- Combo 3 bit 3 
+				END AS Combinition
+			,	2 AS TicketType
+			,	bt.Stake * bt.ActualRate AS Amount
+			,	bt.BetFrom
+			,	rn.Reason
+			,	rn.Reason AS ListReason
+			,	rn.AGroup
+			,	rn.MGroup
+			,	bt.CustID
+			,	e.Currency AS CurrencyName
+			,	e.ExchangeId AS CurrencyID
+		FROM #tmpSubTicket AS st WITH(NOLOCK)
+			INNER JOIN bodb02.dbo.bettrans14 AS bt WITH(NOLOCK) ON st.Refno = bt.Refno
+			INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = bt.currency
+			LEFT JOIN #tmpInputRefno AS rn WITH(NOLOCK) ON rn.Refno = bt.Refno
+			LEFT JOIN #tmpMainTicket AS mt WITH(NOLOCK) ON mt.Refno = rn.Refno
+		WHERE (@FromTransDate IS NULL OR (bt.TransDate >= @FromTransDate AND bt.TransDate < @ToTransDate))
+			AND mt.refno IS NULL;
+
+		----=======================================================================================
+		INSERT INTO #tmpSubTicket(Refno,DBSource,TransID,CustID,OrderTicket,BetType,BetTeam,BetId,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,MatchId,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
+		SELECT 	b.refno
+			,	@DBSource_Orig AS DBSource
+			,	b.TransID
+			,	b.CustID
+			,	(CASE WHEN b.MatchID = @MatchID THEN @Order_SubMainMatch 
+					 ELSE @Order_SubOtherMatch	END) AS  OrderTicket
+			,	b.BetType
+			,	b.BetTeam
+			,	b.BetCheck AS BetId
+			,	b.Odds
+			,	b.Hdp1
+			,	b.Hdp2
+			,	b.LiveHomeScore
+			,	b.LiveAwayScore
+			,	b.LiveIndicator
+			,	b.Status AS TicketStatus
+			,	m.MatchId
+			,	m.EventDate
+			,	m.EventStatus
+			,	m.GlobalShowTime
+			,	m.HomeId
+			,	m.AwayId
+			,	m.LeagueId
+			,	m.SportType
+		FROM #tmpSubTicket AS st WITH(NOLOCK)
+			INNER JOIN bodb_Archive.dbo.bettransm AS b WITH(NOLOCK) ON b.refno = st.refno
+			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid;
+		
+		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Amount,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
+		SELECT	bt.Refno
+			,	bt.TransID
+			,	bt.TransDate
+			,	CASE WHEN CAST(bt.BetCheck AS INT) & 2 = 2 THEN 2 -- Combo 2 bit 2
+					 WHEN CAST(bt.BetCheck AS INT) & 4 = 4 THEN 3 -- Combo 3 bit 3 
+				END AS Combinition
+			,	2 AS TicketType
+			,	bt.Stake * bt.ActualRate AS Amount
+			,	bt.BetFrom
+			,	rn.Reason
+			,	rn.Reason AS ListReason
+			,	rn.AGroup
+			,	rn.MGroup
+			,	bt.CustID
+			,	e.Currency AS CurrencyName
+			,	e.ExchangeId AS CurrencyID
+		FROM #tmpSubTicket AS st WITH(NOLOCK)
+			INNER JOIN bodb_Archive.dbo.bettrans_bk AS bt WITH(NOLOCK) ON st.Refno = bt.Refno
+			INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = bt.currency
+			LEFT JOIN #tmpInputRefno AS rn WITH(NOLOCK) ON rn.Refno = bt.Refno
+			LEFT JOIN #tmpMainTicket AS mt WITH(NOLOCK) ON mt.Refno = rn.Refno
+		WHERE (@FromTransDate IS NULL OR (bt.TransDate >= @FromTransDate AND bt.TransDate < @ToTransDate))
+			AND mt.refno IS NULL;
 	END;
 
 	----==================UPDATE Trans Info==================
@@ -545,7 +666,7 @@ BEGIN
 	,	t.UserName		= c.UserName
 	FROM #tmpMainTicket AS t
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-		INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend;
+		INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON cs.custid = c.srecommend;
 
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
 	SET t.IsLicensee	= 0
@@ -558,7 +679,7 @@ BEGIN
 	,	t.UserName		= c.UserName
 	FROM #tmpMainTicket AS t
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-		INNER JOIN bodb02.dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
+		INNER JOIN bodb02.dbo.CustProductStatus AS s WITH(NOLOCK) ON s.custid = c.custid
 	WHERE t.IsLicensee IS NULL;
 	
 	----==================FILTERS=========================		
@@ -915,7 +1036,7 @@ END
 						INNER JOIN bodb_Archive.dbo.Bettransm AS b WITH(NOLOCK) ON b.refno = tmpTs.Refno
 						INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
 						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
-						INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+						INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 					;
 				END;
@@ -967,7 +1088,7 @@ END
 						INNER JOIN bodb02.dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
-						INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+						INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 					;
 				END;
@@ -1019,7 +1140,7 @@ END
 						INNER JOIN bodb02.dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
-						INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+						INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 				END
 				ELSE IF (@ViewMode = 0)
@@ -1068,7 +1189,7 @@ END
 							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
-								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
+								INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = b.currency	
 								LEFT JOIN #tmpInputRefno AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.sequenceid < @LastScannedSequenceID								
 								AND b.matchid = @MatchID
@@ -1122,7 +1243,7 @@ END
 							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
-								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+								INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = b.currency
 								LEFT JOIN #tmpInputRefno AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.sequenceid < @LastScannedSequenceID							
 								AND b.matchid = @MatchID	
@@ -1174,7 +1295,7 @@ END
 								INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
 								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID 
-								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+								INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = b.currency
 								LEFT JOIN #tmpInputRefno AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.sequenceid < @LastScannedSequenceID
 								AND b.matchid = @MatchID
@@ -1227,7 +1348,7 @@ END
 	,	t.CustomerClass	= c.CustomerClass
 	FROM #tmpSubTicket AS t
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-		INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend;
+		INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON cs.custid = c.srecommend;
 
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
 	SET t.IsLicensee	= 0
@@ -1239,7 +1360,7 @@ END
 	,	t.CustomerClass	= c.CustomerClass
 	FROM #tmpSubTicket AS t
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-		INNER JOIN bodb02.dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
+		INNER JOIN bodb02.dbo.CustProductStatus AS s WITH(NOLOCK) ON s.custid = c.custid
 	WHERE t.IsLicensee IS NULL;
 	
 	----==================FILTERS=========================		
