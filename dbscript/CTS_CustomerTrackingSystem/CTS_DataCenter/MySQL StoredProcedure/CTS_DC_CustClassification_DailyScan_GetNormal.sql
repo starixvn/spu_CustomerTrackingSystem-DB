@@ -101,8 +101,8 @@ BEGIN
 			FROM CTS_DataCenter.CTSCustomerClassification AS cls 
 				INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
 			WHERE cls.CustID = clss.CustID
-				AND cat.ParentID <> CONST_PARENTID_WRAPPER
-			ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+				AND cls.ParentID <> CONST_PARENTID_WRAPPER
+			ORDER BY cat.CategoryPriority ASC, cls.LastModifiedDate DESC
 			LIMIT 1
 		) AS ltc
 	WHERE 	clss.CustID > lv_LastCustID
@@ -128,8 +128,8 @@ BEGIN
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls 
 						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
 					WHERE cls.CustID = clss.CustID
-						AND cat.ParentID <> CONST_PARENTID_WRAPPER
-					ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+						AND cls.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY cat.CategoryPriority ASC, cls.LastModifiedDate DESC
 					LIMIT 1
 				) AS ltc
 		WHERE 	clss.CategoryID = ltc.CategoryID
@@ -156,8 +156,8 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassification AS cls 
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
 				WHERE cls.CustID = clss.CustID
-					AND cat.ParentID <> CONST_PARENTID_WRAPPER
-				ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+					AND cls.ParentID <> CONST_PARENTID_WRAPPER
+				ORDER BY cat.CategoryPriority ASC, cls.LastModifiedDate DESC
 				LIMIT 1
 			) AS ltc
 		WHERE 	clss.CustID > 0

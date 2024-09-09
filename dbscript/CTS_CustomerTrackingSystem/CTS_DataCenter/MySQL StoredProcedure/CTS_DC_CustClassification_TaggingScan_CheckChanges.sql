@@ -63,7 +63,7 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassification AS cc 
 					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID 
 				WHERE t.CustID = cc.CustID 
-					AND ca.ParentID <> CONST_PARENTID_WRAPPER
+					AND cc.ParentID <> CONST_PARENTID_WRAPPER
                     AND ca.IsActive = 1
 				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 				LIMIT 1

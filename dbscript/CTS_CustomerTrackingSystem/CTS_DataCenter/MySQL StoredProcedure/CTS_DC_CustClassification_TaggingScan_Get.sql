@@ -91,7 +91,7 @@ BEGIN
 						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
-                        AND ca.ParentID <> CONST_PARENTID_WRAPPER 
+                        AND cc.ParentID <> CONST_PARENTID_WRAPPER 
 					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 					LIMIT 1
 			   ) AS tmplc 
@@ -114,7 +114,7 @@ BEGIN
 						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
-                        AND ca.ParentID <> CONST_PARENTID_WRAPPER
+                        AND cc.ParentID <> CONST_PARENTID_WRAPPER
 					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 					LIMIT 1
 			    ) AS tmplc
@@ -134,7 +134,7 @@ BEGIN
 						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 					WHERE cc.CustID = clss.CustID
 						AND ca.IsActive = 1
-                        AND ca.ParentID <> CONST_PARENTID_WRAPPER
+                        AND cc.ParentID <> CONST_PARENTID_WRAPPER
 					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 					LIMIT 1
 			   ) AS tmplc 

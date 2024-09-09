@@ -96,7 +96,7 @@ BEGIN
   
 	INSERT IGNORE INTO Temp_Normal (CustID, SportID)
 	SELECT 	tmplc.CustID, tmplc.SportID
-	FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCustomerClassification_BySport_CategoryID_CustID)
+	FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCC_BySport_CategoryID_CustID_LastScannedDate)
 		,	LATERAL	
 			(	SELECT cc.CustID, cc.SportID, cc.CategoryID
 				FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cc 
@@ -150,7 +150,7 @@ BEGIN
     IF lv_NextCategoryID IS NOT NULL THEN      
         INSERT IGNORE INTO Temp_Normal (CustID, SportID)
 		SELECT 	tmplc.CustID, tmplc.SportID
-		FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCustomerClassification_BySport_CategoryID_CustID)
+		FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss USE INDEX(IX_CTSCC_BySport_CategoryID_CustID_LastScannedDate)
 			, LATERAL	
 				(	SELECT cc.CustID, cc.SportID, cc.CategoryID
 					FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cc 

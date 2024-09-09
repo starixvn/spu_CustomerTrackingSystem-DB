@@ -90,7 +90,7 @@ BEGIN
 					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 				WHERE tmpc.CustID = cc.CustID
 					AND ca.IsActive = 1
-                    AND ca.ParentID <> CONST_PARENTID_WRAPPER 
+                    AND cc.ParentID <> CONST_PARENTID_WRAPPER 
 				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 				LIMIT 1
 		   ) tmplc 
