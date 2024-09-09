@@ -25,6 +25,13 @@ BEGIN
     DECLARE CONST_RECOVERTYPE_FIRSTRULE		SMALLINT DEFAULT 1;
     DECLARE CONST_RECOVERTYPE_SECONDRULE	SMALLINT DEFAULT 5;
     
+	DECLARE CONST_DEVICESTATUS_NEW			TINYINT DEFAULT 1;
+	DECLARE CONST_DEVICESTATUS_OLD			TINYINT DEFAULT 2;
+	DECLARE CONST_DEVICESTATUS_RECOVER		TINYINT DEFAULT 3;
+    
+	DECLARE CONST_RECOVERTYPE_RULE1			TINYINT DEFAULT 1;
+	DECLARE CONST_RECOVERTYPE_RULE5			TINYINT DEFAULT 5;
+    
 	DECLARE lv_Min_Transaction_TransID  	BIGINT UNSIGNED;
 	DECLARE lv_Minute_To_Wait_Evolution  	INT;
     DECLARE lv_CurrentDate 					TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
@@ -53,6 +60,7 @@ BEGIN
         ,	RecoverType									SMALLINT UNSIGNED DEFAULT 0 /* SELECT * FROM DCS_DataCenter.StaticList WHERE ListID = 4; */
         
 		,	FP_DeviceMappingID							BIGINT UNSIGNED DEFAULT 0
+		,	FirstRawTransID								BIGINT UNSIGNED
 	);
     
 	CREATE TEMPORARY TABLE Temp_TaggingDevice(
@@ -118,7 +126,8 @@ BEGIN
 														AND dm.FP_DeviceFingerprintAccount_EvolveID 	= tmp.FP_DeviceFingerprintAccount_EvolveID
 														AND dm.FP_DeviceFingerprintAccountOldID 		= tmp.FP_DeviceFingerprintAccountOldID
 	SET tmp.FP_DeviceMappingID  = dm.ID,
-		tmp.FP_DeviceID = dm.FP_DeviceID;
+		tmp.FP_DeviceID = dm.FP_DeviceID,
+		tmp.FirstRawTransID = dm.FirstRawTransID;
     
 	ALTER TABLE Temp_DeviceMapping
 	ADD INDEX IX_Temp_DeviceMapping_FP_DeviceMappingID (FP_DeviceMappingID);	
@@ -224,13 +233,23 @@ BEGIN
 														AND dm.FP_DeviceFingerprintAccount_EvolveID 	= tmp.FP_DeviceFingerprintAccount_EvolveID
 														AND dm.FP_DeviceFingerprintAccountOldID 		= tmp.FP_DeviceFingerprintAccountOldID
 	SET tmp.FP_DeviceMappingID  = dm.ID,
-		tmp.FP_DeviceID = dm.FP_DeviceID
+		tmp.FP_DeviceID = dm.FP_DeviceID,
+		tmp.FirstRawTransID = dm.FirstRawTransID
 	WHERE tmp.FP_DeviceMappingID = 0;
     
-    INSERT IGNORE INTO DCS_DataCenter.FP_TransactionDeviceMapping(RawTransID, FP_DeviceMappingID, FP_DeviceID)
+    INSERT IGNORE INTO DCS_DataCenter.FP_TransactionDeviceMapping(RawTransID, FP_DeviceMappingID, FP_DeviceID, FP_DeviceStatus)
     SELECT 	RawTransID
 		,	FP_DeviceMappingID
 		,	FP_DeviceID
+		,	CASE WHEN FirstRawTransID = RawTransID
+				THEN (
+					CASE WHEN RecoverType = CONST_RECOVERTYPE_RULE1 THEN CONST_DEVICESTATUS_OLD
+						WHEN RecoverType = CONST_RECOVERTYPE_RULE5 THEN CONST_DEVICESTATUS_RECOVER
+                        ELSE CONST_DEVICESTATUS_NEW
+					END
+                )
+                ELSE CONST_DEVICESTATUS_OLD
+			END AS FP_DeviceStatus
     FROM Temp_DeviceMapping
     WHERE FP_DeviceID > 0;
     

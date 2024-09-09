@@ -79,6 +79,7 @@ BEGIN
         
         , 	FP_DeviceID				BIGINT UNSIGNED
         , 	FP_DeviceMappingID		BIGINT UNSIGNED
+        , 	FP_DeviceStatus			TINYINT
 	);
     
     CREATE TEMPORARY TABLE Temp_ExistedDevice(
@@ -340,7 +341,8 @@ BEGIN
     UPDATE Temp_Transaction AS tmp
 		INNER JOIN DCS_DataCenter.FP_TransactionDeviceMapping AS tdm ON tdm.RawTransID = tmp.RawTransID
 	SET tmp.FP_DeviceMappingID = tdm.FP_DeviceMappingID,
-		tmp.FP_DeviceID = tdm.FP_DeviceID;
+		tmp.FP_DeviceID = tdm.FP_DeviceID,
+		tmp.FP_DeviceStatus = tdm.FP_DeviceStatus;
 	
     /* === Insert new Association === */
     WITH cte_DistinctData AS (
@@ -406,7 +408,7 @@ BEGIN
     SET lv_NewAccountDeviceJson = IFNULL(lv_NewAccountDeviceJson,'[{}]');
 	CALL DCS_DC_Transform_NewAccountDevice_Insert(lv_NewAccountDeviceJson);
 	
-	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FP_UserAgentID, FP_DeviceMappingID, FP_DeviceID)
+	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FP_UserAgentID, FP_DeviceMappingID, FP_DeviceID, FP_DeviceStatus)
 	SELECT 	ts.RawTransID
 		,	ts.LoginName
 		,	ts.TransTime
@@ -435,6 +437,7 @@ BEGIN
 		,	ts.FP_UserAgentID
 		,	tmp.FP_DeviceMappingID
 		,	tmp.FP_DeviceID
+		,	tmp.FP_DeviceStatus
 	FROM Temp_Transaction AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS ts ON ts.TransID = tmp.TransID
 	WHERE tmp.DeviceID IS NOT NULL;
