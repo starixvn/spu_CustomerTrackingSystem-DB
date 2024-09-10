@@ -235,7 +235,7 @@ USE CTS_DataCenter;
 	---------------------------------
 	-- CTS_DC_CC_History_Init_Batchsize
 	UPDATE SystemParameter
-	SET ParameterValue = 10000
+	SET ParameterValue = 10000000
 	WHERE ParameterID = 896;
 	
 	SELECT ParameterValue
@@ -249,8 +249,8 @@ USE CTS_DataCenter;
 	WHERE ParameterID = 895;
 	
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_History_Init(@op_History_General_NextID_0);
-	-- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_History_Init(@op_History_General_NextID_1);
-	-- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_History_Init(@op_History_General_NextID_2);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_History_Init(@op_History_General_NextID_1);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_History_Init(@op_History_General_NextID_2);
 	-- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_History_Init(@op_History_General_NextID_3);
 	-- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_History_Init(@op_History_General_NextID_4);
 	-- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_History_Init(@op_History_General_NextID_5);
@@ -288,35 +288,94 @@ USE CTS_DataCenter;
 	/*Initialize and Backup - Probation - FIRST*/
 	/* STEP 3.1.7.a */
 	---------------------------------
+	UPDATE SystemParameter
+	SET ParameterValue = 5000
+	WHERE ParameterID = 899;
+	
 	SELECT ParameterValue
 	INTO @lv_Batchsize_BySport_Init_Probation
 	FROM SystemParameter
 	WHERE ParameterID = 899;
 	
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Probation(@lv_Batchsize_BySport_Init_Probation,1,206,402076,140714);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Probation(@lv_Batchsize_BySport_Init_Probation,1,206,981972,89497);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Probation(@lv_Batchsize_BySport_Init_Probation,2,206,925550,35320);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Probation(@lv_Batchsize_BySport_Init_Probation,43,206,980528,12229);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Probation(@lv_Batchsize_BySport_Init_Probation,99,206,405952,16480);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Probation(@lv_Batchsize_BySport_Init_Probation,145,206,1017243,28104);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Probation(@lv_Batchsize_BySport_Init_Probation,229,206,668206,8538);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Probation(@lv_Batchsize_BySport_Init_Probation,912,206,1144373,9686);
+
 	
 	---------------------------------
 	/*Initialize and Backup - Other*/
 	/* STEP 3.1.7.b */
 	---------------------------------
+	UPDATE SystemParameter
+	SET ParameterValue = 5000
+	WHERE ParameterID = 898;
+	
 	SELECT ParameterValue
 	INTO @lv_Batchsize_BySport_Init_Other
 	FROM SystemParameter
 	WHERE ParameterID = 898;
 	
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,1,201,402076,140714);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,1,203,13074959,5094);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,1,204,87903,7564);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,1,205,683896,12723);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,1,202,2008294,138472);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,1,201,13339119,150978);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,2,203,46627505,5017);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,2,204,44620148,5214);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,2,205,14164630,5609);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,2,202,7325227,17831);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,2,201,14213558,458056);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,43,204,49460571,5036);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,43,203,31271339,5067);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,43,205,26683386,5138);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,43,202,11551741,8452);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,43,201,10194756,21778);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,99,204,20689160,5062);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,99,203,47454442,5116);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,99,205,1277917,5457);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,99,202,4020145,9999);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,99,201,5433649,30156);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,145,203,100719658,5015);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,145,204,100094008,5015);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,145,205,1490417,5427);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,145,202,2530082,20167);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,145,201,938155,45879);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,229,204,150738536,5005);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,229,203,121331200,5015);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,229,202,0,16299);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,229,205,975567,16881);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,229,201,664628,43743);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,912,203,11092750,5024);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,912,205,13055951,5091);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,912,204,2197901,5132);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,912,202,3158854,6880);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Other(@lv_Batchsize_BySport_Init_Other,912,201,3901067,22440);
 
 	---------------------------------
 	/*Update new data*/
 	/* STEP 3.1.7.c */
 	---------------------------------
+	UPDATE SystemParameter
+	SET ParameterValue = 5000
+	WHERE ParameterID = 897;
+	
 	SELECT ParameterValue
 	INTO @lv_Batchsize_BySport_Init_Update
 	FROM SystemParameter
 	WHERE ParameterID = 897;
 	
 	-- OPTION 1: RENAME AND ONLY UPDATE CreatedDate/LastScannedDate for PROBATION
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Update(@lv_Batchsize_BySport_Init_Update,200,201,402076,140714);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Update(@lv_Batchsize_BySport_Init_Update,1,206,981972,89497);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Update(@lv_Batchsize_BySport_Init_Update,2,206,925550,35320);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Update(@lv_Batchsize_BySport_Init_Update,43,206,980528,12229);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Update(@lv_Batchsize_BySport_Init_Update,99,206,405952,16480);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Update(@lv_Batchsize_BySport_Init_Update,145,206,1017243,28104);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Update(@lv_Batchsize_BySport_Init_Update,229,206,668206,8538);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CCMain_BySport_Update(@lv_Batchsize_BySport_Init_Update,912,206,1144373,9686);
 	
 	ALTER TABLE CTSCustomerClassification_BySport
 	RENAME COLUMN CategoryID 		TO CategoryID_arc
@@ -352,6 +411,19 @@ USE CTS_DataCenter;
 	/*Initialize and Backup*/
 	/* STEP 3.1.8.a */
 	---------------------------------
+	UPDATE SystemParameter
+	SET ParameterValue = 5000
+	WHERE ParameterID = 894;
+	
+	SELECT ParameterValue
+	INTO @lv_InitForCCHistory_BySport
+	FROM SystemParameter
+	WHERE ParameterID = 777;	
+	
+	UPDATE SystemParameter
+	SET ParameterValue = @lv_InitForCCHistory_BySport
+	WHERE ParameterID = 893;
+	
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CC_BySport_History_Init(@op_History_BySport_NextID);
 
 	---------------------------------
