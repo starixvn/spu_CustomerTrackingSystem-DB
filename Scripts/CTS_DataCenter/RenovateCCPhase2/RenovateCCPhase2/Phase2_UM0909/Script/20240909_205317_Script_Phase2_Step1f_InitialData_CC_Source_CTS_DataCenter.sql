@@ -375,7 +375,7 @@ VALUES 	(112709838,155216141),
 		(123575124,159535507)
 ;
 
-INSERT IGNORE INTO CTS_DataCenter.CustomerLoginInfoDetection(CTSCustID, CustID, FirstBetDate, Bot, InvalidBrowser, BotTransPercentage, InvalidBrowserInfoTransPercentage, SourceCreatedDate) 
+INSERT IGNORE INTO CTS_DataCenter.CustomerLoginInfoDetection(CTSCustID, CustID, FirstBetDate, Bot, InvalidBrowser, BotTransPercentage, InvalidBrowserInfoTransPercentage, SourceCreatedDate, InsertedTime ) 
 SELECT cust.CTSCustID, cust.CustID, ct.FirstBetDate, ct.Bot, ct.InvalidBrowser, ct.BotTransPercentage, ct.InvalidBrowserInfoTransPercentage, ct.SourceCreatedDate, LEAST(cc.CreatedDate,cc.LastModifiedDate)
 FROM CTS_DataCenter.CustomerLoginInfoDetection AS ct
 	INNER JOIN Temp_CustSiteMigration AS temp ON temp.FromCustID = ct.CustID
