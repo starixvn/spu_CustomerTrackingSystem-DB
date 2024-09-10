@@ -100,7 +100,7 @@ USE CTS_DataCenter;
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,273,22864384,5064);
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,212,6390066,5066);
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,221,22470879,5076);
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,221,22470879,5076);
+	-- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,221,22470879,5076);
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,231,40136892,5090);
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,272,78992405,5162);
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,233,4381434,5163);
@@ -109,7 +109,7 @@ USE CTS_DataCenter;
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,223,4830508,5338);
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,223,4830508,5338);
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,222,19139016,5541);
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,222,19139016,5541);
+	-- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,222,19139016,5541);
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,204,87903,8617);
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,205,1607482,13238);
 
@@ -124,8 +124,11 @@ USE CTS_DataCenter;
 	
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,1002,4792566,44282);
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,202,1110739,130058);
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,202,1110739,130058);
+	-- CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,202,1110739,130058);
 	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,201,2008294,6084541);
+	
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_CustClassification_Other(@lv_Batchsize_Init_Other,200,1001,426676,12567077);
+	
 
 	---------------------------------
 	/*Update new data*/
@@ -442,7 +445,18 @@ USE CTS_DataCenter;
 	/*Initialize and Backup*/
 	/* STEP 3.1.9.a */
 	---------------------------------
-	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_ArchiveCustomer_Init(@op_ArchiveCustomer_NextID);
+	UPDATE SystemParameter
+	SET ParameterValue = 500000
+	WHERE ParameterID = 892;
+	
+	UPDATE SystemParameter
+	SET ParameterValue = @lv_InitForCCHistory_BySport
+	WHERE ParameterID = 891;
+	
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_ArchiveCustomer_Init(@op_ArchiveCustomer_NextID_0);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_ArchiveCustomer_Init(@op_ArchiveCustomer_NextID_1);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_ArchiveCustomer_Init(@op_ArchiveCustomer_NextID_2);
+	CALL CTS_DataCenter.Adhoc_Renovate_Phase2_CTS_DC_ArchiveCustomer_Init(@op_ArchiveCustomer_NextID_3);
 
 	---------------------------------
 	/*Rename columns*/
