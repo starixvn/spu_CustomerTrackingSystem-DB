@@ -136,7 +136,7 @@ BEGIN
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification (
 				CustID, CTSCustID, SubscriberID, RoleID, ParentID, CategoryID
 			, 	Remark, CreatedBy, LastModifiedBy, CreatedDate, LastModifiedDate
-			, 	LastScannedDate, IsAffectToDownline, IsMarkedDirectly)
+			, 	LastScannedDate, IsAffectToDownline, IsMarkedDirectly, SportGroupID_arc, CategoryID_arc)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.SubscriberID
@@ -151,6 +151,8 @@ BEGIN
 			,   DATE(lv_CurrentDateTime) AS LastScannedDate 
 			,	ip_IsAffectDownline AS IsAffectToDownline
 			,	temp.IsMarkedDirectly
+            ,	0
+            ,	0
 		FROM Temp_NewClassification AS temp
 		WHERE temp.IsExistVVIP = 0;
 		
@@ -268,7 +270,7 @@ BEGIN
 		/*	INSERT */
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification (
 				CustID, CTSCustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy
-			, 	LastModifiedDate, LastModifiedBy, LastScannedDate, Remark)
+			, 	LastModifiedDate, LastModifiedBy, LastScannedDate, Remark, SportGroupID_arc, CategoryID_arc)
 		SELECT  temp.CustID
 			, 	temp.CTSCustID
 			,	temp.SubscriberID
@@ -281,6 +283,8 @@ BEGIN
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
 			, 	temp.Remark
+            ,	0
+            ,	0
 		FROM Temp_NewClassification AS temp
 		WHERE temp.IsDataChanged = 1;
 		
@@ -440,7 +444,7 @@ BEGIN
 		
 		IF EXISTS (SELECT 1 FROM Temp_NewClassification AS temp) THEN
 			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-				CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly) 
+				CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly, SportGroupID_arc, CategoryID_arc) 
 			SELECT	temp.CTSCustID
 				,	temp.CustID
 				,	temp.SubscriberID
@@ -453,6 +457,8 @@ BEGIN
 				,	temp.CreatedBy AS LastModifiedBy
 				,	DATE(lv_CurrentDateTime) LastScannedDate
 				,	lv_IsMarkedDirectly AS IsMarkedDirectly
+                ,	0
+                ,	0
 			FROM Temp_NewClassification AS temp;
 		
 			/*Insert history*/
@@ -494,7 +500,7 @@ BEGIN
 			
 		ELSE
 			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-					CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly) 
+					CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly, SportGroupID_arc, CategoryID_arc) 
 			SELECT	temp.CTSCustID
 				,	temp.CustID
 				,	temp.SubscriberID
@@ -507,6 +513,8 @@ BEGIN
 				,	temp.CreatedBy AS LastModifiedBy
 				,	DATE(lv_CurrentDateTime) LastScannedDate
 				,	lv_IsMarkedDirectly AS IsMarkedDirectly
+                ,	0
+                ,	0
 			FROM Temp_Customer AS temp
 				LEFT JOIN Temp_NewClassification AS tmpCat ON tmpCat.CustID = temp.CustID
 			WHERE tmpCat.CustID IS NULL;
@@ -628,7 +636,7 @@ BEGIN
 
 		IF EXISTS (SELECT 1 FROM Temp_NewClassification AS temp) THEN		
 			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-				CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly) 
+				CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly, SportGroupID_arc, CategoryID_arc) 
 			SELECT	temp.CTSCustID
 				,	temp.CustID
 				,	temp.SubscriberID
@@ -641,6 +649,8 @@ BEGIN
 				,	temp.CreatedBy AS LastModifiedBy
 				,	DATE(lv_CurrentDateTime) LastScannedDate
 				,	lv_IsMarkedDirectly AS IsMarkedDirectly
+                ,	0
+                ,	0
 			FROM Temp_NewClassification AS temp;
 		
 			/*Insert history*/
@@ -682,7 +692,7 @@ BEGIN
 			
 		ELSE
 			INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
-					CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly) 
+					CTSCustID, CustID, SubscriberID, RoleID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsMarkedDirectly, SportGroupID_arc, CategoryID_arc) 
 			SELECT	temp.CTSCustID
 				,	temp.CustID
 				,	temp.SubscriberID
@@ -695,6 +705,8 @@ BEGIN
 				,	temp.CreatedBy AS LastModifiedBy
 				,	DATE(lv_CurrentDateTime) LastScannedDate
 				,	lv_IsMarkedDirectly AS IsMarkedDirectly
+                ,	0
+                ,	0
 			FROM Temp_Customer AS temp
 				LEFT JOIN Temp_NewClassification AS tmpCat ON tmpCat.CustID = temp.CustID
 			WHERE tmpCat.CustID IS NULL;
@@ -732,7 +744,7 @@ BEGIN
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
 				CustID,CTSCustID,SubscriberID,RoleID,ParentID,CategoryID,CreatedDate,CreatedBy,LastModifiedDate
-			,	LastModifiedBy,LastScannedDate)
+			,	LastModifiedBy,LastScannedDate, SportGroupID_arc, CategoryID_arc)
 		SELECT DISTINCT 
 				temp.CustID
 			, 	temp.CTSCustID
@@ -745,6 +757,8 @@ BEGIN
 			, 	lv_CurrentDateTime AS LastModifiedDate
 			, 	lv_CreatedBy AS LastModifiedBy
 			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
+            ,	0
+            ,	0
 		FROM Temp_NewClassification AS temp
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
 		
@@ -870,7 +884,7 @@ BEGIN
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, ParentID, CreatedDate, CreatedBy, LastModifiedDate
 			, 	LastModifiedBy, LastScannedDate, IsMarkedDirectly, Remark, IsFromCTS, IsFromAI, IsFromImperva, IsFromTVS, IsFromTW
-			, 	TVSRequestID, IsParlay, SportType, IssueTypeID)
+			, 	TVSRequestID, IsParlay, SportType, IssueTypeID, SportGroupID_arc, CategoryID_arc)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			, 	temp.SubscriberID
@@ -893,6 +907,8 @@ BEGIN
 			,	temp.IsTVSParlay AS IsParlay
 			,	temp.SportType
 			,	temp.TVSIssueTypeID AS IssueTypeID
+            ,	0
+            ,	0
 		FROM Temp_NewClassification AS temp 
 		WHERE 	(temp.DataChangeType = 0 AND temp.IsDataChanged = 1) 
 			OR 	(temp.IsFromOldPA 	= 1 AND lv_IsRescan = 0); /*temp.IsDataChanged = 0*/
