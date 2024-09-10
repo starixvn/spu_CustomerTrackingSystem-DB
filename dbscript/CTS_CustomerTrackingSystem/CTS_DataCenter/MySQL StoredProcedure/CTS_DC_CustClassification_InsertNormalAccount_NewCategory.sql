@@ -110,7 +110,7 @@ BEGIN
      WHERE tmp.CategoryID IS NULL;
 
     /* 1: INSERT CTSCustomerClassification */
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, SportGroupID_arc, CategoryID_arc)
 	SELECT	tmp.CustID					AS CustID
 		,	CONST_PARENTID_NORMAL		AS ParentID
 		,	tmp.CategoryID				AS CategoryID
@@ -119,6 +119,8 @@ BEGIN
 		,	lv_CurrentDateTime			AS LastModifiedDate
 		,	CONST_CREATEDBY				AS LastModifiedBy
 		,	DATE(lv_CurrentDateTime)	AS LastScannedDate
+		,	0
+		,	0
 	FROM Temp_Customer AS tmp;
     
     /* 2: INSERT CTSCustomerClassification_History*/    
