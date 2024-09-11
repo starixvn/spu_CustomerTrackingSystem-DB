@@ -50,9 +50,9 @@ BEGIN
 			SELECT * FROM MatchMonitor ORDER BY ID DESC
             SELECT * FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans;
             
-			CALL CTS_DC_MatchMonitor_Get_xtest(
-				 @ip_MatchInfos:='[{"MatchId":83677751,"EventDate":"2024-08-30","KickOffTime":"2024-08-30","MatchSection":"1"}]'
-				,@ip_FromDate:='2024-08-28 00:00:00',@ip_ToDate:='2024-08-30 00:00:00'
+			CALL CTS_DC_MatchMonitor_Get(
+				 @ip_MatchInfos:='[{"MatchId":83679714,"EventDate":"2024-09-09","KickOffTime":"2024-09-09","MatchSection":"1"}]'
+				,@ip_FromDate:='2024-09-09 00:00:00',@ip_ToDate:='2024-08-30 00:00:00'
 				,@ip_SportType:='[{"LeagueGroupID":0,"SportTypeID":1}]'
 				,@ip_Market:=0,@ip_IsVerified:=NULL
 				,@ip_Bettypes:='[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]',@ip_Reason:='0,5');

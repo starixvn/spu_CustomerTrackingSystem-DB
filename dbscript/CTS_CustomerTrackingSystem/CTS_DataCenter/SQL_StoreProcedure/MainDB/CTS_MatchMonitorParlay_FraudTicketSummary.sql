@@ -47,7 +47,6 @@ BEGIN
 		,	IsLive			BIT
 		,	Bettype			SMALLINT
 		,	BetId			BIGINT
-		,	FraudTrans		VARCHAR(MAX)
 		,	FraudRefno		VARCHAR(MAX)
 	);
 
@@ -56,7 +55,6 @@ BEGIN
 	BEGIN
 		DROP TABLE #tmpParsedRefno;
 	END;
-
 	CREATE TABLE #tmpParsedRefno(
 			MatchId		INT
 		,	DataSource	TINYINT
@@ -70,7 +68,6 @@ BEGIN
 	BEGIN
 		DROP TABLE #tmpTurnOver;
 	END;
-
 	CREATE TABLE #tmpTurnOver(
 			
 			Refno		BIGINT
@@ -92,19 +89,18 @@ BEGIN
 		,	IsLive			BIT
 		,	Bettype			SMALLINT
 		,	BetId			BIGINT
-		,	TransId			BIGINT
+		,	Refno			BIGINT
 	);
 
 	IF @FraudTickets <> ''
 	BEGIN
 		-- Parse raw data
-		INSERT INTO #tmpRawFraudInfo(MatchId,DataSource,IsLive,Bettype,BetId,FraudTrans,FraudRefno)
+		INSERT INTO #tmpRawFraudInfo(MatchId,DataSource,IsLive,Bettype,BetId,FraudRefno)
 		SELECT	j.MatchId
 			,	j.DataSource
 			,	j.IsLive
 			,	j.Bettype
 			,	j.BetId
-			,	j.FraudTrans
 			,	j.FraudRefno
 		FROM OPENJSON (@FraudTickets) WITH (
 					MatchId			INT				'$.MatchId'
@@ -112,15 +108,15 @@ BEGIN
 				,	IsLive			BIT				'$.IsLive'
 				,	Bettype			SMALLINT		'$.Bettype'
 				,	BetId			BIGINT			'$.BetId'
-				,	FraudTrans		VARCHAR(MAX)	'$.FraudTrans'
 				,	FraudRefno		VARCHAR(MAX)	'$.FraudRefno'
-			) AS j;
-	 
+			) AS j; 
+
 		--==============GET Refno====================================
-	
-		WITH Temp_Intermediate(MatchID, IsLive, Bettype, BetId, Refno, FraudRefno) AS
+
+		WITH Temp_Intermediate(MatchID, DataSource, IsLive, Bettype, BetId, Refno, FraudRefno) AS
 		(
 			SELECT  MatchID
+				,	DataSource
 				,	IsLive
 				,	Bettype
 				,	BetId
@@ -129,16 +125,18 @@ BEGIN
 			FROM  #tmpRawFraudInfo
 			UNION ALL
 			SELECT  MatchID
+				,	DataSource
 				,	IsLive
 				,	Bettype
 				,	BetId
 				,	LEFT(FraudRefno, CHARINDEX(',', FraudRefno + ',') - 1)
 				,	STUFF(FraudRefno, 1, CHARINDEX(',', FraudRefno + ','), '')
 			FROM Temp_Intermediate
-			WHERE	FraudRefno > ''
+			WHERE FraudRefno > ''
 		)
-		INSERT INTO #tmpParsedRefno(MatchID, IsLive, Bettype, BetId, Refno)
+		INSERT INTO #tmpParsedRefno(MatchID, DataSource, IsLive, Bettype, BetId, Refno)
 		SELECT	MatchID
+			,	DataSource
 			,	IsLive
 			,	Bettype
 			,	BetId
@@ -148,8 +146,17 @@ BEGIN
 
 		CREATE CLUSTERED INDEX #CIX_tmpParsedRefno ON #tmpParsedRefno(Refno	DESC);
 
+		----Clone #tmpParsedRefno--------------------
+		INSERT INTO #tmpParsedFraudInfo (MatchID, DataSource, IsLive, Bettype, BetId, Refno)
+		SELECT	MatchID
+			,	DataSource
+			,	IsLive
+			,	Bettype
+			,	BetId
+			,	Refno
+		FROM #tmpParsedRefno WITH(NOLOCK)
 		--==============GET Turn Over Origin====================================
-		INSERT INTO #tmpTurnOver(MatchID, IsLive, Bettype, BetId, Refno,TurnOver)
+		INSERT INTO #tmpTurnOver(MatchID, IsLive, Bettype, BetID, Refno,TurnOver)
 		SELECT	tmpTo.MatchID
 			,	tmpTo.IsLive
 			,	tmpTo.Bettype
@@ -176,7 +183,7 @@ BEGIN
 			
 		DELETE tmpRn
 		FROM #tmpParsedRefno AS tmpRn WITH(NOLOCK)
-			INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno;
+			INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno ;
 			
 		--==============GET Turn Over - BK====================================
 		INSERT INTO #tmpTurnOver(MatchID, IsLive, Bettype, BetId, Refno,TurnOver)
@@ -199,43 +206,10 @@ BEGIN
 			,	Bettype
 			,	BetId
 		);
-		--============================================================================
-		-- Pivot the fraud tickets list to transIDs
-		WITH Temp_Intermediate(MatchId,DataSource,IsLive,Bettype,BetId,TransId,FraudTrans) AS
-		(
-			SELECT	MatchId
-				,	DataSource
-				,	IsLive
-				,	Bettype
-				,	BetId
-				,	LEFT(FraudTrans, CHARINDEX(',', FraudTrans + ',') - 1)
-				,	STUFF(FraudTrans, 1, CHARINDEX(',', FraudTrans + ','), '')
-			FROM #tmpRawFraudInfo
-			UNION ALL
-			SELECT	MatchId
-				,	DataSource
-				,	IsLive
-				,	Bettype
-				,	BetId
-				,	LEFT(FraudTrans, CHARINDEX(',', FraudTrans + ',') - 1)
-				,	STUFF(FraudTrans, 1, CHARINDEX(',', FraudTrans + ','), '')
-			FROM Temp_Intermediate
-			WHERE	FraudTrans > ''
-		)
-		INSERT INTO #tmpParsedFraudInfo(MatchId,DataSource,IsLive,Bettype,BetId,TransId)
-		SELECT	DISTINCT MatchId
-			,	DataSource
-			,	IsLive
-			,	Bettype
-			,	BetId
-			,	TransId
-		FROM Temp_Intermediate WITH(NOLOCK)
-		OPTION (MAXRECURSION 0);
-
+	
 		CREATE CLUSTERED INDEX #CIX_tmpParsedFraudInfo ON #tmpParsedFraudInfo (
-			TransId	DESC
+			Refno	DESC
 		);
-		
 
 		-- Return the data
 		SELECT DISTINCT t.MatchId, t.IsLive, t.Bettype, t.BetId, t.betteam AS Betteam, t.Turnover, t.BetCount
@@ -248,10 +222,10 @@ BEGIN
 					,	SUM(tmpTo.TurnOver) AS Turnover
 					,	COUNT(DISTINCT b.transid) AS BetCount
 				FROM #tmpParsedFraudInfo AS t WITH(NOLOCK)
-					INNER JOIN bodb_Archive.dbo.bettransm AS b WITH(NOLOCK) ON b.TransId = t.TransId
-					INNER JOIN #tmpTurnover AS tmpTo WITH(NOLOCK) ON t.MatchId = tmpTo.MatchId AND t.IsLive = tmpTo.IsLive
+					INNER JOIN bodb_Archive.dbo.bettransm AS b WITH(NOLOCK) ON b.Refno = t.Refno-- AND b.CustID IN (25678340,25974420)
+					LEFT JOIN #tmpTurnover AS tmpTo WITH(NOLOCK) ON t.MatchId = tmpTo.MatchId AND t.IsLive = tmpTo.IsLive
 												AND t.Bettype = tmpTo.Bettype AND t.BetId = tmpTo.BetId AND b.refno = tmpTo.refno
-				WHERE t.DataSource = @CONST_DATASOURCE_BK
+				WHERE t.DataSource = @CONST_DATASOURCE_BK 
 				GROUP BY t.MatchId, t.IsLive, t.Bettype, t.BetId, b.Betteam
 				UNION
 				SELECT	t.MatchId
@@ -262,7 +236,7 @@ BEGIN
 					,	SUM(tmpTo.TurnOver) AS Turnover
 					,	COUNT(DISTINCT b.transid) AS BetCount
 				FROM #tmpParsedFraudInfo AS t WITH(NOLOCK)
-					INNER JOIN dbo.bettransm14 AS b WITH(NOLOCK) ON b.TransId = t.TransId
+					INNER JOIN dbo.bettransm14 AS b WITH(NOLOCK) ON b.Refno = t.Refno
 					INNER JOIN #tmpTurnover AS tmpTo WITH(NOLOCK) ON t.MatchId = tmpTo.MatchId AND t.IsLive = tmpTo.IsLive
 												AND t.Bettype = tmpTo.Bettype AND t.BetId = tmpTo.BetId AND b.refno = tmpTo.refno
 				WHERE t.DataSource = @CONST_DATASOURCE_14
@@ -276,7 +250,7 @@ BEGIN
 					,	SUM(tmpTo.TurnOver) AS Turnover
 					,	COUNT(DISTINCT b.transid) AS BetCount
 				FROM #tmpParsedFraudInfo AS t WITH(NOLOCK)
-					INNER JOIN dbo.bettransm AS b WITH(NOLOCK) ON b.TransId = t.TransId
+					INNER JOIN dbo.bettransm AS b WITH(NOLOCK) ON b.Refno = t.Refno
 					INNER JOIN #tmpTurnover AS tmpTo WITH(NOLOCK) ON t.MatchId = tmpTo.MatchId AND t.IsLive = tmpTo.IsLive
 												AND t.Bettype = tmpTo.Bettype AND t.BetId = tmpTo.BetId AND b.refno = tmpTo.refno
 				WHERE t.DataSource = @CONST_DATASOURCE_ORIGIN
