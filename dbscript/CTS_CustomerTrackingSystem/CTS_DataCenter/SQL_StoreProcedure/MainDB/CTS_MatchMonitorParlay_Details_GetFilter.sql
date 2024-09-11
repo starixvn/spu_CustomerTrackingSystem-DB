@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[CTS_MatchMonitorParlay_Details_GetFilter]
 		@ViewMode					TINYINT = 0
 	,	@Matchid					INT = 0
 	,	@EventDate					DATETIME = '1900-09-22'
-	,	@ListSportBettype			VARCHAR(MAX)
+	,	@ListSportBetType			VARCHAR(MAX)
 	,	@IsLive						BIT = 0
 	,	@ListSuspiciousRefno		VARCHAR(MAX) = ''
 	
@@ -40,18 +40,18 @@ AS
 			@ViewMode=0: Ticket Type = 'All Ticket'			
 			@ViewMode=1: Ticket Type = 'Suspicious Ticket'
 
-		@ListSportBettype: JSON
-			,@ListSportBettype='[	{"SporttypeID":1, "BettypeID":1, "BetChoiceType":2}
-								,	{"SporttypeID":2, "BettypeID":3, "BetChoiceType":2}
-								,	{"SporttypeID":2, "BettypeID":609, "BetChoiceType":2}]'	
+		@ListSportBetType: JSON
+			,@ListSportBetType='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
+								,	{"SportTypeID":2, "BetTypeID":3, "BetChoiceType":2}
+								,	{"SportTypeID":2, "BetTypeID":609, "BetChoiceType":2}]'	
 
 	Example:
 		DECLARE @MaxSequenceId BIGINT,@TotalTicketAll BIGINT, @TotalTicketLicensee BIGINT,@TotalTicketCredit BIGINT;
-		EXEC CTS_MatchMonitorParlay_Details_GetFilter
+		EXEC CTS_MatchMonitorParlay_Details_GetFilter_xtest
 			@ViewMode = 1
 			, @Matchid = 83679714
-			, @EventDate = NULL
-			, @ListSportBettype = '[{"SporttypeID":1,"BettypeID":3,"BetChoiceType":2,"BetChoiceHome":"h","BetChoiceAway":"a","BetIDPattern":null,"BetID":0}]'
+			, @EventDate = '2024-09-09 00:00:00'
+			, @ListSportBetType = '[{"SportTypeID":1,"BetTypeID":3,"BetChoiceType":2,"BetChoiceHome":"h","BetChoiceAway":"a","BetIDPattern":null,"BetID":0}]'
 			, @IsLive = 0
 			, @ListSuspiciousRefno = '[{"Refno":18489152651919360,"Reason":"GB(P)","GroupId":1},{"Refno":18489155067838464,"Reason":"GB(P)","GroupId":1}]'
 
@@ -99,7 +99,7 @@ BEGIN
 		,	CurrencyName		NVARCHAR(100)
 		,	Hdp					SMALLMONEY DEFAULT 0
 		,	IsLicensee			BIT DEFAULT NULL
-		,	Bettype				SMALLINT
+		,	BetType				SMALLINT
 		,	TicketStatus		SMALLINT
 		,	Danger1				TINYINT
 		,	Danger2				TINYINT
@@ -139,22 +139,22 @@ BEGIN
 
 	CREATE NONCLUSTERED INDEX #IX_tmpSuspiciousDistinctRefno_Refno ON #tmpRefno(Refno ASC);
 
-	IF	OBJECT_ID('tempdb..#tmpSportBettype') IS NOT NULL
+	IF	OBJECT_ID('tempdb..#tmpSportBetType') IS NOT NULL
 	BEGIN
-		DROP TABLE	#tmpSportBettype;
+		DROP TABLE	#tmpSportBetType;
 	END;
 
-	CREATE TABLE #tmpSportBettype(
-			SporttypeID		SMALLINT
-		,	BettypeID		INT
+	CREATE TABLE #tmpSportBetType(
+			SportTypeID		SMALLINT
+		,	BetTypeID		INT
 		,	BetChoiceType	TINYINT
 		,	BetIDPattern	NVARCHAR(20)
 		,	BetID			NVARCHAR(50)
 	);
 
-	CREATE NONCLUSTERED INDEX #IX_tmpSportBettype_SporttypeBettype ON #tmpSportBettype (
-			SporttypeID	ASC
-		,	BettypeID	ASC
+	CREATE NONCLUSTERED INDEX #IX_tmpSportBetType_SportTypeBetType ON #tmpSportBetType (
+			SportTypeID	ASC
+		,	BetTypeID	ASC
 	);
 
 	--==============================================================================================
@@ -178,19 +178,19 @@ BEGIN
 		SELECT @IsGetDataFromOrigin = 1;
 	END;
 
-	--====================DEFINE SPORT BettypeS=================================================================================================================
-	IF @ListSportBettype <> ''
+	--====================DEFINE SPORT BetTypeS=================================================================================================================
+	IF @ListSportBetType <> ''
 	BEGIN
 
-		INSERT INTO #tmpSportBettype(SporttypeID,BettypeID,BetChoiceType,BetIDPattern,BetID)
-		SELECT	j.SporttypeID
-			,	j.BettypeID
+		INSERT INTO #tmpSportBetType(SportTypeID,BetTypeID,BetChoiceType,BetIDPattern,BetID)
+		SELECT	j.SportTypeID
+			,	j.BetTypeID
 			,	j.BetChoiceType
 			,	j.BetIDPattern
 			,	(CASE WHEN j.BetID = 0 THEN NULL ELSE CONVERT(NVARCHAR(50),j.BetID) END)
-		FROM OPENJSON (@ListSportBettype) WITH (
-				SporttypeID			SMALLINT		'$.SporttypeID'
-			,	BettypeID			INT				'$.BettypeID'
+		FROM OPENJSON (@ListSportBetType) WITH (
+				SportTypeID			SMALLINT		'$.SportTypeID'
+			,	BetTypeID			INT				'$.BetTypeID'
 			,	BetChoiceType		TINYINT			'$.BetChoiceType'
 			,	BetIDPattern		NVARCHAR(20)	'$.BetIDPattern'
 			,	BetID				BIGINT			'$.BetID'
@@ -222,7 +222,7 @@ BEGIN
 	BEGIN
 		IF @IsGetDataFromOrigin = 1
 		BEGIN
-			INSERT INTO #tmpTransm (TransID, CustID, Hdp1, Hdp2, LiveHomeScore, LiveAwayScore, BetTeam, CurrencyName, CurrencyId, Bettype, Hdp, TicketStatus, Refno)
+			INSERT INTO #tmpTransm (TransID, CustID, Hdp1, Hdp2, LiveHomeScore, LiveAwayScore, BetTeam, CurrencyName, CurrencyId, BetType, Hdp, TicketStatus, Refno)
 			SELECT	b.TransID
 				,	b.CustID
 				,	b.Hdp1
@@ -232,7 +232,7 @@ BEGIN
 				,	b.BetTeam
 				,	e.Currency
 				,	e.ExchangeId
-				,	b.Bettype
+				,	b.BetType
 				,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
 				,	b.StatusID
 				,	b.Refno
@@ -240,7 +240,7 @@ BEGIN
 				INNER JOIN bodb02.dbo.bettransm AS b WITH(NOLOCK) ON tmpTs.Refno = b.Refno
 				INNER JOIN bodb02.dbo.bettrans AS bt WITH(NOLOCK) ON b.Refno = bt.Refno
 				INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
-				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.Sporttype = st.SporttypeID AND b.Bettype = st.BettypeID AND b.BetCheck = ISNULL(st.BetID,b.BetCheck)
+				INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetCheck = ISNULL(st.BetID,b.BetCheck)
 				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.Currency
 			WHERE b.Matchid = @Matchid
 				AND b.Liveindicator = @IsLive
@@ -250,7 +250,7 @@ BEGIN
 		
 		IF @IsGetDataFrom14 = 1
 		BEGIN
-			INSERT INTO #tmpTransm (TransID, CustID, Hdp1, Hdp2, LiveHomeScore, LiveAwayScore, BetTeam, CurrencyName, CurrencyId, Bettype, hdp, TicketStatus, Refno)
+			INSERT INTO #tmpTransm (TransID, CustID, Hdp1, Hdp2, LiveHomeScore, LiveAwayScore, BetTeam, CurrencyName, CurrencyId, BetType, hdp, TicketStatus, Refno)
 			SELECT	b.TransID
 				,	b.CustID
 				,	b.Hdp1
@@ -260,7 +260,7 @@ BEGIN
 				,	b.BetTeam
 				,	e.Currency
 				,	e.ExchangeId
-				,	b.Bettype
+				,	b.BetType
 				,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
 				,	b.StatusID
 				,	b.Refno
@@ -268,7 +268,7 @@ BEGIN
 				INNER JOIN bodb02.dbo.bettransm14 AS b WITH(NOLOCK) ON tmpTs.Refno = b.Refno
 				INNER JOIN bodb02.dbo.bettrans AS bt WITH(NOLOCK) ON b.Refno = bt.Refno
 				INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
-				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.Sporttype = st.SporttypeID AND b.Bettype = st.BettypeID AND b.BetCheck = ISNULL(st.BetID,b.BetCheck)
+				INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetCheck = ISNULL(st.BetID,b.BetCheck)
 				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.Currency
 			WHERE b.Matchid = @Matchid
 				AND b.Liveindicator = @IsLive
@@ -278,7 +278,7 @@ BEGIN
 		
 		IF @IsGetDataFromBK = 1
 		BEGIN
-			INSERT INTO #tmpTransm (TransID,CustID,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,BetTeam,CurrencyName,CurrencyId,Bettype,Hdp,TicketStatus,Refno)
+			INSERT INTO #tmpTransm (TransID,CustID,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,BetTeam,CurrencyName,CurrencyId,BetType,Hdp,TicketStatus,Refno)
 			SELECT	b.TransID
 				,	b.CustID
 				,	b.Hdp1
@@ -288,7 +288,7 @@ BEGIN
 				,	b.BetTeam
 				,	e.Currency
 				,	e.ExchangeId
-				,	b.Bettype
+				,	b.BetType
 				,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
 				,	b.StatusID
 				,	b.Refno
@@ -296,7 +296,7 @@ BEGIN
 				INNER JOIN bodb_Archive.dbo.bettransm AS b WITH(NOLOCK) ON tmpTs.Refno = b.Refno
 				INNER JOIN bodb02.dbo.bettrans AS bt WITH(NOLOCK) ON b.Refno = bt.Refno
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
-				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.Sporttype = st.SporttypeID AND b.Bettype = st.BettypeID AND b.BetCheck = ISNULL(st.BetID,b.BetCheck)
+				INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetCheck = ISNULL(st.BetID,b.BetCheck)
 				INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.Currency
 			WHERE b.Matchid = @Matchid
 				AND b.Liveindicator = @IsLive
@@ -310,7 +310,7 @@ BEGIN
 	BEGIN
 		SELECT @MaxSequenceId = (MAX(SequenceId) + 1) FROM bodb02.dbo.Bettrans WITH(NOLOCK);
 
-		INSERT INTO #tmpTransm (TransID, CustID, Hdp1, Hdp2, LiveHomeScore, LiveAwayScore, BetTeam, CurrencyName, CurrencyId, Bettype, Hdp, TicketStatus, SequenceId, Refno)
+		INSERT INTO #tmpTransm (TransID, CustID, Hdp1, Hdp2, LiveHomeScore, LiveAwayScore, BetTeam, CurrencyName, CurrencyId, BetType, Hdp, TicketStatus, SequenceId, Refno)
 		SELECT	b.TransID
 			,	b.CustID
 			,	b.Hdp1
@@ -320,7 +320,7 @@ BEGIN
 			,	b.BetTeam
 			,	e.Currency
 			,	e.ExchangeId
-			,	b.Bettype
+			,	b.BetType
 			,	ABS(CASE WHEN st.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS Hdp
 			,	b.StatusID				
 			,	bt.SequenceId
@@ -328,7 +328,7 @@ BEGIN
 		FROM bodb02.dbo.bettransm AS b WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.bettrans AS bt WITH(NOLOCK) ON b.Refno = bt.Refno
 			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
-			INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.Sporttype = st.SporttypeID AND b.Bettype = st.BettypeID AND b.BetCheck = ISNULL(st.BetID,b.BetCheck)
+			INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetCheck = ISNULL(st.BetID,b.BetCheck)
 			INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.Currency
 		WHERE b.Matchid = @Matchid
 			AND b.Liveindicator = @IsLive
@@ -391,7 +391,7 @@ BEGIN
 		LEFT JOIN #tmpInputRefno AS tmpSt ON tmpSt.Refno = tmpTs.Refno
 	;
 
-	DROP TABLE IF EXISTS #tmpSportBettype;
+	DROP TABLE IF EXISTS #tmpSportBetType;
 	DROP TABLE IF EXISTS #tmpTransm;
 	DROP TABLE IF EXISTS #tmpInputRefno;
 END;

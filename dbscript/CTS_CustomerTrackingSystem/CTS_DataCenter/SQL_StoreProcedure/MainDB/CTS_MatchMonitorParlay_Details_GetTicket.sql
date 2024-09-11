@@ -5,13 +5,13 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[CTS_MatchMonitorParlay_Details_GetTicket]
+ALTER PROCEDURE [dbo].[CTS_MatchMonitorParlay_Details_GetTicket]
 		@ViewMode				TINYINT = 1
 	,	@EventDate				DATETIME = '1900-09-22'
 	,	@ListRefno				VARCHAR(MAX)
-	,	@MatchID				INT = 0
+	,	@Matchid				INT = 0
 	,	@IsLive					BIT = 1
-	,	@ListSportBettype		VARCHAR(MAX)
+	,	@ListSportBetType		VARCHAR(MAX)
 	,	@FromTransDate			DATETIME = NULL
 	,	@ToTransDate			DATETIME = NULL	
 	,	@ListScore				VARCHAR(MAX) = NULL
@@ -53,8 +53,8 @@ AS
 			@ViewMode=0: Ticket Type = 'All Ticket'			
 			@ViewMode=1: Ticket Type = 'Suspicious Ticket'
 
-		@ListSportBettype: JSON
-			,@ListSportBettype='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
+		@ListSportBetType: JSON
+			,@ListSportBetType='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
 								,	{"SportTypeID":2, "BetTypeID":3, "BetChoiceType":2}
 								,	{"SportTypeID":2, "BetTypeID":609, "BetChoiceType":2}]'	
 		@IsLicensee: 1: Licensee ELS 0, (Match Monitor Details Page map Site)
@@ -63,14 +63,14 @@ AS
 		DECLARE @MinSequenceId BIGINT,@TotalTicket BIGINT;
 
 		EXEC CTS_MatchMonitorParlay_Details_GetTicket
-			 @ViewMode = 1
+			 @ViewMode = 0
 			, @EventDate = '2024-09-09'
 			, @ListRefno = '[	{"Refno":18489152651919360,"Reason":"GB(P)","AGroup":1,"MGroup":3}
 							,	{"Refno":18489155067838464,"Reason":"GB(P)","AGroup":2,"MGroup":4}
 							]'
-			, @MatchID = 83679714
+			, @Matchid = 83679714
 			, @IsLive = 0
-			, @ListSportBettype = '[{"SportTypeID":1,"BetTypeID":3,"BetChoiceType":2,"BetChoiceHome":"h","BetChoiceAway":"a","BetIDPattern":null,"BetID":0
+			, @ListSportBetType = '[{"SportTypeID":1,"BetTypeID":3,"BetChoiceType":2,"BetChoiceHome":"h","BetChoiceAway":"a","BetIDPattern":null,"BetID":0
 										, "BetChoiceHomeFullName":"Home", "BetChoiceAwayFullName":"Away"
 									}]'
 			, @FromTransDate = NULL
@@ -153,12 +153,12 @@ BEGIN
 
 	CREATE CLUSTERED INDEX CIX_#tmpCustRefno_CustIDRefno ON #tmpCustRefno(CustID,Refno);
 	--========================================================================
-	IF	OBJECT_ID('tempdb..#tmpSportBettype') IS NOT NULL
+	IF	OBJECT_ID('tempdb..#tmpSportBetType') IS NOT NULL
 	BEGIN
-		DROP TABLE #tmpSportBettype;
+		DROP TABLE #tmpSportBetType;
 	END;
 
-	CREATE TABLE #tmpSportBettype(
+	CREATE TABLE #tmpSportBetType(
 			SportTypeID				SMALLINT
 		,	BetTypeID				INT
 		,	BetChoiceType			TINYINT
@@ -201,7 +201,9 @@ BEGIN
 		,	Danger5			TINYINT
 		,	CustomerClass	SMALLINT
 	);
+
 	CREATE CLUSTERED INDEX CIX_tmpMainTicket_Refno ON #tmpMainTicket(Refno);
+
 	--========================================================================
 	IF	OBJECT_ID('tempdb..#tmpTicketDetails') IS NOT NULL
 	BEGIN
@@ -214,8 +216,9 @@ BEGIN
 		,	DBSource			TINYINT			--1: Bettransm , 2: Bettrans14, 3: Bettrans_bk
 		,	TransID				BIGINT
 		,	CustID				INT
-		,	OrderTicket			TINYINT
-		,	MatchID				INT
+		,	Amount				MONEY		
+		,	TicketOrder			TINYINT
+		,	Matchid				INT
 		,	EventDate			DATETIME
 		,	EventStatus			NVARCHAR(50)
 		,	GlobalShowTime			DATETIME
@@ -232,30 +235,34 @@ BEGIN
 		,	ChoiceOrder			NVARCHAR(10)
 		,	BetID				BIGINT
 		,	Odds				SMALLMONEY
+		,	MalayOdds			SMALLMONEY
 		,	Hdp1				SMALLMONEY
 		,	Hdp2				SMALLMONEY
 		,	Hdp					SMALLMONEY
 		,	LiveHomeScore		SMALLINT
 		,	LiveAwayScore		SMALLINT
 		,	LiveIndicator		BIT
-		,	TicketStatus		VARCHAR(50)
+		,	TicketStatus		SMALLINT
 		
 	);	
 	CREATE CLUSTERED INDEX CIX_tmpSubTicket_Refno ON #tmpTicketDetails(Refno);
 	CREATE NONCLUSTERED INDEX IX_tmpSubTicket_CustIDRefno ON #tmpTicketDetails(CustID,Refno);
 
 	--=================================================================================
-	IF	OBJECT_ID('tempdb..#tmpMainTicketOdds') IS NOT NULL
+	IF	OBJECT_ID('tempdb..#tmpMainTicketFormat') IS NOT NULL
 	BEGIN
-		DROP TABLE	#tmpMainTicketOdds;
+		DROP TABLE	#tmpMainTicketFormat;
 	END;
 
-	CREATE TABLE #tmpMainTicketOdds(
-			Refno	BIGINT
-		,	Odds	SMALLMONEY
-		,	BetTeam	NVARCHAR(10)
+	CREATE TABLE #tmpMainTicketFormat(
+			Refno			BIGINT
+		,	Odds			SMALLMONEY
+		,	MalayOdds		SMALLMONEY
+		,	BetTeam			NVARCHAR(10)
+		,	ChoiceOrder		NVARCHAR(10)
+		,	TicketStatus	SMALLINT
 	);
-	CREATE CLUSTERED INDEX CIX_tmpMainTicketOdds_Refno ON #tmpMainTicketOdds(Refno);
+	CREATE CLUSTERED INDEX CIX_tmpMainTicketFormat_Refno ON #tmpMainTicketFormat(Refno);
 	--================================================================================================
 	SET @ToTransDate = DATEADD(SECOND,1,@ToTransDate);
 
@@ -283,9 +290,9 @@ BEGIN
 		SET @BatchSize = 0
 	END
 	--==================================================================
-	IF @ListSportBettype <> ''
+	IF @ListSportBetType <> ''
 		BEGIN
-			INSERT INTO #tmpSportBettype(SportTypeID, BetTypeID,BetChoiceType,BetChoiceHome,BetChoiceAway,BetChoiceHomeFullName, BetChoiceAwayFullName, BetIDPattern,BetID)
+			INSERT INTO #tmpSportBetType(SportTypeID, BetTypeID,BetChoiceType,BetChoiceHome,BetChoiceAway,BetChoiceHomeFullName, BetChoiceAwayFullName, BetIDPattern,BetID)
 			SELECT	j.SportTypeID
 				,	j.BetTypeID
 				,	j.BetChoiceType
@@ -295,7 +302,7 @@ BEGIN
 				,	j.BetChoiceAwayFullName
 				,	j.BetIDPattern
 				,	j.BetID
-			FROM OPENJSON (@ListSportBettype) WITH (
+			FROM OPENJSON (@ListSportBetType) WITH (
 					SportTypeID					SMALLINT		'$.SportTypeID'
 				,	BetTypeID					INT				'$.BetTypeID'
 				,	BetChoiceType				TINYINT			'$.BetChoiceType'
@@ -307,7 +314,7 @@ BEGIN
 				,	BetID						BIGINT			'$.BetID'
 				) AS j;
 				
-			CREATE NONCLUSTERED INDEX IX_tmpSportBettype_Group ON #tmpSportBettype(SportTypeID, BetTypeID);
+			CREATE NONCLUSTERED INDEX IX_tmpSportBetType_Group ON #tmpSportBetType(SportTypeID, BetTypeID);
 			
 		END;
 	
@@ -340,13 +347,13 @@ BEGIN
 		FROM #tmpRefnoInfo AS rn WITH(NOLOCK);
 
 --SELECT 'Debug_vm1-SubOri' AS Step, GetDate() AS ExecTime;		
-		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,OrderTicket,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,MatchId,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
+		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,TicketOrder,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,MalayOdds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,Matchid,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
 		SELECT 	b.refno
 			,	@DBSource_Orig AS DBSource
 			,	b.TransID
 			,	b.CustID
-			,	(CASE WHEN b.MatchID = @MatchID THEN @Order_SubMainMatch 
-					 ELSE @Order_SubOtherMatch	END) AS OrderTicket
+			,	(CASE WHEN b.Matchid = @Matchid THEN @Order_SubMainMatch 
+					 ELSE @Order_SubOtherMatch	END) AS TicketOrder
 			,	b.BetType
 			,	(CASE WHEN sb.BetChoiceType = 2 THEN b.BetTeam ELSE '1' END) AS BetTeamGroup
 			,	b.BetTeam
@@ -356,14 +363,17 @@ BEGIN
 						 ELSE NULL END) AS ChoiceOrder
 			,	b.BetCheck AS BetId
 			,	b.Odds
+			,	(CASE WHEN b.Odds <= 1 THEN b.Odds
+					 WHEN b.Odds > 1 THEN -(1/NULLIF(b.Odds,0))
+				 END) AS MalayOdds
 			,	b.Hdp1
 			,	b.Hdp2
 			,	ABS(CASE WHEN sb.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
 			,	b.LiveHomeScore
 			,	b.LiveAwayScore
 			,	b.LiveIndicator
-			,	b.Status AS TicketStatus
-			,	m.MatchId
+			,	b.StatusID AS TicketStatus
+			,	m.Matchid
 			,	m.EventDate
 			,	m.EventStatus
 			,	m.GlobalShowTime
@@ -373,22 +383,23 @@ BEGIN
 			,	m.SportType
 		FROM	#tmpRefno AS rn WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.bettransm AS b WITH(NOLOCK) ON rn.Refno = b.Refno	
-			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-			LEFT JOIN #tmpSportBettype AS sb WITH(NOLOCK) ON sb.SportTypeID = m.SportType AND sb.BetTypeID = b.BetType
-		WHERE m.eventdate > @MoveBetsDay;
+			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
+			LEFT JOIN #tmpSportBetType AS sb WITH(NOLOCK) ON sb.SportTypeID = m.SportType AND sb.BetTypeID = b.BetType
+		WHERE m.eventdate > @MoveBetsDay
+			;
 
 		DELETE rn
 		FROM #tmpRefno AS rn 
 			INNER JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON td.Refno = rn.Refno;
 
 --SELECT 'Debug_vm1-Sub14' AS Step, GetDate() AS ExecTime;	
-		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,OrderTicket,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,MatchId,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
+		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,TicketOrder,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,MalayOdds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,Matchid,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
 		SELECT 	b.refno
 			,	@DBSource_14 AS DBSource
 			,	b.TransID
 			,	b.CustID
-			,	(CASE WHEN b.MatchID = @MatchID THEN @Order_SubMainMatch 
-					 ELSE @Order_SubOtherMatch	END) AS OrderTicket
+			,	(CASE WHEN b.Matchid = @Matchid THEN @Order_SubMainMatch 
+					 ELSE @Order_SubOtherMatch	END) AS TicketOrder
 			,	b.BetType
 			,	(CASE WHEN sb.BetChoiceType = 2 THEN b.BetTeam ELSE '1' END) AS BetTeamGroup
 			,	b.BetTeam
@@ -398,14 +409,17 @@ BEGIN
 						 ELSE NULL END) AS ChoiceOrder
 			,	b.BetCheck AS BetId
 			,	b.Odds
+			,	(CASE WHEN b.Odds <= 1 THEN b.Odds
+					 WHEN b.Odds > 1 THEN -(1/NULLIF(b.Odds,0))
+				 END) AS MalayOdds
 			,	b.Hdp1
 			,	b.Hdp2
 			,	ABS(CASE WHEN sb.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
 			,	b.LiveHomeScore
 			,	b.LiveAwayScore
 			,	b.LiveIndicator
-			,	b.Status AS TicketStatus
-			,	m.MatchId
+			,	b.StatusID AS TicketStatus
+			,	m.Matchid
 			,	m.EventDate
 			,	m.EventStatus
 			,	m.GlobalShowTime
@@ -415,8 +429,8 @@ BEGIN
 			,	m.SportType
 		FROM	#tmpRefno AS rn WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.bettransm14 b WITH(NOLOCK) ON rn.Refno = b.Refno	
-			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
-			LEFT JOIN #tmpSportBettype AS sb WITH(NOLOCK) ON sb.SportTypeID = m.SportType AND sb.BetTypeID = b.BetType
+			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
+			LEFT JOIN #tmpSportBetType AS sb WITH(NOLOCK) ON sb.SportTypeID = m.SportType AND sb.BetTypeID = b.BetType
 		WHERE m.eventdate BETWEEN @BalanceUpDay AND @MoveBetsDay;
 
 		DELETE rn
@@ -424,13 +438,13 @@ BEGIN
 			INNER JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON td.Refno = rn.Refno;
 
 --SELECT 'Debug_vm1-SubBk' AS Step, GetDate() AS ExecTime;	
-		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,OrderTicket,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,MatchId,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
+		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,TicketOrder,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,MalayOdds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,Matchid,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
 		SELECT 	b.refno
 			,	@DBSource_bk AS DBSource
 			,	b.TransID
 			,	b.CustID
-			,	(CASE WHEN b.MatchID = @MatchID THEN @Order_SubMainMatch 
-					 ELSE @Order_SubOtherMatch	END) AS OrderTicket
+			,	(CASE WHEN b.Matchid = @Matchid THEN @Order_SubMainMatch 
+					 ELSE @Order_SubOtherMatch	END) AS TicketOrder
 			,	b.BetType
 			,	(CASE WHEN sb.BetChoiceType = 2 THEN b.BetTeam ELSE '1' END) AS BetTeamGroup
 			,	b.BetTeam
@@ -440,14 +454,17 @@ BEGIN
 						 ELSE NULL END) AS ChoiceOrder
 			,	b.BetCheck AS BetId
 			,	b.Odds
+			,	(CASE WHEN b.Odds <= 1 THEN b.Odds
+					 WHEN b.Odds > 1 THEN -(1/NULLIF(b.Odds,0))
+				 END) AS MalayOdds
 			,	b.Hdp1
 			,	b.Hdp2
 			,	ABS(CASE WHEN sb.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
 			,	b.LiveHomeScore
 			,	b.LiveAwayScore
 			,	b.LiveIndicator
-			,	b.Status AS TicketStatus
-			,	m.MatchId
+			,	b.StatusID AS TicketStatus
+			,	m.Matchid
 			,	m.EventDate
 			,	m.EventStatus
 			,	m.GlobalShowTime
@@ -457,8 +474,8 @@ BEGIN
 			,	m.SportType
 		FROM	#tmpRefno AS rn WITH(NOLOCK)
 			INNER JOIN bodb_Archive.dbo.bettrans_bk b WITH(NOLOCK) ON rn.Refno = b.Refno	
-			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
-			LEFT JOIN #tmpSportBettype AS sb WITH(NOLOCK) ON sb.SportTypeID = m.SportType AND sb.BetTypeID = b.BetType
+			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
+			LEFT JOIN #tmpSportBetType AS sb WITH(NOLOCK) ON sb.SportTypeID = m.SportType AND sb.BetTypeID = b.BetType
 		WHERE m.eventdate < @BalanceUpDay;
 
 		DELETE rn
@@ -559,15 +576,15 @@ BEGIN
 			SELECT DISTINCT b.Refno
 			FROM bodb02.dbo.bettransm AS b WITH(NOLOCK)
 				INNER JOIN bodb02.dbo.Bettrans bt WITH(NOLOCK) ON b.Refno = bt.Refno
-				INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+				INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
 			WHERE m.EventDate > @MoveBetsDay	
 				AND bt.SequenceID < @LastScannedSequenceID
-				AND b.MatchID = @MatchID
+				AND b.Matchid = @Matchid
 				AND (CAST(bt.BetCheck AS INT) & 2 = 2 -- Combo 2 bit 2
 					OR CAST(bt.BetCheck AS INT) & 4 = 4) -- Combo 3 bit 3
 				AND bt.BetTeam = 1						-- 1:Mix Parlay
-				AND bt.Bettype = 29
-				AND bt.MatchID = 29						
+				AND bt.BetType = 29
+				AND bt.Matchid = 29						
 		END
 		ELSE IF @BatchSize <> 0 -- GET Ticket Details Info By Batch Size
 		BEGIN 
@@ -576,14 +593,14 @@ BEGIN
 			SELECT DISTINCT TOP(@BatchSize) bt.Refno, bt.sequenceid
 			FROM bodb02.dbo.bettransm AS b WITH(NOLOCK)
 				INNER JOIN bodb02.dbo.Bettrans bt WITH(NOLOCK) ON b.Refno = bt.Refno
-				INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+				INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
 			WHERE m.EventDate > @MoveBetsDay
-				AND b.MatchID = @MatchID
+				AND b.Matchid = @Matchid
 				AND (CAST(bt.BetCheck AS INT) & 2 = 2 -- Combo 2 bit 2
 					OR CAST(bt.BetCheck AS INT) & 4 = 4) -- Combo 3 bit 3
 				AND bt.BetTeam = 1						-- 1:Mix Parlay
-				AND bt.Bettype = 29
-				AND bt.MatchID = 29
+				AND bt.BetType = 29
+				AND bt.Matchid = 29
 				AND bt.SequenceID < @LastScannedSequenceID				
 			ORDER BY bt.SequenceID DESC
 
@@ -591,13 +608,13 @@ BEGIN
 		END
 		
 --SELECT 'Debug_vm0-SubOri' AS Step, GetDate() AS ExecTime;		
-		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,OrderTicket,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,MatchId,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
+		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,TicketOrder,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,MalayOdds, Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,Matchid,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
 		SELECT 	b.refno
 			,	@DBSource_Orig AS DBSource
 			,	b.TransID
 			,	b.CustID
-			,	(CASE WHEN b.MatchID = @MatchID THEN @Order_SubMainMatch 
-					 ELSE @Order_SubOtherMatch	END) AS OrderTicket
+			,	(CASE WHEN b.Matchid = @Matchid THEN @Order_SubMainMatch 
+					 ELSE @Order_SubOtherMatch	END) AS TicketOrder
 			,	b.BetType
 			,	(CASE WHEN sb.BetChoiceType = 2 THEN b.BetTeam ELSE '1' END) AS BetTeamGroup
 			,	b.BetTeam
@@ -607,14 +624,17 @@ BEGIN
 						 ELSE NULL END) AS ChoiceOrder
 			,	b.BetCheck AS BetId
 			,	b.Odds
+			,	(CASE WHEN b.Odds <= 1 THEN b.Odds
+					 WHEN b.Odds > 1 THEN -(1/NULLIF(b.Odds,0))
+				 END) AS MalayOdds
 			,	b.Hdp1
 			,	b.Hdp2
 			,	ABS(CASE WHEN sb.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
 			,	b.LiveHomeScore
 			,	b.LiveAwayScore
 			,	b.LiveIndicator
-			,	b.Status AS TicketStatus
-			,	m.MatchId
+			,	b.StatusID AS TicketStatus
+			,	m.Matchid
 			,	m.EventDate
 			,	m.EventStatus
 			,	m.GlobalShowTime
@@ -624,8 +644,8 @@ BEGIN
 			,	m.SportType
 		FROM	#tmpRefno AS rn WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.bettransm AS b WITH(NOLOCK) ON rn.Refno = b.Refno	
-			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-			LEFT JOIN #tmpSportBettype AS sb WITH(NOLOCK) ON sb.SportTypeID = m.SportType AND sb.BetTypeID = b.BetType
+			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
+			LEFT JOIN #tmpSportBetType AS sb WITH(NOLOCK) ON sb.SportTypeID = m.SportType AND sb.BetTypeID = b.BetType
 		WHERE m.eventdate > @MoveBetsDay;
 
 		DELETE rn
@@ -633,13 +653,13 @@ BEGIN
 			INNER JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON td.Refno = rn.Refno;
 
 --SELECT 'Debug_vm0-Sub14' AS Step, GetDate() AS ExecTime;	
-		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,OrderTicket,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,MatchId,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
+		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,TicketOrder,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,MalayOdds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,Matchid,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
 		SELECT 	b.refno
 			,	@DBSource_14 AS DBSource
 			,	b.TransID
 			,	b.CustID
-			,	(CASE WHEN b.MatchID = @MatchID THEN @Order_SubMainMatch 
-					 ELSE @Order_SubOtherMatch	END) AS OrderTicket
+			,	(CASE WHEN b.Matchid = @Matchid THEN @Order_SubMainMatch 
+					 ELSE @Order_SubOtherMatch	END) AS TicketOrder
 			,	b.BetType
 			,	(CASE WHEN sb.BetChoiceType = 2 THEN b.BetTeam ELSE '1' END) AS BetTeamGroup
 			,	b.BetTeam
@@ -649,14 +669,17 @@ BEGIN
 						 ELSE NULL END) AS ChoiceOrder
 			,	b.BetCheck AS BetId
 			,	b.Odds
+			,	(CASE WHEN b.Odds <= 1 THEN b.Odds
+					 WHEN b.Odds > 1 THEN -(1/NULLIF(b.Odds,0))
+				 END) AS MalayOdds
 			,	b.Hdp1
 			,	b.Hdp2
 			,	ABS(CASE WHEN sb.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
 			,	b.LiveHomeScore
 			,	b.LiveAwayScore
 			,	b.LiveIndicator
-			,	b.Status AS TicketStatus
-			,	m.MatchId
+			,	b.StatusID AS TicketStatus
+			,	m.Matchid
 			,	m.EventDate
 			,	m.EventStatus
 			,	m.GlobalShowTime
@@ -666,8 +689,8 @@ BEGIN
 			,	m.SportType
 		FROM	#tmpRefno AS rn WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.bettransm14 b WITH(NOLOCK) ON rn.Refno = b.Refno	
-			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
-			LEFT JOIN #tmpSportBettype AS sb WITH(NOLOCK) ON sb.SportTypeID = m.SportType AND sb.BetTypeID = b.BetType
+			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
+			LEFT JOIN #tmpSportBetType AS sb WITH(NOLOCK) ON sb.SportTypeID = m.SportType AND sb.BetTypeID = b.BetType
 		WHERE m.eventdate BETWEEN @BalanceUpDay AND @MoveBetsDay;
 
 		DELETE rn
@@ -675,13 +698,13 @@ BEGIN
 			INNER JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON td.Refno = rn.Refno;
 
 --SELECT 'Debug_vm0-SubBk' AS Step, GetDate() AS ExecTime;	
-		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,OrderTicket,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,MatchId,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
+		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,TicketOrder,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,MalayOdds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,Matchid,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
 		SELECT 	b.refno
 			,	@DBSource_bk AS DBSource
 			,	b.TransID
 			,	b.CustID
-			,	(CASE WHEN b.MatchID = @MatchID THEN @Order_SubMainMatch 
-					 ELSE @Order_SubOtherMatch	END) AS OrderTicket
+			,	(CASE WHEN b.Matchid = @Matchid THEN @Order_SubMainMatch 
+					 ELSE @Order_SubOtherMatch	END) AS TicketOrder
 			,	b.BetType
 			,	(CASE WHEN sb.BetChoiceType = 2 THEN b.BetTeam ELSE '1' END) AS BetTeamGroup
 			,	b.BetTeam
@@ -691,14 +714,17 @@ BEGIN
 						 ELSE NULL END) AS ChoiceOrder
 			,	b.BetCheck AS BetId
 			,	b.Odds
+			,	(CASE WHEN b.Odds <= 1 THEN b.Odds
+					 WHEN b.Odds > 1 THEN -(1/NULLIF(b.Odds,0))
+				 END) AS MalayOdds
 			,	b.Hdp1
 			,	b.Hdp2
 			,	ABS(CASE WHEN sb.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
 			,	b.LiveHomeScore
 			,	b.LiveAwayScore
 			,	b.LiveIndicator
-			,	b.Status AS TicketStatus
-			,	m.MatchId
+			,	b.StatusID AS TicketStatus
+			,	m.Matchid
 			,	m.EventDate
 			,	m.EventStatus
 			,	m.GlobalShowTime
@@ -708,8 +734,8 @@ BEGIN
 			,	m.SportType
 		FROM	#tmpRefno AS rn WITH(NOLOCK)
 			INNER JOIN bodb_Archive.dbo.bettrans_bk b WITH(NOLOCK) ON rn.Refno = b.Refno	
-			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
-			LEFT JOIN #tmpSportBettype AS sb WITH(NOLOCK) ON sb.SportTypeID = m.SportType AND sb.BetTypeID = b.BetType
+			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
+			LEFT JOIN #tmpSportBetType AS sb WITH(NOLOCK) ON sb.SportTypeID = m.SportType AND sb.BetTypeID = b.BetType
 		WHERE m.eventdate < @BalanceUpDay;
 
 		DELETE rn
@@ -808,25 +834,32 @@ BEGIN
 
 	END;
 
---SELECT 'Debug_vm1-CalculateOdds' AS Step, GetDate() AS ExecTime;			
-		INSERT INTO #tmpMainTicketOdds(Refno, Odds, BetTeam)
+--SELECT 'Debug_vm1-CalculateOdds' AS Step, GetDate() AS ExecTime;		
+		INSERT INTO #tmpMainTicketFormat(Refno, Odds, MalayOdds, BetTeam, ChoiceOrder, TicketStatus)
 		SELECT	st.Refno
 			,	EXP(SUM(LOG(st.Odds))) AS Odds
-			,	MIN(CASE WHEN st.OrderTicket = 1 THEN st.Betteam ELSE NULL END)
+			,	(CASE WHEN SUM(CASE WHEN st.MalayOdds < 0 THEN 1 ELSE NULL END)%2 = 1 
+						THEN - 1 ELSE 1 END)*EXP(SUM(LOG(ABS(st.MalayOdds)))) AS MalayOdds
+			,	MIN(CASE WHEN st.TicketOrder = 1 THEN st.Betteam ELSE NULL END)
+			,	MIN(CASE WHEN st.TicketOrder = 1 THEN st.ChoiceOrder ELSE NULL END)
+			,	MIN(CASE WHEN st.TicketOrder = 1 THEN st.TicketStatus  ELSE NULL END)
 		FROM #tmpTicketDetails AS st WITH(NOLOCK)
 		GROUP BY st.Refno
 
 --SELECT 'Debug_vm1-InsertMain' AS Step, GetDate() AS ExecTime;	
-		INSERT INTO #tmpTicketDetails(Refno,CustID, DBSource,TransId,OrderTicket,Odds, Betteam)
+		INSERT INTO #tmpTicketDetails(Refno,CustID, DBSource,TransId,TicketOrder,Odds, MalayOdds, Betteam, ChoiceOrder, TicketStatus)
 		SELECT 	mt.refno
 			,	mt.CustID
 			,	0 AS DBSource
 			,	mt.TransID AS TransIdm
-			,	@Order_MainTicket AS OrderTicket
-			,	mo.Odds
-			,	mo.Betteam
+			,	@Order_MainTicket AS TicketOrder
+			,	mf.Odds
+			,	mf.MalayOdds
+			,	mf.Betteam
+			,	mf.ChoiceOrder
+			,	mf.TicketStatus
 		FROM #tmpMainTicket AS mt WITH(NOLOCK)
-			INNER JOIN #tmpMainTicketOdds AS mo WITH(NOLOCK) ON mt.Refno = mo.Refno		
+			INNER JOIN #tmpMainTicketFormat AS mf WITH(NOLOCK) ON mt.Refno = mf.Refno		
 	
 	----==================UPDATE Trans Info==================
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
@@ -897,7 +930,7 @@ BEGIN
 				FROM #tmpTicketDetails AS td
 					LEFT JOIN CTE_Score AS s ON s.LiveHomeScore = td.LiveHomeScore AND s.LiveAwayScore = td.LiveAwayScore
 				WHERE s.LiveHomeScore IS NULL
-					AND td.OrderTicket = 1;
+					AND td.TicketOrder = 1;
 
 			END;
 
@@ -1075,7 +1108,7 @@ BEGIN
 			IF (@ListHDPBetTeam IS NOT NULL)
 			BEGIN
 				IF EXISTS (	SELECT 1 
-							FROM #tmpSportBettype AS st WITH(NOLOCK) 
+							FROM #tmpSportBetType AS st WITH(NOLOCK) 
 							WHERE st.BetChoiceType = 1) --Filter BetTeam
 				BEGIN
 					WITH CTE_BetTeam AS (
@@ -1086,23 +1119,12 @@ BEGIN
 					FROM #tmpTicketDetails AS t
 						LEFT JOIN CTE_BetTeam AS bt ON bt.BetTeam = t.BetTeam
 					WHERE bt.BetTeam IS NULL
-						AND t.OrderTicket = 1;				
+						AND t.TicketOrder = 1;				
 				END
 				ELSE IF EXISTS (SELECT 1 
-								FROM #tmpSportBettype AS st WITH(NOLOCK) 
+								FROM #tmpSportBetType AS st WITH(NOLOCK) 
 								WHERE st.BetChoiceType = 2) --Filter Hdp
 				BEGIN
-					WITH CTE_Hdp AS (
-						SELECT ssk.value AS Hdp FROM STRING_SPLIT(@ListHDPBetTeam, ',') AS ssk
-					)
-					SELECT Hdp
-					FROM CTE_Hdp;
-
-
-					SELECT DISTINCT t.HDP
-					FROM #tmpTicketDetails AS t
-					WHERE t.OrderTicket = 1 --AND HDP IS NULL ;
-
 					;WITH CTE_Hdp AS (
 						SELECT ssk.value AS Hdp FROM STRING_SPLIT(@ListHDPBetTeam, ',') AS ssk
 					)
@@ -1113,7 +1135,7 @@ BEGIN
 						LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
 					WHERE h.Hdp IS NULL
 						AND del.Refno IS NULL
-						AND t.OrderTicket = 1
+						AND t.TicketOrder = 1
 						AND t.hdp IS NOT NULL;
 				END;
 			END;	
@@ -1130,7 +1152,7 @@ BEGIN
 					LEFT JOIN CTE_Status AS s ON s.StatusID = t.TicketStatus
 					LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
 				WHERE s.StatusID IS NULL
-					AND t.OrderTicket <> 0
+					AND t.TicketOrder = 1 --Sub Ticket of View Match
 					AND del.Refno IS NULL;
 			END;		
 
@@ -1146,44 +1168,49 @@ BEGIN
 						CustId			INT
 					,	BetTeamGroup	NVARCHAR(10)
 				);
-			
+
+				SELECT	mt.CustId
+					,	st.BetTeamGroup
+					,	SUM(mt.Amount)
+					, @CustAmountRM
+				FROM #tmpMainTicket AS mt WITH(NOLOCK)
+					INNER JOIN #tmpTicketDetails AS st WITH(NOLOCK) ON st.Refno = mt.Refno AND TicketOrder = 1
+				GROUP BY mt.CustId, st.BetTeamGroup
+
 				INSERT INTO #tmpCustAmount(CustId, BetTeamGroup)
 				SELECT	mt.CustId
 					,	st.BetTeamGroup
+					--,	SUM(mt.Amount)
 				FROM #tmpMainTicket AS mt WITH(NOLOCK)
-					INNER JOIN #tmpTicketDetails AS st WITH(NOLOCK) ON st.Refno = mt.Refno
+					INNER JOIN #tmpTicketDetails AS st WITH(NOLOCK) ON st.Refno = mt.Refno AND TicketOrder = 1
 				GROUP BY mt.CustId, st.BetTeamGroup
 				HAVING SUM(mt.Amount) >= @CustAmountRM;
 
 				CREATE CLUSTERED INDEX CIX_tmpCustAmount_Group ON #tmpCustAmount (CustID, BetTeamGroup);
 
 				INSERT INTO #tmpDelRefnoFilter(Refno)
-				SELECT DISTINCT tmpTk.Refno
+				SELECT tmpTk.Refno
 				FROM #tmpTicketDetails AS tmpTk WITH(NOLOCK)
 					LEFT JOIN #tmpCustAmount AS tmpCa WITH(NOLOCK) ON tmpCa.CustId = tmpTk.CustId and tmpCa.BetTeamGroup = tmpTk.BetTeamGroup
 					LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON tmpTk.Refno = del.Refno
-				WHERE tmpCa.CustId IS NULL
+				WHERE tmpTk.TicketOrder = 1
+					AND tmpCa.CustId IS NULL
 					AND del.Refno IS NULL;
 			END;		
-			SELECT COUNT(DISTINCT Refno) AS CountTicketDetails FROM #tmpTicketDetails;
-			SELECT COUNT(DISTINCT Refno) AS CountDelRefnoFilter FROM #tmpDelRefnoFilter;
+
 			DELETE td
 			FROM #tmpTicketDetails AS td WITH(NOLOCK)
 				INNER JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON del.Refno = td.Refno;
-			
-			--SELECT *FROM #tmpTicketDetails AS td WITH(NOLOCK)
-			--	INNER JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON del.Refno = td.Refno;
 		END;	
 
 --SELECT 'Debug_ReturnData' AS Step, GetDate() AS ExecTime;	
 	--=========================--RETURN DATA============================--
 	IF (@ViewMode = 0 AND @BatchSize = 0)
 	BEGIN		
-		SET @TotalTicket = (SELECT COUNT(DISTINCT Refno)
-							FROM #tmpTicketDetails AS td WITH(NOLOCK));
+		SET @TotalTicket = (SELECT COUNT(DISTINCT Refno) FROM #tmpTicketDetails AS td WITH(NOLOCK));
 	END
 	ELSE 
-	BEGIN
+	BEGIN		
 		SELECT	st.CustId
 			,	mt.CustomerClass
 			,	mt.Danger1
@@ -1193,24 +1220,25 @@ BEGIN
 			,	mt.Danger5
 			--	CHOICE------------
 			,	st.ChoiceOrder
-			,	st.OrderTicket
+			,	st.TicketOrder
 			,	st.Refno
 			,	mt.Combinition
 			,	st.TransId AS TransID			
-			,	st.MatchId
+			,	st.Matchid
 			,	h.TeamName AS HomeName
 			,	a.TeamName AS AwayName
-			,	bt.typenamee AS BettypeName
+			,	bt.typenamee AS BetTypeName
 			,	st.BetTeam
 			,	st.BetTeamFullName
 			,	s.SportName AS SportType
 			,	l.LeagueName
-			,	st.GlobalShowTime
+			,	st.GlobalShowTime AS KickOffTime
 			------------------------------
+			,	st.TicketStatus
 			,	st.Odds
-			,	st.Odds AS MalayOdds
+			,	st.MalayOdds
 			,	mt.CurrencyName
-			,	st.Hdp as Choice
+			,	(CASE WHEN TicketOrder > 0 AND st.Hdp IS NULL THEN st.BetTeam ELSE CONVERT(VARCHAR(10),st.Hdp) END) AS Choice
 			,	st.LiveHomeScore
 			,	st.LiveAwayScore
 			,	mt.TransDate
@@ -1218,15 +1246,16 @@ BEGIN
 			,	mt.AGroup
 			,	mt.MGroup
 			,	mt.Reason
-			,	ISNULL(mt.ListReason,mt.Reason) AS ListReason			
+			,	ISNULL(mt.ListReason,mt.Reason) AS ListReason
+			
 		FROM #tmpMainTicket AS mt WITH(NOLOCK)
 			INNER JOIN #tmpTicketDetails AS st WITH(NOLOCK) ON st.Refno = mt.Refno
 			LEFT JOIN bodb02.dbo.Team AS h WITH(NOLOCK) ON h.TeamID = st.HomeID
 			LEFT JOIN bodb02.dbo.Team AS a WITH(NOLOCK) ON a.TeamID = st.AwayID
 			LEFT JOIN bodb02.dbo.League AS l WITH(NOLOCK) ON l.LeagueID = st.LeagueID
 			LEFT JOIN bodb02.dbo.Sports AS s WITH(NOLOCK) ON s.SportType = st.SportType
-			LEFT JOIN bodb02.dbo.Bettype AS bt WITH(NOLOCK) ON st.bettype = bt.typeID
-		ORDER BY mt.Refno ASC, OrderTicket ASC, MatchID DESC;
+			LEFT JOIN bodb02.dbo.BetType AS bt WITH(NOLOCK) ON st.BetType = bt.typeID
+		ORDER BY mt.Refno ASC, TicketOrder ASC, Matchid DESC;
 	END;
 
 --SELECT 'Debug_END'
