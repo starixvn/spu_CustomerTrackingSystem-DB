@@ -341,12 +341,12 @@ BEGIN
 				, 	SpecialCC, IsPAProbation, RelevantCategoryID, CreatedDate, MatchID, IsFromTW, TWRobotCounter, IsFromAI, IsFromImperva
 				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, GroupName, IsRobot)
 			SELECT 	tmpJs.CustID
-				,	CASE WHEN IFNULL(tmpJs.CTSCustID, 0) = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
-				,	CASE WHEN IFNULL(tmpJs.RoleID,0) = 0 THEN cus.RoleID ELSE tmpJs.RoleID END
-				,	CASE WHEN IFNULL(tmpJs.SubscriberID,0) = 0 THEN cus.SubscriberID ELSE tmpJs.SubscriberID END
+				,	CASE WHEN tmpJs.CTSCustID = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
+				,	CASE WHEN tmpJs.RoleID = 0 THEN cus.RoleID ELSE tmpJs.RoleID END
+				,	CASE WHEN tmpJs.SubscriberID = 0 THEN cus.SubscriberID ELSE tmpJs.SubscriberID END
 				,	tmpJs.DWCategoryID
 				,	cat.CategoryGroupID
-				,	CASE WHEN tmpJs.IsLicensee IS NULL THEN cus.IsLicensee ELSE tmpJs.IsLicensee END
+				,	CASE WHEN tmpJs.IsLicensee = 0 THEN cus.IsLicensee ELSE tmpJs.IsLicensee END
 				,	cus.IsLicenseeVIP
 				,	cus.IsLicenseeBA
 				,	tmpJs.CreatedBy 
