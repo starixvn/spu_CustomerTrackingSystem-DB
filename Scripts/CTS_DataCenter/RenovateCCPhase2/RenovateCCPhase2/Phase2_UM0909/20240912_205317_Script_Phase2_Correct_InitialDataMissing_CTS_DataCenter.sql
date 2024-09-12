@@ -27,7 +27,7 @@ WHERE ID = 1096115669;
 /*-- CategoryID INCORRECT*/
 UPDATE CTSCustomerClassification AS cc
 	, LATERAL (
-		SELECT h.ParentID,h.CategoryID
+		SELECT h.ParentID,h.CategoryID,h.CustID
 		FROM CTSCustomerClassification_History AS h 
 		WHERE h.CustID = 55766060
 			AND h.IsDataChanged = 1
@@ -181,7 +181,7 @@ FROM Adhoc_TVSCustomer_DUP AS cust
 	INNER JOIN TVSVoidRequest_History AS main ON main.ID = cust.ID
 UNION
 SELECT DISTINCT tvs.CustID, tvs.CategoryID , tvs.TVSRequestID, tvs.IsParlay, tvs.SportType, tvs.IssueTypeID, main.ReasonID, main.CreatedBy, main.CreatedDate, 1, cust.IsDisable
-FROM Adhoc_TVSCustomer_DUP AS cust
+FROM Adhoc_TVSCustomer_DUP2 AS cust
 	INNER JOIN Adhoc_TVSVoidRequest_CCHis AS tvs ON cust.CustID = tvs.CustID AND IFNULL(cust.TVSRequestID,0) =  IFNULL(tvs.TVSRequestID,0)
 	INNER JOIN TVSVoidRequest_History AS main ON main.ID = cust.ID
 ;
