@@ -102,7 +102,7 @@ BEGIN
         ,	BettypeID		INT
         ,	BetID			BIGINT
         ,	FraudTrans		LONGTEXT
-        ,	Refno			LONGTEXT
+        ,	FraudRefno		LONGTEXT
         ,	FraudTransm		LONGTEXT
         ,	TicketType		SMALLINT
         ,	PRIMARY KEY PK_Temp_MatchFraudTrans(MatchID,LiveIndicator,BettypeID, BetID,TicketType)
@@ -324,10 +324,10 @@ BEGIN
 						) js
 	WHERE NOT EXISTS (SELECT 1 FROM Temp_VerfiedTrans AS tmpVt WHERE js.TransID = tmpVt.TransID);    
 
-	INSERT INTO Temp_MatchFraudTrans(MatchID,LiveIndicator,BettypeID,BetID,TicketType,FraudTrans,Refno,FraudTransm)
+	INSERT INTO Temp_MatchFraudTrans(MatchID,LiveIndicator,BettypeID,BetID,TicketType,FraudTrans,FraudRefno,FraudTransm)
 	SELECT 	t.MatchID, t.LiveIndicator, t.BettypeID, t.BetID, t.TicketType
 		,	GROUP_CONCAT(DISTINCT d.ListTransID) AS FraudTrans
-        ,	GROUP_CONCAT(DISTINCT d.ListRefno) AS ListRefno
+        ,	GROUP_CONCAT(DISTINCT d.ListRefno) AS FraudRefno
         ,	GROUP_CONCAT(DISTINCT d.ListTransIDm) AS FraudTransm
     FROM Temp_MatchMonitor AS t
 		INNER JOIN CTS_DataCenter.MatchMonitorDetails AS d ON t.MatchID = d.MatchID 
@@ -356,7 +356,7 @@ BEGIN
 					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID AND tmpMm.TicketType = tmpNv.TicketType LIMIT 1) IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
             ,	t.FraudTrans
-            ,	t.Refno
+            ,	t.FraudRefno
             ,	t.FraudTransm
             ,	tmpMm.TicketType
 		FROM Temp_MatchMonitor AS tmpMm
@@ -400,7 +400,7 @@ BEGIN
 			,	0 AS IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
             ,	t.FraudTrans
-            ,	t.Refno
+            ,	t.FraudRefno
             ,	t.FraudTransm
             ,	tmpMm.TicketType
 		FROM Temp_MatchMonitor AS tmpMm
@@ -446,7 +446,7 @@ BEGIN
 			,	1 AS IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
             ,	t.FraudTrans
-            ,	t.Refno
+            ,	t.FraudRefno
             ,	t.FraudTransm
             ,	tmpMm.TicketType
 		FROM Temp_MatchMonitor AS tmpMm
