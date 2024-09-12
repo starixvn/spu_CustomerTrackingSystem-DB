@@ -16,16 +16,20 @@ BEGIN
 		Revisions:
 			- 20220909@Aries.Nguyen:Created  [Redmine ID: #176992] 
             - 20230707@Jonas.Huynh:	Renovate normal classification [Redmine ID: #189875]
+            - 20240812@Victoria.Le: Renovate CC - Phase 2 [Redmine ID: #205317]
             
 		Param's Explanation (filtered by):
 
 	*/
 	
-    INSERT INTO CTS_Archive.CTSCustomerClassification_BySport_History_Archive(HistoryID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime)
+    INSERT INTO CTS_Archive.CTSCustomerClassification_BySport_History_Renovate_Archive(
+			HistoryID,CustID,CTSCustID,SportID,ParentID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate
+		,	LastModifiedBy,InsertDate,PerformanceTime,SourceTypeID,Remark)
 	SELECT	HistoryID
         ,	CustID 				
 		,	CTSCustID 			
-		,	SportID 			
+		,	SportID 	
+		,	ParentID
 		,	CategoryID 			
 		,	TurnoverRM 			
 		,	WinlossRM 			
@@ -37,6 +41,8 @@ BEGIN
 		,	LastModifiedBy 		
 		,	InsertDate 
         ,	PerformanceTime
+        ,	SourceTypeID
+        ,	Remark
 	FROM JSON_TABLE(
 			ip_HistoryJson,
 			 "$[*]" COLUMNS(
@@ -44,17 +50,20 @@ BEGIN
 							,	CustID 				BIGINT UNSIGNED		PATH "$.CustID"       
 							,	CTSCustID 			BIGINT UNSIGNED		PATH "$.CTSCustID"       
 							,	SportID 			SMALLINT UNSIGNED	PATH "$.SportID"       
-							,	CategoryID 			SMALLINT UNSIGNED	PATH "$.CategoryID"       
+							,	ParentID 			INT UNSIGNED		PATH "$.ParentID"       
+							,	CategoryID 			INT UNSIGNED		PATH "$.CategoryID"       
 							,	TurnoverRM 			DECIMAL(20 , 4 )	PATH "$.TurnoverRM"       
 							,	WinlossRM 			DECIMAL(20 , 4 )	PATH "$.WinlossRM"       
 							,	BetCount 			BIGINT				PATH "$.BetCount"       
 							,	ActiveDays 			INT					PATH "$.ActiveDays"       
-							,	TargetCC 			SMALLINT			PATH "$.TargetCC"            
+							,	TargetCC 			INT					PATH "$.TargetCC"            
 							,	ActionType 			TINYINT				PATH "$.ActionType"       
 							,	LastModifiedDate 	DATETIME			PATH "$.LastModifiedDate"       
 							,	LastModifiedBy 		INT UNSIGNED		PATH "$.LastModifiedBy"       
 							,	InsertDate 			DATETIME 			PATH "$.InsertDate" 
                             ,	PerformanceTime 	DATETIME 			PATH "$.PerformanceTime" 
+                            ,	SourceTypeID	 	SMALLINT UNSIGNED	PATH "$.SourceTypeID" 
+                            ,	Remark			 	VARCHAR(500)		PATH "$.Remark" 
 				)
 		   ) AS  tbl;  
 END$$

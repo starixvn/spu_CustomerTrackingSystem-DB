@@ -14,18 +14,22 @@ sp: BEGIN
 		Original: 
 		Revisions: 
 			- 20220818@Aries.Nguyen: Created [Redmine ID: #176224] 
-            
+            - 20240708@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode SportGroupID [Redmine ID: #205317]
+
         Param's Explanation: 
 
 		Example:
 			-CALL CTS_DataCenter.CTS_DC_CustClassification_SabaDangerLevel_Scan(@op_LastHistoryID);
 
 	*/
+    DECLARE	CONST_PARENTID_PA 					INT;
     DECLARE lv_BatchSize 			INT;
 
     DECLARE lv_LastHistoryID 		BIGINT UNSIGNED;
     DECLARE lv_NextHistoryID 		BIGINT UNSIGNED;
     
+    SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE 	Temp_Cust (
 			CustID 			BIGINT UNSIGNED PRIMARY KEY
@@ -87,7 +91,7 @@ sp: BEGIN
     SELECT	cate.CategoryID
 		, 	tbl.SportType
 	FROM CTS_DataCenter.CustomerCategory AS cate
-		INNER JOIN JSON_TABLE(cate.SabaSportType, 
+		INNER JOIN JSON_TABLE(REPLACE(JSON_ARRAY(cate.SabaSportType), ',', '","'), 
 						'$[*]' COLUMNS (SportType BIGINT UNSIGNED PATH '$')
 		) tbl
 	WHERE cate.SabaSportType IS NOT NULL;
@@ -96,7 +100,7 @@ sp: BEGIN
     SELECT 	cus.CustID
 		,	tmp.SportType
     FROM Temp_Cust AS cus
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cus.CustID = clss.CustID AND clss.SportGroupID = 0
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cus.CustID = clss.CustID AND clss.ParentID = CONST_PARENTID_PA
         INNER JOIN Temp_SabaSportType AS tmp ON clss.CategoryID = tmp.CategoryID;
     
     #Add 

@@ -24,17 +24,30 @@ BEGIN
 			- 20220426@Harvey.Nguyen: fix bug return duplicate category [Redmine ID: #170802]
 			- 20240320@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
             - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
 
 		Param's Explanation:
 
 	*/ 
-    
-    DECLARE lv_remark VARCHAR(50);
-	DECLARE	lv_GroupNormal	VARCHAR(50);
-	DECLARE	CONST_PARENTID_POTENTIALPA 	INT DEFAULT 150;
 
-	SET lv_GroupNormal = (SELECT CategoryName FROM CustomerCategory WHERE CategoryID = 200);	
-    
+	DECLARE	CONST_PARENTID_PA 				INT;
+	DECLARE	CONST_PARENTID_POTENTIALPA 		INT;
+	DECLARE	CONST_PARENTID_NORMAL 			INT;
+	DECLARE	CONST_PARENTID_WRAPPER			INT;
+	DECLARE CONST_PARENTID_VVIP      		INT;
+	DECLARE CONST_PARENTNAME_PA 			VARCHAR(50);
+	DECLARE CONST_PARENTNAME_POTENTIALPA 	VARCHAR(50);
+	DECLARE CONST_PARENTNAME_NORMAL			VARCHAR(50);
+
+	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+	SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
+	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+	SET CONST_PARENTID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+	SET CONST_PARENTNAME_PA 				= 'Problem Account';
+	SET CONST_PARENTNAME_POTENTIALPA 		= 'General Normal Account';
+	SET CONST_PARENTNAME_NORMAL 			= 'General Normal Account';
+
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;
     CREATE TEMPORARY TABLE Temp_CustID (
 		CustID 			BIGINT UNSIGNED PRIMARY KEY
@@ -42,7 +55,7 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ParentID;
     CREATE TEMPORARY TABLE Temp_ParentID (
-		ParentID 		SMALLINT UNSIGNED PRIMARY KEY
+		ParentID 		INT UNSIGNED PRIMARY KEY
     );
     
     IF IFNULL(ip_CustIDs, '') <> '' THEN
@@ -56,38 +69,26 @@ BEGIN
 		PREPARE stmt2 FROM @sql;
 		EXECUTE stmt2;
 	END IF;
-
-    DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
-    CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory (
-		CustID				BIGINT UNSIGNED
-	,	CategoryID			SMALLINT UNSIGNED
-    , 	LastModifiedDate	DATETIME
-    );
-    
-    SET lv_remark = 'Auto tag customer classification';
-    
-    INSERT INTO Temp_LatestRecordOfCategory(CustID, CategoryID, LastModifiedDate)
-    SELECT cla.CustID
-        , 	cla.CategoryID AS 'CategoryID'
-        ,   MAX(cla.LastModifiedDate) AS 'LastModifiedDate'
-    FROM		CTS_DataCenter.CTSCustomerClassification AS cla
-		INNER JOIN Temp_CustID AS cust ON cla.CustID = cust.CustID
-		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON cla.CategoryID = a.CategoryID
-    WHERE (IFNULL(ip_ParentCateIDs, '') = ''
-			OR a.ParentID IN (SELECT ParentID FROM Temp_ParentID))
-	GROUP BY cla.CustID, CategoryID;
-
-    SELECT DISTINCT	c.CustID AS CustID
-		,	(	CASE WHEN a.ParentID = CONST_PARENTID_POTENTIALPA THEN lv_GroupNormal 
-					ELSE b.CategoryName END) AS ParentCategoryName
-		,	a.CategoryName
-    FROM Temp_LatestRecordOfCategory AS c
-		INNER JOIN CTS_DataCenter.CustomerCategory AS a ON c.CategoryID = a.CategoryID
-        LEFT JOIN CTS_DataCenter.CustomerCategory AS b ON a.ParentID = b.CategoryID;  
+   
+    SELECT DISTINCT cls.CustID
+		,	(CASE	WHEN cls.ParentID = CONST_PARENTID_PA THEN CONST_PARENTNAME_PA 
+					WHEN cls.ParentID = CONST_PARENTID_POTENTIALPA THEN CONST_PARENTNAME_POTENTIALPA
+					WHEN cls.ParentID IN (CONST_PARENTID_NORMAL, CONST_PARENTID_VVIP) THEN CONST_PARENTNAME_NORMAL END
+			) AS ParentCategoryName
+		,	cat.CategoryName
+    FROM	Temp_CustID AS cust	
+			, LATERAL (
+				SELECT cls.CustID, cls.ParentID
+				FROM CTS_DataCenter.CTSCustomerClassification AS cls
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.IsActive = 1
+				WHERE cls.CustID = cust.CustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
+				ORDER BY cat.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+				LIMIT 1) AS clss
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = clss.CustID AND cls.ParentID = clss.ParentID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.IsActive = 1
+    WHERE IFNULL(ip_ParentCateIDs, '') = ''
+			OR clss.ParentID IN (SELECT ParentID FROM Temp_ParentID);
 	
-	# Begin: Cleanup
-	DROP TEMPORARY TABLE Temp_LatestRecordOfCategory;
-	# End: Cleanup
 END$$
 
 DELIMITER ;

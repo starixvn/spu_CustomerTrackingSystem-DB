@@ -26,6 +26,7 @@ AS
 		- 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
 		- 20231030@Victoria.Le: New Member Classify Tagging [Redmine ID: #195060]
 		- 20240424@Thomas.Nguyen: Remove logic New Member Classify Tagging [Redmine ID: #200854]
+		- 20240618@Jonas.Nguyen: Renovate CC - Phase 2 [Redmine ID: #205317]
 
 	Param's Explanation:
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
@@ -43,31 +44,31 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE @GENERAL_SPORTID		 SMALLINT = 200;
-	DECLARE @CurrentDateTime		 DATETIME = GETDATE();
-	DECLARE	@ToDate					 DATE	  = GETDATE();
-	DECLARE @YesterdayDate			 DATE	  = DATEADD(DAY, -1, @ToDate);
-	DECLARE @From30Date				 DATE	  = DATEADD(DAY, -29, @ToDate);
+	DECLARE @GENERAL_SPORTID				SMALLINT = 200;
+	DECLARE @CurrentDateTime				DATETIME = GETDATE();
+	DECLARE	@ToDate							DATE	  = GETDATE();
+	DECLARE @YesterdayDate					DATE	  = DATEADD(DAY, -1, @ToDate);
+	DECLARE @From30Date						DATE	  = DATEADD(DAY, -29, @ToDate);
 
-	DECLARE @CATEGORY_NULL			 SMALLINT = 0,
-			@CATEGORY_NORMALINACTIVE SMALLINT = 1001,
-	   	    @CATEGORY_SMARTINACTIVE	 SMALLINT = 1002,
-			@CATEGORY_NEWMEMBER		 SMALLINT = 201,
-			@CATEGORY_NORMALMEMBER	 SMALLINT = 202,
-			@CATEGORY_SMARTPUNTER	 SMALLINT = 203,
-			@CATEGORY_RISKY			 SMALLINT = 204,
-			@CATEGORY_GOODMEMBER	 SMALLINT = 205,
-			@CATEGORY_PROBATION		 SMALLINT = 206;
+	DECLARE @CATEGORY_NULL					INT = 0,
+			@CATEGORY_NORMALINACTIVE		INT = 40700,
+	   	    @CATEGORY_SMARTINACTIVE			INT = 40701,
+			@CATEGORY_NEW					INT = 40100,
+			@CATEGORY_GOOD					INT = 40200,
+			@CATEGORY_NORMAL				INT = 40300,
+			@CATEGORY_PROBATION				INT = 40400,
+			@CATEGORY_SMART					INT = 40500,
+			@CATEGORY_RISKY					INT = 40600;
 
-	DECLARE @SportGroup_SabaVRSoccer	 SMALLINT = 145,
-			@SportGroup_SabaVRBasketball SMALLINT = 912,
-			@SportGroup_NonSport		 SMALLINT = 229;
+	DECLARE @SportGroup_SabaVRSoccer		SMALLINT = 145,
+			@SportGroup_SabaVRBasketball	SMALLINT = 912,
+			@SportGroup_NonSport			SMALLINT = 229;
 
-	DECLARE @ScanTaggingType_NotExist  TINYINT = 0,
-			@ScanTaggingType_Exist	   TINYINT = 1,
-			@ScanTaggingType_ExistOnly TINYINT = 2;
+	DECLARE @ScanTaggingType_NotExist		TINYINT = 0,
+			@ScanTaggingType_Exist			TINYINT = 1,
+			@ScanTaggingType_ExistOnly		TINYINT = 2;
 
-	DECLARE @ListCustIds			 VARCHAR(MAX);
+	DECLARE @ListCustIds					VARCHAR(MAX);
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	BEGIN
@@ -76,7 +77,7 @@ BEGIN
 
 	CREATE TABLE #tmpCustomers(
 		CustId			       INT PRIMARY KEY,
-		CurrentCategoryId      SMALLINT NOT NULL,
+		CurrentCategoryId      INT		NOT NULL,
 		IsNewCreated	       BIT	    NOT NULL DEFAULT 0,
 		IsRealtimeOnly		   BIT	    NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT		NOT NULL DEFAULT 0,
@@ -100,7 +101,7 @@ BEGIN
 
 	CREATE TABLE #tmpScanTaggingCustomer(
 		CustId			       INT PRIMARY KEY,
-		CurrentCategoryId      SMALLINT NOT NULL,
+		CurrentCategoryId      INT		NOT NULL,
 		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0
 	);
 
@@ -129,8 +130,8 @@ BEGIN
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		CustId				   INT			  NOT NULL,
-		CurrentCategoryId	   SMALLINT		  NOT NULL DEFAULT 0,
-		NewCategoryId		   SMALLINT		  NULL,
+		CurrentCategoryId	   INT			  NOT NULL DEFAULT 0,
+		NewCategoryId		   INT			  NULL,
 		IsActiveWithin30Days   BIT			  NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT			  NOT NULL DEFAULT 0,
 		IsRealtimeOnly		   BIT			  NOT NULL DEFAULT 0,
@@ -164,8 +165,8 @@ BEGIN
 	CREATE TABLE #tmpBetCount(
 		CustId		INT	PRIMARY KEY,
 		SportGroup	SMALLINT,
-		CategoryId	SMALLINT  NOT NULL,
-		BetCount	BIGINT	  NULL
+		CategoryId	INT	NOT NULL,
+		BetCount	BIGINT NULL
 	);
 
 	CREATE NONCLUSTERED INDEX IX_tmpBetCount_CategoryId ON #tmpBetCount(
@@ -182,7 +183,7 @@ BEGIN
 	-- #1: Get list customers
 	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay, ScanTaggingType)
 	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
-		,	T.C.value('./@CategoryId', 'SMALLINT')		AS CurrentCategoryId
+		,	T.C.value('./@CategoryId', 'INT')			AS CurrentCategoryId
 		,	T.C.value('./@IsNewCreated', 'BIT')			AS IsNewCreated
 		,	T.C.value('./@IsRealtimeOnly', 'BIT')		AS IsRealtimeOnly
 		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
@@ -196,13 +197,13 @@ BEGIN
 		 a.IsRealtimeOnly = 0
 	FROM #tmpCustomers AS a
 	WHERE   a.IsRealtimeOnly = 1 
-		AND a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION)
+		AND a.CurrentCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY, @CATEGORY_PROBATION)
 		AND a.ScanTaggingType = @ScanTaggingType_Exist;
 
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpCustomers AS a
 	WHERE   a.IsRealtimeOnly = 1 
-		AND a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION)
+		AND a.CurrentCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY, @CATEGORY_PROBATION)
 		AND a.ScanTaggingType = @ScanTaggingType_NotExist;
 
 			
@@ -309,8 +310,8 @@ BEGIN
 		FROM #tmpCustomerAccummulatedInfo AS a
 			INNER JOIN dbo.CustomerClassification_BetCount AS b WITH(NOLOCK) ON a.CustId = b.CustId
 		WHERE a.IsRealtimeOnly = 1 
-				AND ((a.CurrentCategoryId = @CATEGORY_GOODMEMBER AND a.BetCount - b.BetCount < 100)
-				OR (a.CurrentCategoryId = @CATEGORY_NORMALMEMBER AND a.BetCount - b.BetCount < 20));
+				AND ((a.CurrentCategoryId = @CATEGORY_GOOD AND a.BetCount - b.BetCount < 100)
+				OR (a.CurrentCategoryId = @CATEGORY_NORMAL AND a.BetCount - b.BetCount < 20));
 
 		-- #11.1: Classify Tagging (link Association, TWGB,...) If having any from tagging function
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
@@ -355,7 +356,7 @@ BEGIN
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT t.CustId
 			,  @GENERAL_SPORTID
-			,  CASE WHEN t.IsActiveWithin30Days = 1 THEN @CATEGORY_NEWMEMBER ELSE @CATEGORY_NORMALINACTIVE END
+			,  CASE WHEN t.IsActiveWithin30Days = 1 THEN @CATEGORY_NEW ELSE @CATEGORY_NORMALINACTIVE END
 			,  @CATEGORY_NULL
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime
@@ -405,7 +406,10 @@ BEGIN
 		OUTPUT INSERTED.CustId, @GENERAL_SPORTID, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
 		SELECT a.CustId
 			,  @GENERAL_SPORTID
-			,  CASE WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId ELSE a.NewCategoryId END
+			,  CASE 
+					WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId 
+					WHEN a.NewCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY) AND a.CurrentCategoryId NOT IN (@CATEGORY_PROBATION, @CATEGORY_SMART, @CATEGORY_RISKY) THEN @CATEGORY_PROBATION
+					ELSE a.NewCategoryId END
 			,  a.CurrentCategoryId
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime
@@ -421,7 +425,7 @@ BEGIN
 		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
 		SELECT a.CustId
 			,  @GENERAL_SPORTID
-			,  CASE WHEN a.CurrentCategoryId IN (@CATEGORY_SMARTPUNTER, @CATEGORY_RISKY, @CATEGORY_PROBATION, @CATEGORY_SMARTINACTIVE) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
+			,  CASE WHEN a.NewCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY, @CATEGORY_PROBATION) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
 			,  a.CurrentCategoryId
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime

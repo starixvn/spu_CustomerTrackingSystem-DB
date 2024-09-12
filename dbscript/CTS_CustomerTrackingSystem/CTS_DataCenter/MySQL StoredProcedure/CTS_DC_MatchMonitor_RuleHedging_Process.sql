@@ -35,6 +35,7 @@ sp: BEGIN
             -	20240509@Casey.Huynh: 	HF Hedging StepTime [Redmine ID: #204338]
             -	20240617@Casey.Huynh:	Update Data Type [Redmine ID: #206564]
             -	20240724@Casey.Huynh:	Enhance Rule [Redmine ID: #207523]
+	    - 	20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
 			
 		Param's Explanation (filtered by):	
 		Example:
@@ -46,15 +47,22 @@ sp: BEGIN
 	DECLARE CONST_SUBSCRIBERID_MAXBET	INT DEFAULT 169;
     DECLARE CONST_MMRULEGROUP_HEDGING	INT DEFAULT 3;
     DECLARE CONST_MMREASON_HEDGING		INT DEFAULT 1;
+	DECLARE CONST_PARENTID_PA 			INT;
+	DECLARE CONST_PARENTID_VVIP			INT;
+	DECLARE CONST_PARENTID_WRAPPER		INT;
 
-	DECLARE lv_RuleTimeStep 				SMALLINT;
+	DECLARE lv_RuleTimeStep 			SMALLINT;
 	DECLARE lv_RuleTotalStake 			DECIMAL(20,4);
 	DECLARE lv_CustIDList 				LONGTEXT;
 	DECLARE lv_IsHedging 				BOOLEAN;
 	DECLARE lv_GroupID 					INT; 
+	DECLARE lv_SPName 					VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_Process';
+    
+	SET CONST_PARENTID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+	SET CONST_PARENTID_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+	SET CONST_PARENTID_WRAPPER			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 
     #==================LOG=======================================================
-    DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_RuleHedging_Process';
     IF CONST_LOG = 1 THEN     
 		INSERT INTO CTS_Log.CTSLog(LogName, InsertTime, OtherText)
 		SELECT lv_SPName, CURRENT_TIMESTAMP(), CONCAT('@ip_LiveIndicator:=',ip_LiveIndicator,',@ip_MatchID:=',ip_MatchID
@@ -267,13 +275,24 @@ sp: BEGIN
 		PREPARE stmt1 FROM @sql;
 		EXECUTE stmt1;
 
+		WITH CTE_Latest AS
+		(
+
+			SELECT tmpCus.CustID,cc.CategoryID,cc.ParentID
+			FROM Temp_Cust AS tmpCus 
+				INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = tmpCus.CustID
+				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+			WHERE cc.ParentID <> CONST_PARENTID_WRAPPER
+			ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+			LIMIT 1
+		)
 		SELECT 1 
 		INTO lv_IsHedging
-		FROM Temp_Cust AS tmpCus 
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = tmpCus.CustID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID
-		WHERE cla.SportGroupID = 0
-		AND cc.IsHedgingReasonMM = 1
+		FROM CTE_Latest AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cla ON cla.CustID = temp.CustID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+		WHERE temp.ParentID <> CONST_PARENTID_VVIP
+			AND cc.ParentID = CONST_PARENTID_PA AND cc.IsHedgingReasonMM = 1
 		LIMIT 1;
    
         IF lv_IsHedging <> 1 THEN

@@ -15,6 +15,7 @@ BEGIN
 		Revisions:
 			- 20211026@Aries.Nguyen [Redmine ID: #163087]: Created
             - 20230425@Jonas.Huynh	[Redmine ID: #186678]: Normal Classification Renovation
+            - 20240805@Jonas.Huynh	[RedmineID: #205317]: Renovate CC 
             
         Param's Explanation (filtered by):
 
@@ -62,8 +63,10 @@ BEGIN
     WHERE EXISTS (SELECT 1 FROM Temp_CustArchived AS arc WHERE arc.CTSCustID = cus.CTSCustID);
 
     UPDATE CTS_Archive.CTSCustomerAssociationStatus AS cus
-	INNER JOIN Temp_Cust AS tmp ON tmp.CustID = cus.CustID
-    SET cus.LastTicketDate = tmp.LastTicketDate;
+		INNER JOIN Temp_Cust AS tmp ON tmp.CustID = cus.CustID
+    SET cus.LastTicketDate = tmp.LastTicketDate
+    WHERE cus.LastTicketDate < tmp.LastTicketDate
+		OR cus.LastTicketDate IS NULL;
     
 END$$
 DELIMITER ;

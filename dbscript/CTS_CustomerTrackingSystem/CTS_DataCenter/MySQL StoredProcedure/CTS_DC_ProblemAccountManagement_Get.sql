@@ -24,14 +24,21 @@ sp :BEGIN
 			- 20220913@Casey.Huynh: 	Add CategoryID Filter  [Redmine ID: #176976]
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
 			- 20240103@Thomas.Nguyen:   Return CategoryID [RedmineID: #197710] 
+			- 20240628@Thomas.Nguyen:	Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
 
 		Param's Explanation (filtered by):   
         Example: 
 			CALL CTS_DC_ProblemAccountManagement_Get('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,null,null,0); 
             CALL CTS_DC_ProblemAccountManagement_Get('2022-01-10 00:00:00', '2022-05-10 00:00:00', null,'52,92,63',null,0); 
 	*/	
+	DECLARE CONST_PARENTID_VVIP     INT;
+	DECLARE	CONST_PARENTID_PA 		INT;
+
     DECLARE lv_CTSCustID 			BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_CustID 				BIGINT UNSIGNED DEFAULT 0;
+
+	SET CONST_PARENTID_VVIP 		= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+	SET CONST_PARENTID_PA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 
     DROP TEMPORARY TABLE IF EXISTS Temp_SiteID;
     CREATE TEMPORARY TABLE 		Temp_SiteID (
@@ -41,13 +48,13 @@ sp :BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CategoryID;
     CREATE TEMPORARY TABLE 		Temp_CategoryID(
-			CategoryID 		SMALLINT UNSIGNED
+			CategoryID 		INT UNSIGNED
         , 	PRIMARY KEY (CategoryID)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
     CREATE TEMPORARY TABLE 		Temp_CustomerCategory (
-			CategoryID 		SMALLINT UNSIGNED
+			CategoryID 		INT UNSIGNED
         ,   CategoryName	VARCHAR(50)
         , 	PRIMARY KEY (CategoryID)
 	);
@@ -68,7 +75,7 @@ sp :BEGIN
         SELECT 	cate.CategoryID
 			,	cate.CategoryName
 		FROM CTS_DataCenter.CustomerCategory AS cate 
-		WHERE cate.ParentID = 50;        
+		WHERE cate.ParentID = CONST_PARENTID_PA;        
 	ELSE 
 		SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CategoryID (CategoryID) VALUES ('", REPLACE(ip_CategoryIDs, ",", "'),('"),"');");
 		PREPARE 	stmt1 FROM @sql;
@@ -103,7 +110,7 @@ sp :BEGIN
 	, 	cus.SiteID
 	,	cus.Currency
 	,	cus.CurrencyID
-	,	class.CategoryID
+	,	GROUP_CONCAT(DISTINCT class.CategoryID SEPARATOR ', ') AS CategoryID
 	,	GROUP_CONCAT(DISTINCT tmpCat.CategoryName SEPARATOR ', ') AS CategoryName
 	,	MIN(class.CreatedDate) AS CreatedDate
 	,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(us.UserName, class.CreatedBy) ORDER BY class.CreatedDate ASC,class.LastModifiedDate ASC,class.CategoryID ASC SEPARATOR ', '),',',1) AS CreatedBy
@@ -118,21 +125,21 @@ sp :BEGIN
         STRAIGHT_JOIN CTS_DataCenter.Temp_CustomerCategory AS tmpCat ON class.CategoryID = tmpCat.CategoryID
         LEFT JOIN CTS_Admin.CTSUser AS us ON class.CreatedBy = us.UserID
 	WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
-		AND  class.SportGroupID = 0
+		AND  class.ParentID = CONST_PARENTID_PA
 		AND  cus.SiteID IN (SELECT st.SiteID FROM Temp_SiteID AS st)
 		AND  (lv_CTSCustID = 0 OR cus.CTSCustID = lv_CTSCustID
 							   OR (ip_HasDownline = 1 
 									AND (cus.SRecommend = lv_CustID 
 										OR cus.MRecommend = lv_CustID 
 										OR cus.Recommend = lv_CustID)))
+		AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS vv WHERE vv.CustID = class.CustID AND vv.ParentID = CONST_PARENTID_VVIP)
 	GROUP BY cus.CTSCustID
 		, 	cus.CustID
 		, 	cus.UserName
 		, 	cus.Site
 		, 	cus.SiteID
 		,	cus.Currency
-		,	cus.CurrencyID
-		,	class.CategoryID;
+		,	cus.CurrencyID;
 	
 END$$
 DELIMITER ;

@@ -22,7 +22,8 @@ sp:BEGIN
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 			- 20230428@Jonas.Huynh: 	Realtime Renovation [Redmine ID: #186678]
 			- 20231108@Victoria.Le: 	Add First5TWGBTicketCount [Redmine ID: #195060]
-             
+            - 20240628@Thomas.Nguyen: 	Renovate CC phase 2 [Redmine ID: #205317]
+
 		Param's Explanation (filtered by):
 
 		Example:
@@ -43,45 +44,41 @@ sp:BEGIN
 			ID  					BIGINT UNSIGNED 
 		,	CustID  				BIGINT UNSIGNED
 		,	CTSCustID  				BIGINT UNSIGNED
-		,	SportGroupID  			SMALLINT UNSIGNED 
-		,	CategoryID  			SMALLINT  
+		,	ParentID  				INT UNSIGNED 
+		,	CategoryID  			INT  
 		,	TurnoverRM  			DECIMAL(20 , 4 )  
 		,	WinlossRM  				DECIMAL(20 , 4 )  
 		,	BetCount  				BIGINT  
 		,	ActiveDays  			INT  
 		,	RobotCounter  			SMALLINT  
-		,	ProbationPeriodWinloss  DECIMAL(20,4)  
-		,	TargetCC  				SMALLINT  
+		,	TargetCC  				INT  
 		,	SourceTypeID  			SMALLINT UNSIGNED  
-		,	FromCategoryID  		SMALLINT UNSIGNED  
-		,	ToCategoryID  			SMALLINT UNSIGNED  
-		,	IsAppliedCC  			BIT(1)
-		,	IsDataChanged  			BIT(1)
+		,	OldCategoryID  			INT UNSIGNED  
+		,	DWCategoryID  			INT UNSIGNED  
+		,	IsDataChanged  			TINYINT(1)
 		,	ActionType  			TINYINT  
-		,	IsAuto  				BIT(1)  
+		,	IsAuto  				TINYINT(1)  
 		,	LastModifiedDate  		DATETIME  
 		,	LastModifiedBy  		INT UNSIGNED  
 		,	InsertDate  			DATETIME
 		,	TaggingType  			SMALLINT
 		,	TargetDangerLevel1  	SMALLINT  
-		,	IsAppliedDangerLevel1  	BIT(1)
 		,	TWGroupBettingRate  	DECIMAL(10,4)  
 		,	TWTicketRejectRate  	DECIMAL(10,4)  
 		,	TWBetCount  			BIGINT  
 		,	TWDesktopUsageRate  	DECIMAL(10,4)  
         ,	Remark 					VARCHAR(500)
-		,	IsDirect				BIT(1) 
+		,	IsMarkedDirectly		TINYINT(1) 
 		,	TVSRequestID			BIGINT UNSIGNED 
-        ,	IsFromTVS 				BIT 
-		,	IsFromTW 				BIT
-		,	IsFromCTS 				BIT
-		,	IsFromAI 				BIT 
-		,	IsFromImperva			BIT
-		,	IsParlay				BIT
+        ,	IsFromTVS 				TINYINT(1) 
+		,	IsFromTW 				TINYINT(1)
+		,	IsFromCTS 				TINYINT(1)
+		,	IsFromAI 				TINYINT(1) 
+		,	IsFromImperva			TINYINT(1)
+		,	IsParlay				TINYINT(1)
 		,	SportType				SMALLINT
 		,	IssueTypeID				TINYINT
         ,	PerformanceTime			DATETIME
-        ,	First5TWGBTicketCount	TINYINT UNSIGNED
 		,	PRIMARY KEY (ID)
 		,	KEY 					IX_CTSCustomerClassification_History_CustID (CustID)
 	);
@@ -130,18 +127,17 @@ sp:BEGIN
 			ID
 		,	CustID
 		,	CTSCustID
-		,	SportGroupID
-		,	CategoryID,TurnoverRM 
+		,	ParentID
+		,	CategoryID
+		,	TurnoverRM 
 		,	WinlossRM
 		,	BetCount
 		,	ActiveDays
 		,	RobotCounter
-		,	ProbationPeriodWinloss
 		,	TargetCC
 		,	SourceTypeID
-		,	FromCategoryID
-		,	ToCategoryID
-		,	IsAppliedCC
+		,	OldCategoryID
+		,	DWCategoryID
 		,	IsDataChanged
 		,	ActionType
 		,	IsAuto
@@ -150,11 +146,13 @@ sp:BEGIN
 		,	InsertDate
 		,	TaggingType
 		,	TargetDangerLevel1
-		,	IsAppliedDangerLevel1
 		,	TWGroupBettingRate
 		,	TWTicketRejectRate
 		,	TWBetCount
-		,	TWDesktopUsageRate,Remark,IsDirect,TVSRequestID
+		,	TWDesktopUsageRate
+		,	Remark
+		,	IsMarkedDirectly
+		,	TVSRequestID
 		,	IsFromTVS
 		,	IsFromTW
 		,	IsFromCTS
@@ -164,24 +162,21 @@ sp:BEGIN
 		,	SportType
 		,	IssueTypeID
         ,	PerformanceTime
-        ,	First5TWGBTicketCount
 	)
     SELECT 	ID  					
 		,	CustID  				
 		,	CTSCustID  				
-		,	SportGroupID  			
+		,	ParentID  			
 		,	CategoryID  			
 		,	TurnoverRM  			
 		,	WinlossRM  				
 		,	BetCount  				
 		,	ActiveDays  			
 		,	RobotCounter  		
-		,	ProbationPeriodWinloss  
 		,	TargetCC  				
 		,	SourceTypeID  			
-		,	FromCategoryID  		
-		,	ToCategoryID  			
-		,	IsAppliedCC  			
+		,	OldCategoryID  		
+		,	DWCategoryID  			
 		,	IsDataChanged  			
 		,	ActionType  			
 		,	IsAuto  				
@@ -190,13 +185,12 @@ sp:BEGIN
 		,	InsertDate  			
 		,	TaggingType  			
 		,	TargetDangerLevel1  	
-		,	IsAppliedDangerLevel1  	
 		,	TWGroupBettingRate  	
 		,	TWTicketRejectRate  	
 		,	TWBetCount  			
 		,	TWDesktopUsageRate  
         ,	Remark 			
-		,	IsDirect
+		,	IsMarkedDirectly
 		,	TVSRequestID
 		,	IsFromTVS 				 
 		,	IsFromTW 				
@@ -207,7 +201,6 @@ sp:BEGIN
 		,	SportType
 		,	IssueTypeID
         ,	PerformanceTime
-        ,	First5TWGBTicketCount
 	FROM CTS_DataCenter.CTSCustomerClassification_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
 		AND IsDataChanged = 1
@@ -260,18 +253,17 @@ sp:BEGIN
 				ID
 			,	CustID
 			,	CTSCustID
-			,	SportGroupID
-			,	CategoryID,TurnoverRM 
+			,	ParentID
+			,	CategoryID
+			,	TurnoverRM 
 			,	WinlossRM
 			,	BetCount
 			,	ActiveDays
 			,	RobotCounter
-			,	ProbationPeriodWinloss
 			,	TargetCC
 			,	SourceTypeID
-			,	FromCategoryID
-			,	ToCategoryID
-			,	IsAppliedCC
+			,	OldCategoryID
+			,	DWCategoryID
 			,	IsDataChanged
 			,	ActionType
 			,	IsAuto
@@ -280,11 +272,13 @@ sp:BEGIN
 			,	InsertDate
 			,	TaggingType
 			,	TargetDangerLevel1
-			,	IsAppliedDangerLevel1
 			,	TWGroupBettingRate
 			,	TWTicketRejectRate
 			,	TWBetCount
-			,	TWDesktopUsageRate,Remark,IsDirect,TVSRequestID
+			,	TWDesktopUsageRate
+			,	Remark
+			,	IsMarkedDirectly
+			,	TVSRequestID
 			,	IsFromTVS
 			,	IsFromTW
 			,	IsFromCTS
@@ -294,24 +288,21 @@ sp:BEGIN
 			,	SportType
 			,	IssueTypeID
             ,	PerformanceTime
-            ,	First5TWGBTicketCount
 		)
 		SELECT 	ID  					
 			,	h.CustID  				
 			,	CTSCustID  				
-			,	SportGroupID  			
+			,	ParentID  			
 			,	CategoryID  			
 			,	TurnoverRM  			
 			,	WinlossRM  				
 			,	BetCount  				
 			,	ActiveDays  			
 			,	RobotCounter  		
-			,	ProbationPeriodWinloss  
 			,	TargetCC  				
 			,	SourceTypeID  			
-			,	FromCategoryID  		
-			,	ToCategoryID  			
-			,	IsAppliedCC  			
+			,	OldCategoryID  		
+			,	DWCategoryID  			
 			,	IsDataChanged  			
 			,	ActionType  			
 			,	IsAuto  				
@@ -320,13 +311,12 @@ sp:BEGIN
 			,	InsertDate  			
 			,	TaggingType  			
 			,	TargetDangerLevel1  	
-			,	IsAppliedDangerLevel1  	
 			,	TWGroupBettingRate  	
 			,	TWTicketRejectRate  	
 			,	TWBetCount  			
 			,	TWDesktopUsageRate  
 			,	Remark 			
-			,	IsDirect
+			,	IsMarkedDirectly
 			,	TVSRequestID
 			,	IsFromTVS 				 
 			,	IsFromTW 				
@@ -337,7 +327,6 @@ sp:BEGIN
 			,	SportType
 			,	IssueTypeID
             ,	PerformanceTime
-            ,	First5TWGBTicketCount
 		FROM Temp_CustDataShouldBeRemoved AS k
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON k.CustID = h.CustID
 		WHERE h.ID < lv_LastID
@@ -353,19 +342,17 @@ sp:BEGIN
 		SELECT	ID  					
 			,	CustID  				
 			,	CTSCustID  				
-			,	SportGroupID  			
+			,	ParentID  			
 			,	CategoryID  			
 			,	TurnoverRM  			
 			,	WinlossRM  				
 			,	BetCount  				
 			,	ActiveDays  			
 			,	RobotCounter  		
-			,	ProbationPeriodWinloss  
 			,	TargetCC  				
 			,	SourceTypeID  			
-			,	FromCategoryID  		
-			,	ToCategoryID  			
-			,	IsAppliedCC  			
+			,	OldCategoryID  		
+			,	DWCategoryID  			
 			,	IsDataChanged  			
 			,	ActionType  			
 			,	IsAuto  				
@@ -374,13 +361,12 @@ sp:BEGIN
 			,	InsertDate  			
 			,	TaggingType  			
 			,	TargetDangerLevel1  	
-			,	IsAppliedDangerLevel1  	
 			,	TWGroupBettingRate  	
 			,	TWTicketRejectRate  	
 			,	TWBetCount  			
 			,	TWDesktopUsageRate 
             ,	Remark 	
-			,	IsDirect
+			,	IsMarkedDirectly
 			,	TVSRequestID
             ,	IsFromTVS 				 
 			,	IsFromTW 				
@@ -391,7 +377,6 @@ sp:BEGIN
 			,	SportType
 			,	IssueTypeID
             ,	PerformanceTime
-            ,	First5TWGBTicketCount
 		FROM Temp_History;
 		
 		UPDATE CTS_DataCenter.SystemParameter

@@ -27,6 +27,7 @@ sp : BEGIN
 			- 20210427@Aries.Nguyen: Enhance performance [Redmine ID: #152509] 
 			- 20210915@Aries.Nguyen: Remove DeviceAssociationDay table [Redmine ID: #160470]
             - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
+			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
 
 		Param's Explanation (filtered by):
             - ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
@@ -37,9 +38,15 @@ sp : BEGIN
 			- CALL CTS_DataCenter.CTS_DC_RPT_AssociatedAccount('1,11','4414',0,0,'2021-01-28','2021-01-30',41,0,100, @op_TotalItems);
 
 	*/    
-	DECLARE	CONST_PARENTID_PA 					INT DEFAULT 50;
-	DECLARE	CONST_PARENTID_POTENTIALPA 			INT DEFAULT 150;
-	DECLARE	CONST_PARENTID_NORMAL 				INT DEFAULT 200;
+	DECLARE	CONST_PARENTID_PA 					INT;
+	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
+	DECLARE	CONST_PARENTID_NORMAL 				INT;
+	DECLARE	CONST_PARENTID_WRAPPER				INT;
+
+	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_PARENTID_POTENTIALPA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
+	SET CONST_PARENTID_NORMAL 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 
 	IF (ip_SubscriberIDs IS NULL OR ip_SubscriberIDs = '' OR ip_SubscriberIDs = -1) 
 		OR (ip_AssociationStatus IS NULL OR ip_AssociationStatus = -1)
@@ -97,6 +104,13 @@ sp : BEGIN
         , 	CategoryName	VARCHAR(300)
 	);
     
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustLatestCate;
+	CREATE TEMPORARY TABLE 		Temp_CustLatestCate (
+			CustID				BIGINT UNSIGNED
+		,	ParentID			INT UNSIGNED
+		,	PRIMARY KEY(CustID)
+	);  
+
     DROP TEMPORARY TABLE IF EXISTS Temp_Device;
 	CREATE TEMPORARY TABLE 		Temp_Device (
 				DCSDeviceID 		BIGINT UNSIGNED PRIMARY KEY 
@@ -394,6 +408,18 @@ sp : BEGIN
 			OR ev.CustStatusID NOT IN (SELECT CustStatusID FROM Temp_CustStatusID);
     END IF;
     
+	INSERT IGNORE INTO Temp_CustLatestCate (CustID, ParentID)
+	SELECT clss.CustID, clss.ParentID
+	FROM Temp_CustEvidence AS ev
+	,	LATERAL (
+			SELECT ev.CustID, cls.ParentID
+			FROM CTS_DataCenter.CTSCustomerClassification AS cls
+				INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = cls.CategoryID
+			WHERE cls.CustID = ev.CustID AND cate.IsActive = 1 AND cls.ParentID <> CONST_PARENTID_WRAPPER
+			ORDER BY cate.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+			LIMIT 1
+		) AS clss;
+
     INSERT IGNORE INTO Temp_Result (CTSCustID, UserName, SubscriberID, SubscriberName, AccountStatus, EvidenceCode, CategoryName)
 	SELECT ev.CTSCustID
 		,	ev.UserName
@@ -403,10 +429,11 @@ sp : BEGIN
         ,	ev.EvidenceCode
         ,	cc.CategoryName
 	FROM Temp_CustEvidence AS ev
-		INNER JOIN CTS_DataCenter.StaticList stl ON ev.CustStatusID = stl.ItemID AND stl.ListID = 1
-        LEFT JOIN CTS_DataCenter.CTSCustomerClassification custClass ON custClass.CustID = ev.CustID
-        LEFT JOIN CTS_DataCenter.CustomerCategory cc ON cc.CategoryID = custClass.CategoryID AND cc.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL)
-        LEFT JOIN CTS_Admin.Subscriber sub ON sub.SubscriberID = ev.SubscriberID
+		INNER JOIN CTS_DataCenter.StaticList AS stl ON ev.CustStatusID = stl.ItemID AND stl.ListID = 1
+		LEFT JOIN Temp_CustLatestCate AS cls ON cls.CustID = ev.CustID AND cls.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL)
+        LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS custClass ON custClass.CustID = cls.CustID AND custClass.ParentID = cls.ParentID
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = custClass.CategoryID
+        LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = ev.SubscriberID
 	 ON DUPLICATE KEY UPDATE Temp_Result.CategoryName = CASE WHEN Temp_Result.CategoryName LIKE CONCAT('%',cc.CategoryName,'%') THEN Temp_Result.CategoryName
 															 ELSE CONCAT(Temp_Result.CategoryName, ', ', cc.CategoryName)
 														END;

@@ -20,6 +20,7 @@ BEGIN
 			- 20230404@Victoria.Le:		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeID [Redmine ID: #185319] 
 			- 20230601@Victoria.Le:		Add TVSRequestID <> 0 for TVSRequestID IS NOT NULL [Redmine ID: #189023]
             - 20240306@Thomas.Nguyen:	Add column InsertedTime [Redmine ID: #201993]
+			- 20240624@Victoria.Le:		Renovate CC Phase 2 [Redmine ID: #205317]
 
         Param's Explanation (filtered by):
         
@@ -32,93 +33,88 @@ BEGIN
     DECLARE CONST_WINLOSSSTATUS_KEEP		SMALLINT DEFAULT 1;
     DECLARE CONST_WINLOSSSTATUS_WINNING		SMALLINT DEFAULT 2;
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEvidence;    
+	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedEvidence;
 	CREATE TEMPORARY TABLE Temp_ExistedEvidence(	  
-			CTSCustID				BIGINT UNSIGNED 
-        ,	EvidenceID_Licensee 	SMALLINT	        
-        ,	EvidenceID_Credit 		SMALLINT	
-        ,  	INDEX IX_Temp_ExistedEvidence_CTSCustIDEvidenceID(CTSCustID, EvidenceID_Licensee, EvidenceID_Credit)
+			CTSCustID					BIGINT UNSIGNED 
+        ,	Ext_EvidenceID_Licensee 	SMALLINT	        
+        ,	Ext_EvidenceID_Credit 		SMALLINT	
+        ,  	KEY IX_Temp_ExistedEvidence_CTSCustIDEvidenceID(Ext_EvidenceID_Credit)
     );
     
     /* REMOVE FROM QUEUE  */
-    UPDATE Temp_PA AS t
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
+    UPDATE Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID
 	SET d.IsFromTVS = 0
-	WHERE IFNULL(t.TVSRequestID,0) <> 0;
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
         
     DELETE d
-    FROM Temp_PA AS t
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-	WHERE IFNULL(t.TVSRequestID,0) <> 0
+    FROM Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0);
-    
-    /* REMOVE FROM OLD PA  */
-    UPDATE Temp_PA AS t
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-	SET d.IsFromTVS = 0
-	WHERE IFNULL(t.TVSRequestID,0) <> 0;
-    
-    DELETE d
-    FROM Temp_PA AS t
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationOldCategory AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-	WHERE IFNULL(t.TVSRequestID,0) <> 0
+
+    /* REMOVE FROM CLASSIFICATION  */
+    INSERT INTO Temp_ExistedEvidence(CTSCustID, Ext_EvidenceID_Licensee, Ext_EvidenceID_Credit)
+    SELECT DISTINCT temp.CTSCustID, c.Ext_EvidenceID_Licensee, c.Ext_EvidenceID_Credit
+    FROM Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategory AS c ON d.CategoryID = c.CategoryID
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0 AND temp.IsExistVVIP = 0;
+	
+	/* UPDATE CLASSIFICATION  */ 
+	UPDATE Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID
+	SET 	d.IsFromTVS = 0
+		,	temp.WinlossStatus = 	CASE WHEN temp.WinlossStatus = CONST_WINLOSSSTATUS_KEEP THEN CONST_WINLOSSSTATUS_WINNING
+										 ELSE temp.WinlossStatus END
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
+	
+	/* REMOVE FROM TVSVoidRequest  */   
+	/*
+	UPDATE Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.TVSVoidRequest AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID AND d.IsDisabled = 0
+	SET d.IsDisabled = 1
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
+ 	*/
+	DELETE d
+    FROM Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.TVSVoidRequest AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID AND d.IsDisabled = 0
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON d.TVSRequestID = cc.TVSRequestID AND d.CustID = cc.CustID
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0
+		AND (cc.IsFromCTS = 0 AND cc.IsFromTW = 0 AND cc.IsFromAI = 0 AND cc.IsFromImperva = 0);
+		
+	/* REMOVE FROM CTSCustomerClassification  */
+	DELETE d
+    FROM Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0
 		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
-    
+
     /* REMOVE FROM CLASSIFICATION HISTORY  */    
 	DELETE d
-    FROM Temp_PA AS t
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-	WHERE IFNULL(t.TVSRequestID,0) <> 0;
-        
-    /* REMOVE FROM CLASSIFICATION  */
-    INSERT INTO Temp_ExistedEvidence(CTSCustID, EvidenceID_Licensee, EvidenceID_Credit)
-    SELECT DISTINCT t.CTSCustID, c.EvidenceID_Licensee, c.EvidenceID_Credit
-    FROM Temp_PA AS t
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS c ON d.CategoryID = c.CategoryID
-	WHERE IFNULL(t.TVSRequestID,0) <> 0;    
-    
-    UPDATE Temp_PA AS t
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-	SET 	d.IsFromTVS = 0
-		,	t.WinlossStatus = 	CASE 	
-									WHEN t.WinlossStatus = CONST_WINLOSSSTATUS_KEEP THEN CONST_WINLOSSSTATUS_WINNING
-                                    ELSE t.WinlossStatus
-								END
-	WHERE IFNULL(t.TVSRequestID,0) <> 0;
-    
-	DELETE d
-    FROM Temp_PA AS t
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS d ON t.TVSRequestID = d.TVSRequestID AND t.CustID = d.CustID
-	WHERE IFNULL(t.TVSRequestID,0) <> 0
-		AND (d.IsFromCTS = 0 AND d.IsFromTW = 0 AND d.IsFromAI = 0 AND d.IsFromImperva = 0);
+    FROM Temp_NewClassification AS temp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS d ON temp.TVSRequestID = d.TVSRequestID AND temp.CustID = d.CustID
+	WHERE IFNULL(temp.TVSRequestID,0) <> 0;
       
 	/* REMOVE FROM CUSTOMER EVIDENCE  */ 
     DELETE d
-    FROM Temp_ExistedEvidence AS t
-		INNER JOIN CTS_DataCenter.CustEvidence AS d ON t.CTSCustID = d.CTSCustID 
-			AND (t.EvidenceID_Credit = d.EvidenceID OR t.EvidenceID_Licensee = d.EvidenceID)
+    FROM Temp_ExistedEvidence AS temp
+		INNER JOIN CTS_DataCenter.CustEvidence AS d ON temp.CTSCustID = d.CTSCustID 
+			AND (temp.Ext_EvidenceID_Credit = d.EvidenceID OR temp.Ext_EvidenceID_Licensee = d.EvidenceID)
 	WHERE d.Level = 0;    		
 	
     /* REMOVE AFFECTED EVIDENCE  */ 
     INSERT INTO CTS_DataCenter.CustEvidenceAffectedQueueRemove (CTSCustID,EvidenceID,Created)
 	WITH CTE_data (CTSCustID,EvidenceID) AS 
     (
-		SELECT	t.CTSCustID
-			,	CASE WHEN d.IsLicensee = 1 THEN EvidenceID_Licensee ELSE EvidenceID_Credit END
-		FROM Temp_ExistedEvidence AS t
-			INNER JOIN CTSCustomer AS d ON t.CTSCustID = d.CTSCustID
+		SELECT	temp.CTSCustID
+			,	CASE WHEN d.IsLicensee = 1 THEN Ext_EvidenceID_Licensee ELSE Ext_EvidenceID_Credit END
+		FROM Temp_ExistedEvidence AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomer AS d ON temp.CTSCustID = d.CTSCustID
 	)   
     SELECT CTSCustID, EvidenceID, NOW() 
     FROM CTE_data
     WHERE EvidenceID IS NOT NULL;
-
-	/* LOG THE VOID REQUEST FOR FURTHER TRACKING */
-	INSERT INTO CTS_DataCenter.TVSVoidRequest_History (TVSRequestID,CustIDs,ReasonID,CreatedBy,CreatedDate,IsParlay,SportType,IssueTypeID,CreatedTime)
-	SELECT TVSRequestID, GROUP_CONCAT(DISTINCT CustID), ReasonID, CreatedBy, NOW(),IsParlay,SportType,IssueTypeID, CURRENT_TIMESTAMP(3)
-	FROM Temp_PA
-	WHERE IsFromTVS = 1
-	GROUP BY TVSRequestID, ReasonID, CreatedBy, IsParlay, SportType, IssueTypeID;
-    
+	
 END$$
 DELIMITER ;

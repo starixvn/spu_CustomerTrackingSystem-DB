@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 /****** Object:  StoredProcedure [dbo].[CTS_NormalClassification_BetCount_Update]    Script Date: 03/04/2023 14:24:2022 PM ******/
@@ -19,7 +20,8 @@ AS
 		- 20230403@Jonas.Huynh: Modify betcount schedule for Normal & Good Member [Redmine ID: #185633]
 		- 20230421@Jonas.Huynh: Realtime Renovation [Redmine ID: #186678]
 		- 20230630@Jonas.Huynh: Normal renovation by Sport [Redmine ID: #189875]
-
+		- 20240618@Jonas.Nguyen: Renovate CC - Phase 2 [Redmine ID: #205317]
+	
 	Param's Explanation:
 		
 */
@@ -27,13 +29,14 @@ BEGIN
 	
 	SET NOCOUNT ON;
 	
-	DECLARE @GENERAL_SPORTID		SMALLINT = 200;
-	DECLARE @CATEGORY_NORMALMEMBER	INT		 = 202
-		,	@CATEGORY_GOODMEMBER	INT		 = 205;
+	DECLARE @GENERAL_SPORTID	SMALLINT = 200;
+
+	DECLARE @CATEGORY_GOOD		INT	= 40200,
+			@CATEGORY_NORMAL	INT	= 40300;
 
 	DELETE a WITH(ROWLOCK)
 	FROM #tmpBetCount AS a
-	WHERE a.CategoryId NOT IN (@CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER);
+	WHERE a.CategoryId NOT IN (@CATEGORY_NORMAL, @CATEGORY_GOOD);
 
 	IF (@IsGeneralFlow = 1)
 		BEGIN
@@ -67,8 +70,8 @@ BEGIN
 END;
 GO
 
-GRANT EXECUTE ON [dbo].[CTS_NormalClassification_BetCount_Update] TO [bodbSPUNet]
+GRANT EXECUTE ON [dbo].[CTS_NormalClassification_BetCount_Update] TO [wsv_cts]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_NormalClassification_BetCount_Update] TO [bodbSPUNet]
+GRANT VIEW DEFINITION ON [dbo].[CTS_NormalClassification_BetCount_Update] TO [wsv_cts]
 GO
 

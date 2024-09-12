@@ -19,13 +19,19 @@ BEGIN
             -	20211213@Casey.Huynh: 	Enhance MM, return result (remove Danger Level) [Redmine ID: 165606]
             - 	20221118@Aries.Nguyen: 	Support suspicious Irrigation in Match Monitor [Redmine ID: #179499]
 			- 	20230118@Victoria.Le: 	Return ParentID & TaggingType to definite whether Customer is Problem Account/Normal Categories links with PA [RedmineID: #181995]
-			
+			-	20240628@Thomas.Nguyen: Renovate CC phase 2 - Return IsPA and IsNormalLinkedPA [Redmine ID: #205317]
+
 		Param's Explanation (filtered by):
         		
 		Example:
 			-	CALL CTS_DC_CustInfo_GetByCustID('1,2,987385,8498955,21007469,1295,916740,2812695');;
 	*/
-    
+    DECLARE	CONST_PARENTID_PA 					INT;
+	DECLARE	CONST_PARENTID_NORMAL 				INT;
+
+	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+	SET CONST_PARENTID_NORMAL 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;
     CREATE TEMPORARY TABLE Temp_CustID(
 		CustID 	BIGINT UNSIGNED
@@ -46,8 +52,8 @@ BEGIN
 		,	c.Currency
 		,	CASE WHEN s.SubscriberType = 0 THEN 'C' ELSE 'L' END AS SubscriberType
         ,	clss.CustomerClass
-		,	clss.ParentID
-		,	clss.TaggingType
+		,	CASE WHEN clss.ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN clss.ParentID = CONST_PARENTID_NORMAL AND clss.TaggingType = 1 THEN 1 ELSE 0 END AS IsNormalLinkedPA
 	FROM Temp_CustID AS t 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID AND CustSubID = 0
 		INNER JOIN CTS_Admin.Subscriber AS s ON c.SubscriberID	= s.SubscriberID

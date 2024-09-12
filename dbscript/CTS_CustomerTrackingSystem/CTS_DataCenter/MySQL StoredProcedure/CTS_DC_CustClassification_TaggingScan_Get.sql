@@ -16,35 +16,40 @@ BEGIN
 		Original: 
 		Revisions:
 			- 20230804@Jonas.Huynh: Created [RedmineID: #191400]
+			- 20240620@Jonas.Huynh: Renovate CC [RedmineID: #205317]
             
         Param's Explanation:     
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_TaggingScan_Get();
 	*/ 
-    
-    DECLARE	CONST_GROUP_NORMAL 			INT DEFAULT 200;
-    
-	DECLARE CONST_CATEGORY_SMART 		INT DEFAULT 203;
-    DECLARE CONST_CATEGORY_HIGHRISK 	INT DEFAULT 204;
-    DECLARE CONST_CATEGORY_PROBATION	INT DEFAULT 206;
-	
-	DECLARE lv_LastCategoryID 			INT;
-	DECLARE lv_LastCustID 				BIGINT UNSIGNED;
-    DECLARE lv_BatchSize 				BIGINT;
-    
-    DECLARE lv_NextCategoryID 			INT;
+    DECLARE	CONST_PARENTID_NORMAL		INT ;
+    DECLARE CONST_PARENTID_WRAPPER		INT	;
+	DECLARE CONST_CATEGROUPID_PROBATION	INT	;            
+	DECLARE CONST_CATEGROUPID_SMART 	INT ;
+    DECLARE CONST_CATEGROUPID_RISKY 	INT ;
+
+    DECLARE lv_BatchSize 				INT;
+    DECLARE lv_LastCategoryID 			BIGINT UNSIGNED;
+    DECLARE lv_NextCategoryID 			BIGINT UNSIGNED;
+    DECLARE lv_LastCustID 				BIGINT UNSIGNED;
     DECLARE lv_NextCustID 				BIGINT UNSIGNED;
     
+    SET CONST_PARENTID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+    SET CONST_PARENTID_WRAPPER 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+	SET CONST_CATEGROUPID_PROBATION 	= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
+	SET CONST_CATEGROUPID_SMART 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SMART');
+    SET CONST_CATEGROUPID_RISKY 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_RISKY');
+        
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
 	CREATE TEMPORARY TABLE Temp_Category(
-			CategoryID		INT PRIMARY KEY,
-            CategoryGroup	SMALLINT
+			CategoryID			INT UNSIGNED PRIMARY KEY,
+            CategoryGroupID		INT UNSIGNED
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
 			CustID 			BIGINT UNSIGNED PRIMARY KEY,
-            CategoryID		INT NOT NULL
+            CategoryID		INT UNSIGNED NOT NULL
     );
           
     SELECT ParameterValue 
@@ -62,58 +67,81 @@ BEGIN
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 145;
    
-	INSERT INTO Temp_Category(CategoryID, CategoryGroup)
-	SELECT CategoryID, CategoryGroup
+	INSERT INTO Temp_Category(CategoryID, CategoryGroupID)
+	SELECT CategoryID, CategoryGroupID
 	FROM CTS_DataCenter.CustomerCategory
-	WHERE ParentID = 200 
+	WHERE ParentID = CONST_PARENTID_NORMAL 
 		AND IsActive = 1
-		AND IsUsedManually = 0 
 		AND ScanTaggingIntervalInSecond > 0;
         
     IF lv_LastCategoryID IS NULL OR lv_LastCategoryID = 0 THEN
 		SELECT CategoryID 
-		INTO lv_LastCategoryID 
+		INTO lv_LastCategoryID
 		FROM Temp_Category
 		ORDER BY CategoryID ASC
         LIMIT 1;
 	END IF;
     
-	INSERT IGNORE INTO Temp_Cust (CustID, CategoryID)
-	SELECT clss.CustID, clss.CategoryID
+    INSERT IGNORE INTO Temp_Cust (CustID, CategoryID)
+    SELECT tmplc.CustID, tmplc.CategoryID
 	FROM CTS_DataCenter.CTSCustomerClassification AS clss
+		,	LATERAL	
+				(	SELECT cc.CustID, cc.CategoryID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = clss.CustID
+						AND ca.IsActive = 1
+                        AND cc.ParentID <> CONST_PARENTID_WRAPPER 
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
+					LIMIT 1
+			   ) AS tmplc 
 	WHERE clss.CustID > lv_LastCustID
 		AND clss.CategoryID = lv_LastCategoryID
-		AND clss.SportGroupID = CONST_GROUP_NORMAL
-		AND NOT EXISTS (SELECT 1 
-						 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
-						 WHERE pin.CTSCustID = clss.CTSCustID)
+		AND clss.ParentID = CONST_PARENTID_NORMAL
+		AND tmplc.CategoryID = lv_LastCategoryID
 	ORDER BY clss.CategoryID ASC
 		,	 clss.CustID ASC
 	LIMIT lv_BatchSize;
     
     IF NOT EXISTS (SELECT 1 FROM Temp_Cust) THEN
-		SELECT cate.CategoryID
+		SELECT tmplc.CategoryID
         INTO   lv_NextCategoryID
 		FROM Temp_Category AS cate
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cate.CategoryID = clss.CategoryID 
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CategoryID = cate.CategoryID
+			, LATERAL	
+				(	SELECT cc.CustID, cc.CategoryID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = clss.CustID
+						AND ca.IsActive = 1
+                        AND cc.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
+					LIMIT 1
+			    ) AS tmplc
 		WHERE cate.CategoryID > lv_LastCategoryID
-            AND NOT EXISTS (SELECT 1 
-							 FROM CTS_DataCenter.PinCustomerCategory AS pin 
-							 WHERE pin.CTSCustID = clss.CTSCustID)
+			AND tmplc.CategoryID = cate.CategoryID
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
     END IF;
     
     IF lv_NextCategoryID IS NOT NULL THEN
 		INSERT IGNORE INTO Temp_Cust (CustID, CategoryID)
-		SELECT clss.CustID, clss.CategoryID
+		SELECT tmplc.CustID, tmplc.CategoryID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss
+			,	LATERAL	
+				(	SELECT cc.CustID, cc.CategoryID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = clss.CustID
+						AND ca.IsActive = 1
+                        AND cc.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
+					LIMIT 1
+			   ) AS tmplc 
 		WHERE clss.CustID > 0
 			AND clss.CategoryID = lv_NextCategoryID
-			AND clss.SportGroupID = CONST_GROUP_NORMAL
-			AND NOT EXISTS (SELECT 1 
-							 FROM  CTS_DataCenter.PinCustomerCategory AS pin 
-							 WHERE pin.CTSCustID = clss.CTSCustID)
+			AND clss.ParentID = CONST_PARENTID_NORMAL
+           	AND tmplc.CategoryID = lv_NextCategoryID
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
 		LIMIT lv_BatchSize;
@@ -141,7 +169,7 @@ BEGIN
     
     SELECT DISTINCT	tmp.CustID, 
 		CASE 
-			WHEN tmpc.CategoryGroup IS NOT NULL AND tmpc.CategoryGroup IN (CONST_CATEGORY_PROBATION, CONST_CATEGORY_SMART, CONST_CATEGORY_HIGHRISK) THEN 1 
+			WHEN tmpc.CategoryGroupID IS NOT NULL AND tmpc.CategoryGroupID IN (CONST_CATEGROUPID_PROBATION, CONST_CATEGROUPID_SMART, CONST_CATEGROUPID_RISKY) THEN 1 
             ELSE 0 
 		END AS IsCheckTaggingTW
     FROM Temp_Cust AS tmp

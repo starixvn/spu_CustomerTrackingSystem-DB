@@ -1,4 +1,4 @@
-/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 USE [bodb_VR2Model]
 GO
 SET ANSI_NULLS ON
@@ -17,6 +17,7 @@ AS
 
 	Revisions:
 		- 20230627@Jonas.Huynh: Reset Balance for Credit with Inactive Normal with new place-bet [Redmine ID: #189876]
+		- 20240618@Jonas.Nguyen: Renovate CC - Phase 2 [Redmine ID: #205317]
 
 	Param's Explanation:
 		
@@ -25,7 +26,7 @@ BEGIN
 	
 	SET NOCOUNT ON;
 	
-	DECLARE @CATEGORY_NORMALINACTIVE SMALLINT = 1001;
+	DECLARE @CATEGORY_NORMALINACTIVE	INT = 40700;
 
 	IF	OBJECT_ID('tempdb..#tmpResetBalance') IS NOT NULL
 	DROP TABLE	#tmpResetBalance;
@@ -59,8 +60,8 @@ BEGIN
 END;
 GO
 
-GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_Balance_Reset] TO [bodbSPUNet]
+GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_Balance_Reset] TO [wsv_cts]
 GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_Balance_Reset] TO [bodbSPUNet]
+GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_Balance_Reset] TO [wsv_cts]
 GO
 

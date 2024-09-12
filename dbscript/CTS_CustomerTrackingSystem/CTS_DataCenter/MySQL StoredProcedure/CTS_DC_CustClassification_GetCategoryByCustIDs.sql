@@ -14,13 +14,18 @@ BEGIN
 		Original: 
 
 		Revisions:
-			- 20240820@Long.Luu: Created [Redmine ID: #209403]
+			- 20240820@Long.Luu: 			Created [Redmine ID: #209403]
+			- 20240822@Victoria.Le: 		Renovate CC phase 2 [Redmine ID: #205317]
             
 		Param's Explanation:
 
 		Example:  
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetCategoryByCustIDs("1,2,3");
 	*/ 
+	DECLARE CONST_PARENTID_WRAPPER 				INT;
+	
+	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;
     CREATE TEMPORARY TABLE 		Temp_InputCustomers (
 			CustID              BIGINT UNSIGNED PRIMARY KEY 
@@ -31,12 +36,37 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;    
     
-    
-    SELECT b.CustID, b.CategoryID, c.CustomerClass, b.CreatedDate
-    FROM Temp_InputCustomers AS a
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS b ON a.CustID = b.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS c ON b.CategoryID = c.CategoryID; 
-   
+	DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers_Dup;
+	CREATE TEMPORARY TABLE Temp_InputCustomers_Dup LIKE Temp_InputCustomers;
+	INSERT INTO Temp_InputCustomers_Dup SELECT * FROM Temp_InputCustomers;
+
+	WITH CTE AS
+	(
+
+		SELECT b.CustID, b.CategoryID, b.CreatedDate
+		FROM Temp_InputCustomers AS a
+			 INNER JOIN CTS_DataCenter.CTSCustomerClassification AS b ON a.CustID = b.CustID
+		WHERE b.ParentID = CONST_PARENTID_WRAPPER
+		UNION
+		SELECT b.CustID, b.CategoryID, b.CreatedDate
+		FROM Temp_InputCustomers_Dup AS a
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS b ON a.CustID = b.CustID
+			,	LATERAL (
+					SELECT cls.ParentID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cls
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
+					WHERE cls.CustID = b.CustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY cat.CategoryPriority ASC, cls.LastModifiedDate DESC
+					LIMIT 1
+				) AS ltr
+		WHERE b.ParentID = ltr.ParentID
+	)
+	SELECT c.CustID, cat.OldCategoryID AS CategoryID, cat.CustomerClass, c.CreatedDate
+	FROM CTE AS c
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = c.CategoryID
+	WHERE cat.IsActive = 1
+		AND cat.CustomerClass IS NOT NULL;
+
 END$$
 
 DELIMITER ;

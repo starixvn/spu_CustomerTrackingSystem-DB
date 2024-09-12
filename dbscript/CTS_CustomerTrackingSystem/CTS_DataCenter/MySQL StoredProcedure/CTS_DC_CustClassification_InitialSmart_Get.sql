@@ -16,12 +16,13 @@ BEGIN
 
 		Revisions: 
 				- 20240530@Thomas.Nguyen: Created [Redmine ID: #199345]
-            
+                - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryID [Redmine ID: #205317]
+
 		Example:
 			CALL CTS_DataCenter.CTS_DC_CustClassification_InitialSmart_Get(@NextScannedDateTime,@NextScannedCustID);
             SELECT @NextScannedDateTime,@NextScannedCustID
 	*/
-    DECLARE  CONST_CATEGORYID_INITIALSMART	INT DEFAULT 66;
+    DECLARE  CONST_CATEID_INITIALSMART	INT;
     
 	DECLARE lv_LastScannedDate DATETIME(3);
 	DECLARE lv_LastScannedCustID BIGINT UNSIGNED;
@@ -29,6 +30,8 @@ BEGIN
     DECLARE lv_SecondBatchSize SMALLINT;
     DECLARE lv_TotalRow SMALLINT;
 	
+    SET CONST_CATEID_INITIALSMART 		            = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMART');
+
     SELECT sys.ParameterValue
     INTO lv_LastScannedCustID
     FROM CTS_DataCenter.SystemParameter AS sys
@@ -47,16 +50,16 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
     CREATE TEMPORARY TABLE Temp_Customer(
 			CustID				BIGINT UNSIGNED
-		,	Probability		    DECIMAL(8,4)
-        ,   PredictTime 	    DATETIME(3)
+		,	Probability		    DECIMAL(8,2)
+        ,   SourceCreatedDate 	DATETIME(3)
         ,   InsertedTime        DATETIME(3)
         ,   PRIMARY KEY (InsertedTime, CustID)
     );
     
-    INSERT INTO Temp_Customer(CustID, Probability, PredictTime, InsertedTime)
+    INSERT INTO Temp_Customer(CustID, Probability, SourceCreatedDate, InsertedTime)
     SELECT	cs.CustID
 		, 	cs.Probability
-        ,	cs.PredictTime
+        ,	cs.SourceCreatedDate
 		,	cs.InsertedTime
     FROM CTS_DataCenter.Customer_InitialSmart AS cs
     WHERE cs.InsertedTime = lv_LastScannedDate
@@ -69,10 +72,10 @@ BEGIN
     IF lv_TotalRow < lv_BatchSize THEN   
         SET lv_SecondBatchSize = lv_BatchSize - lv_TotalRow;
         
-        INSERT INTO Temp_Customer(CustID, Probability, PredictTime, InsertedTime)
+        INSERT INTO Temp_Customer(CustID, Probability, SourceCreatedDate, InsertedTime)
 		SELECT	cs.CustID
             , 	cs.Probability
-            ,	cs.PredictTime
+            ,	cs.SourceCreatedDate
             ,	cs.InsertedTime
 		FROM CTS_DataCenter.Customer_InitialSmart AS cs
 		WHERE cs.InsertedTime > lv_LastScannedDate
@@ -88,10 +91,10 @@ BEGIN
         ,	cus.SubscriberID
         ,	cus.RoleID
         ,   cus.IsLicensee
-        ,	CONST_CATEGORYID_INITIALSMART AS CategoryID
-        ,	CONST_CATEGORYID_INITIALSMART AS CategoryGroup
+        ,	CONST_CATEID_INITIALSMART AS CategoryID
+        ,	CONST_CATEID_INITIALSMART AS CategoryGroup
         ,   tmp.Probability
-        ,   tmp.PredictTime AS DetectedDate
+        ,   tmp.SourceCreatedDate AS DetectedDate
 	FROM Temp_Customer AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
     

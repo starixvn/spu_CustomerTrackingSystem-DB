@@ -15,18 +15,26 @@ BEGIN
 		Revisions:
 			- 20230703@Jonas.Huynh: Created [Redmine ID: #189875]
 			- 20240318@Jonas.Huynh: Config Probation Days [Redmine ID: #201359]
+            - 20240718@Jonas.Huynh: Renovate CC [Redmine ID: #205317]
             
 		Param's Explanation:
         
 		Example:
-			- call CTS_DataCenter.CTS_DC_CustClassification_BySport_GetCurrentCategory('[{"CustId": 5941, "SportGroup": 10}]');
+			- call CTS_DataCenter.CTS_DC_CustClassification_BySport_GetCurrentCategory('[{"CustId": 5941, "SportGroup": 10}]'); call CTS_DataCenter.CTS_DC_CustClassification_BySport_GetCurrentCategory_UAT4('[{"CustId": 5941, "SportGroup": 10}]');
             
-	 */ 	
-    DECLARE	CONST_GROUP_NORMAL 			INT DEFAULT 200;
-	DECLARE	CATEGORY_GROUP_PROBATION	INT DEFAULT 206;
+	 */
+    
+    DECLARE	CONST_GROUP_PROBATION 		INT ;
+	DECLARE	CONST_PARENTID_NORMAL 		INT ;
+    DECLARE CONST_PARENTID_WRAPPER		INT	;   
+        
 	DECLARE lv_CurrentTime 				DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_CurrentDate 				DATE DEFAULT CURRENT_DATE();
-       
+	
+   	SET CONST_PARENTID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+    SET CONST_PARENTID_WRAPPER 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+    SET CONST_GROUP_PROBATION 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
 			CustID				BIGINT UNSIGNED
@@ -45,10 +53,11 @@ BEGIN
 			CustID 				BIGINT UNSIGNED
         ,	SportGroup			SMALLINT
         ,	CategoryID			INT
-        ,	CategoryGroup		SMALLINT
+        ,	CategoryGroupID		INT
         ,	IsProbationLastDay	BIT DEFAULT(0)
+        ,	CreatedDate			DATE
         ,   PRIMARY KEY (CustID, SportGroup)
-		,	INDEX IX_Temp_CustCategory_CategoryGroup(CategoryGroup)
+		,	INDEX IX_Temp_CustCategory_CategoryGroup(CategoryGroupID)
     );
     
     #1. Get valid customers
@@ -75,28 +84,39 @@ BEGIN
 	END IF;	
 
 	#2. Get latest normal category
-	INSERT INTO Temp_CustCategory(CustID, SportGroup, CategoryID, CategoryGroup)
-	SELECT 	tmpIc.CustID
-		,	tmpIc.SportGroup
-		,	cls.CategoryID
-		,	cc.CategoryGroup
-	FROM Temp_Cust AS tmpIc
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cls ON cls.CustID = tmpIc.CustID AND cls.SportID = tmpIc.SportGroup
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID;
-	
+	INSERT INTO Temp_CustCategory(CustID, SportGroup, CategoryID, CategoryGroupID, CreatedDate)
+	SELECT 	tmpc.CustID
+		,	tmpc.SportGroup
+		,	tmplc.CategoryID
+		,	tmplc.CategoryGroupID
+        ,	tmplc.CreatedDate
+	FROM Temp_Cust AS tmpc
+		, LATERAL	
+			   (	SELECT cc.CustID, cc.SportID, cc.CategoryID, ca.CategoryGroupID, cc.CreatedDate, ca.ParentID
+					FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE tmpc.CustID = cc.CustID
+						AND	tmpc.SportGroup = cc.SportID
+						AND ca.IsActive = 1
+						AND ca.ParentID <> CONST_PARENTID_WRAPPER 
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
+					LIMIT 1
+			   ) tmplc 
+	WHERE tmplc.ParentID = CONST_PARENTID_NORMAL;
+        	
 	#3. Get Probation info    
 	UPDATE Temp_CustCategory AS tmpCc
-		INNER JOIN CTS_DataCenter.ProbationAccountMonitor_BySport AS pro ON pro.CustID = tmpCc.CustID
         INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 23 AND s.ItemID = tmpCc.SportGroup 
-	SET IsProbationLastDay = (CASE WHEN pro.CreatedDate <= DATE_SUB(lv_CurrentDate, INTERVAL CAST(s.ItemValue AS UNSIGNED) DAY) THEN 1 /*Up to Smart, Risky*/ ELSE 0 END)
-	WHERE tmpCc.CategoryGroup = CATEGORY_GROUP_PROBATION;
+	SET tmpCc.IsProbationLastDay = (CASE WHEN tmpCc.CreatedDate <= DATE_SUB(lv_CurrentDate, INTERVAL CAST(s.ItemValue AS UNSIGNED) DAY) THEN 1 /*Up to Smart, Risky*/ ELSE 0 END)
+	WHERE tmpCc.CategoryGroupID = CONST_GROUP_PROBATION;
     
     #4. Return data set
 	SELECT	DISTINCT tmpCust.CustID
 		,	tmpCust.SportGroup
-		,	CASE WHEN tmpCc.CategoryGroup IS NULL THEN 0 ELSE tmpCc.CategoryGroup END AS CategoryID
+		,	CASE WHEN tmpCc.CategoryGroupID IS NULL THEN 0 ELSE tmpCc.CategoryGroupID END AS CategoryID
         ,	CASE WHEN tmpCc.IsProbationLastDay IS NULL THEN 0 ELSE tmpCc.IsProbationLastDay END AS IsProbationLastDay
 	FROM Temp_Cust AS tmpCust
-		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID AND tmpCc.SportGroup = tmpCust.SportGroup;
+		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID 
+			AND tmpCc.SportGroup = tmpCust.SportGroup;
 END$$
 DELIMITER ;

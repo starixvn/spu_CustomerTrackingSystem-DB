@@ -21,6 +21,7 @@ AS
 		- 20240318@Jonas.Huynh: Renovate Non-Sport Rules [Redmine ID: #201359]
 		- 20240320@Thomas.Nguyen: Classify customers without performance that were removed special CC from manual action [Redmine ID: #201360]
 		- 20240426@Jonas.Huynh: Exclude New Parlay SportGroup [Redmine ID: #203600]
+		- 20240618@Jonas.Nguyen: Renovate CC - Phase 2 [Redmine ID: #205317]
 
 	Param's Explanation:
 		@CustomersXML	 : This parameter is used to classify customer perf which bases on currentCategory
@@ -38,11 +39,14 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE	@CATEGORY_NULL				SMALLINT = 0,
-			@CATEGORY_NEWMEMBER			SMALLINT = 201,
-			@CATEGORY_NORMALMEMBER		SMALLINT = 202,
-			@CATEGORY_GOODMEMBER		SMALLINT = 205,
-			@CATEGORY_CCRESET			SMALLINT = -1;
+	DECLARE	@CATEGORY_NULL				INT = 0,
+			@CATEGORY_NEW				INT = 40100,
+			@CATEGORY_NORMAL			INT = 40300,
+			@CATEGORY_GOOD				INT = 40200,
+			@CATEGORY_PROBATION			INT = 40400,
+			@CATEGORY_SMART				INT = 40500,
+			@CATEGORY_RISKY				INT = 40600,
+			@CATEGORY_CCRESET			INT = -1;
 
 	DECLARE @SPORT_SOCCER				SMALLINT = 1,
 			@SPORT_BASKETBALL			SMALLINT = 2,
@@ -67,7 +71,7 @@ BEGIN
 	CREATE TABLE #tmpCustomers(
 		CustId			       INT,
 		SportGroup			   SMALLINT,
-		CurrentCategoryId      SMALLINT NOT NULL,
+		CurrentCategoryId      INT		NOT NULL,
 		IsCheckBetCount		   BIT	    NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT		NOT NULL DEFAULT 0,
 		IsPlaceBetWithin30Days BIT		NOT NULL DEFAULT 0,
@@ -109,8 +113,8 @@ BEGIN
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		CustId				   INT			  NOT NULL,
 		SportGroup			   SMALLINT		  NOT NULL,
-		CurrentCategoryId	   SMALLINT		  NOT NULL DEFAULT 0,
-		NewCategoryId		   SMALLINT		  NULL,
+		CurrentCategoryId	   INT			  NOT NULL DEFAULT 0,
+		NewCategoryId		   INT			  NULL,
 		IsProbationLastDay	   BIT			  NOT NULL DEFAULT 0,
 		IsCheckBetCount		   BIT			  NOT NULL DEFAULT 0,
 		IsSpecialSite		   BIT			  DEFAULT 0,
@@ -136,7 +140,7 @@ BEGIN
 	CREATE TABLE #tmpBetCount(
 		CustId		INT,
 		SportGroup	SMALLINT,
-		CategoryId	SMALLINT  NOT NULL,
+		CategoryId	INT		  NOT NULL,
 		BetCount	BIGINT	  NULL,
 		PRIMARY KEY (CustId, SportGroup)
 	);
@@ -160,7 +164,7 @@ BEGIN
 	INSERT INTO #tmpCustomers(CustId, SportGroup, CurrentCategoryId, IsCheckBetCount, IsProbationLastDay)
 	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
 		,	T.C.value('./@SportGroup', 'SMALLINT')		AS SportGroup
-		,	T.C.value('./@CategoryId', 'SMALLINT')		AS CurrentCategoryId
+		,	T.C.value('./@CategoryId', 'INT')			AS CurrentCategoryId
 		,	T.C.value('./@IsCheckBetCount', 'BIT')		AS IsCheckBetCount
 		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
 	FROM @CustomersXML.nodes('//r') AS T(C)
@@ -170,7 +174,7 @@ BEGIN
 	DELETE r WITH(ROWLOCK)
 	FROM #tmpCustomers AS r
 	WHERE r.IsCheckBetCount = 1 
-		AND r.CurrentCategoryId NOT IN (@CATEGORY_NULL, @CATEGORY_NEWMEMBER, @CATEGORY_NORMALMEMBER, @CATEGORY_GOODMEMBER);
+		AND r.CurrentCategoryId NOT IN (@CATEGORY_NULL, @CATEGORY_NEW, @CATEGORY_NORMAL, @CATEGORY_GOOD);
 
 	-- #3: Get accummulated performance
 	SELECT @ListCustIds = STUFF(( SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
@@ -217,8 +221,8 @@ BEGIN
 	FROM #tmpCustomerAccummulatedInfo AS a
 		INNER JOIN dbo.CustomerClassification_BySport_BetCount AS b WITH(NOLOCK) ON a.CustId = b.CustId AND a.SportGroup = b.SportId
 	WHERE a.IsCheckBetCount = 1 
-		  AND ((a.CurrentCategoryId = @CATEGORY_GOODMEMBER AND a.BetCount - b.BetCount < 100)
-		  OR (a.CurrentCategoryId = @CATEGORY_NORMALMEMBER AND a.BetCount - b.BetCount < 20));
+		  AND ((a.CurrentCategoryId = @CATEGORY_GOOD AND a.BetCount - b.BetCount < 100)
+		  OR (a.CurrentCategoryId = @CATEGORY_NORMAL AND a.BetCount - b.BetCount < 20));
 	
 	-- #8: Insert scanned cust daily
 	UPDATE b WITH(ROWLOCK, UPDLOCK)
@@ -262,7 +266,7 @@ BEGIN
 	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT t.CustId
 		,  t.SportGroup
-		,  @CATEGORY_NEWMEMBER
+		,  @CATEGORY_NEW
 		,  @CATEGORY_NULL
 		,  @ToDate
 		,  @CurrentDateTime
@@ -351,8 +355,11 @@ BEGIN
 	INSERT INTO dbo.CustomerClassification_BySport(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	OUTPUT INSERTED.CustId, INSERTED.SportId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount  
 	SELECT  a.CustId
-		,	a.SportGroup
-		,	CASE WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId ELSE a.NewCategoryId END
+		, 	a.SportGroup
+		,   CASE 
+				WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId 
+				WHEN a.NewCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY) AND a.CurrentCategoryId NOT IN (@CATEGORY_PROBATION, @CATEGORY_SMART, @CATEGORY_RISKY) THEN @CATEGORY_PROBATION
+			ELSE a.NewCategoryId END
 		,	a.CurrentCategoryId
 		,	@CurrentDate
 		,	@CurrentDateTime

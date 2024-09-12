@@ -16,17 +16,22 @@ BEGIN
 		Revisions:
 			- 20240321@Casey.Huynh: 	Created [Redmine ID: #201538]
 			- 20240521@Victoria.Le: 	Danger Score - Deposit [Redmine ID: #205166]
-            
-		Example:
+            - 20240620@Jonas.Huynh: 	Renovate CC [RedmineID: #205317]
+		
+        Example:
 			CALL CTS_DataCenter.CTS_DC_DangerousDetection_GetLatest(@ip_IsLicensee:=0);
 	*/
-    DECLARE  CONST_CATEGORYID_EARLYWARNINGMEMBER	INT DEFAULT 65;
-    
-	DECLARE lv_LastScannedDate DATETIME(3);
+    DECLARE	CONST_CATEID_EARLYWARNING			INT;
+    DECLARE	CONST_CATEGROUPID_EARLYWARNING		INT;
+        
+	DECLARE lv_LastScannedDate DATETIME(3);	
 	DECLARE lv_LastCustID BIGINT UNSIGNED;
     DECLARE lv_BatchSize SMALLINT;
     DECLARE lv_TotalRow SMALLINT;
-	
+	  
+    SET CONST_CATEID_EARLYWARNING	 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_EARLYWARNING');
+    SET CONST_CATEGROUPID_EARLYWARNING	 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_EARLYWARNING');
+    
 	IF (ip_IsLicensee = 0) THEN
 		SELECT sys.ParameterValue
 		INTO lv_LastScannedDate
@@ -110,8 +115,8 @@ BEGIN
         ,	cus.CTSCustID
         ,	cus.SubscriberID
         ,	cus.RoleID
-        ,	CONST_CATEGORYID_EARLYWARNINGMEMBER AS CategoryID
-        ,	CONST_CATEGORYID_EARLYWARNINGMEMBER AS CategoryGroup
+        ,	CONST_CATEID_EARLYWARNING AS CategoryID
+        ,	CONST_CATEGROUPID_EARLYWARNING AS CategoryGroup
 	FROM Temp_Cust AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0;
     

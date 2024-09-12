@@ -16,7 +16,8 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 20240314@Thomas.Nguyen: Created [Redmine ID: #201360]
+			- 20240314@Thomas.Nguyen: 		Created [Redmine ID: #201360]
+			- 20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
 		
 		Param's Explanation (filtered by):   
             - ip_ActionType: 0: Add, 2: Remove
@@ -24,14 +25,14 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_SpecialCustClass_ValidateUsername(0,'[{"Username":"member11","SportID":1}]');
 	*/
     
-	DECLARE	CONST_CATEGORYID_VVIP 	INT DEFAULT 210;
-	DECLARE	CONST_GROUP_NORMAL		INT DEFAULT 200;
+	DECLARE CONST_CATEID_VVIP				INT;
+	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
 			Username 	    VARCHAR(50)
 		,	CTSCustID	    BIGINT UNSIGNED
-		,	CustID		    INT UNSIGNED
+		,	CustID		    BIGINT UNSIGNED
 		,	SportID		    SMALLINT UNSIGNED
 		,	SubscriberID	INT
 		,	IsLicenseeVIP	TINYINT
@@ -71,7 +72,7 @@ BEGIN
 	UPDATE Temp_Cust AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS class ON class.CTSCustID = tmp.CTSCustID 
 	SET tmp.ValidatedID	= 3
-	WHERE tmp.IsExistedCust = 1 AND tmp.ValidatedID = 1 AND tmp.SportID = 0 AND class.SportGroupID = CONST_GROUP_NORMAL AND class.CategoryID = CONST_CATEGORYID_VVIP;
+	WHERE tmp.IsExistedCust = 1 AND tmp.ValidatedID = 1 AND tmp.SportID = 0 AND class.CategoryID = CONST_CATEID_VVIP;
 	
 	UPDATE Temp_Cust AS tmp
 		INNER JOIN CTS_DataCenter.SpecialCustomerClass AS scc ON scc.CTSCustID = tmp.CTSCustID

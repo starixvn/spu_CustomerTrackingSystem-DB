@@ -19,6 +19,7 @@ BEGIN
 
 		Revisions:
 			- 20210217@Long.Luu: Created [Redmine ID: #0000]
+			- 20240909@Jonas.Huynh:	Renovate CC [Redmine ID: #205317]
             
 		Example:
 			call CTS_DataCenter.CTS_DC_RobotDetection_Insert ('[{"C": 123, "R": 1}]','20210911', @ErrorMessage);    
@@ -36,19 +37,15 @@ BEGIN
 			CustID						BIGINT UNSIGNED
 		, 	PeriodRangeType				SMALLINT UNSIGNED
         ,	IsNewRobot					BIT DEFAULT 1
-        ,	IsNewRange					BIT DEFAULT 1
+        ,	CreatedDate					TIMESTAMP(3) 
         ,	PRIMARY KEY 				PK_Temp_RobotInfo(CustID, PeriodRangeType)
 	);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_DisabledRobot;    
-	CREATE TEMPORARY TABLE Temp_DisabledRobot(	  	
-			CustID						BIGINT UNSIGNED PRIMARY KEY
-	); 
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedRobotInfo;    
 	CREATE TEMPORARY TABLE Temp_ExistedRobotInfo(	  	
 			CustID						BIGINT UNSIGNED
 		, 	PeriodRangeType				SMALLINT UNSIGNED
+        ,	CreatedDate					TIMESTAMP(3) 
         ,	PRIMARY KEY 				PK_Temp_RobotInfo(CustID, PeriodRangeType)
 	); 
     
@@ -61,59 +58,32 @@ BEGIN
             , 	PeriodRangeType 		SMALLINT UNSIGNED	PATH "$.R"
 		 )) AS tmpTable;  
     
-    INSERT INTO Temp_ExistedRobotInfo(CustID, PeriodRangeType)
+    INSERT INTO Temp_ExistedRobotInfo(CustID, PeriodRangeType, CreatedDate)
 	SELECT 	DISTINCT r.CustID
 		, 	r.PeriodRangeType
+        ,	r.CreatedDate
 	FROM Temp_RobotInfo AS t
 		INNER JOIN CTS_DataCenter.RobotDetection AS r ON r.CustID = t.CustID;
     
     UPDATE Temp_RobotInfo AS t
-		INNER JOIN Temp_ExistedRobotInfo AS r ON r.CustID = t.CustID
-	SET t.IsNewRobot = 0;
+		INNER JOIN Temp_ExistedRobotInfo AS r ON r.CustID = t.CustID 
+			AND r.PeriodRangeType = t.PeriodRangeType
+	SET t.IsNewRobot = 0,
+		t.CreatedDate = r.CreatedDate;
+       
+	DELETE r
+	FROM CTS_DataCenter.RobotDetection AS r
+		INNER JOIN Temp_RobotInfo AS t ON t.CustID = r.CustID
+			AND t.PeriodRangeType = r.PeriodRangeType; 
     
-    UPDATE Temp_RobotInfo AS t
-		INNER JOIN Temp_ExistedRobotInfo AS r ON r.CustID = t.CustID AND r.PeriodRangeType = t.PeriodRangeType
-	SET t.IsNewRange = 0;
-    
-    INSERT INTO Temp_DisabledRobot(CustID)
-    SELECT DISTINCT t.CustID
-    FROM Temp_RobotInfo AS t
-		INNER JOIN CTS_DataCenter.RobotDetection AS r ON r.CustID = t.CustID
-	WHERE r.IsDisabled = 1;
-
-	#IF ((SELECT PeriodRangeType FROM Temp_RobotInfo LIMIT 1) <> 200) THEN
-		INSERT INTO CTS_DataCenter.RobotDetection(CustID,PeriodRangeType,IsDisabled,CreatedDate,LastModifiedDate)
-		SELECT 	t.CustID
-			, 	t.PeriodRangeType
-			,	CASE WHEN d.CustID IS NULL THEN 0 ELSE 1 END
-			, 	lv_CurrentDateTime
-			, 	lv_CurrentDateTime #ip_ScanDate, lv_CurrentDateTime
-		FROM Temp_RobotInfo AS t
-			LEFT JOIN Temp_DisabledRobot AS d ON t.CustID = d.CustID
-		WHERE t.IsNewRange = 1;
-		
-		UPDATE CTS_DataCenter.RobotDetection AS r
-			INNER JOIN Temp_RobotInfo AS t ON r.CustID = t.CustID AND r.PeriodRangeType = t.PeriodRangeType
-		SET r.LastModifiedDate = lv_CurrentDateTime
-		WHERE t.IsNewRange = 0;
-    /*ELSE
-		INSERT INTO CTS_DataCenter.RobotDetection_OCRD(CustID,PeriodRangeType,IsDisabled,CreatedDate,LastModifiedDate)
-		SELECT 	t.CustID
-			, 	t.PeriodRangeType
-			,	CASE WHEN d.CustID IS NULL THEN 0 ELSE 1 END
-			, 	lv_CurrentDateTime
-			, 	lv_CurrentDateTime #ip_ScanDate, lv_CurrentDateTime
-		FROM Temp_RobotInfo AS t
-			LEFT JOIN Temp_DisabledRobot AS d ON t.CustID = d.CustID
-		WHERE t.IsNewRange = 1
-        ON DUPLICATE KEY UPDATE LastModifiedDate = lv_CurrentDateTime;
-		
-		UPDATE CTS_DataCenter.RobotDetection_OCRD AS r
-			INNER JOIN Temp_RobotInfo AS t ON r.CustID = t.CustID AND r.PeriodRangeType = t.PeriodRangeType
-		SET r.LastModifiedDate = lv_CurrentDateTime
-		WHERE t.IsNewRange = 0;
-	END IF;*/
-    
+	INSERT INTO CTS_DataCenter.RobotDetection(CustID,PeriodRangeType,IsDisabled,CreatedDate,LastModifiedDate)
+	SELECT 	t.CustID
+		, 	t.PeriodRangeType
+		,	0
+		, 	CASE WHEN t.CreatedDate IS NULL THEN lv_CurrentDateTime ELSE t.CreatedDate END
+		, 	lv_CurrentDateTime #ip_ScanDate, lv_CurrentDateTime
+	FROM Temp_RobotInfo AS t;
+		    
     SELECT CustID, PeriodRangeType, IsNewRobot
     FROM Temp_RobotInfo;
      

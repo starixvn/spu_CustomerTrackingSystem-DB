@@ -1,3 +1,4 @@
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
@@ -12,7 +13,7 @@ AS
 	Original:	
 	Revisions:
 		- 20231030@Victoria.Le: 	Initial Writing  [Redmine ID: #195060]
-
+		- 20240628@Thomas.Nguyen: 	Renovate CC phase 2 - Not update infor when JobScannedType = 2 [Redmine ID: #205317]
 */
 BEGIN
 	
@@ -172,7 +173,7 @@ BEGIN
 			,	LastJobScannedTime	= 	@Today
 		FROM dbo.CustomerClassification_ScannedNewCust AS cs
 			INNER JOIN #tmpBatch AS tb ON tb.CustId = cs.CustId
-		WHERE tb.IsExist = 1 AND tb.SportType IN (@SPORT_SOCCER,@SPORT_BASEKETBALL);
+		WHERE tb.IsExist = 1 AND tb.SportType IN (@SPORT_SOCCER,@SPORT_BASEKETBALL) AND cs.JobScannedType <> 2;
 		
 		UPDATE cs WITH (UPDLOCK,ROWLOCK)
 		SET 	TotalTicketCount 	= 	tb.TotalTicketCount
@@ -184,7 +185,7 @@ BEGIN
 			,	LastJobScannedTime	= 	@Today
 		FROM dbo.CustomerClassification_ScannedNewCust AS cs
 			INNER JOIN #tmpBatch AS tb ON tb.CustId = cs.CustId
-		WHERE tb.IsExist = 1 AND tb.SportType IS NULL;
+		WHERE tb.IsExist = 1 AND tb.SportType IS NULL AND cs.JobScannedType <> 2;
 
 		INSERT INTO dbo.CustomerClassification_ScannedNewCust (CustId,TotalTicketCount,GBTicketCount,SportType,CreatedTime,JobScannedType,LastJobScannedTime)
 		SELECT 	tb.CustId
@@ -199,7 +200,7 @@ BEGIN
 					 ELSE @TYPE_SCANNING END
 			,	@Today
 		FROM #tmpBatch AS tb
-		WHERE tb.IsExist = 0 AND tb.SportType IN (@SPORT_SOCCER,@SPORT_BASEKETBALL);;
+		WHERE tb.IsExist = 0 AND tb.SportType IN (@SPORT_SOCCER,@SPORT_BASEKETBALL);
 		
 		INSERT INTO dbo.CustomerClassification_ScannedNewCust (CustId,TotalTicketCount,GBTicketCount,SportType,CreatedTime,JobScannedType,LastJobScannedTime)
 		SELECT 	tb.CustId

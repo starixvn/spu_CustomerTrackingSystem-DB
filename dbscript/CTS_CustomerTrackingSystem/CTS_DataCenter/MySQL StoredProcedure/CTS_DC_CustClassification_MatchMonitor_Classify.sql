@@ -19,15 +19,41 @@ BEGIN
 			- 20240319@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
             - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Remove GroupPriority [Redmine ID: #200854]    
 			- 20240530@Casey.Huynh:	Saba Group Betting (NOT Classify Saba GB Match) [Redmine ID: #191972]
+			- 20240717@Jonas.Huynh:	Renovate CC [Redmine ID: #205317]
             
 		Param's Explanation:
         
 		Example:
 			CALL CTS_DataCenter.CTS_DC_CustClassification_MatchMonitor_Classify();
 	 */
+        
+	DECLARE	CONST_PARENTID_PA						INT;
+    
+	DECLARE	CONST_CATEID_ROBOTUSER					INT;
+	DECLARE	CONST_CATEID_ROBOTUSERLOSING			INT;
+	DECLARE	CONST_CATEID_ROBOTOCRD					INT;
+	DECLARE	CONST_CATEID_ROBOTOCRDLOSING			INT;
+	DECLARE	CONST_CATEID_ROBOTUSERABNORMAL			INT;
+	DECLARE	CONST_CATEID_ROBOTBETTING				INT;
+	DECLARE	CONST_CATEID_SYSTEMDETECTGB				INT;
+    DECLARE	CONST_CATEID_ROBOTOLD				    INT;
+  	DECLARE	CONST_CATEGROUPID_SYSTEMDETECTGB		INT;
     
 	DECLARE lv_PackSize INT;
 	DECLARE lv_MatchID INT;
+     
+    SET CONST_PARENTID_PA	 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_CATEID_ROBOTBETTING	 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTBETTING');
+	SET CONST_CATEID_ROBOTOLD	 			    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOLD');
+    SET CONST_CATEID_ROBOTUSER	 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
+    SET CONST_CATEID_ROBOTUSERLOSING			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSERLOSING');
+    SET CONST_CATEID_ROBOTOCRD	 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
+    SET CONST_CATEID_ROBOTOCRDLOSING			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRDLOSING');
+    SET CONST_CATEID_ROBOTUSERABNORMAL	        = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSERABNORMAL');
+    SET CONST_CATEID_SYSTEMDETECTGB	 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SYSTEMDETECTGB');
+    
+    SET CONST_CATEGROUPID_SYSTEMDETECTGB 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SYSTEMDETECTGB');
+
     
     /*****GET SYSTEM Parameter VALUE****/
     SELECT s.ParameterValue
@@ -88,7 +114,7 @@ BEGIN
 	INSERT INTO Temp_ExcludePACategoryID(CategoryID)
     SELECT cat.CategoryID
     FROM CTS_DataCenter.CustomerCategory AS cat
-    WHERE cat.ParentID = 50 AND cat.CategoryID NOT IN  (57,61,163,164,165,166,179);   
+    WHERE cat.ParentID = CONST_PARENTID_PA AND cat.CategoryID NOT IN (CONST_CATEID_ROBOTBETTING, CONST_CATEID_ROBOTOLD, CONST_CATEID_ROBOTUSER, CONST_CATEID_ROBOTUSERLOSING, CONST_CATEID_ROBOTOCRD, CONST_CATEID_ROBOTOCRDLOSING, CONST_CATEID_ROBOTUSERABNORMAL);
 
     INSERT INTO Temp_MatchMonitorDetailsCust(CustID, MMDetailsID, MatchID, NoOfCust)
     WITH CTE_MatchMonitorDetials AS
@@ -128,8 +154,8 @@ BEGIN
         ,	tmpCust.RoleID
         ,	tmpCust.SubscriberID
         ,	tmpCust.IsLicensee
-        ,	63 AS CategoryID # Group Betting
-        , 	63 AS CategoryGroup # Group Betting
+        ,	CONST_CATEID_SYSTEMDETECTGB AS CategoryID # Group Betting
+        , 	CONST_CATEGROUPID_SYSTEMDETECTGB AS CategoryGroup # Group Betting
 	FROM Temp_Cust AS tmpCust
 	WHERE NOT EXISTS (	SELECT 1 
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls 

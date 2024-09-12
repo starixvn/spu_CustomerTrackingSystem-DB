@@ -13,19 +13,28 @@ BEGIN
 
 		Revisions:
 			- 20211130@Aries.Nguyen: Created [Redmine: #164079]
-        
+            - 20240620@Jonas.Huynh:  Renovate CC [RedmineID: #205317]
 		Param's Explanation (filtered by):   
         
         Example: 
 			- CALL CTS_DC_CustClassification_ProblemAccount_GetB2CByBatch ();
 	*/	 
-	DECLARE	CONST_GROUP_PROBLEM 	INT DEFAULT 0;
+    DECLARE	CONST_PARENTID_PA 		INT;
+    DECLARE	CONST_PARENTID_WRAPPER	INT;
+    
     DECLARE lv_LastCustID 			INT UNSIGNED;
     DECLARE lv_NextCustID 			INT UNSIGNED;
 	DECLARE lv_BatchSize 			INT;
     DECLARE lv_CurrentSubID 		INT UNSIGNED;
     DECLARE lv_NextSubID 			INT UNSIGNED;
 
+	SET CONST_PARENTID_PA			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+	SET CONST_PARENTID_WRAPPER		= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_ProblemAccount;
+    CREATE TEMPORARY TABLE Temp_ProblemAccount (
+			CustID 		INT  UNSIGNED PRIMARY KEY
+    );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust (
@@ -49,56 +58,113 @@ BEGIN
 	FROM CTS_DataCenter.SystemParameter 
 	WHERE ParameterID = 66;
     
-    INSERT IGNORE INTO Temp_Cust(CustID, FraudID)
-	SELECT 	clss.CustID
-		,	cate.AFCFraudID
+    INSERT IGNORE INTO Temp_ProblemAccount(CustID)
+	SELECT DISTINCT clss.CustID
 	FROM CTS_DataCenter.CTSCustomerClassification AS clss
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID  AND cate.AFCFraudID IS NOT NULL
+		, LATERAL	
+		  (		SELECT cc.CustID, ca.ParentID
+				FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+				WHERE cc.CustID = clss.CustID
+					AND ca.IsActive = 1
+					AND ca.ParentID <> CONST_PARENTID_WRAPPER
+				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
+				LIMIT 1
+		   ) AS tmplc
 	WHERE clss.CustID > lv_LastCustID
-		AND clss.SportGroupID = CONST_GROUP_PROBLEM
+		AND clss.ParentID = CONST_PARENTID_PA
         AND clss.SubscriberID = lv_CurrentSubID
+        AND tmplc.CustID = clss.CustID
+        AND tmplc.ParentID = CONST_PARENTID_PA
+        AND EXISTS (SELECT 1 
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON cc.CustID = tmplc.CustID
+					WHERE clss.ParentID = CONST_PARENTID_PA
+						AND ca.AFCFraudID IS NOT NULL)
 	ORDER BY clss.CustID ASC
 	LIMIT lv_BatchSize;
+        
+	INSERT IGNORE INTO Temp_Cust(CustID, FraudID)
+	SELECT DISTINCT pa.CustID, ca.AFCFraudID
+	FROM Temp_ProblemAccount AS pa
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = pa.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = clss.CategoryID
+	WHERE clss.ParentID = CONST_PARENTID_PA
+		AND ca.AFCFraudID IS NOT NULL;
     
     IF NOT EXISTS (SELECT 1 FROM Temp_Cust) THEN
 		SELECT ItemID
         INTO lv_NextSubID
 		FROM CTS_DataCenter.StaticList  AS sub
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON sub.ItemID = clss.SubscriberID AND clss.SportGroupID = 0
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON sub.ItemID = clss.SubscriberID AND clss.ParentID = CONST_PARENTID_PA
+			, LATERAL	
+			  (		SELECT cc.CustID, ca.ParentID, cc.SubscriberID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = clss.CustID
+						AND ca.IsActive = 1
+						AND ca.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
+					LIMIT 1
+			   ) AS tmplc
 		WHERE ListID = 15 
 			AND ItemID > lv_CurrentSubID
+			AND tmplc.ParentID = CONST_PARENTID_PA
+            AND tmplc.SubscriberID = sub.ItemID
+			AND EXISTS (SELECT 1 
+						FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON cc.CustID = tmplc.CustID
+						WHERE clss.ParentID = CONST_PARENTID_PA	
+							AND ca.AFCFraudID IS NOT NULL)
 		ORDER BY ItemID ASC
-		LIMIT 1; 
+		LIMIT 1;
     END IF;
     
-    IF lv_NextSubID IS NOT NULL THEN
-		INSERT IGNORE INTO Temp_Cust(CustID, FraudID)
-		SELECT 	clss.CustID
-			,	cate.AFCFraudID
+	IF lv_NextSubID IS NOT NULL THEN
+		TRUNCATE Temp_ProblemAccount;
+        
+		INSERT IGNORE INTO Temp_ProblemAccount(CustID)
+		SELECT DISTINCT clss.CustID
 		FROM CTS_DataCenter.CTSCustomerClassification AS clss
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.AFCFraudID IS NOT NULL
+			, LATERAL	
+			  (		SELECT cc.CustID, ca.ParentID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CustID = clss.CustID
+						AND ca.IsActive = 1
+						AND ca.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
+					LIMIT 1
+			   ) AS tmplc
 		WHERE clss.CustID > 0
-			AND clss.SportGroupID = CONST_GROUP_PROBLEM
+			AND clss.ParentID = CONST_PARENTID_PA
 			AND clss.SubscriberID = lv_NextSubID
+            AND tmplc.CustID = clss.CustID
+			AND tmplc.ParentID = CONST_PARENTID_PA
+			AND EXISTS (SELECT 1 
+						FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+							INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON cc.CustID = tmplc.CustID
+						WHERE clss.ParentID = CONST_PARENTID_PA	
+							AND ca.AFCFraudID IS NOT NULL)
 		ORDER BY clss.CustID ASC
 		LIMIT lv_BatchSize;
-        
+			
+		INSERT IGNORE INTO Temp_Cust(CustID, FraudID)
+		SELECT DISTINCT pa.CustID, ca.AFCFraudID
+		FROM Temp_ProblemAccount AS pa
+			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = pa.CustID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = clss.CategoryID
+		WHERE clss.ParentID = CONST_PARENTID_PA
+			AND ca.AFCFraudID IS NOT NULL;
 	ELSE
 		SET lv_NextSubID = lv_CurrentSubID;
-	END IF;
+ 	END IF;
     
     SELECT MAX(CustID)
     INTO lv_NextCustID
     FROM Temp_Cust;
 		
-    IF lv_NextCustID IS NOT NULL THEN
-		INSERT IGNORE INTO Temp_Cust(CustID, FraudID)
-		SELECT 	clss.CustID
-			,	cate.AFCFraudID
-		FROM CTS_DataCenter.CTSCustomerClassification AS clss
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.AFCFraudID IS NOT NULL 
-		WHERE clss.CustID = lv_NextCustID;
-        
+    IF lv_NextCustID IS NOT NULL THEN        
 		UPDATE CTS_DataCenter.SystemParameter 
         SET ParameterValue = lv_NextCustID
 		WHERE ParameterID = 64;

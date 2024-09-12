@@ -17,7 +17,8 @@ sp:BEGIN
 			- 20220909@Aries.Nguyen:	Created  [Redmine ID: #176992] 
 			- 20230210@Long.Luu: 		Fix Customer Classification Log [Redmine ID: #183279] 
             - 20230707@Jonas.Huynh:		Renovate normal classification [Redmine ID: #189875]
-            
+            - 20240628@Thomas.Nguyen: 	Renovate CC phase 2 [Redmine ID: #205317]
+
 		Param's Explanation (filtered by):
 
 		Example:
@@ -37,19 +38,22 @@ sp:BEGIN
     CREATE TEMPORARY TABLE Temp_History (
 			ID 					BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	CustID 				BIGINT UNSIGNED 
-		,	CTSCustID 			BIGINT UNSIGNED 
+		,	CTSCustID 			BIGINT UNSIGNED
+		,	ParentID  			INT UNSIGNED  
 		,	SportID 			SMALLINT UNSIGNED 
-		,	CategoryID 			SMALLINT UNSIGNED 
+		,	CategoryID 			INT UNSIGNED 
 		,	TurnoverRM 			DECIMAL(20 , 4 ) 
 		,	WinlossRM 			DECIMAL(20 , 4 )
 		,	BetCount 			BIGINT 
 		,	ActiveDays 			INT
-		,	TargetCC 			SMALLINT
+		,	TargetCC 			INT
 		,	ActionType 			TINYINT 
 		,	LastModifiedDate 	DATETIME 
 		,	LastModifiedBy 		INT UNSIGNED 
 		,	InsertDate 			DATETIME
         ,	PerformanceTime		DATETIME
+		,	SourceTypeID	 	SMALLINT UNSIGNED
+		,	Remark			 	VARCHAR(500)
 		,	KEY 				IX_Temp_History_CustIDSportID (CustID, SportID)
 	);
     
@@ -95,10 +99,11 @@ sp:BEGIN
 		LEAVE sp; 
 	END IF;
 
-    INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime)
+    INSERT INTO Temp_History(ID,CustID,CTSCustID,ParentID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime,SourceTypeID,Remark)
     SELECT 	ID 					
 		,	CustID 				
-		,	CTSCustID 			
+		,	CTSCustID 	
+		,	ParentID		
 		,	SportID 			
 		,	CategoryID 			
 		,	TurnoverRM 			
@@ -111,6 +116,8 @@ sp:BEGIN
 		,	LastModifiedBy 		
 		,	InsertDate
         ,   PerformanceTime
+		,	SourceTypeID
+		,	Remark
 	FROM CTS_DataCenter.CTSCustomerClassification_BySport_History
     WHERE ID BETWEEN lv_LastID AND lv_NextLastID
         AND InsertDate < lv_DateValid;
@@ -159,10 +166,11 @@ sp:BEGIN
 						WHERE k.ID = h.ID);		
         
         # take back the old log for the new active ones
-        INSERT INTO Temp_History(ID,CustID,CTSCustID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime)
+        INSERT INTO Temp_History(ID,CustID,CTSCustID,ParentID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime,SourceTypeID,Remark)
 		SELECT 	h.ID 					
 			,	h.CustID 				
-			,	h.CTSCustID 			
+			,	h.CTSCustID 
+			,	h.ParentID			
 			,	h.SportID 			
 			,	h.CategoryID 			
 			,	h.TurnoverRM 			
@@ -175,6 +183,8 @@ sp:BEGIN
 			,	h.LastModifiedBy 		
 			,	h.InsertDate 	
             ,	h.PerformanceTime
+			,	h.SourceTypeID
+			,	h.Remark
 		FROM Temp_CustDataShouldBeRemoved AS k
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport_History AS h ON k.CustID = h.CustID AND k.SportID = h.SportID
 		WHERE h.ID < lv_LastID
@@ -188,7 +198,8 @@ sp:BEGIN
     
 		 SELECT ID 					
 			,	CustID 				
-			,	CTSCustID 			
+			,	CTSCustID 	
+			,	ParentID		
 			,	SportID 			
 			,	CategoryID 			
 			,	TurnoverRM 			
@@ -201,6 +212,8 @@ sp:BEGIN
 			,	LastModifiedBy 		
 			,	InsertDate
             , 	PerformanceTime
+			,	SourceTypeID
+			,	Remark
 		FROM Temp_History;
 		
 		UPDATE CTS_DataCenter.SystemParameter
