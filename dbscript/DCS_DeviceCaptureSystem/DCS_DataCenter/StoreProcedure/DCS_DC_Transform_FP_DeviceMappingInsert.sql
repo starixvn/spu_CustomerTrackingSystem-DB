@@ -99,19 +99,13 @@ BEGIN
     WHERE trans.TransID >= lv_Min_Transaction_TransID
     LIMIT ip_BatchSize;
     
-    DELETE FROM Temp_DeviceMapping
-    WHERE FP_TaggingID = 0
-		AND FP_FingerPrintID = 0
-		AND FP_DeviceFingerprintAccountID = 0
-		AND FP_DeviceFingerprintAccount_EvolveID = 0
-		AND FP_DeviceFingerprintAccountOldID = 0;
-    
     SET lv_Min_Transaction_TransID = (SELECT MIN(TransID) FROM Temp_DeviceMapping);
     
     -- Wait lv_Minute_To_Wait_Evolution minutes
     DELETE tmp
     FROM Temp_DeviceMapping AS tmp
-    WHERE FP_DeviceFingerprintAccountID > 0
+    WHERE (FP_TaggingID > 0 OR FP_FingerPrintID > 0)
+		AND FP_DeviceFingerprintAccountID > 0
 		AND FP_DeviceFingerprintAccount_EvolveID = 0
 		AND FP_DeviceFingerprintAccount_InsertedTime >= DATE_ADD(NOW(), INTERVAL (-1)*lv_Minute_To_Wait_Evolution MINUTE);
     
@@ -248,10 +242,11 @@ BEGIN
                         ELSE CONST_DEVICESTATUS_NEW
 					END
                 )
-                ELSE CONST_DEVICESTATUS_OLD
+                ELSE (CASE WHEN FP_DeviceMappingID = 0 
+						THEN 0
+                        ELSE CONST_DEVICESTATUS_OLD END) 
 			END AS FP_DeviceStatus
-    FROM Temp_DeviceMapping
-    WHERE FP_DeviceID > 0;
+    FROM Temp_DeviceMapping;
     
     /*****UPDATE MaxTransID in SystemSetting****************************************************/    
     IF lv_Min_Transaction_TransID IS NOT NULL AND lv_Min_Transaction_TransID > 0 THEN
