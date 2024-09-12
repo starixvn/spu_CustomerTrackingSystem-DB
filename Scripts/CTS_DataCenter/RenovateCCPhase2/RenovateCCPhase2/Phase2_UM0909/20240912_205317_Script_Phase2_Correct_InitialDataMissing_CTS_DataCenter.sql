@@ -8,6 +8,14 @@
 
 	Revisions:	
 		- 20240912@Victoria.Le: 	Initial Writing [Redmine ID: #205317]
+										1. ParentID + CategoryID = NULL -- REMOVE VVIP
+										2. CategoryID INCORRECT in CCMain
+										3. TVS MISSING - FROM ID > 174216
+										4. TVS SOURCE - DELETE DUPLICATE IsDisabled = 1
+										5. UPDATE DATA INIT = NULL
+										6. RequestTypeID = 2 FOR ROBOT
+										7. CC305-CC3005 - Old data: update Remark = NULL
+										8. RobotDetection - Update IsDisabled = 1 for customers archieved
 		
 	Param's Explanation (filtered by):
 
@@ -16,15 +24,14 @@
 
 USE CTS_DataCenter;
 
-
-/*-- ParentID + CategoryID = NULL -- REMOVE VVIP*/
+/*1. ParentID + CategoryID = NULL -- REMOVE VVIP*/
 UPDATE CTSCustomerClassification_History 
 SET ParentID = 1000
   , CategoryID = 1010
 WHERE ID = 1096115669;
 
-
-/*-- CategoryID INCORRECT*/
+-- -----------------------------------------------------------------------------
+/*2. CategoryID INCORRECT in CCMain*/
 UPDATE CTSCustomerClassification AS cc
 	, LATERAL (
 		SELECT h.ParentID,h.CategoryID,h.CustID
@@ -39,7 +46,8 @@ WHERE cc.CustID = latest.CustID AND cc.ParentID = latest.ParentID
 	AND cc.CategoryID <> latest.CategoryID
 ;
 
-/*-- TVS MISSING*/
+-- -----------------------------------------------------------------------------
+/*3. TVS MISSING*/
 DROP TEMPORARY TABLE IF EXISTS Adhoc_TVSCustomer;
 CREATE TEMPORARY TABLE Adhoc_TVSCustomer
 (
@@ -154,15 +162,6 @@ INNER JOIN Adhoc_TVSCustomer_DUP AS tvs ON tvs.CustID = h.CustID AND  IFNULL(tvs
 WHERE h.IsFromTVS = 1
 ;
 
-/*
-UPDATE Adhoc_TVSCustomer_DUP AS tvs
-	INNER JOIN Adhoc_TVSVoidRequest_CC AS main ON tvs.CustID = main.CustID AND  IFNULL(tvs.TVSRequestID,0) =  IFNULL(main.TVSRequestID,0)
-	LEFT JOIN Adhoc_TVSVoidRequest_CCHis AS his ON main.CustID = his.CustID AND IFNULL(main.TVSRequestID,0) =  IFNULL(his.TVSRequestID,0)
-SET tvs.IsDisabled = 1
-WHERE his.CustID IS NULL
-;
-*/
-
 UPDATE Adhoc_TVSCustomer_DUP AS tvs
 	INNER JOIN Adhoc_TVSVoidRequest_CCHis AS his ON his.CustID = tvs.CustID AND IFNULL(his.TVSRequestID,0) =  IFNULL(tvs.TVSRequestID,0)
 	LEFT JOIN Adhoc_TVSVoidRequest_CC AS main ON his.CustID = main.CustID AND  IFNULL(his.TVSRequestID,0) =  IFNULL(main.TVSRequestID,0)
@@ -186,12 +185,101 @@ FROM Adhoc_TVSCustomer_DUP2 AS cust
 	INNER JOIN TVSVoidRequest_History AS main ON main.ID = cust.ID
 ;
 
-/*CC305-CC3005 -- distinct cc.CustID: 10135*/
+-- -----------------------------------------------------------------------------
+/* 4. DELETE DUPLICATE IsDisabled = 1*/
+WITH CTE AS
+(
+	SELECT ID, ROW_NUMBER() OVER (PARTITION BY CustID,CategoryID,IFNULL(TVSRequestID,0),IFNULL(IsParlay,0),IFNULL(SportType,0),IFNULL(IssueTypeID,0) ORDER BY ID) AS RN
+	FROM TVSVoidRequest
+	WHERE IsDisabled = 1
+)
+DELETE r
+FROM CTE as c
+	INNER JOIN TVSVoidRequest as r on r.ID = c.ID
+WHERE c.RN > 1
+;
+
+-- -----------------------------------------------------------------------------
+/*5 . UPDATE DATA INIT = NULL*/
+WITH CTE AS
+(
+	SELECT DISTINCT r.ID, r.CustID,IFNULL(r.TVSReasonID,0) AS TVSReasonID,IFNULL(r.CreatedBy,0) AS CreatedBy,IFNULL(r.CreatedDate,0) AS CreatedDate
+		, IFNULL(cate.TVSReasonID,tvs.ReasonID) AS TVSReasonID_ORG, tvs.CreatedBy AS CreatedBy_ORG, tvs.CreatedDate AS CreatedDate_ORG, tvs.ReasonID AS ReasonID_ORG
+		, tvs.ID AS ID_ORG
+	FROM TVSVoidRequest AS r
+    INNER JOIN CustomerCategory AS cate ON cate.CategoryID = r.CategoryID
+    INNER JOIN AdhocVic_TVSVoidRequest_CC AS ad ON ad.CustID = r.CustID 
+                                                    AND IFNULL(ad.TVSRequestID,0) = IFNULL(r.TVSRequestID,0) 
+                                                    AND IFNULL(ad.IsParlay,0) = IFNULL(r.IsParlay,0) 
+                                                    AND IFNULL(ad.SportType,0) = IFNULL(r.SportType,0) 
+                                                    AND IFNULL(ad.IssueTypeID,0) = IFNULL(r.IssueTypeID,0) 
+                                                   -- AND ad.IsDisable = r.IsDisabled
+    INNER JOIN TVSVoidRequest_History AS tvs ON tvs.ID = ad.ID
+	WHERE r.TVSReasonID IS NULL
+)
+UPDATE TVSVoidRequest AS r
+	INNER JOIN CTE AS c ON c.ID = r.ID
+SET r.TVSReasonID 	= c.TVSReasonID_ORG
+,	r.CreatedBy 	= c.CreatedBy_ORG
+,	r.CreatedDate 	= c.CreatedDate_ORG
+;
+
+-- -----------------------------------------------------------------------------
+/*6. RequestTypeID = 2 FOR ROBOT*/
+UPDATE TVSVoidRequest AS r
+SET RequestTypeID 	= 2
+,	TVSReasonID 	= CASE WHEN TVSReasonID = 10500 THEN 105 ELSE TVSReasonID END
+WHERE TVSReasonID IN (36,100)
+;
+
+-- -----------------------------------------------------------------------------
+/*7. CC305-CC3005 -- distinct cc.CustID: 10103 */
 UPDATE CTSCustomerClassification AS cc
 	INNER JOIN CustomerLoginInfoDetection AS cld ON cld.CustID = cc.CustID
 SET cc.Remark = NULL
 WHERE cc.ParentID = 20000
 	AND cc.CategoryID IN (21000,26000)
 	AND cc.CustID >= 106954653	AND cc.CustID <= 165623851
+	AND cc.Remark IS NOT NULL
+	AND cc.Remark <> 'Site Migration'
 ;
 
+-- -----------------------------------------------------------------------------
+/*8. RobotDetection*/
+DROP TEMPORARY TABLE IF EXISTS Temp_RobotDetection;    
+CREATE TEMPORARY TABLE Temp_RobotDetection(	  
+		ID						BIGINT PRIMARY KEY
+	,	CustID					BIGINT 
+	,	IsUpdated				TINYINT(1) DEFAULT 0
+);
+
+
+INSERT INTO Temp_RobotDetection (ID, CustID)
+SELECT rd.ID, rd.CustID
+FROM CTS_DataCenter.RobotDetection AS rd
+	LEFT JOIN CTS_DataCenter.CTSCustomer as cust on cust.CustID = rd.CustID
+WHERE cust.CustID IS NULL AND rd.IsDisabled = 0
+;
+
+DROP TEMPORARY TABLE IF EXISTS Temp_RobotDetection_Duplicate;
+CREATE TEMPORARY TABLE Temp_RobotDetection_Duplicate AS SELECT * FROM Temp_RobotDetection;
+
+
+UPDATE Temp_RobotDetection AS rd
+	INNER JOIN Temp_RobotDetection_Duplicate AS temp ON temp.CustID = rd.CustID
+	,	LATERAL (
+			SELECT ar.IsReactivated
+			FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar
+			WHERE ar.CustID = temp.CustID
+			ORDER BY ar.InsertTime DESC, ar.ID DESC
+			LIMIT 1
+		) AS latest
+SET rd.IsUpdated = 1
+WHERE latest.IsReactivated = 0
+;
+
+UPDATE CTS_DataCenter.RobotDetection AS rd
+	INNER JOIN Temp_RobotDetection AS temp ON temp.ID = rd.ID
+SET rd.IsDisabled = 1
+WHERE temp.IsUpdated = 1
+;
