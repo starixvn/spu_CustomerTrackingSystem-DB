@@ -65,8 +65,8 @@ AS
 		EXEC CTS_MatchMonitorParlay_Details_GetTicket
 			 @ViewMode = 0
 			, @EventDate = '2024-09-09'
-			, @ListRefno = '[	{"Refno":18489152651919360,"Reason":"GB(P)","AGroup":1,"MGroup":3}
-							,	{"Refno":18489155067838464,"Reason":"GB(P)","AGroup":2,"MGroup":4}
+			, @ListRefno = '[		{"Refno":18489152651919360,"Reason":"GB(P)","AGroup":1,"MGroup":3}
+								,	{"Refno":18489155067838464,"Reason":"GB(P)","AGroup":2,"MGroup":4}
 							]'
 			, @Matchid = 83679714
 			, @IsLive = 0
@@ -124,7 +124,7 @@ BEGIN
 	END;
 
 	CREATE TABLE #tmpRefnoInfo(
-			Refno		BIGINT NOT NULL 
+			Refno		BIGINT  
 		,	Reason		VARCHAR(50) DEFAULT '0'
 		,	AGroup		INT
 		,	MGroup		INT
@@ -136,7 +136,7 @@ BEGIN
 	END;
 
 	CREATE TABLE #tmpRefno(
-			Refno BIGINT NOT NULL PRIMARY KEY
+			Refno BIGINT PRIMARY KEY
 		,	SequenceID BIGINT
 	);
 
@@ -148,7 +148,7 @@ BEGIN
 
 	CREATE TABLE #tmpCustRefno(
 			CustID	INT
-		,	Refno	BIGINT NOT NULL 
+		,	Refno	BIGINT 
 	);
 
 	CREATE CLUSTERED INDEX CIX_#tmpCustRefno_CustIDRefno ON #tmpCustRefno(CustID,Refno);
@@ -181,7 +181,8 @@ BEGIN
 		,	TransDate		DATETIME
 		,	Combinition		SMALLINT -- 2: Double, 3: Trible
 		,	TicketType		SMALLINT
-		,	Amount			MONEY				
+		,	Stake			MONEY --Amount = Stake* ActualRate
+		,	OrgStake		MONEY				
 		,	BetFrom			NVARCHAR(4)
 		,	Reason			VARCHAR(50) DEFAULT '0'
 		,	ListReason		VARCHAR(MAX)
@@ -203,7 +204,21 @@ BEGIN
 	);
 
 	CREATE CLUSTERED INDEX CIX_tmpMainTicket_Refno ON #tmpMainTicket(Refno);
+	--=================================================================================
+	IF	OBJECT_ID('tempdb..#tmpMainTicketFormat') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpMainTicketFormat;
+	END;
 
+	CREATE TABLE #tmpMainTicketFormat(
+			Refno			BIGINT
+		,	Odds			SMALLMONEY
+		,	MalayOdds		SMALLMONEY
+		,	BetTeam			NVARCHAR(10)
+		,	ChoiceOrder		NVARCHAR(10)
+		,	TicketStatus	SMALLINT
+	);
+	CREATE CLUSTERED INDEX CIX_tmpMainTicketFormat_Refno ON #tmpMainTicketFormat(Refno);
 	--========================================================================
 	IF	OBJECT_ID('tempdb..#tmpTicketDetails') IS NOT NULL
 	BEGIN
@@ -216,7 +231,8 @@ BEGIN
 		,	DBSource			TINYINT			--1: Bettransm , 2: Bettrans14, 3: Bettrans_bk
 		,	TransID				BIGINT
 		,	CustID				INT
-		,	Amount				MONEY		
+		,	Stake				MONEY --Amount
+		,	OrgStake			MONEY	
 		,	TicketOrder			TINYINT
 		,	Matchid				INT
 		,	EventDate			DATETIME
@@ -248,21 +264,7 @@ BEGIN
 	CREATE CLUSTERED INDEX CIX_tmpSubTicket_Refno ON #tmpTicketDetails(Refno);
 	CREATE NONCLUSTERED INDEX IX_tmpSubTicket_CustIDRefno ON #tmpTicketDetails(CustID,Refno);
 
-	--=================================================================================
-	IF	OBJECT_ID('tempdb..#tmpMainTicketFormat') IS NOT NULL
-	BEGIN
-		DROP TABLE	#tmpMainTicketFormat;
-	END;
 
-	CREATE TABLE #tmpMainTicketFormat(
-			Refno			BIGINT
-		,	Odds			SMALLMONEY
-		,	MalayOdds		SMALLMONEY
-		,	BetTeam			NVARCHAR(10)
-		,	ChoiceOrder		NVARCHAR(10)
-		,	TicketStatus	SMALLINT
-	);
-	CREATE CLUSTERED INDEX CIX_tmpMainTicketFormat_Refno ON #tmpMainTicketFormat(Refno);
 	--================================================================================================
 	SET @ToTransDate = DATEADD(SECOND,1,@ToTransDate);
 
@@ -318,7 +320,7 @@ BEGIN
 			
 		END;
 	
-	IF @ListRefno IS NOT NULL
+	IF @ListRefno <> ''
 	BEGIN
 		INSERT INTO #tmpRefnoInfo (Refno,Reason,AGroup,MGroup)
 		SELECT	j.Refno
@@ -333,10 +335,6 @@ BEGIN
 			) AS j;
 				
 		CREATE CLUSTERED INDEX CIX_tmpTransIds_Group ON #tmpRefnoInfo (Refno, Reason);	
-	END	
-	ELSE 
-	BEGIN
-		SET @ListRefno = ''
 	END;
 
 	IF @ViewMode = 1 -- Get Fraud Ticket Only from bk, 14, org
@@ -483,7 +481,7 @@ BEGIN
 		--===============================GET MAIN PARLAY TICKET - ORIGINAL===========================================
 
 --SELECT 'Debug_vm1-OgrMain' AS Step, GetDate() AS ExecTime;
-		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Amount,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
+		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Stake,OrgStake,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
 		SELECT	bt.Refno
 			,	bt.TransID
 			,	bt.TransDate
@@ -491,7 +489,8 @@ BEGIN
 					 WHEN CAST(bt.BetCheck AS INT) & 4 = 4 THEN 3 -- Combo 3 bit 3 
 				END AS Combinition
 			,	2 AS TicketType
-			,	bt.Stake * bt.ActualRate AS Amount
+			,	bt.Stake * bt.ActualRate AS Stake
+			,	bt.Stake AS OrgStake
 			,	bt.BetFrom
 			,	rn.Reason
 			,	rn.Reason AS ListReason
@@ -510,7 +509,7 @@ BEGIN
 			INNER JOIN #tmpMainTicket AS td WITH(NOLOCK) ON td.Refno = rn.Refno;
 
 --SELECT 'Debug_vm1-14Main' AS Step, GetDate() AS ExecTime;	
-		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Amount,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
+		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Stake,OrgStake,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
 		SELECT	bt.Refno
 			,	bt.TransID
 			,	bt.TransDate
@@ -518,7 +517,8 @@ BEGIN
 					 WHEN CAST(bt.BetCheck AS INT) & 4 = 4 THEN 3 -- Combo 3 bit 3 
 				END AS Combinition
 			,	2 AS TicketType
-			,	bt.Stake * bt.ActualRate AS Amount
+			,	bt.Stake * bt.ActualRate AS Stake
+			,	bt.Stake AS OrgStake
 			,	bt.BetFrom
 			,	rn.Reason
 			,	rn.Reason AS ListReason
@@ -542,7 +542,7 @@ BEGIN
 		FROM #tmpRefnoInfo AS rn WITH(NOLOCK)
 			INNER JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON td.Refno = rn.Refno;	
 
-		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Amount,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
+		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Stake,OrgStake,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
 		SELECT	bt.Refno
 			,	bt.TransID
 			,	bt.TransDate
@@ -550,7 +550,8 @@ BEGIN
 					 WHEN CAST(bt.BetCheck AS INT) & 4 = 4 THEN 3 -- Combo 3 bit 3 
 				END AS Combinition
 			,	2 AS TicketType
-			,	bt.Stake * bt.ActualRate AS Amount
+			,	bt.Stake * bt.ActualRate AS Stake
+			,	bt.Stake AS OrgStake
 			,	bt.BetFrom
 			,	rn.Reason
 			,	rn.Reason AS ListReason
@@ -746,7 +747,7 @@ BEGIN
 		FROM #tmpTicketDetails AS rn WITH(NOLOCK);
 
 --SELECT 'Debug_vm0-OgrMain' AS Step, GetDate() AS ExecTime;
-		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Amount,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
+		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Stake,OrgStake,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
 		SELECT	bt.Refno
 			,	bt.TransID
 			,	bt.TransDate
@@ -754,7 +755,8 @@ BEGIN
 					 WHEN CAST(bt.BetCheck AS INT) & 4 = 4 THEN 3 -- Combo 3 bit 3 
 				END AS Combinition
 			,	2 AS TicketType
-			,	bt.Stake * bt.ActualRate AS Amount
+			,	bt.Stake * bt.ActualRate AS Stake
+			,	bt.Stake AS Stake
 			,	bt.BetFrom
 			,	rn.Reason
 			,	rn.Reason AS ListReason
@@ -774,7 +776,7 @@ BEGIN
 		FROM #tmpRefnoInfo AS rn 
 			INNER JOIN #tmpMainTicket AS td WITH(NOLOCK) ON td.Refno = rn.Refno;
 --SELECT 'Debug_vm0-14Main' AS Step, GetDate() AS ExecTime;	
-		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Amount,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
+		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Stake,OrgStake,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
 		SELECT	bt.Refno
 			,	bt.TransID
 			,	bt.TransDate
@@ -782,7 +784,8 @@ BEGIN
 					 WHEN CAST(bt.BetCheck AS INT) & 4 = 4 THEN 3 -- Combo 3 bit 3 
 				END AS Combinition
 			,	2 AS TicketType
-			,	bt.Stake * bt.ActualRate AS Amount
+			,	bt.Stake * bt.ActualRate AS Stake
+			,	bt.Stake AS OrgStake
 			,	bt.BetFrom
 			,	rn.Reason
 			,	rn.Reason AS ListReason
@@ -1141,7 +1144,7 @@ BEGIN
 			END;	
 
 			--========================Fitler By Status==================	
-			IF (@ListStatus IS NOT NULL)
+			IF (@ListStatus IS NOT NULL) 
 			BEGIN
 				WITH CTE_Status AS (
 					SELECT ssk.value AS StatusID FROM STRING_SPLIT(@ListStatus, ',') AS ssk
@@ -1169,22 +1172,14 @@ BEGIN
 					,	BetTeamGroup	NVARCHAR(10)
 				);
 
-				SELECT	mt.CustId
-					,	st.BetTeamGroup
-					,	SUM(mt.Amount)
-					, @CustAmountRM
-				FROM #tmpMainTicket AS mt WITH(NOLOCK)
-					INNER JOIN #tmpTicketDetails AS st WITH(NOLOCK) ON st.Refno = mt.Refno AND TicketOrder = 1
-				GROUP BY mt.CustId, st.BetTeamGroup
-
 				INSERT INTO #tmpCustAmount(CustId, BetTeamGroup)
 				SELECT	mt.CustId
 					,	st.BetTeamGroup
-					--,	SUM(mt.Amount)
+					--,	SUM(mt.Stake)
 				FROM #tmpMainTicket AS mt WITH(NOLOCK)
 					INNER JOIN #tmpTicketDetails AS st WITH(NOLOCK) ON st.Refno = mt.Refno AND TicketOrder = 1
 				GROUP BY mt.CustId, st.BetTeamGroup
-				HAVING SUM(mt.Amount) >= @CustAmountRM;
+				HAVING SUM(mt.Stake) >= @CustAmountRM;
 
 				CREATE CLUSTERED INDEX CIX_tmpCustAmount_Group ON #tmpCustAmount (CustID, BetTeamGroup);
 
@@ -1238,6 +1233,8 @@ BEGIN
 			,	st.Odds
 			,	st.MalayOdds
 			,	mt.CurrencyName
+			,	(CASE WHEN st.TicketOrder = 0 THEN mt.Stake ELSE NULL END) AS Stake
+			,	(CASE WHEN st.TicketOrder = 0 THEN mt.OrgStake ELSE NULL END) AS OrgStake
 			,	(CASE WHEN TicketOrder > 0 AND st.Hdp IS NULL THEN st.BetTeam ELSE CONVERT(VARCHAR(10),st.Hdp) END) AS Choice
 			,	st.LiveHomeScore
 			,	st.LiveAwayScore
@@ -1245,9 +1242,8 @@ BEGIN
 			,	mt.BetFrom
 			,	mt.AGroup
 			,	mt.MGroup
-			,	mt.Reason
-			,	ISNULL(mt.ListReason,mt.Reason) AS ListReason
-			
+			,	mt.Reason			
+			,	ISNULL(mt.ListReason,mt.Reason) AS ListReason			
 		FROM #tmpMainTicket AS mt WITH(NOLOCK)
 			INNER JOIN #tmpTicketDetails AS st WITH(NOLOCK) ON st.Refno = mt.Refno
 			LEFT JOIN bodb02.dbo.Team AS h WITH(NOLOCK) ON h.TeamID = st.HomeID
