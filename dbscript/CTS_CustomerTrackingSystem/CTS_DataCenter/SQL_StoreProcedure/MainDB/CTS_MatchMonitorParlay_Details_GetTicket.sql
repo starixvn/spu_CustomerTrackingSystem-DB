@@ -810,7 +810,7 @@ BEGIN
 		FROM #tmpRefno AS rn WITH(NOLOCK)
 			INNER JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON td.Refno = rn.Refno;	
 
-		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Amount,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
+		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Stake,OrgStake,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
 		SELECT	bt.Refno
 			,	bt.TransID
 			,	bt.TransDate
@@ -818,7 +818,8 @@ BEGIN
 					 WHEN CAST(bt.BetCheck AS INT) & 4 = 4 THEN 3 -- Combo 3 bit 3 
 				END AS Combinition
 			,	2 AS TicketType
-			,	bt.Stake * bt.ActualRate AS Amount
+			,	bt.Stake * bt.ActualRate AS Stake
+			,	bt.Stake AS OrgStake
 			,	bt.BetFrom
 			,	rn.Reason
 			,	rn.Reason AS ListReason
