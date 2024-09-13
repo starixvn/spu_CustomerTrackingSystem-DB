@@ -1034,7 +1034,7 @@ BEGIN
 			END;
 
 			--========================Fitler By Reason==================
-			IF (@ListReason <> '')
+			IF (@ListReason <> '') AND @ListRefno <> ''
 			BEGIN
 				DECLARE @tmpSupportedReason AS TABLE (Reason VARCHAR(50) DEFAULT '0' PRIMARY KEY);
 				
@@ -1201,7 +1201,7 @@ BEGIN
 
 --SELECT 'Debug_ReturnData' AS Step, GetDate() AS ExecTime;	
 	--=========================--RETURN DATA============================--
-	IF (@ViewMode = 0 AND @BatchSize = 0)
+	IF (@BatchSize = 0)
 	BEGIN		
 		SET @TotalTicket = (SELECT COUNT(DISTINCT Refno) FROM #tmpTicketDetails AS td WITH(NOLOCK));
 	END
