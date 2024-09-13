@@ -334,9 +334,10 @@ BEGIN
 			AND t.LiveIndicator = d.LiveIndicator AND t.BettypeID = d.BettypeID AND t.BetID = d.BetID AND  t.TicketType = d.TicketType 
 		INNER JOIN Temp_Reason AS r ON d.Reason = r.ReasonID
 	GROUP BY t.MatchID, t.LiveIndicator, t.BettypeID, t.BetID, t.TicketType;
-        
+   
     IF (ip_IsVerified IS NULL)
-    THEN
+    THEN 
+
 		SELECT	tmpMm.MatchID
             ,	tmpMm.MatchSection
 			,	tmpMm.EventDate
@@ -362,9 +363,9 @@ BEGIN
 		FROM Temp_MatchMonitor AS tmpMm
 			INNER JOIN CTS_DataCenter.BettypeSetting AS sbs ON sbs.BetTypeID = tmpMm.BettypeID
 			INNER JOIN Temp_MatchFraudTrans AS t ON tmpMm.MatchID = t.MatchID AND tmpMm.LiveIndicator = t.LiveIndicator 
-					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID and tmpMm.TicketType = t.TicketType
+					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID AND t.TicketType = tmpMm.TicketType
 			LEFT JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
-					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID 
+					AND tmpMm.BettypeID = tmpMg.BettypeID AND tmpMm.BetID = tmpMg.BetID AND tmpMg.TicketType = tmpMm.TicketType
 		GROUP BY tmpMm.MatchID
             ,	tmpMm.MatchSection
 			,	tmpMm.EventDate
@@ -377,7 +378,11 @@ BEGIN
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
             ,	sbs.BettypeNameDisplay
+            ,	t.FraudTrans
+            ,	t.FraudRefno
+            ,	t.FraudTransm
             ,	tmpMm.TicketType;
+
 	END IF;
 
 	IF (ip_IsVerified = 0)
