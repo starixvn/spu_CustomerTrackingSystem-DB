@@ -4,7 +4,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[CTS_MatchMonitorParlay_FraudTicketSummary]
+CREATE PROCEDURE [dbo].[CTS_MatchMonitorParlay_FraudTicketSummary]
 		@FraudTickets VARCHAR(MAX) = NULL
 
 AS
@@ -155,6 +155,7 @@ BEGIN
 			,	BetId
 			,	Refno
 		FROM #tmpParsedRefno WITH(NOLOCK)
+
 		--==============GET Turn Over Origin====================================
 		INSERT INTO #tmpTurnOver(MatchID, IsLive, Bettype, BetID, Refno,TurnOver)
 		SELECT	tmpTo.MatchID
@@ -164,11 +165,12 @@ BEGIN
 			,	tmpTo.Refno
 			,	bt.Stake * bt.actualrate AS TurnOver
 		FROM #tmpParsedRefno AS tmpTo WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.Bettrans AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno;
+			INNER JOIN bodb02.dbo.Bettrans AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno 
+
 			
 		DELETE tmpRn
 		FROM #tmpParsedRefno AS tmpRn WITH(NOLOCK)
-			INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno;
+			INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno ;
 
 		--==============GET Turn Over - 14====================================
 		INSERT INTO #tmpTurnOver(MatchID, IsLive, Bettype, BetId, Refno,TurnOver)
@@ -179,11 +181,11 @@ BEGIN
 			,	tmpTo.Refno
 			,	bt.Stake * bt.actualrate AS TurnOver
 		FROM #tmpParsedRefno AS tmpTo WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.Bettrans14 AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno;
+			INNER JOIN bodb02.dbo.Bettrans14 AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno AND bt.MatchID = tmpTo.MatchID;
 			
 		DELETE tmpRn
 		FROM #tmpParsedRefno AS tmpRn WITH(NOLOCK)
-			INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno ;
+			INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno;
 			
 		--==============GET Turn Over - BK====================================
 		INSERT INTO #tmpTurnOver(MatchID, IsLive, Bettype, BetId, Refno,TurnOver)
@@ -194,7 +196,7 @@ BEGIN
 			,	tmpTo.Refno
 			,	bt.Stake * bt.actualrate AS TurnOver
 		FROM #tmpParsedRefno AS tmpTo WITH(NOLOCK)
-			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno;
+			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno  AND bt.MatchID = tmpTo.MatchID;
 			
 		DELETE tmpRn
 		FROM #tmpParsedRefno AS tmpRn WITH(NOLOCK)
@@ -212,7 +214,7 @@ BEGIN
 		);
 
 		-- Return the data
-		SELECT DISTINCT t.MatchId, t.IsLive, t.Bettype, t.BetId, t.betteam AS Betteam, t.Turnover, t.BetCount
+		SELECT DISTINCT tmp.MatchId, tmp.IsLive, tmp.Bettype, tmp.BetId, tmp.betteam AS Betteam, tmp.Turnover, tmp.BetCount
 		FROM (
 				SELECT	t.MatchId
 					,	t.IsLive
@@ -220,9 +222,9 @@ BEGIN
 					,	b.betteam
 					,	t.BetId
 					,	SUM(tmpTo.TurnOver) AS Turnover
-					,	COUNT(DISTINCT b.transid) AS BetCount
+					,	COUNT(DISTINCT t.Refno) AS BetCount
 				FROM #tmpParsedFraudInfo AS t WITH(NOLOCK)
-					INNER JOIN bodb_Archive.dbo.bettransm AS b WITH(NOLOCK) ON b.Refno = t.Refno-- AND b.CustID IN (25678340,25974420)
+					INNER JOIN bodb_Archive.dbo.bettransm AS b WITH(NOLOCK) ON b.Refno = t.Refno AND  b.MatchID = t.MatchID
 					LEFT JOIN #tmpTurnover AS tmpTo WITH(NOLOCK) ON t.MatchId = tmpTo.MatchId AND t.IsLive = tmpTo.IsLive
 												AND t.Bettype = tmpTo.Bettype AND t.BetId = tmpTo.BetId AND b.refno = tmpTo.refno
 				WHERE t.DataSource = @CONST_DATASOURCE_BK 
@@ -234,7 +236,7 @@ BEGIN
 					,	b.betteam
 					,	t.BetId
 					,	SUM(tmpTo.TurnOver) AS Turnover
-					,	COUNT(DISTINCT b.transid) AS BetCount
+					,	COUNT(DISTINCT t.Refno) AS BetCount
 				FROM #tmpParsedFraudInfo AS t WITH(NOLOCK)
 					INNER JOIN dbo.bettransm14 AS b WITH(NOLOCK) ON b.Refno = t.Refno
 					INNER JOIN #tmpTurnover AS tmpTo WITH(NOLOCK) ON t.MatchId = tmpTo.MatchId AND t.IsLive = tmpTo.IsLive
@@ -248,14 +250,14 @@ BEGIN
 					,	b.betteam
 					,	t.BetId
 					,	SUM(tmpTo.TurnOver) AS Turnover
-					,	COUNT(DISTINCT b.transid) AS BetCount
+					,	COUNT(DISTINCT t.Refno) AS BetCount
 				FROM #tmpParsedFraudInfo AS t WITH(NOLOCK)
-					INNER JOIN dbo.bettransm AS b WITH(NOLOCK) ON b.Refno = t.Refno
+					INNER JOIN dbo.bettransm AS b WITH(NOLOCK) ON b.Refno = t.Refno AND b.MatchID = t.MatchID
 					INNER JOIN #tmpTurnover AS tmpTo WITH(NOLOCK) ON t.MatchId = tmpTo.MatchId AND t.IsLive = tmpTo.IsLive
 												AND t.Bettype = tmpTo.Bettype AND t.BetId = tmpTo.BetId AND b.refno = tmpTo.refno
 				WHERE t.DataSource = @CONST_DATASOURCE_ORIGIN
 				GROUP BY t.MatchId, t.IsLive, t.Bettype, t.BetId, b.Betteam
-			) AS t;
+			) AS tmp;
 	END;
 
 	DROP TABLE IF EXISTS #tmpRawFraudInfo;
