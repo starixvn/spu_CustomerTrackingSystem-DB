@@ -76,7 +76,7 @@ BEGIN
     
     DELETE tmp
     FROM Temp_Trans AS tmp
-    WHERE lv_SkipDeviceMapping <> 0
+    WHERE lv_SkipDeviceMapping = 0
 		AND NOT EXISTS (SELECT 1 FROM DCS_DataCenter.FP_TransactionDeviceMapping AS tdm WHERE tdm.RawTransID = tmp.RawTransID);
     
     INSERT INTO Temp_Account(AccountID)
