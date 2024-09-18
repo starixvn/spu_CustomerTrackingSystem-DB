@@ -221,8 +221,6 @@ CREATE TABLE `FP_AssociationMapping` (
 ) ENGINE=InnoDB;
 
 /* ========= Update Schema ========= */
-DELETE FROM `DCS_DataCenter`.`RawTransaction` WHERE  IsProcessed = -1 AND CreatedDate < '2024-06-30';
-
 ALTER TABLE `DCS_DataCenter`.`RawTransaction`
 REMOVE PARTITIONING;
 
@@ -238,12 +236,7 @@ ADD COLUMN `FP_Tagging` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintCode` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintExtraCode` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintOldCode` VARCHAR(32) NULL,
-ADD COLUMN `FP_UserAgentCode` VARCHAR(32) NULL,
-DROP COLUMN `CookieID`,
-DROP COLUMN `RawFingerPrintID`,
-DROP COLUMN `BrowserInstanceID`,
-DROP COLUMN `RawUserAgentID`,
-DROP COLUMN `JsChallengeID`;
+ADD COLUMN `FP_UserAgentCode` VARCHAR(32) NULL;
 
 ALTER TABLE `DCS_DataCenter`.`ProcessedTransaction`
 ADD COLUMN `IsIncognitoMode` BOOLEAN,
@@ -252,13 +245,7 @@ ADD COLUMN `FP_Tagging` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintCode` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintExtraCode` VARCHAR(32) NULL,
 ADD COLUMN `FP_FingerPrintOldCode` VARCHAR(32) NULL,
-ADD COLUMN `FP_UserAgentCode` VARCHAR(32) NULL,
-DROP COLUMN `CookieID`,
-DROP COLUMN `RawFingerPrintID`,
-DROP COLUMN `BrowserInstanceID`,
-DROP COLUMN `RawUserAgentID`,
-DROP COLUMN `JsChallengeID`;
-
+ADD COLUMN `FP_UserAgentCode` VARCHAR(32) NULL;
 
 ALTER TABLE `DCS_DataCenter`.`Transaction`
 ADD COLUMN `IsIncognitoMode` BOOLEAN,
@@ -267,11 +254,7 @@ ADD COLUMN `FP_TaggingID` BIGINT UNSIGNED,
 ADD COLUMN `FP_FingerPrintID` BIGINT UNSIGNED,
 ADD COLUMN `FP_FingerPrintExtraID` BIGINT UNSIGNED,
 ADD COLUMN `FP_FingerPrintOldID` BIGINT UNSIGNED,
-ADD COLUMN `FP_UserAgentID` BIGINT UNSIGNED,
-DROP COLUMN `CookieID`,
-DROP COLUMN `RawUserAgentID`,
-DROP COLUMN `RawFingerPrintID`,
-DROP COLUMN `BrowserInstanceID`;
+ADD COLUMN `FP_UserAgentID` BIGINT UNSIGNED;
 
 ALTER TABLE `DCS_DataCenter`.`Transaction07`
 ADD COLUMN `IsIncognitoMode` BOOLEAN,
@@ -280,12 +263,6 @@ ADD COLUMN `FP_UserAgentID` BIGINT UNSIGNED,
 ADD COLUMN `FP_DeviceMappingID` BIGINT UNSIGNED NULL,
 ADD COLUMN `FP_DeviceID` BIGINT UNSIGNED NULL,
 ADD COLUMN `FP_DeviceStatus` TINYINT NULL,
-DROP COLUMN `CookieID`,
-DROP COLUMN `RawUserAgentID`,
-DROP COLUMN `RawFingerPrintID`,
-DROP COLUMN `BrowserInstanceID`,
-DROP COLUMN `FPDeviceID`,
-DROP COLUMN `RecoverType`,
 ADD KEY `IX_Transaction07_FP_DeviceMappingID` (`FP_DeviceMappingID`);
 
 ALTER TABLE `DCS_DataCenter`.`JSChallengeInfo`

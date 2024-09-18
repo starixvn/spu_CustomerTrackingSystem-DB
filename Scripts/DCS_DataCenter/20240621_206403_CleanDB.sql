@@ -7,6 +7,36 @@
 
 USE DCS_DataCenter;
 
+DELETE FROM `DCS_DataCenter`.`RawTransaction` WHERE  IsProcessed = -1 AND CreatedDate < '2024-06-30';
+
+ALTER TABLE `DCS_DataCenter`.`RawTransaction`
+DROP COLUMN `CookieID`,
+DROP COLUMN `RawFingerPrintID`,
+DROP COLUMN `BrowserInstanceID`,
+DROP COLUMN `RawUserAgentID`,
+DROP COLUMN `JsChallengeID`;
+
+ALTER TABLE `DCS_DataCenter`.`ProcessedTransaction`
+DROP COLUMN `CookieID`,
+DROP COLUMN `RawFingerPrintID`,
+DROP COLUMN `BrowserInstanceID`,
+DROP COLUMN `RawUserAgentID`,
+DROP COLUMN `JsChallengeID`;
+
+ALTER TABLE `DCS_DataCenter`.`Transaction`
+DROP COLUMN `CookieID`,
+DROP COLUMN `RawUserAgentID`,
+DROP COLUMN `RawFingerPrintID`,
+DROP COLUMN `BrowserInstanceID`;
+
+ALTER TABLE `DCS_DataCenter`.`Transaction07`
+DROP COLUMN `CookieID`,
+DROP COLUMN `RawUserAgentID`,
+DROP COLUMN `RawFingerPrintID`,
+DROP COLUMN `BrowserInstanceID`,
+DROP COLUMN `FPDeviceID`,
+DROP COLUMN `RecoverType`;
+
 DROP TABLE `DCS_DataCenter`.`Cookie`;
 DROP TABLE `DCS_DataCenter`.`RawFingerPrint`;
 DROP TABLE `DCS_DataCenter`.`FingerPrintAttribute`;
