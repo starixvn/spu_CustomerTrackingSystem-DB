@@ -118,7 +118,7 @@ BEGIN
 		,	b.livehomescore 			AS LiveHomeScore
 		,	b.liveawayscore 			AS LiveAwayScore
 		,	b.bettype 					AS BetTypeID
-		,	(CASE WHEN b.BetCheck = '' THEN 0 END) AS BetID			
+		,	(CASE WHEN b.BetCheck = '' THEN 0 ELSE b.BetCheck END) AS BetID			
 		,	b.betteam 					AS BetTeam
 		,	b.custid 					AS CustID
 		,	m.eventdate 				AS EventDate
