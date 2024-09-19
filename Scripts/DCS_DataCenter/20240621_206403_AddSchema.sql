@@ -8,18 +8,6 @@
 USE DCS_DataCenter;
 
 /* ========= NEW TABLES ========= */
-DROP TABLE IF EXISTS FP_LastModifiedDate;
-CREATE TABLE `FP_LastModifiedDate` (
-  `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `TableName` VARCHAR(255) NOT NULL,
-  `RecordID` BIGINT UNSIGNED NOT NULL,
-  `LastModifiedDate` DATE,
-  `InsertedTime` TIMESTAMP DEFAULT NOW(),
-  `ModifiedTime` TIMESTAMP DEFAULT NOW(),
-  PRIMARY KEY (`ID`),
-  UNIQUE KEY `UX_FP_LastModifiedDate_TableName_RecordID` (`TableName`,`RecordID`)
-) ENGINE=InnoDB;
-
 DROP TABLE IF EXISTS FP_Tagging;
 CREATE TABLE `FP_Tagging` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -221,6 +209,8 @@ CREATE TABLE `FP_AssociationMapping` (
 ) ENGINE=InnoDB;
 
 /* ========= Update Schema ========= */
+DELETE FROM `DCS_DataCenter`.`RawTransaction` WHERE  IsProcessed = -1 AND CreatedDate < '2024-06-30';
+
 ALTER TABLE `DCS_DataCenter`.`RawTransaction`
 REMOVE PARTITIONING;
 
@@ -264,6 +254,8 @@ ADD COLUMN `FP_DeviceMappingID` BIGINT UNSIGNED NULL,
 ADD COLUMN `FP_DeviceID` BIGINT UNSIGNED NULL,
 ADD COLUMN `FP_DeviceStatus` TINYINT NULL,
 ADD KEY `IX_Transaction07_FP_DeviceMappingID` (`FP_DeviceMappingID`);
+
+TRUNCATE TABLE `DCS_DataCenter`.`JSChallengeInfo`;
 
 ALTER TABLE `DCS_DataCenter`.`JSChallengeInfo`
 CHANGE COLUMN `ChallengeCode` `ChallengeCode` VARCHAR(50) NOT NULL,
