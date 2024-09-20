@@ -19,6 +19,7 @@ BEGIN
 		Revisions:
 			- 20240313@Teddy.le [Redmine ID: #196667]
 			- 20240621@Jonathan.Doan: Change data flow v5.1 [Redmine ID: #206403]
+			- 20240830@Jonathan.Doan: Update datatype [Redmine ID: #206403]
 
 		Param's Explanation (filtered by):
 			
