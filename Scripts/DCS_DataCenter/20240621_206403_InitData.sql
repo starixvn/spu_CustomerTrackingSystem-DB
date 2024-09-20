@@ -11,7 +11,6 @@ INSERT INTO `DCS_DataCenter`.`SystemSetting`(`ID`, `VGroup`, `VName`, `VValue`, 
 VALUES 	(23, 'DeviceEvolution', 'Max_FP_DeviceFingerprintAccountID', 0, NOW()),
 		(24, 'DeviceMapping', 'Min_Transaction_TransID', 0, NOW()),
 		(25, 'DeviceMapping', 'Minute_To_Wait_Evolution', 5, NOW()),
-		(26, 'LastModifiedDate', 'Transaction07.MaxTransID', 0, NOW()),
 		(27, 'TransformDevice', 'SkipDeviceMapping', 0, NOW());
 
 INSERT INTO `DCS_DataCenter`.`StaticList`(`ListID`, `ItemID`, `ListCode`, `ListName`, `ItemCode`, `ItemName`, `Status`, `Description`, `CreatedDate`)

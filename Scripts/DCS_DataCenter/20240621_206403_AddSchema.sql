@@ -150,11 +150,11 @@ CREATE TABLE `FP_DeviceMapping` (
   `InsertedTime` TIMESTAMP DEFAULT NOW(),
   PRIMARY KEY (`ID`),
   UNIQUE KEY `UX_FP_DeviceMapping_Group` (`FP_TaggingID`,`FP_FingerPrintID`,`FP_DeviceFingerprintAccountID`,`FP_DeviceFingerprintAccount_EvolveID`,`FP_DeviceFingerprintAccountOldID`),
-  KEY `UK_FP_DeviceMapping_FP_TaggingID` (`FP_TaggingID`),
-  KEY `UK_FP_DeviceMapping_FP_FingerPrintID` (`FP_FingerPrintID`),
-  KEY `UK_FP_DeviceMapping_FP_DeviceFingerprintAccountID` (`FP_DeviceFingerprintAccountID`),
-  KEY `UK_FP_DeviceMapping_FP_DeviceFingerprintAccount_EvolveID` (`FP_DeviceFingerprintAccount_EvolveID`),
-  KEY `UK_FP_DeviceMapping_FP_DeviceFingerprintAccountOldID` (`FP_DeviceFingerprintAccountOldID`)
+  KEY `IX_FP_DeviceMapping_FP_TaggingID` (`FP_TaggingID`),
+  KEY `IX_FP_DeviceMapping_FP_FingerPrintID` (`FP_FingerPrintID`),
+  KEY `IX_FP_DeviceMapping_FP_DeviceFingerprintAccountID` (`FP_DeviceFingerprintAccountID`),
+  KEY `IX_FP_DeviceMapping_FP_DeviceFingerprintAccount_EvolveID` (`FP_DeviceFingerprintAccount_EvolveID`),
+  KEY `IX_FP_DeviceMapping_FP_DeviceFingerprintAccountOldID` (`FP_DeviceFingerprintAccountOldID`)
 ) ENGINE=InnoDB;
 
 DROP TABLE IF EXISTS FP_TransactionDeviceMapping;
@@ -209,15 +209,50 @@ CREATE TABLE `FP_AssociationMapping` (
 ) ENGINE=InnoDB;
 
 /* ========= Update Schema ========= */
-DELETE FROM `DCS_DataCenter`.`RawTransaction` WHERE  IsProcessed = -1 AND CreatedDate < '2024-06-30';
-
-ALTER TABLE `DCS_DataCenter`.`RawTransaction`
-REMOVE PARTITIONING;
-
-ALTER TABLE `DCS_DataCenter`.`RawTransaction`
-DROP PRIMARY KEY,
-ADD PRIMARY KEY (TransID),
-ADD KEY `IX_RawTransaction_CreatedDate` (`CreatedDate`);
+DROP TABLE IF EXISTS `DCS_DataCenter`.`RawTransaction`;
+CREATE TABLE `RawTransaction` (
+  `TransID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `LoginName` VARCHAR(100) NOT NULL,
+  `SubscriberName` VARCHAR(50) NOT NULL,
+  `TransTime` TIMESTAMP(4) NOT NULL,
+  `CreatedDate` DATETIME NOT NULL COMMENT 'Date Only',
+  `DeviceCode` VARCHAR(32) DEFAULT NULL,
+  `FingerprintCode` VARCHAR(620) DEFAULT NULL,
+  `FingerprintMoreInfo` VARCHAR(250) DEFAULT NULL,
+  `UserAgent` VARCHAR(1000) DEFAULT NULL,
+  `IP` VARCHAR(50) DEFAULT NULL,
+  `IPID` DECIMAL(50,0) DEFAULT NULL,
+  `PluginID` BIGINT DEFAULT NULL,
+  `URL` VARCHAR(500) DEFAULT NULL,
+  `Action` VARCHAR(100) DEFAULT NULL,
+  `ActionResult` VARCHAR(100) DEFAULT NULL,
+  `InvalidDevice` VARCHAR(1000) DEFAULT NULL,
+  `TransStatus` BIT(16) DEFAULT NULL COMMENT 'Refer Table TransStatus',
+  `FPSTransID` BIGINT UNSIGNED DEFAULT NULL,
+  `Flagged` SMALLINT DEFAULT NULL,
+  `IsProcessed` TINYINT NOT NULL DEFAULT '0',
+  `InsertTime` TIMESTAMP(4) NULL DEFAULT NULL,
+  `BotDetectionValue` BIT(32) DEFAULT NULL,
+  `BotComponentID` BIGINT UNSIGNED DEFAULT NULL,
+  `FakeIP` VARCHAR(100) DEFAULT NULL,
+  `CookieID` BIGINT UNSIGNED DEFAULT NULL,
+  `RawUserAgentID` BIGINT UNSIGNED DEFAULT NULL,
+  `RawFingerPrintID` BIGINT UNSIGNED DEFAULT NULL,
+  `BrowserInstanceID` BIGINT UNSIGNED DEFAULT NULL,
+  `JsChallengeID` BIGINT UNSIGNED DEFAULT NULL,
+  `IsIncognitoMode` TINYINT(1) DEFAULT NULL,
+  `ChallengeCode` VARCHAR(50) DEFAULT NULL,
+  `FP_Tagging` VARCHAR(32) DEFAULT NULL,
+  `FP_FingerPrintCode` VARCHAR(32) DEFAULT NULL,
+  `FP_FingerPrintExtraCode` VARCHAR(32) DEFAULT NULL,
+  `FP_FingerPrintOldCode` VARCHAR(32) DEFAULT NULL,
+  `FP_UserAgentCode` VARCHAR(32) DEFAULT NULL,
+  
+  PRIMARY KEY (`TransID`),
+  KEY `IX_RawTransaction_IsProcessed` (`IsProcessed`),
+  KEY `IX_RawTransaction_SubscriberName` (`SubscriberName`,`CreatedDate`),
+  KEY `IX_RawTransaction_CreatedDate` (`CreatedDate`)
+) ENGINE=InnoDB;
 
 ALTER TABLE `DCS_DataCenter`.`RawTransaction`
 ADD COLUMN `IsIncognitoMode` BOOLEAN,
