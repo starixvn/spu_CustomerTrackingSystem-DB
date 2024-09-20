@@ -241,7 +241,7 @@ BEGIN
 			IF(ip_LiveIndicator = 0) THEN			
 					SET @sql = 	CONCAT("UPDATE CTS_DataCenter.MatchMonitorParlayStagingGroupBettingNonLive
 										SET	GroupID = ",lv_TargetGroupID,"
-										WHERE TransID IN (",lv_TransIDmList,")");
+										WHERE TransIDm IN (",lv_TransIDmList,")");
 					
 					PREPARE 	stmt1 FROM @sql;
 					EXECUTE 	stmt1;
