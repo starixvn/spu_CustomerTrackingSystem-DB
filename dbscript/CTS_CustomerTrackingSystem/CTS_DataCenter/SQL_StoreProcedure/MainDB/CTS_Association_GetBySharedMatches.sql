@@ -22,6 +22,7 @@ AS
 		- 20230602@Long.Luu:		Add new agent as internal account [Redmine ID: #188554]
         - 20231024@Long.Luu: 		Add Agent HITRM & WINRM as internal account [Redmine ID: #195355]
         - 20231207@Long.Luu: 		Add Agent M999RM00 as internal account [Redmine ID: #197915]
+		- 20240920@Thomas.Nguyen: 	Enhance Performance [Redmine ID: #210628]
 
 	Params Explaination:
 		- @QueryType: 1 detect associations, 2 get fraud tickets, 3 get association custlist of a group, 4 get fraud tickets of a custgroup
@@ -44,6 +45,11 @@ BEGIN
 		,	@BalanceUpDay							SMALLDATETIME
 		,	@MoveBetsDay							SMALLDATETIME;
 	
+	DROP TABLE IF EXISTS #tmpCustIdsOrg;
+	CREATE TABLE #tmpCustIdsOrg(
+			CustId				INT NOT NULL PRIMARY KEY
+	);
+
 	DROP TABLE IF EXISTS #tmpCustIds;
 	CREATE TABLE #tmpCustIds(
 			CustId				INT NOT NULL PRIMARY KEY
@@ -65,11 +71,22 @@ BEGIN
 
 	IF @ListCustId <> ''
 		BEGIN
-			INSERT INTO #tmpCustIds (CustId)
+			INSERT INTO #tmpCustIdsOrg (CustId)
 			SELECT ssk.Value
 			FROM STRING_SPLIT(@ListCustId, ',') AS ssk
 			OPTION (MAXRECURSION 0);
 		END;
+
+	INSERT INTO #tmpCustIds (CustId)
+	SELECT tmp.CustId
+	FROM #tmpCustIdsOrg AS tmp
+		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) on c.custid = tmp.custid
+	WHERE c.srecommend NOT IN (41430709) 
+		AND c.mrecommend NOT IN (27899314,11656504,12146012) 
+		AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)		
+		AND c.username NOT LIKE '%CashOut' 
+		AND c.site NOT IN ('Nextbet','9wickets','9wsports')
+		AND c.Currency NOT IN (20,27,28);
 
 	SET @DataFromDate = DATEADD(DAY, -7, @Today);
 
@@ -172,15 +189,8 @@ BEGIN
 		INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.MatchID = m.matchid 
 		INNER JOIN #tmpStakeThredsHold AS s WITH(NOLOCK) ON s.SportType = m.sporttype
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) on b.custid = c.custid	
 	WHERE b.winlostdate > @MoveBetsDay
-		AND b.srecommend NOT IN (41430709) 
-		AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-		AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)		
-		AND b.username NOT LIKE '%CashOut' 
-		AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 		AND m.eventstatus = 'Completed'
-		AND b.Currency NOT IN (20,27,28)
 		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122) -- exclude SABA, Virtual Sport
 		AND (b.stake * b.actualrate >= s.StakeRM);
 
@@ -228,12 +238,11 @@ BEGIN
 		INNER JOIN dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 	WHERE	b.winlostdate <= @MoveBetsDay AND b.winlostdate > @DataFromDate
 		AND m.eventstatus = 'Completed'
-		AND b.Currency NOT IN (20,27,28)
 		AND l.LeagueGroupID NOT IN (42,72,74,108,113,122) -- exclude SABA, Virtual Sport		
 		AND (b.stake * b.actualrate >= s.StakeRM)
 
 	CREATE CLUSTERED INDEX CIX_tmpRawTickets
-	ON #tmpRawTickets (MatchID, Bettype, Betteam, CustID); 
+	ON #tmpRawTickets (MatchID, Bettype, Betteam, LiveHomeScore, LiveAwayScore, CustID); 
 
 	;WITH cte_custPerMatch AS (
 		SELECT DISTINCT c1.CustID AS CustID1, c1.MatchID, c1.Bettype, c1.BetTeam, c2.CustID AS CustID2
@@ -348,6 +357,7 @@ BEGIN
 		END;
 	
 	DROP TABLE #BUMBData;
+	DROP TABLE #tmpCustIdsOrg;
 	DROP TABLE #tmpCustIds;
 	DROP TABLE #tmpRawTickets;
 	DROP TABLE #tmpAssociation;
