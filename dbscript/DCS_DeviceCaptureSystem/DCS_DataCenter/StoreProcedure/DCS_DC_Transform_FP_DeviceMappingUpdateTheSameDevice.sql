@@ -38,11 +38,11 @@ BEGIN
     DECLARE CONST_RECOVERTYPE_FIRSTRULE		SMALLINT DEFAULT 1;
     DECLARE CONST_RECOVERTYPE_SECONDRULE	SMALLINT DEFAULT 2;
     
-    DECLARE lv_CurrentID 					INT DEFAULT 0;
-    DECLARE lv_MaxID 						INT;
-    DECLARE lv_CurrentFirstDeviceID 		INT;
-    DECLARE lv_CurrentSecondDeviceID 		INT;
-    DECLARE lv_SameDeviceWithID 			INT;
+    DECLARE lv_CurrentID 					BIGINT UNSIGNED DEFAULT 0;
+    DECLARE lv_MaxID 						BIGINT UNSIGNED;
+    DECLARE lv_CurrentFirstDeviceID 		BIGINT UNSIGNED;
+    DECLARE lv_CurrentSecondDeviceID 		BIGINT UNSIGNED;
+    DECLARE lv_SameDeviceWithID 			BIGINT UNSIGNED;
     DECLARE lv_RecoverType		 			SMALLINT; /* 1: FirstRule, 2: SecondRule */
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_SameDevice;

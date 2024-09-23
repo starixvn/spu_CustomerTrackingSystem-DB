@@ -71,11 +71,11 @@ BEGIN
 		SELECT dfaMain.ID,
 			   dfaMain.AccountID,
 			   ROW_NUMBER() OVER (PARTITION BY dfaMain.AccountID ORDER BY dfaMain.ID DESC) AS rn
-		FROM Temp_GroupAccount tmpGA
-			INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccount dfaMain ON dfaMain.AccountID = tmpGA.AccountID
+		FROM Temp_GroupAccount AS tmpGA
+			INNER JOIN DCS_DataCenter.FP_DeviceFingerprintAccount AS dfaMain ON dfaMain.AccountID = tmpGA.AccountID
 		WHERE dfaMain.EvolveID > 0
 	)
-	SELECT 	DISTINCT 
+	SELECT 	DISTINCT
 			AccountID
 		,	ID AS FPDeviceFingerprintAccountID
 	FROM cte_IDRef
