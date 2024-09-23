@@ -209,6 +209,13 @@ CREATE TABLE `FP_AssociationMapping` (
 ) ENGINE=InnoDB;
 
 /* ========= Update Schema ========= */
+SET @MAX_PROCESSEDTRANSACTION_TRANSID = (SELECT MAX(TransID) FROM ProcessedTransaction);
+SET @MAX_RAWTRANSACTION_TRANSID = (SELECT MAX(TransID) FROM RawTransaction);
+SET @AUTO_INCREMENT_TRANSID = (CASE WHEN @MAX_PROCESSEDTRANSACTION_TRANSID > @MAX_RAWTRANSACTION_TRANSID 
+									THEN @MAX_PROCESSEDTRANSACTION_TRANSID
+									ELSE @MAX_RAWTRANSACTION_TRANSID
+								END) + 1;
+
 DROP TABLE IF EXISTS `DCS_DataCenter`.`RawTransaction`;
 CREATE TABLE `RawTransaction` (
   `TransID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -253,6 +260,11 @@ CREATE TABLE `RawTransaction` (
   KEY `IX_RawTransaction_SubscriberName` (`SubscriberName`,`CreatedDate`),
   KEY `IX_RawTransaction_CreatedDate` (`CreatedDate`)
 ) ENGINE=InnoDB;
+
+SET @sql := CONCAT('ALTER TABLE `DCS_DataCenter`.`RawTransaction` AUTO_INCREMENT = ', @AUTO_INCREMENT_TRANSID);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 ALTER TABLE `DCS_DataCenter`.`RawTransaction`
 ADD COLUMN `IsIncognitoMode` BOOLEAN,

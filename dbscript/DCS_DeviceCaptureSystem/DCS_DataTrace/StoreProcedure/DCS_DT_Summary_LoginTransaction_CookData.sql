@@ -257,9 +257,9 @@ BEGIN
     UPDATE DCS_DataTrace.LoginTransactionSummaryByFlagged AS trans
 		INNER JOIN Temp_TotalTransByFlagged AS tmp ON 	trans.TransDate = tmp.TransDate 
 													AND trans.Flagged = tmp.Flagged
-	SET 	trans.TotalTrans 			= trans.TotalTrans + tmp.TotalTrans
-		,	trans.ModifiedTime 			= lv_CurrentDatetime
-		,	tmp.IsUpdate = 1;
+	SET 	trans.TotalTrans 		= trans.TotalTrans + tmp.TotalTrans
+		,	trans.ModifiedTime 		= lv_CurrentDatetime
+		,	tmp.IsUpdate 			= 1;
         
     INSERT INTO DCS_DataTrace.LoginTransactionSummaryByFlagged(TransDate, Flagged, TotalTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate

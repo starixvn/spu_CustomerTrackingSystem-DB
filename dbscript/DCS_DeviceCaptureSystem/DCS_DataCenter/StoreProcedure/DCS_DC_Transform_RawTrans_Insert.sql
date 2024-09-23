@@ -139,7 +139,7 @@ BEGIN
                             ,	ChallengeCode			VARCHAR(50)		PATH "$.ChallengeCode"
                             ,	IsIncognitoMode			BOOLEAN			PATH "$.IsIncognitoMode"
 				)
-		   ) AS  rt; 
+		   ) AS rt; 
            
     /******* Add index ********************/
 	ALTER TABLE Temp_Transaction
@@ -148,13 +148,13 @@ BEGIN
     /******* BotDetection ********************/
 	INSERT INTO Temp_BotDetection(ID, BotDetectionValue)
     SELECT 	tmp.ID
-		, 	SUM(bd.Value) as Value
+		, 	SUM(bd.Value) AS Value
 	FROM Temp_Transaction AS tmp
-		INNER JOIN DCS_DataCenter.BotDetection bd ON FIND_IN_SET(bd.Name, tmp.BotDetection)
+		INNER JOIN DCS_DataCenter.BotDetection AS bd ON FIND_IN_SET(bd.Name, tmp.BotDetection)
 	GROUP BY tmp.ID;
     
 	UPDATE Temp_Transaction AS tmp
-		INNER JOIN Temp_BotDetection tmpBD ON tmpBD.ID = tmp.ID
+		INNER JOIN Temp_BotDetection AS tmpBD ON tmpBD.ID = tmp.ID
 	SET tmp.BotDetectionValue = tmpBD.BotDetectionValue;
     
     /******* BotComponent ********************/

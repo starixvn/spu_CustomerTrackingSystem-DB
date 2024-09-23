@@ -82,12 +82,12 @@ BEGIN
 	WHERE rn <= 10;
     
     UPDATE Temp_DeviceFingerprintAccount AS tmp
-	INNER JOIN (
-		SELECT 	AccountID
-			, 	GROUP_CONCAT(FPDeviceFingerprintAccountID ORDER BY FPDeviceFingerprintAccountID DESC SEPARATOR ',') AS concatenatedIDs
-		FROM Temp_DeviceFingerprintAccount_Ref
-		GROUP BY AccountID
-	) AS tmpRef ON tmp.AccountID = tmpRef.AccountID
+		INNER JOIN (
+			SELECT 	AccountID
+				, 	GROUP_CONCAT(FPDeviceFingerprintAccountID ORDER BY FPDeviceFingerprintAccountID DESC SEPARATOR ',') AS concatenatedIDs
+			FROM Temp_DeviceFingerprintAccount_Ref
+			GROUP BY AccountID
+		) AS tmpRef ON tmp.AccountID = tmpRef.AccountID
 	SET tmp.IDRef = tmpRef.concatenatedIDs;
     
 	SELECT 	tmp.ID AS FPDeviceFingerprintAccountID

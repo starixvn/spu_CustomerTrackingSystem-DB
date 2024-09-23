@@ -112,7 +112,7 @@ BEGIN
     
     IF lv_Max_FP_DeviceEvolutionID IS NOT NULL AND lv_Max_FP_DeviceEvolutionID > 0 THEN
 		UPDATE DCS_DataCenter.SystemSetting AS sys
-		SET sys.VValue 	= CONCAT('', lv_Max_FP_DeviceEvolutionID),
+		SET sys.VValue = CONCAT('', lv_Max_FP_DeviceEvolutionID),
 		    sys.UpdatedTime = lv_CurrentDate
 		WHERE ID = CONST_MINID_FP_DEVICEEVOLUTION;
     END IF;

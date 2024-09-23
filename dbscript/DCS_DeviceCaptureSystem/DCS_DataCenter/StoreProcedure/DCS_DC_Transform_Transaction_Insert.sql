@@ -139,7 +139,7 @@ BEGIN
 	    ,   rt.LoginName
         ,   rt.TransTime
         ,   su.SubscriberID
-        ,   su.SubscriberType        
+        ,   su.SubscriberType
         ,   rt.DeviceCode
         ,   rt.URL
         ,   MD5(LOWER(rt.UserAgent))
@@ -184,7 +184,7 @@ BEGIN
         ,   MIN(trt.CreatedDate)
 	FROM Temp_RawTransaction AS trt
 	GROUP BY trt.SubscriberID
-        ,    trt.URLDetails;    
+        ,    trt.URLDetails;
     
 	# Insert New Account
     INSERT IGNORE INTO DCS_DataCenter.Account(LoginName, SubscriberID, SubscriberType, CreatedDate, InsertTime, CreatedTime, LastLoginTime)
@@ -211,28 +211,30 @@ BEGIN
     #Remove Temp Trans If AccountID Is NULL
     DELETE 	trt
     FROM	Temp_RawTransaction AS trt
-    WHERE 	trt.AccountID IS NULL;       
+    WHERE 	trt.AccountID IS NULL;
     
     UPDATE 	DCS_DataCenter.Association AS ass
         INNER JOIN	(SELECT DISTINCT AccountID FROM Temp_RawTransaction trt) AS trtAcc ON ass.AccountID = trtAcc.AccountID
         INNER JOIN	CTS_DataCenter.CustDCSAccount AS acc ON ass.AccountID = acc.AccountID
 	SET ass.IsCTSTransformed = 0
-    WHERE ass.IsCTSTransformed < 0;			
+    WHERE ass.IsCTSTransformed < 0;
   
-    INSERT INTO Temp_LastLoginTime(SubscriberID, AccountID, LastLoginTime)   
+    INSERT INTO Temp_LastLoginTime(SubscriberID, AccountID, LastLoginTime)
     SELECT  acc.SubscriberID
         ,   acc.AccountID
         ,   tac.LastLoginTime
-    FROM DCS_DataCenter.Account 	AS acc
-        INNER JOIN (SELECT trt.AccountID, MAX(trt.TransTime) AS LastLoginTime FROM Temp_RawTransaction AS trt GROUP BY trt.AccountID) AS tac ON	acc.AccountID = tac.AccountID
-    WHERE tac.LastLoginTime > acc.LastLoginTime;    
+    FROM DCS_DataCenter.Account AS acc
+        INNER JOIN (SELECT trt.AccountID, MAX(trt.TransTime) AS LastLoginTime
+					FROM Temp_RawTransaction AS trt
+                    GROUP BY trt.AccountID) AS tac ON	acc.AccountID = tac.AccountID
+    WHERE tac.LastLoginTime > acc.LastLoginTime;
 
     INSERT INTO Temp_LastLoginTimeCTSCust(CTSCustID, LastLoginTime)
     SELECT  cus.CTSCustID
 	    ,   MAX(lgn.LastLoginTime)
     FROM Temp_LastLoginTime AS lgn
         INNER JOIN  CTS_DataCenter.CustDCSAccount AS cus ON lgn.AccountID = cus.AccountID
-	GROUP BY 	cus.CTSCustID;    
+	GROUP BY 	cus.CTSCustID;
 	
     INSERT INTO DCS_DataCenter.AccountLastLoginTimeProcess(AccountID, LastLoginTime)
     SELECT  tll.AccountID
@@ -312,7 +314,7 @@ BEGIN
     SET tmp.FP_DeviceFingerprintAccountID = dfa.ID;
     
     INSERT IGNORE INTO Temp_FP_EvolvedMapping(FP_DeviceFingerprintAccountID, FP_FingerPrintExtraID)
-    SELECT 	DISTINCT 
+    SELECT 	DISTINCT
 			FP_DeviceFingerprintAccountID
 		,	FP_FingerPrintExtraID
     FROM Temp_RawTransaction
@@ -333,7 +335,7 @@ BEGIN
     INSERT IGNORE INTO DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FP_TaggingID, FP_FingerPrintID, FP_FingerPrintExtraID, FP_FingerPrintOldID, FP_UserAgentID)
    	SELECT  trt.TransID
 	    ,   trt.LoginName
-        ,   trt.TransTime                
+        ,   trt.TransTime
 	    ,   trt.SubscriberID
         ,   trt.AccountID
 	    ,   trt.URLID
@@ -343,8 +345,8 @@ BEGIN
         ,   trt.ActionResultID
 	    ,   trt.Flagged
         ,   trt.PluginID
-        ,   trt.TransStatus				
-	    ,   trt.CreatedDate                
+        ,   trt.TransStatus
+	    ,   trt.CreatedDate
         ,   lv_CurrentDate AS InsertTime
         ,   trt.DeviceCode
         ,   trt.FingerprintCode
@@ -358,7 +360,7 @@ BEGIN
         ,   trt.FP_FingerPrintExtraID
         ,   trt.FP_FingerPrintOldID
         ,   trt.FP_UserAgentID
-	FROM Temp_RawTransaction AS trt;	
+	FROM Temp_RawTransaction AS trt;
 
     #================================================================
 	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode)
