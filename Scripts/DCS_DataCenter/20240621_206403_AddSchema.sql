@@ -176,6 +176,8 @@ CREATE TABLE `FP_Device` (
   UNIQUE KEY `UX_FP_Device_FirstRawTransID` (`FirstRawTransID`)
 ) ENGINE=InnoDB AUTO_INCREMENT=300000001;
 
+
+/* -- Đã chạy rồi
 DROP TABLE IF EXISTS FP_Association;
 CREATE TABLE `FP_Association` (
   `AssociationID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -187,13 +189,17 @@ CREATE TABLE `FP_Association` (
   `InsertedTime` TIMESTAMP(4) NOT NULL,
   `IsCTSTransformed` TINYINT NOT NULL DEFAULT '0',
   
-  PRIMARY KEY (`AssociationID`),
-  UNIQUE KEY `UX_FP_Association_AccountID_DeviceID` (`AccountID`,`DeviceID`),
-  KEY `IX_FP_Association_IsCTSTransformed` (`IsCTSTransformed`),
-  KEY `IX_FP_Association_SubscriberID_AccountID_DeviceID` (`SubscriberID`,`AccountID`,`DeviceID`),
-  KEY `IX_FP_Association_DeviceID_AccountID_CreatedDate` (`DeviceID`,`AccountID`)
+  PRIMARY KEY (`AssociationID`)
 ) ENGINE=InnoDB;
 
+CALL DCS_DC_Initial_FP_Association(100000);
+
+ALTER TABLE FP_Association
+ADD UNIQUE INDEX `UX_FP_Association_AccountID_DeviceID` (`AccountID`,`DeviceID`),
+ADD INDEX `IX_FP_Association_IsCTSTransformed` (`IsCTSTransformed`),
+ADD INDEX `IX_FP_Association_SubscriberID_AccountID_DeviceID` (`SubscriberID`,`AccountID`,`DeviceID`),
+ADD INDEX `IX_FP_Association_DeviceID_AccountID` (`DeviceID`,`AccountID`);
+*/
 
 DROP TABLE IF EXISTS FP_AssociationMapping;
 CREATE TABLE `FP_AssociationMapping` (
