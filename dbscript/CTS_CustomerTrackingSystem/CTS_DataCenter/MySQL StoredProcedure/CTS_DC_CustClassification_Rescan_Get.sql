@@ -23,6 +23,7 @@ sp: BEGIN
 			- 20230517@Victoria.Le:		New Category for Robot OCRD [Redmine ID: #186991]
             - 20240103@Thomas.Nguyen:   New Category for System Detect Unauthorized Login [RedmineID: #197710]
 			- 20240620@Jonas.Huynh: 	Renovate CC [RedmineID: #205317]
+            - 20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
             
         Param's Explanation:
 
@@ -442,7 +443,7 @@ sp: BEGIN
 	WHERE NOT EXISTS (SELECT 1 
 					  FROM Temp_CustCategory AS cc 
                       WHERE cc.CustID = tmp.CustID 
-						AND cc.InputFlowID = CONST_INPUTFLOWID_CATEGORY_PA);
+						AND cc.CategoryID = CONST_CATEID_EARLYWARNING);
     
     /***********************Check Initial GroupBetting****************************/
     INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, SportType, InputFlowID)
@@ -470,7 +471,7 @@ sp: BEGIN
 	WHERE NOT EXISTS (SELECT 1 
 					  FROM Temp_CustCategory AS cc 
 					  WHERE cc.CustID = tmp.CustID 
-						AND cc.InputFlowID = CONST_INPUTFLOWID_CATEGORY_PA);
+						AND cc.CategoryID = CONST_CATEID_INITIALGB);
 	
     /***********************Check Initial Smart****************************/
 	INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)
@@ -497,7 +498,7 @@ sp: BEGIN
 	WHERE NOT EXISTS (SELECT 1 
 					  FROM Temp_CustCategory AS cc 
 					  WHERE cc.CustID = tmp.CustID 
-						AND cc.InputFlowID = CONST_INPUTFLOWID_CATEGORY_PA);
+						AND cc.CategoryID = CONST_CATEID_INITIALSMART);
 
     /***********************Rescan Potential Category****************************/        
     DROP TEMPORARY TABLE IF EXISTS Temp_PotentialCategory2;    

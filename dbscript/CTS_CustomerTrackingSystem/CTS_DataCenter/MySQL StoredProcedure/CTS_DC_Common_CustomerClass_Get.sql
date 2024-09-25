@@ -16,7 +16,8 @@ BEGIN
             - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
 			- 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
 			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
-
+            - 20240923@Jonas.Huynh: Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
+            
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DC_Common_CustomerClass_Get();
@@ -26,15 +27,20 @@ BEGIN
 	DECLARE	CONST_GROUPNAME_ASSOCIATEDPA 	VARCHAR(100) DEFAULT 'Associated PA';
 	DECLARE	CONST_GROUPNAME_OTHERS			VARCHAR(100) DEFAULT 'Others';
     
-	DECLARE	CONST_PARENTID_PA 					INT;
-	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
-	DECLARE	CONST_PARENTID_NORMAL 				INT;
-	DECLARE CONST_CATEGROUPID_INACTIVE			INT;
+	DECLARE CONST_PARENTID_VVIP					INT;
+	DECLARE CONST_PARENTID_WRAPPER				INT;
+    
+    DECLARE	CONST_BIZCATEGROUPID_PA 			INT;
+	DECLARE	CONST_BIZCATEGROUPID_PAASSOCIATED 	INT;
+	DECLARE	CONST_BIZCATEGROUPID_NORMAL 		INT;
+	DECLARE CONST_BIZCATEGROUPID_OTHERS			INT;
 
-	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
-    SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
-	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
-	SET CONST_CATEGROUPID_INACTIVE 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INACTIVE');
+	SET CONST_PARENTID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+    SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');    
+	SET CONST_BIZCATEGROUPID_PA 			= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_PA');
+    SET CONST_BIZCATEGROUPID_PAASSOCIATED 	= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_PAASSOCIATED');
+	SET CONST_BIZCATEGROUPID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
+	SET CONST_BIZCATEGROUPID_OTHERS 		= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_OTHERS');
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerClass;
     CREATE TEMPORARY TABLE Temp_CustomerClass(
@@ -48,37 +54,21 @@ BEGIN
     );
     
     INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
-    SELECT 	CONST_GROUPNAME_PA AS CustomerClassGroup		    
+    SELECT 	CASE 
+				WHEN cat.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_PA THEN CONST_GROUPNAME_PA 
+                WHEN cat.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_NORMAL THEN CONST_GROUPNAME_NORMAL 
+                WHEN cat.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_PAASSOCIATED THEN CONST_GROUPNAME_ASSOCIATEDPA 
+                WHEN cat.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_OTHERS THEN CONST_GROUPNAME_OTHERS 
+			END AS CustomerClassGroup		    
 		,	cat.CustomerClass
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
 	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.ParentID = CONST_PARENTID_PA
-		AND cat.IsActive = 1
+	WHERE 	cat.IsActive = 1
         AND cat.CustomerClass IS NOT NULL
-	GROUP BY cat.CustomerClass, cat.CategoryGroupID;
+        AND cat.ParentID NOT IN (CONST_PARENTID_VVIP, CONST_PARENTID_WRAPPER)
+	GROUP BY cat.CustomerClass, cat.CategoryGroupID, cat.BusinessCategoryGroupID
+    ORDER BY cat.CategoryIDs;
     
-	INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
-    SELECT 	CONST_GROUPNAME_NORMAL AS CustomerClassGroup		    
-		,	cat.CustomerClass
-		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs  
-	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.ParentID = CONST_PARENTID_POTENTIALPA
-		AND cat.IsActive = 1
-        AND cat.CustomerClass IS NOT NULL
-	GROUP BY cat.CustomerClass, cat.CategoryGroupID;
-
-	INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
-	SELECT	(CASE WHEN cat.TaggingType =1 THEN CONST_GROUPNAME_ASSOCIATEDPA 
-				 WHEN cat.CategoryGroupID = CONST_CATEGROUPID_INACTIVE THEN CONST_GROUPNAME_OTHERS 
-                 ELSE CONST_GROUPNAME_NORMAL 
-			END) AS CustomerClassGroup
-		,	cat.CustomerClass
-		,	cat.CategoryID AS CategoryIDs
-	FROM	CTS_DataCenter.CustomerCategory AS cat
-	WHERE 	cat.ParentID = CONST_PARENTID_NORMAL
-		AND cat.IsActive = 1
-        AND cat.CustomerClass IS NOT NULL;
-
    UPDATE Temp_CustomerClass
    SET OrderID = CASE WHEN CustomerClassGroup = CONST_GROUPNAME_PA THEN 1
                  WHEN CustomerClassGroup = CONST_GROUPNAME_ASSOCIATEDPA THEN 2

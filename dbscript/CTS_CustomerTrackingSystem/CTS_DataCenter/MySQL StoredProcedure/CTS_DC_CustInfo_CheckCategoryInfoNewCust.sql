@@ -17,36 +17,39 @@ sp: BEGIN
             - 20220614@Aries.Nguyen: CTS - Classify Category for new Customer (all roles) is not Latest [Redmine ID: #174084]
             - 20220616@Aries.Nguyen: Cannot mark PA (affected by uplines) correctly with First Mark [Redmine ID: #174136]
             - 20220628@Aries.Nguyen: Update robot classification rule [Redmine ID: #174430]
-			      - 202208018@Long.Luu: Use IsDangerProbation in stead of IsPAProbation [Redmine ID: #174219]
+			- 202208018@Long.Luu: Use IsDangerProbation in stead of IsPAProbation [Redmine ID: #174219]
             - 20230515@Casey.Huynh:	New Category for Robot OCRD [Redmine ID: #186991]
             - 20240626@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryGroup, ParentID [Redmine ID: #205317]
-
+			- 20240923@Jonas.Huynh:	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
+            
         Param's Explanation:
 
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_CheckCategoryInfoNewCust(@op_LastCTSCustID);SELECT @op_LastCTSCustID;
 	*/
-    DECLARE CONST_PARENTID_VVIP 						  INT;
-    DECLARE	CONST_PARENTID_PA 					      INT;
+    DECLARE CONST_PARENTID_VVIP 			  INT;
+    DECLARE	CONST_PARENTID_PA 				  INT;
     DECLARE CONST_CATEGROUPID_ROBOTUSER       INT;
     DECLARE CONST_CATEGROUPID_ROBOTOCRD       INT;
     DECLARE CONST_CATEGROUPID_INFOBET         INT;
     DECLARE CONST_CATEGROUPID_INFOBETLOSING   INT;
     DECLARE CONST_CATEID_INFOBET              INT;
+    DECLARE CONST_BIZCATEGROUPID_NORMAL       INT;
 
     DECLARE lv_LastCTSCustID 	BIGINT UNSIGNED;
     DECLARE lv_BatchSize 		INT UNSIGNED;
     DECLARE lv_MaxCTSCustID 	BIGINT UNSIGNED;
      
-    SET CONST_PARENTID_VVIP 							    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
-    SET CONST_PARENTID_PA 				            = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
-    SET CONST_CATEGROUPID_ROBOTUSER				    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_ROBOTUSER');
-    SET CONST_CATEGROUPID_ROBOTOCRD				    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_ROBOTOCRD');
-    SET CONST_CATEGROUPID_INFOBET				      = CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INFOBET');
+    SET CONST_PARENTID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+    SET CONST_PARENTID_PA 				        = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_CATEGROUPID_ROBOTUSER				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_ROBOTUSER');
+    SET CONST_CATEGROUPID_ROBOTOCRD				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_ROBOTOCRD');
+    SET CONST_CATEGROUPID_INFOBET				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INFOBET');
     SET CONST_CATEGROUPID_INFOBETLOSING		    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INFOBETLOSING');
-    SET CONST_CATEID_INFOBET				          = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INFOBET');
+    SET CONST_CATEID_INFOBET				    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INFOBET');
+    SET CONST_BIZCATEGROUPID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
 
-	  DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE Temp_CustInfo(
         CTSCustID		  BIGINT 	UNSIGNED PRIMARY KEY
       ,	CustID			  BIGINT	UNSIGNED
@@ -176,11 +179,13 @@ sp: BEGIN
         ,	  class.IsFromCTS
         ,	  class.LastModifiedDate
     FROM Temp_CustInfo AS tmp    
-		    STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.ParentID = CONST_PARENTID_PA 
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroupID NOT IN (CONST_CATEGROUPID_ROBOTUSER,CONST_CATEGROUPID_ROBOTOCRD);
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.ParentID = CONST_PARENTID_PA 
+        STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = class.CategoryID 
+			AND cate.CategoryGroupID NOT IN (CONST_CATEGROUPID_ROBOTUSER,CONST_CATEGROUPID_ROBOTOCRD)
+			AND cate.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL;
 	 
     SELECT	tmp.CTSCustID
-		    ,	  tmp.CustID          
+		,	  tmp.CustID          
         ,	  tmp.CustSubID  
         ,	  tmp.UserName  
         ,	  tmp.RegisterName  
@@ -192,16 +197,16 @@ sp: BEGIN
      
     SELECT 	cate.CTSCustID		
         ,   cate.CustID	
-		    ,  	tmp.RoleID
+		,  	tmp.RoleID
         ,  	tmp.SubscriberID
         ,  	tmp.IsLicensee 
         ,   cate.CategoryID		
-		    ,	  cate.CategoryGroupID
-		    ,   cate.Remark		
-        ,	  cate.CreatedBy
-        ,	  cate.IsFromTVS
-        ,	  cate.IsFromTW
-        ,	  cate.IsFromCTS
+		,	cate.CategoryGroupID
+		,   cate.Remark		
+        ,	cate.CreatedBy
+        ,	cate.IsFromTVS
+        ,	cate.IsFromTW
+        ,	cate.IsFromCTS
         ,   cate.LastModifiedDate
         ,   0 AS IsMarkedDirectly
     FROM Temp_CustCategory AS cate

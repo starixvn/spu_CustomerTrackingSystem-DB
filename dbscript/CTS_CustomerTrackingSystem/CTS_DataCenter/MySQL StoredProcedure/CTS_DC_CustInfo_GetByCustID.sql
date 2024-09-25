@@ -28,10 +28,12 @@ BEGIN
 	*/
     DECLARE	CONST_PARENTID_PA 					INT;
 	DECLARE	CONST_PARENTID_NORMAL 				INT;
+	DECLARE	CONST_BIZCATEGROUPID_NORMAL			INT;
 
 	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_PARENTID_NORMAL 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
-
+	SET CONST_BIZCATEGROUPID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;
     CREATE TEMPORARY TABLE Temp_CustID(
 		CustID 	BIGINT UNSIGNED
@@ -52,13 +54,13 @@ BEGIN
 		,	c.Currency
 		,	CASE WHEN s.SubscriberType = 0 THEN 'C' ELSE 'L' END AS SubscriberType
         ,	clss.CustomerClass
-		,	CASE WHEN clss.ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN clss.ParentID = CONST_PARENTID_PA AND cat.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN 1 ELSE 0 END AS IsPA
 		,	CASE WHEN clss.ParentID = CONST_PARENTID_NORMAL AND clss.TaggingType = 1 THEN 1 ELSE 0 END AS IsNormalLinkedPA
 	FROM Temp_CustID AS t 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS c ON t.CustID = c.CustID AND CustSubID = 0
 		INNER JOIN CTS_Admin.Subscriber AS s ON c.SubscriberID	= s.SubscriberID
-        LEFT JOIN Temp_CustClassificationInfo AS clss ON t.CustID = clss.CustID;
-      
+        LEFT JOIN Temp_CustClassificationInfo AS clss ON t.CustID = clss.CustID
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1;      
 END$$
 
 DELIMITER ;

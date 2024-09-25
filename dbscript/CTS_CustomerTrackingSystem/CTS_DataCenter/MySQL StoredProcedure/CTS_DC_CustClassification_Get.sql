@@ -34,7 +34,8 @@ BEGIN
             - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
             - 20240424@Thomas.Nguyen: Classify initial group betting - Add ParentID = 150 [Redmine ID: #200854]
 			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode, PinCustomerCategory and return more IsVVIP, IsPA, IsPotentialPA, ColorTypeID [Redmine ID: #205317]
-
+			- 20240923@Jonas.Huynh:	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
+            
 		Param's Explanation:
         
 		Example:
@@ -47,6 +48,7 @@ BEGIN
 	DECLARE CONST_PARENTID_NORMAL      		INT;
     DECLARE CONST_PARENTID_VVIP      		INT;
 	DECLARE CONST_CATEID_VVIP				INT;
+	DECLARE CONST_BIZCATEGROUPID_NORMAL		INT;
 
 	DECLARE lv_LowestParentIDPriority		SMALLINT;
 
@@ -55,7 +57,8 @@ BEGIN
 	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
     SET CONST_PARENTID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
 	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
-
+	SET CONST_BIZCATEGROUPID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
 			CategoryID				INT UNSIGNED
@@ -70,7 +73,7 @@ BEGIN
    
 	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName,CategoryGroupID, CategoryPriority, ParentID, CustomerClassPriority, IsProbation, ColorTypeID)
 	SELECT DISTINCT (CASE 
-                        WHEN cc.ParentID = CONST_PARENTID_PA THEN cc.CategoryGroupID
+                        WHEN cc.ParentID = CONST_PARENTID_PA AND cate.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN cc.CategoryGroupID
                         ELSE cate.CategoryID 
 					END)
 				,	cc.CategoryName
@@ -110,7 +113,7 @@ BEGIN
 		,	CategoryName
         ,	CategoryGroupID
 		,	CASE WHEN CategoryID = CONST_CATEID_VVIP THEN 1 ELSE 0 END AS IsVVIP
-		,	CASE WHEN ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN ParentID = CONST_PARENTID_PA AND cate.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN 1 ELSE 0 END AS IsPA
 		,	ColorTypeID
 	FROM Temp_LatestRecordOfCategory;
 END$$

@@ -24,7 +24,8 @@ BEGIN
 			- 20240319@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
 			- 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
             - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID and return ColorTypeID [Redmine ID: #205317]
-
+			- 20240923@Jonas.Huynh: Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
+            
 		---------------------------------------------------------------------------------------------------
 		[Before #192172]: CTS_DC_AssociationDetection_DetectGroup 
 			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
@@ -537,7 +538,14 @@ BEGIN
 					LIMIT 1	) AS tmpcls
 	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss	ON clss.CustID = tmpcls.CustID AND clss.ParentID = tmpcls.ParentID
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID;
-
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory2;    
+    CREATE TEMPORARY TABLE Temp_CustCategory2 LIKE Temp_CustCategory;
+    
+    INSERT INTO Temp_CustCategory2 
+    SELECT * 
+    FROM Temp_CustCategory;
+    
     /*****************************Handle CustomerClass Info**************************************************/
     SELECT GROUP_CONCAT(DISTINCT CustID) 
     INTO lv_CustIDs
@@ -573,7 +581,11 @@ BEGIN
         , 	TRIM(GROUP_CONCAT(DISTINCT ' ',cat.CategoryName)) AS CustomerCategory
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.CategoryID)) AS CategoryIDs
         ,	TRIM(GROUP_CONCAT(DISTINCT cat.ParentID)) AS ParentIDs
-        ,	TRIM(GROUP_CONCAT(DISTINCT cat.ColorTypeID)) AS ColorTypeIDs
+        ,	(SELECT clss.ColorTypeID	
+			 FROM Temp_CustCategory2 AS clss
+			 WHERE clss.CustID = cus.CustID
+			 ORDER BY clss.CustomerClassPriority ASC
+			 LIMIT 1) AS ColorTypeID
         ,	cusclss.CustomerClass
         ,	cti.CountBotTrans AS BotTransSum
         ,	ROUND((cti.CountBotTrans/cti.CountLogin)*100,2) AS BotTransPercentage
@@ -584,7 +596,7 @@ BEGIN
         LEFT JOIN Temp_CustClassificationInfo AS cusclss ON cus.CustID = cusclss.CustID
         LEFT JOIN Temp_CustAssociationType AS asTy ON cus.CTSCustID = asTy.CTSCustID
         LEFT JOIN Temp_Recommend AS re ON cus.Recommend = re.CustID
-		LEFT JOIN Temp_CustCategory AS cat ON cat.CustID = cus.CustID
+        LEFT JOIN Temp_CustCategory AS cat ON cat.CustID = cus.CustID
         LEFT JOIN Temp_CustLogTransInfo AS cti ON cti.CTSCustID = cus.CTSCustID
 	GROUP BY cus.RowNumber 
 		,	grp.GroupID
