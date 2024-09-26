@@ -95,6 +95,7 @@ ALTER TABLE MatchMonitorDetailsVerifiedTrans
 		,	BetteamName	VARCHAR(10) NOT NULL DEFAULT ''	
 		,	BetChoiceType TINYINT NOT NULL
 		,	BetTypeName VARCHAR(128) NOT NULL
+        ,	BetTypeNameDetailsX VARCHAR(100)
 		,	BetTypeNameDisplay VARCHAR(128) NULL	
 		,	BetIDPattern varchar(20) NULL
 		,	BetTeamDB VARCHAR(10) NULL 
@@ -104,25 +105,25 @@ ALTER TABLE MatchMonitorDetailsVerifiedTrans
 		,	PRIMARY KEY (BetTypeID, BetteamOrder)
 	);
 
-	INSERT INTO CTS_DataCenter.BettypeSetting(BetTypeID,BetteamOrder, BetteamName,BetChoiceType,BetTypeName,BetTypeNameDisplay,BetIDPattern,BetTeamDB,BetteamShortName,Status)
-	SELECT DISTINCT BetTypeID, 0, '' AS BetteamName,BetChoiceType,BetTypeName,BetTypeNameDisplay,BetIDPattern
+	INSERT INTO CTS_DataCenter.BettypeSetting(BetTypeID,BetteamOrder, BetteamName, BetTypeNameDetailsX, BetChoiceType,BetTypeName,BetTypeNameDisplay,BetIDPattern,BetTeamDB,BetteamShortName,Status)
+	SELECT DISTINCT BetTypeID, 0, '' AS BetteamName, BetTypeNameDetailsX, BetChoiceType,BetTypeName,BetTypeNameDisplay,BetIDPattern
 		,NULL AS BetTeamDB, NULL AS BetteamShortName, 1 AS Status
 	FROM CTS_DataCenter.SportBettypeSetting
 	WHERE BetChoiceType = 1;
 
-	INSERT INTO CTS_DataCenter.BettypeSetting(BetTypeID,BetteamOrder,BetteamName,BetChoiceType,BetTypeName,BetTypeNameDisplay,BetIDPattern,BetTeamDB,BetteamShortName,Status)
+	INSERT INTO CTS_DataCenter.BettypeSetting(BetTypeID,BetteamOrder,BetteamName,BetTypeNameDetailsX,BetChoiceType,BetTypeName,BetTypeNameDisplay,BetIDPattern,BetTeamDB,BetteamShortName,Status)
 	SELECT DISTINCT BetTypeID
 	, 1 AS BetteamOrder
-	,'Temp1' AS BetteamName,BetChoiceType,BetTypeName,BetTypeNameDisplay,BetIDPattern
+	,'Temp1' AS BetteamName, BetTypeNameDetailsX, BetChoiceType,BetTypeName,BetTypeNameDisplay,BetIDPattern
 	, REPLACE(json_extract(BetChoicePattern, '$.BetChoiceHome'),'"','') AS BetTeamDB
 	, REPLACE(json_extract(BetChoicePattern, '$.BetChoiceHomeDisplay'),'"','') BetteamShortName, 1 AS Status
 	FROM CTS_DataCenter.SportBettypeSetting 
 	WHERE BetChoiceType = 2;
 
-	INSERT INTO CTS_DataCenter.BettypeSetting(BetTypeID,BetteamOrder,BetteamName,BetChoiceType,BetTypeName,BetTypeNameDisplay,BetIDPattern,BetTeamDB,BetteamShortName,Status)
+	INSERT INTO CTS_DataCenter.BettypeSetting(BetTypeID,BetteamOrder,BetteamName,BetTypeNameDetailsX,BetChoiceType,BetTypeName,BetTypeNameDisplay,BetIDPattern,BetTeamDB,BetteamShortName,Status)
 	SELECT DISTINCT BetTypeID
 	, 2 AS BetteamOrder
-	,'Temp2' AS BetteamName,BetChoiceType,BetTypeName,BetTypeNameDisplay,BetIDPattern
+	,'Temp2' AS BetteamName,BetTypeNameDetailsX, BetChoiceType,BetTypeName,BetTypeNameDisplay,BetIDPattern
 	, REPLACE(json_extract(BetChoicePattern, '$.BetChoiceAway'),'"','') AS BetTeamDB
 	, REPLACE(json_extract(BetChoicePattern, '$.BetChoiceAwayDisplay'),'"','') BetteamShortName, 1 AS Status
 	FROM CTS_DataCenter.SportBettypeSetting 
@@ -143,12 +144,12 @@ ALTER TABLE MatchMonitorDetailsVerifiedTrans
 	;
 	#----------------------------
 	ALTER TABLE SportBettypeSetting
-		ADD COLUMN IsMMParlayDetection	TINYINT(1) NOT NULL DEFAULT 0 AFTER IsMMDetection
-	,	DROP COLUMN BetTypeName 
-	,	DROP COLUMN BettypeNameDistplay
-	,	DROP COLUMN BetChoicePattern
-	,	DROP COLUMN BetChoiceType
-	,	DROP COLUMN BetIDPattern;
+		ADD COLUMN IsMMParlayDetection	TINYINT(1) NOT NULL DEFAULT 0 AFTER IsMMDetection;
+	#,	DROP COLUMN BetTypeName 
+	#,	DROP COLUMN BettypeNameDistplay
+	#,	DROP COLUMN BetChoicePattern
+	#,	DROP COLUMN BetChoiceType
+	#,	DROP COLUMN BetIDPattern;
 
 	UPDATE CTS_DataCenter.SportBettypeSetting
 	SET IsMMParlayDetection = 1

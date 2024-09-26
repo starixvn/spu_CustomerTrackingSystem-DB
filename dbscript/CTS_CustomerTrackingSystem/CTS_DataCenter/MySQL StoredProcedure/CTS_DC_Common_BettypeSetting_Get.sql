@@ -55,10 +55,12 @@ BEGIN
 		,   INDEX IX_Temp_BettypeID(BettypeID)
 	);
 	IF ip_FunctionID IS NULL THEN
-		SELECT  		bs.BetTypeID
-					, 	bs.BetTypeNameDisplay
-					,	bs.BetChoiceType
-					,	bs.BetIDPattern
+		SELECT DISTINCT bs.BetTypeID
+					, 	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
+									ELSE bs.BettypeNameDisplay END) AS BettypeNameDisplay					
+					,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BetIDPattern,'X',js.NameDetailsX)  
+									ELSE 0 END) AS BetID 
+                    ,	bs.BetChoiceType
 					,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceHome
 					,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceHomeDisplay
 					,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceHomeFullName
@@ -66,11 +68,14 @@ BEGIN
 					,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceAwayDisplay
 					,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceAwayFullName
         FROM CTS_DataCenter.BettypeSetting AS bs
+			, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(BetTypeNameDetailsX,''), ',', '","'), '"]'),
+								  '$[*]' COLUMNS (NameDetailsX VARCHAR(1) PATH '$')) js
         GROUP BY 		bs.BetTypeID
+					,	bs.BetIDPattern
+					,	js.NameDetailsX
 					, 	bs.BetTypeNameDisplay
 					,	bs.BetChoiceType
-					,	bs.BetIDPattern;
-        
+					,	bs.BetIDPattern;        
     ELSE 
 		IF(ip_IsFilterMMDetection = 0)
 		THEN
