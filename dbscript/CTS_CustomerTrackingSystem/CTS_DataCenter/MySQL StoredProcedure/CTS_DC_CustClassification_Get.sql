@@ -66,20 +66,22 @@ BEGIN
         ,	CategoryGroupID   		INT UNSIGNED
 		,	CategoryPriority		SMALLINT UNSIGNED
 		,	ParentID				INT UNSIGNED
+        ,	BusinessCategoryGroupID	INT UNSIGNED
 		,	CustomerClassPriority	SMALLINT UNSIGNED
 		,	IsProbation				BIT DEFAULT 0
 		,	ColorTypeID				TINYINT UNSIGNED
     );
    
-	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName,CategoryGroupID, CategoryPriority, ParentID, CustomerClassPriority, IsProbation, ColorTypeID)
+	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName,CategoryGroupID, CategoryPriority, ParentID, BusinessCategoryGroupID, CustomerClassPriority, IsProbation, ColorTypeID)
 	SELECT DISTINCT (CASE 
-                        WHEN cc.ParentID = CONST_PARENTID_PA AND cate.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN cc.CategoryGroupID
+                        WHEN cc.ParentID = CONST_PARENTID_PA AND cc.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN cc.CategoryGroupID
                         ELSE cate.CategoryID 
 					END)
 				,	cc.CategoryName
                 ,	cc.CategoryGroupID
 				,	cc.CategoryPriority
 				,	cc.ParentID
+				,	cc.BusinessCategoryGroupID
 				,	cc.CustomerClassPriority
 				,	cc.IsPAProbation AS IsProbation
 				,	cc.ColorTypeID
@@ -113,7 +115,7 @@ BEGIN
 		,	CategoryName
         ,	CategoryGroupID
 		,	CASE WHEN CategoryID = CONST_CATEID_VVIP THEN 1 ELSE 0 END AS IsVVIP
-		,	CASE WHEN ParentID = CONST_PARENTID_PA AND cate.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN ParentID = CONST_PARENTID_PA AND BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN 1 ELSE 0 END AS IsPA
 		,	ColorTypeID
 	FROM Temp_LatestRecordOfCategory;
 END$$
