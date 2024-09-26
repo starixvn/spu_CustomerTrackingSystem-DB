@@ -446,8 +446,8 @@ sp : BEGIN
 		,	tmpCS.IsPAProbation AS IsProbation
 		,	t.GroupIDList AS GroupIDs
 		,	t.OriginGroupIDList AS OriginGroupIDs
-		,	CASE WHEN tmpCS.ParentID = CONST_PARENTID_PA AND cat.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN 1 ELSE 0 END AS IsPA
-		,	CASE WHEN tmpCS.ParentID = CONST_PARENTID_POTENTIALPA OR (tmpCS.ParentID = CONST_PARENTID_PA AND cat.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_NORMAL) THEN 1 ELSE 0 END AS IsPotentialPA
+		,	CASE WHEN tmpCS.ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN tmpCS.ParentID = CONST_PARENTID_POTENTIALPA THEN 1 ELSE 0 END AS IsPotentialPA
 	FROM Temp_AssociatedAccount AS tmpAcc
 		INNER JOIN Temp_Classification AS tmpCS ON tmpCS.CTSCustID = tmpAcc.CTSCustID
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
