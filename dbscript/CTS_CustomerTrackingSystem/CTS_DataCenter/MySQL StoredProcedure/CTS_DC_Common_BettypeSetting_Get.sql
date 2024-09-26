@@ -38,6 +38,9 @@ BEGIN
 		CALL CTS_DC_Common_BettypeSetting_Get_xtest(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=1, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
 		#Filter MM: 
 		CALL CTS_DC_Common_BettypeSetting_Get_xtest(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=0, @ip_IsShowDetailsX:=1,@ip_Status:=1);	
+        #WEB MM Detection Parlay Ticket: 
+		CALL CTS_DC_Common_BettypeSetting_Get_xtest(@ip_FunctionID:=NULL,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=1, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
+		
 */
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_SportTypeID;
@@ -51,116 +54,134 @@ BEGIN
 			BettypeID	INT
 		,   INDEX IX_Temp_BettypeID(BettypeID)
 	);
-	
-    IF(ip_IsFilterMMDetection = 0)
-	THEN
-		SET ip_IsFilterMMDetection = NULL;
-    END IF;
-    
-	IF(ip_IsFilterMMParlayDetection = 0)
-	THEN
-		SET ip_IsFilterMMParlayDetection = NULL;
-    END IF;
-
-    IF ip_SportTypeIDList IS NOT NULL THEN		
-		SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SportTypeID(SportTypeID) VALUES ('", REPLACE(ip_SportTypeIDList, ",", "'),('"),"');");
-		PREPARE stmt1 FROM @sql;
-		EXECUTE stmt1;  
+	IF ip_FunctionID IS NULL THEN
+		SELECT  		bs.BetTypeID
+					, 	bs.BetTypeNameDisplay
+					,	bs.BetChoiceType
+					,	bs.BetIDPattern
+					,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceHome
+					,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceHomeDisplay
+					,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceHomeFullName
+					,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceAway
+					,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceAwayDisplay
+					,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceAwayFullName
+        FROM CTS_DataCenter.BettypeSetting AS bs
+        GROUP BY 		bs.BetTypeID
+					, 	bs.BetTypeNameDisplay
+					,	bs.BetChoiceType
+					,	bs.BetIDPattern;
         
-	ELSE 
-		INSERT INTO Temp_SportTypeID(SportTypeID)
-        VALUES(NULL);
-	END IF;
-    
-    IF ip_BetTypeIDList IS NOT NULL THEN
-		SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_BettypeID(BettypeID) VALUES ('", REPLACE(ip_BetTypeIDList, ",", "'),('"),"');");
-		PREPARE stmt1 FROM @sql;
-		EXECUTE stmt1;
-	ELSE 
-		INSERT INTO Temp_BettypeID(BettypeID)
-        VALUES(NULL);
-    END IF;
-    
-    IF ip_IsShowDetailsX = 1 THEN    
+    ELSE 
+		IF(ip_IsFilterMMDetection = 0)
+		THEN
+			SET ip_IsFilterMMDetection = NULL;
+		END IF;
+		
+		IF(ip_IsFilterMMParlayDetection = 0)
+		THEN
+			SET ip_IsFilterMMParlayDetection = NULL;
+		END IF;
 
-		SELECT  (CASE WHEN sbs.LeagueGroupID = 0 THEN NULL ELSE LeagueGroupID END) AS LeagueGroupID
-			,	sbs.SportTypeID
-			,	sbs.SportName
-            ,	bs.BetTypeID
-            ,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
-							ELSE bs.BettypeNameDisplay END) AS BettypeNameDisplay
-			,	bs.BetChoiceType            
-            ,	bs.BetIDPattern
-            ,	sbs.IsMMDetection
-            ,	sbs.IsDefaultSelected
-            ,	sbs.PriorityOrder
-            ,	js.NameDetailsX
-            ,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceHome
-            ,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceHomeDisplay
-            ,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceHomeFullName
-            ,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceAway
-            ,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceAwayDisplay
-            ,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceAwayFullName
-		FROM CTS_DataCenter.SportBettypeSetting AS sbs
-			INNER JOIN CTS_DataCenter.BettypeSetting AS bs ON bs.BettypeID = sbs.BetTypeID
-			INNER JOIN Temp_SportTypeID AS tmpSt ON IFNULL(tmpSt.SportTypeID,sbs.SportTypeID) = sbs.SportTypeID
-			INNER JOIN Temp_BettypeID AS tmpBt ON IFNULL(tmpBt.BettypeID,sbs.BettypeID) = sbs.BettypeID
-            , JSON_TABLE(CONCAT('["', REPLACE(IFNULL(BetTypeNameDetailsX,''), ',', '","'), '"]'),
-						  '$[*]' COLUMNS (NameDetailsX VARCHAR(1) PATH '$')) js
-		WHERE 	sbs.Status = ip_Status
-			AND	sbs.FunctionID = ip_FunctionID			
-			AND	sbs.IsMMDetection = IFNULL(ip_IsFilterMMDetection,sbs.IsMMDetection) 
-            AND sbs.IsMMParlayDetection = IFNULL(ip_IsFilterMMParlayDetection,sbs.IsMMParlayDetection)
-		GROUP BY sbs.LeagueGroupID
-			,	sbs.SportTypeID
-			,	sbs.SportName                   
-            ,	sbs.IsMMDetection
-            ,	sbs.IsDefaultSelected
-            ,	sbs.PriorityOrder
-            ,	sbs.BetTypeID     
-            ,	bs.BetChoiceType
-            ,	bs.BetIDPattern
-            ,	js.NameDetailsX
-            ,	bs.BettypeNameDisplay
-		ORDER BY LeagueGroupID, sbs.PriorityOrder, js.NameDetailsX; 
-	ELSE	
-	
-		SELECT  (CASE WHEN sbs.LeagueGroupID = 0 THEN NULL ELSE LeagueGroupID END) AS LeagueGroupID
-			,	sbs.SportTypeID
-			,	sbs.SportName
-            ,	sbs.BetTypeID
-            , 	bs.BetTypeNameDisplay
-            ,	bs.BetChoiceType
-            ,	bs.BetIDPattern
-            ,	sbs.IsMMDetection
-            ,	sbs.IsDefaultSelected
-            ,	sbs.PriorityOrder
-            ,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceHome
-            ,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceHomeDisplay
-            ,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceHomeFullName
-            ,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceAway
-            ,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceAwayDisplay
-            ,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceAwayFullName
-		FROM CTS_DataCenter.SportBettypeSetting AS sbs
-        	INNER JOIN CTS_DataCenter.BettypeSetting AS bs ON bs.BettypeID = sbs.BetTypeID
-			INNER JOIN Temp_SportTypeID AS tmpSt ON IFNULL(tmpSt.SportTypeID,sbs.SportTypeID) = sbs.SportTypeID
-			INNER JOIN Temp_BettypeID AS tmpBt ON IFNULL(tmpBt.BettypeID,sbs.BettypeID) = sbs.BettypeID
-		WHERE 	sbs.Status = ip_Status
-			AND	sbs.FunctionID = ip_FunctionID
-			AND	sbs.IsMMDetection = IFNULL(ip_IsFilterMMDetection,sbs.IsMMDetection) 
-            AND sbs.IsMMParlayDetection = IFNULL(ip_IsFilterMMParlayDetection,sbs.IsMMParlayDetection)
-		GROUP BY sbs.LeagueGroupID
-			,	sbs.SportTypeID
-			,	sbs.SportName                   
-            ,	sbs.IsMMDetection
-            ,	sbs.IsDefaultSelected
-            ,	sbs.PriorityOrder
-            ,	sbs.BetTypeID     
-            ,	bs.BetChoiceType
-            ,	bs.BetIDPattern
-            ,	bs.BettypeNameDisplay
-		ORDER BY LeagueGroupID, PriorityOrder; 
-        
+		IF ip_SportTypeIDList IS NOT NULL THEN		
+			SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_SportTypeID(SportTypeID) VALUES ('", REPLACE(ip_SportTypeIDList, ",", "'),('"),"');");
+			PREPARE stmt1 FROM @sql;
+			EXECUTE stmt1;  
+			
+		ELSE 
+			INSERT INTO Temp_SportTypeID(SportTypeID)
+			VALUES(NULL);
+		END IF;
+		
+		IF ip_BetTypeIDList IS NOT NULL THEN
+			SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_BettypeID(BettypeID) VALUES ('", REPLACE(ip_BetTypeIDList, ",", "'),('"),"');");
+			PREPARE stmt1 FROM @sql;
+			EXECUTE stmt1;
+		ELSE 
+			INSERT INTO Temp_BettypeID(BettypeID)
+			VALUES(NULL);
+		END IF;
+		
+		IF ip_IsShowDetailsX = 1 THEN    
+
+			SELECT  (CASE WHEN sbs.LeagueGroupID = 0 THEN NULL ELSE LeagueGroupID END) AS LeagueGroupID
+				,	sbs.SportTypeID
+				,	sbs.SportName
+				,	bs.BetTypeID
+				,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
+								ELSE bs.BettypeNameDisplay END) AS BettypeNameDisplay
+				,	bs.BetChoiceType            
+				,	bs.BetIDPattern
+				,	sbs.IsMMDetection
+				,	sbs.IsDefaultSelected
+				,	sbs.PriorityOrder
+				,	js.NameDetailsX
+				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceHome
+				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceHomeDisplay
+				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceHomeFullName
+				,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceAway
+				,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceAwayDisplay
+				,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceAwayFullName
+			FROM CTS_DataCenter.SportBettypeSetting AS sbs
+				INNER JOIN CTS_DataCenter.BettypeSetting AS bs ON bs.BettypeID = sbs.BetTypeID
+				INNER JOIN Temp_SportTypeID AS tmpSt ON IFNULL(tmpSt.SportTypeID,sbs.SportTypeID) = sbs.SportTypeID
+				INNER JOIN Temp_BettypeID AS tmpBt ON IFNULL(tmpBt.BettypeID,sbs.BettypeID) = sbs.BettypeID
+				, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(BetTypeNameDetailsX,''), ',', '","'), '"]'),
+							  '$[*]' COLUMNS (NameDetailsX VARCHAR(1) PATH '$')) js
+			WHERE 	sbs.Status = ip_Status
+				AND	sbs.FunctionID = ip_FunctionID			
+				AND	sbs.IsMMDetection = IFNULL(ip_IsFilterMMDetection,sbs.IsMMDetection) 
+				AND sbs.IsMMParlayDetection = IFNULL(ip_IsFilterMMParlayDetection,sbs.IsMMParlayDetection)
+			GROUP BY sbs.LeagueGroupID
+				,	sbs.SportTypeID
+				,	sbs.SportName                   
+				,	sbs.IsMMDetection
+				,	sbs.IsDefaultSelected
+				,	sbs.PriorityOrder
+				,	sbs.BetTypeID     
+				,	bs.BetChoiceType
+				,	bs.BetIDPattern
+				,	js.NameDetailsX
+				,	bs.BettypeNameDisplay
+			ORDER BY LeagueGroupID, sbs.PriorityOrder, js.NameDetailsX; 
+		ELSE	
+		
+			SELECT  (CASE WHEN sbs.LeagueGroupID = 0 THEN NULL ELSE LeagueGroupID END) AS LeagueGroupID
+				,	sbs.SportTypeID
+				,	sbs.SportName
+				,	sbs.BetTypeID
+				, 	bs.BetTypeNameDisplay
+				,	bs.BetChoiceType
+				,	bs.BetIDPattern
+				,	sbs.IsMMDetection
+				,	sbs.IsDefaultSelected
+				,	sbs.PriorityOrder
+				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceHome
+				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceHomeDisplay
+				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceHomeFullName
+				,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceAway
+				,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceAwayDisplay
+				,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceAwayFullName
+			FROM CTS_DataCenter.SportBettypeSetting AS sbs
+				INNER JOIN CTS_DataCenter.BettypeSetting AS bs ON bs.BettypeID = sbs.BetTypeID
+				INNER JOIN Temp_SportTypeID AS tmpSt ON IFNULL(tmpSt.SportTypeID,sbs.SportTypeID) = sbs.SportTypeID
+				INNER JOIN Temp_BettypeID AS tmpBt ON IFNULL(tmpBt.BettypeID,sbs.BettypeID) = sbs.BettypeID
+			WHERE 	sbs.Status = ip_Status
+				AND	sbs.FunctionID = ip_FunctionID
+				AND	sbs.IsMMDetection = IFNULL(ip_IsFilterMMDetection,sbs.IsMMDetection) 
+				AND sbs.IsMMParlayDetection = IFNULL(ip_IsFilterMMParlayDetection,sbs.IsMMParlayDetection)
+			GROUP BY sbs.LeagueGroupID
+				,	sbs.SportTypeID
+				,	sbs.SportName                   
+				,	sbs.IsMMDetection
+				,	sbs.IsDefaultSelected
+				,	sbs.PriorityOrder
+				,	sbs.BetTypeID     
+				,	bs.BetChoiceType
+				,	bs.BetIDPattern
+				,	bs.BettypeNameDisplay
+			ORDER BY LeagueGroupID, PriorityOrder; 
+			
+		END IF;
 	END IF;
 END$$
 DELIMITER ;
