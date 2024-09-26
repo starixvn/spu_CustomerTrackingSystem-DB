@@ -59,6 +59,7 @@ sp : BEGIN
     DECLARE CONS_ASSBYAI_ACTIVESTATUS INT DEFAULT 1;
 	DECLARE CONST_PARENTID_PA               	INT;
 	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
+	DECLARE	CONST_BIZCATEGROUPID_NORMAL 		INT;
     #==================================================
 	DECLARE lv_CustID INT;
     
@@ -81,6 +82,7 @@ sp : BEGIN
 	
 	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
+    SET CONST_BIZCATEGROUPID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
 	#========================================================================
     IF (ip_SubscriberIDs IS NULL OR ip_SubscriberIDs = '' OR ip_SubscriberIDs = -1) OR  (ip_CategoryIDs IS NULL OR ip_CategoryIDs = '' OR ip_CategoryIDs = -1) THEN
 		LEAVE sp;
@@ -397,23 +399,22 @@ sp : BEGIN
 		WHERE cate.CTSCustID IS NULL;
     END IF;
     
-    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames, ColorTypeIDs, IsPAProbation)
-	SELECT	tmpAcc.CTSCustID
+   INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames, ColorTypeIDs, IsPAProbation)  
+   SELECT	tmpAcc.CTSCustID
 		,	cc.ParentID -- Each Customer has only 1 ParentID
 		,	GROUP_CONCAT(DISTINCT cate.CategoryID SEPARATOR ',') 
-        ,	GROUP_CONCAT(DISTINCT cc.CategoryName SEPARATOR ',')
-		,	GROUP_CONCAT(DISTINCT cc.ColorTypeID SEPARATOR ',')
+        ,	GROUP_CONCAT(DISTINCT cat.CategoryName SEPARATOR ',')
+		,	GROUP_CONCAT(DISTINCT cat.ColorTypeID SEPARATOR ',')
+        ,	GROUP_CONCAT((SELECT cate.ColorTypeID FROM CTS_DataCenter.CustomerCategory AS cate2 WHERE cate2.CategoryID = cate.CategoryID ORDER BY cate.CategoryPriority ASC))
 		,	MAX(cc.IsPAProbation)
 	FROM	Temp_AssociatedAccount AS tmpAcc
-		,	LATERAL (	SELECT cat.CategoryID
+		,	LATERAL (	SELECT cat.CategoryID, cat.ColorTypeID, cat.CategoryName, cat.ParentID, cat.IsPAProbation, cat.CategoryPriority
 						FROM CTS_DataCenter.CTSCustomerClassification AS clss
 							INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
 						WHERE clss.CTSCustID = tmpAcc.CTSCustID
 						ORDER BY cat.CategoryPriority ASC, clss.LastModifiedDate DESC) AS cate
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = tmpCate.CategoryID 
-	GROUP BY tmpAcc.CTSCustID, cc.ParentID
-    ORDER BY tmpAcc.CTSCustID, cc.ParentID, cc.CategoryPriority ASC;
+	GROUP BY tmpAcc.CTSCustID, cc.ParentID;
     
     /* Update IsFiltered */
     UPDATE 	Temp_AssociatedAccount AS tmpAcc
@@ -445,10 +446,11 @@ sp : BEGIN
 		,	tmpCS.IsPAProbation AS IsProbation
 		,	t.GroupIDList AS GroupIDs
 		,	t.OriginGroupIDList AS OriginGroupIDs
-		,	CASE WHEN tmpCS.ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
-		,	CASE WHEN tmpCS.ParentID = CONST_PARENTID_POTENTIALPA THEN 1 ELSE 0 END AS IsPotentialPA
+		,	CASE WHEN tmpCS.ParentID = CONST_PARENTID_PA AND cat.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN tmpCS.ParentID = CONST_PARENTID_POTENTIALPA OR (tmpCS.ParentID = CONST_PARENTID_PA AND cat.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_NORMAL) THEN 1 ELSE 0 END AS IsPotentialPA
 	FROM Temp_AssociatedAccount AS tmpAcc
 		INNER JOIN Temp_Classification AS tmpCS ON tmpCS.CTSCustID = tmpAcc.CTSCustID
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
 		LEFT JOIN Temp_CustomerGroup AS t ON tmpAcc.CustID = t.CustID
 	WHERE tmpAcc.IsFiltered = 1
 	ORDER BY  tmpAcc.SubscriberName ASC, tmpAcc.AssociationStatus ASC , tmpAcc.AccountStatusGroup ASC, tmpAcc.AccountStatusID ASC,  tmpAcc.AssociationDate DESC, tmpAcc.CTSCustID ASC
