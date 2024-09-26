@@ -401,12 +401,11 @@ sp : BEGIN
     
    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames, ColorTypeIDs, IsPAProbation)  
    SELECT	tmpAcc.CTSCustID
-		,	cc.ParentID -- Each Customer has only 1 ParentID
+		,	cate.ParentID -- Each Customer has only 1 ParentID
 		,	GROUP_CONCAT(DISTINCT cate.CategoryID SEPARATOR ',') 
-        ,	GROUP_CONCAT(DISTINCT cat.CategoryName SEPARATOR ',')
-		,	GROUP_CONCAT(DISTINCT cat.ColorTypeID SEPARATOR ',')
+        ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ',')
         ,	GROUP_CONCAT((SELECT cate.ColorTypeID FROM CTS_DataCenter.CustomerCategory AS cate2 WHERE cate2.CategoryID = cate.CategoryID ORDER BY cate.CategoryPriority ASC))
-		,	MAX(cc.IsPAProbation)
+		,	MAX(cate.IsPAProbation)
 	FROM	Temp_AssociatedAccount AS tmpAcc
 		,	LATERAL (	SELECT cat.CategoryID, cat.ColorTypeID, cat.CategoryName, cat.ParentID, cat.IsPAProbation, cat.CategoryPriority
 						FROM CTS_DataCenter.CTSCustomerClassification AS clss
@@ -414,7 +413,7 @@ sp : BEGIN
 						WHERE clss.CTSCustID = tmpAcc.CTSCustID
 						ORDER BY cat.CategoryPriority ASC, clss.LastModifiedDate DESC) AS cate
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID
-	GROUP BY tmpAcc.CTSCustID, cc.ParentID;
+	GROUP BY tmpAcc.CTSCustID, cate.ParentID;
     
     /* Update IsFiltered */
     UPDATE 	Temp_AssociatedAccount AS tmpAcc
@@ -450,7 +449,6 @@ sp : BEGIN
 		,	CASE WHEN tmpCS.ParentID = CONST_PARENTID_POTENTIALPA THEN 1 ELSE 0 END AS IsPotentialPA
 	FROM Temp_AssociatedAccount AS tmpAcc
 		INNER JOIN Temp_Classification AS tmpCS ON tmpCS.CTSCustID = tmpAcc.CTSCustID
-        LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
 		LEFT JOIN Temp_CustomerGroup AS t ON tmpAcc.CustID = t.CustID
 	WHERE tmpAcc.IsFiltered = 1
 	ORDER BY  tmpAcc.SubscriberName ASC, tmpAcc.AssociationStatus ASC , tmpAcc.AccountStatusGroup ASC, tmpAcc.AccountStatusID ASC,  tmpAcc.AssociationDate DESC, tmpAcc.CTSCustID ASC
