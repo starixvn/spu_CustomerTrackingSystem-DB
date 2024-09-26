@@ -30,7 +30,7 @@ UPDATE CTS_DataCenter.CustomerCategory SET CategoryPriority = 750, CustomerClass
 UPDATE CTS_DataCenter.CustomerCategory SET CategoryPriority = 750, CustomerClassPriority = 750 WHERE CategoryID = 40505;
 UPDATE CTS_DataCenter.CustomerCategory SET CategoryPriority = 595, CustomerClassPriority = 600 WHERE CategoryID = 40604;
 UPDATE CTS_DataCenter.CustomerCategory SET CategoryPriority = 600, CustomerClassPriority = 600 WHERE CategoryID = 40404;
-UPDATE CTS_DataCenter.CustomerCategory SET CategoryPriority = 600, CustomerClassPriority = 600 WHERE CategoryID = 40405;
+UPDATE CTS_DataCenter.CustomerCategory SET CategoryPriority = 750, CustomerClassPriority = 750 WHERE CategoryID = 40405;
 
 -- #2. Update Table CTS_DataCenter.CustomerCategorySettings
 UPDATE CTS_DataCenter.CustomerCategorySettings SET ParentID = 20000, IsParallelParentID = false, IsMultiCateIDSameParentID = true, IsKeepOldCateID = true WHERE CategoryID = 30300;
