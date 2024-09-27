@@ -59,11 +59,11 @@ CREATE TABLE CustomerCategorySMA(
   Ext_SabaIntelligentRiskLevelTHB VARCHAR(50) DEFAULT NULL,
   Ext_SabaIntelligentRiskLevelIND VARCHAR(50) DEFAULT NULL,
   PRIMARY KEY(CategoryID),
-  KEY IX_CustomerCategory_ParentID(ParentID),
-  KEY IX_CustomerCategory_IsActive(IsActive),
-  KEY IX_CustomerCategory_CategoryGroupID(CategoryGroupID),
-  KEY IX_CustomerCategory_TVSReasonID(TVSReasonID),
-  KEY IX_CustomerCategory_OldCategoryID(OldCategoryID)
+  INDEX IX_CustomerCategory_ParentID(ParentID),
+  INDEX IX_CustomerCategory_IsActive(IsActive),
+  INDEX IX_CustomerCategory_CategoryGroupID(CategoryGroupID),
+  INDEX IX_CustomerCategory_TVSReasonID(TVSReasonID),
+  INDEX IX_CustomerCategory_OldCategoryID(OldCategoryID)
 ) ENGINE=InnoDB;
 
 #===================================================
@@ -77,7 +77,7 @@ CREATE TABLE CustomerCategorySettingsSMA(
   IsKeepOldCateID TINYINT(1) DEFAULT NULL,
   RemarkTemplateID INT DEFAULT NULL,
   PRIMARY KEY(CategoryID,CategoryGroupID),
-  KEY IX_CustomerCategorySettingsSMA_ParentID(ParentID)
+  INDEX IX_CustomerCategorySettingsSMA_ParentID(ParentID)
 ) ENGINE=InnoDB;
 #===================================================
 DROP TABLE IF EXISTS CustomerClassificationSMA_Remark;
@@ -96,8 +96,6 @@ CREATE TABLE CTSCustomerClassificationSMA(
   SubscriberID INT UNSIGNED DEFAULT NULL,
   RoleID TINYINT DEFAULT NULL,
   IsAffectToDownline TINYINT(1) DEFAULT NULL,
-  SportGroupID_arc INT UNSIGNED NOT NULL,
-  CategoryID_arc INT UNSIGNED NOT NULL,
   Remark VARCHAR(500) DEFAULT NULL,
   CreatedDate DATETIME DEFAULT NULL,
   CreatedBy INT DEFAULT NULL,
@@ -116,18 +114,12 @@ CREATE TABLE CTSCustomerClassificationSMA(
   IssueTypeID TINYINT DEFAULT NULL,
   ParentID INT UNSIGNED NOT NULL,
   CategoryID INT UNSIGNED NOT NULL,
-  CreatedDate_new DATETIME DEFAULT NULL,
-  SportGroupID_bk INT UNSIGNED DEFAULT NULL,
-  CategoryID_bk INT UNSIGNED DEFAULT NULL,
-  CreatedDate_bk DATETIME DEFAULT NULL,
-  LastScannedDate_new DATETIME DEFAULT NULL,
-  LastScannedDate_bk DATETIME DEFAULT NULL,
   PRIMARY KEY(CustID,ParentID,CategoryID),
-  KEY IX_CTSCCSMA_TVSRequestID(TVSRequestID),
-  KEY IX_CTSCCSMA_CTSCustID_ParentID_LastModifiedDate(CTSCustID,ParentID,LastModifiedDate),
-  KEY IX_CTSCCSMA_SubscriberID_ParentID(SubscriberID,ParentID),
-  KEY IX_CTSCCSMA_ParentID_CreatedDate(ParentID,CreatedDate),
-  KEY IX_CTSCCSMA_CategoryID_CustID_LastScannedDate(CategoryID,CustID,LastScannedDate)
+  INDEX IX_CTSCCSMA_TVSRequestID(TVSRequestID),
+  INDEX IX_CTSCCSMA_CTSCustID_ParentID_LastModifiedDate(CTSCustID,ParentID,LastModifiedDate),
+  INDEX IX_CTSCCSMA_SubscriberID_ParentID(SubscriberID,ParentID),
+  INDEX IX_CTSCCSMA_ParentID_CreatedDate(ParentID,CreatedDate),
+  INDEX IX_CTSCCSMA_CategoryID_CustID_LastScannedDate(CategoryID,CustID,LastScannedDate)
 ) ENGINE=InnoDB;
 #==========================================
 DROP TABLE IF EXISTS CTSCustomerClassificationSMA_History;
@@ -135,8 +127,6 @@ CREATE TABLE CTSCustomerClassificationSMA_History(
   ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   CustID BIGINT UNSIGNED DEFAULT NULL,
   CTSCustID BIGINT UNSIGNED DEFAULT NULL,
-  SportGroupID_arc INT UNSIGNED DEFAULT NULL,
-  CategoryID_arc INT DEFAULT NULL,
   TurnoverRM DECIMAL(20,4) DEFAULT NULL,
   WinlossRM DECIMAL(20,4) DEFAULT NULL,
   BetCount BIGINT DEFAULT NULL,
@@ -179,15 +169,11 @@ CREATE TABLE CTSCustomerClassificationSMA_History(
   CategoryID INT DEFAULT NULL,
   OldCategoryID INT UNSIGNED DEFAULT NULL,
   DWCategoryID INT UNSIGNED DEFAULT NULL,
-  SportGroupID_bk INT UNSIGNED DEFAULT NULL,
-  CategoryID_bk INT DEFAULT NULL,
-  FromCategoryID_bk INT UNSIGNED DEFAULT NULL,
-  ToCategoryID_bk INT UNSIGNED DEFAULT NULL,
   PRIMARY KEY(ID),
-  KEY IX_CTSCCSMA_History_InsertDate(InsertDate),
-  KEY IX_CTSCCSMA_History_CTSCustID(CTSCustID),
-  KEY IX_CTSCCSMA_History_TVSRequestID(TVSRequestID),
-  KEY IX_CTSCCSMA_History_CustID_Infor(CustID,ParentID,LastModifiedDate,IsDataChanged)
+  INDEX IX_CTSCCSMA_History_InsertDate(InsertDate),
+  INDEX IX_CTSCCSMA_History_CTSCustID(CTSCustID),
+  INDEX IX_CTSCCSMA_History_TVSRequestID(TVSRequestID),
+  INDEX IX_CTSCCSMA_History_CustID_Infor(CustID,ParentID,LastModifiedDate,IsDataChanged)
 ) ENGINE=InnoDB;
 
 #======================================================================================
@@ -232,7 +218,7 @@ CREATE TABLE CTSCustomerClassificationSMA_Log(
   IssueTypeID TINYINT DEFAULT NULL,
   PerformanceTime DATETIME DEFAULT NULL,
   PRIMARY KEY(ID,InsertDate),
-  KEY IX_CTSCCSMA_Log_CustID(CustID)
+  INDEX IX_CTSCCSMA_Log_CustID(CustID)
 ) ENGINE=InnoDB
 /*!50100 PARTITION BY RANGE(extract(year_month from InsertDate))
 (PARTITION pm202408 VALUES LESS THAN(202409) ENGINE = InnoDB,
@@ -252,7 +238,9 @@ CREATE TABLE CTSCustomerClassificationSMA_Log(
  PARTITION pm202510 VALUES LESS THAN(202511) ENGINE = InnoDB,
  PARTITION pm202511 VALUES LESS THAN(202512) ENGINE = InnoDB,
  PARTITION pm999999 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */;
-#========================================================================================================
+#************************************************************************************************************
+#************************************************************************************************************
+USE CTS_Archive;
 CREATE TABLE CTSCustomerAssociationStatusSMA (
   CTSCustID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   CustID INT UNSIGNED DEFAULT NULL,
@@ -263,8 +251,23 @@ CREATE TABLE CTSCustomerAssociationStatusSMA (
   RollBackDate DATETIME DEFAULT NULL,
   CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (CTSCustID),
-  KEY IX_CTSCustomerAssociationStatusSMA_CustID (CustID),
-  KEY IX_CTSCustomerAssociationStatusSMA_IsRollBack_RollBackDate (IsRollBack,RollBackDate),
-  KEY IX_CTSCustomerAssociationStatusSMA_Archive (IsArchived,CTSCustID,LastTicketDate),
-  KEY IX_CTSCustomerAssociationStatusSMA_LastTicketDate (LastTicketDate)
+  INDEX IX_CTSCustomerAssociationStatusSMA_CustID (CustID),
+  INDEX IX_CTSCustomerAssociationStatusSMA_IsRollBack_RollBackDate (IsRollBack,RollBackDate),
+  INDEX IX_CTSCustomerAssociationStatusSMA_Archive (IsArchived,CTSCustID,LastTicketDate),
+  INDEX IX_CTSCustomerAssociationStatusSMA_LastTicketDate (LastTicketDate)
+) ENGINE=InnoDB;
+
+CREATE TABLE CTSCustomerAssociationArchive_ProcessSMA (
+  CTSCustID BIGINT UNSIGNED NOT NULL,
+  CustID INT UNSIGNED NOT NULL,
+  RoleID INT UNSIGNED  NOT NULL,
+  PRIMARY KEY (CTSCustID),
+  INDEX IX_CTSCustomerAssociationArchive_CustID (CustID)
+) ENGINE=InnoDB;
+
+CREATE TABLE CTSCustomerAssociationRollBackSMA_Process (
+  CTSCustID BIGINT UNSIGNED NOT NULL,
+  CustID INT UNSIGNED NOT NULL,
+  PRIMARY KEY (CTSCustID),
+  INDEX IX_CTSCustomerAssociationRollBackSMA_CustID (CustID)
 ) ENGINE=InnoDB;
