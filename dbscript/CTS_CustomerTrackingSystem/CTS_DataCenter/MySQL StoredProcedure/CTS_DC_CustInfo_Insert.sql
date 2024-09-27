@@ -43,6 +43,8 @@ BEGIN
 			- 20231024@Jonas.Huynh: HF wrong reactivated category [Redmine ID: #193050]
 			- 20231207@Long.Luu: 	Add Agent M999RM00 as internal account [Redmine ID: #197915]
 			- 20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
+            - 202409266@Casey.Huynh: Return Agent [Redmine ID: #185799]
+            
 		Param's Explanation (filtered by):
 		Example:
 			 CALL CTS_DataCenter.CTS_DC_CustInfo_Insert('[
@@ -290,15 +292,14 @@ BEGIN
 		INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss ON tmpCus.SiteID = mss.SiteID 
 																AND ((mss.RoleMapping = 1 AND tmpCus.RoleID = 1)
 																	OR (mss.RoleMapping = 2 AND tmpCus.RoleID > 1)
-																	OR (mss.RoleMapping = 0));
-             
+																	OR (mss.RoleMapping = 0));     
         
 	UPDATE Temp_CTSCustomer AS tmpCus
     INNER JOIN Temp_CustInfo AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID
 	SET   tmpCus.SubscriberID = cus.SubscriberID
 		, tmpCus.RegisterName = cus.RegisterName;      
 	
-    #====CREATE CATEGORY FOR NEW OR REACTIVATED CUSTOMER (RoleID = 0)=====================================
+    #====CREATE CATEGORY FOR NEW OR REACTIVATED MEMBER (RoleID = 1)=====================================
     INSERT INTO Temp_CustNewCategory(CustID, IsInternal, SiteID)
     SELECT	tmpCus.CustID
 		,	tmpCus.IsInternal
@@ -308,7 +309,20 @@ BEGIN
         AND tmpCus.CustSubID = 0;    
    
 	CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);
+    
+    #====CREATE CATEGORY FOR NEW OR REACTIVATED AGENT (RoleID = 2)=====================================
+	TRUNCATE TABLE Temp_CustNewCategory;
+    INSERT INTO Temp_CustNewCategory(CustID, IsInternal, SiteID)
+    SELECT	tmpCus.CustID
+		,	tmpCus.IsInternal
+        ,	tmpCus.SiteID
+    FROM Temp_CTSCustomer AS tmpCus
+    WHERE tmpCus.RoleID = 2
+        AND tmpCus.CustSubID = 0;    
    
+	CALL CTS_DataCenter.CTS_DC_CustClassificationSMA_InsertNormalAccount_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);
+    
+    
     #=====INSERT NEW CUSTOMER=====================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
 			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , Danger4 , Danger5, DangerSabaSc, DangerSabaBkb , InsertedTime , ModifiedTime, IsLicensee, IsInternal)
