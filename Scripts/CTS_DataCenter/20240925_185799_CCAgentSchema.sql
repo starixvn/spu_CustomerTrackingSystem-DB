@@ -252,3 +252,19 @@ CREATE TABLE CTSCustomerClassificationSMA_Log(
  PARTITION pm202510 VALUES LESS THAN(202511) ENGINE = InnoDB,
  PARTITION pm202511 VALUES LESS THAN(202512) ENGINE = InnoDB,
  PARTITION pm999999 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */;
+#========================================================================================================
+CREATE TABLE CTSCustomerAssociationStatusSMA (
+  CTSCustID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  CustID INT UNSIGNED DEFAULT NULL,
+  RoleID TINYINT,
+  LastTicketDate DATETIME DEFAULT NULL,
+  IsArchived TINYINT(1) DEFAULT 0,
+  IsRollBack TINYINT(1) DEFAULT 0,
+  RollBackDate DATETIME DEFAULT NULL,
+  CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (CTSCustID),
+  KEY IX_CTSCustomerAssociationStatusSMA_CustID (CustID),
+  KEY IX_CTSCustomerAssociationStatusSMA_IsRollBack_RollBackDate (IsRollBack,RollBackDate),
+  KEY IX_CTSCustomerAssociationStatusSMA_Archive (IsArchived,CTSCustID,LastTicketDate),
+  KEY IX_CTSCustomerAssociationStatusSMA_LastTicketDate (LastTicketDate)
+) ENGINE=InnoDB;

@@ -320,8 +320,7 @@ BEGIN
     WHERE tmpCus.RoleID = 2
         AND tmpCus.CustSubID = 0;    
    
-	CALL CTS_DataCenter.CTS_DC_CustClassificationSMA_InsertNormalAccount_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);
-    
+	CALL CTS_DataCenter.CTS_DC_CustClassificationSMA_InsertNormalAccount_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);    
     
     #=====INSERT NEW CUSTOMER=====================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
