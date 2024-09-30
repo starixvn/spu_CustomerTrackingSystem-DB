@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="1"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationSMA_Insert_GetInfo`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_Insert_GetInfo`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationSMA_Insert_GetInfo`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_Insert_GetInfo`(
 		IN	ip_InputFlowID			INT 
 	,	IN	ip_FromAction			TINYINT
     ,	IN	ip_UplineRoleID			INT
@@ -12,7 +12,7 @@ SQL SECURITY INVOKER
 BEGIN
 /*
 		Created:	20240927@Thomas.Nguyen
-		Task:		Insert main customer categories for Customer Classification
+		Task:		Insert main Agency categories for Agency Classification
 		DB:			CTS_DataCenter
 		
 		Param's Expanation:
@@ -22,21 +22,21 @@ BEGIN
 			- ip_CustInfo
 			
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassificationSMA_Insert_GetInfo (9,3,'[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]');
+			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_GetInfo (9,3,'[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]');
 			
 		Revisions: 
-			- 20240927@Thomas.Nguyen:			Initial Writing [Redmine ID: #185799]
+			- 20240927@Thomas.Nguyen:			Created [Redmine ID: #185799]
 */
 
-	DECLARE CONST_CATEID_AGENT_VVIP 								INT;
-	DECLARE CONST_PARENTID_AGENT_VVIP 							INT;
-	DECLARE CONST_PARENTID_AGENT_PA 								INT;
-	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_VVIP			INT;
-	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY		INT;
-	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL			INT;
+	DECLARE CONST_AGENCY_CATEID_VVIP 								INT;
+	DECLARE CONST_AGENCY_PARENTID_VVIP 							INT;
+	DECLARE CONST_AGENCY_PARENTID_PA 								INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP			INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY		INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL			INT;
 	
-	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY		INT;
-	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL		INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY		INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL		INT;
 	
 	DECLARE CONST_SOURCETYPE_VVIP_MANUAL 					INT DEFAULT 13;
 	DECLARE CONST_SOURCETYPE_VVIP_AFFECTED_SUPER			INT DEFAULT 24;
@@ -48,13 +48,13 @@ BEGIN
 	DECLARE lv_IsMarkedDirectly								TINYINT(1);
 	DECLARE	lv_CurrentDateTime								DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3); 
 	
-	SET CONST_CATEID_AGENT_VVIP 							= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_AGENT_VVIP');
-	SET CONST_PARENTID_AGENT_VVIP 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_AGENT_VVIP');
-	SET CONST_PARENTID_AGENT_PA 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_AGENT_PA');
-	SET CONST_INPUTFLOWID_GENERAL_INSERT_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_VVIP');
-	SET CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY');
-	SET CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL');
-	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
+	SET CONST_AGENCY_CATEID_VVIP 							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_VVIP');
+	SET CONST_AGENCY_PARENTID_VVIP 							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
+	SET CONST_AGENCY_PARENTID_PA 							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 	CREATE TEMPORARY TABLE Temp_NewClassification(	  	
@@ -213,7 +213,7 @@ BEGIN
 	); 
 	
 		/*1 - VVIP*/
-	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_VVIP THEN 
+	IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP THEN 
 		SET lv_SourceTypeID = CASE 	WHEN ip_FromAction = 1 THEN CONST_SOURCETYPE_VVIP_MANUAL
 									WHEN ip_FromAction = 3 AND ip_UplineRoleID = 4 THEN CONST_SOURCETYPE_VVIP_AFFECTED_SUPER
 									WHEN ip_FromAction = 3 AND ip_UplineRoleID = 3 THEN CONST_SOURCETYPE_VVIP_AFFECTED_MASTER
@@ -233,9 +233,9 @@ BEGIN
 		SELECT DISTINCT 
 				tmpJs.CustID, tmpJs.CTSCustID, tmpJs.SubscriberID, tmpJs.RoleID, tmpJs.Remark, tmpJs.CreatedBy
 			,	(CASE WHEN cls.CustID IS NOT NULL THEN 1 ELSE 0 END) AS IsExistVVIP
-			,	CONST_PARENTID_AGENT_VVIP
-			,	CONST_CATEID_AGENT_VVIP
-			,	CONST_CATEID_AGENT_VVIP
+			,	CONST_AGENCY_PARENTID_VVIP
+			,	CONST_AGENCY_CATEID_VVIP
+			,	CONST_AGENCY_CATEID_VVIP
 			,	(CASE WHEN cls.CustID IS NULL THEN lv_IsMarkedDirectly END) AS IsMarkedDirectly
 			,	(CASE WHEN cls.CustID IS NULL THEN lv_SourceTypeID END) AS SourceTypeID
 			,	(CASE WHEN cls.CustID IS NULL THEN 1 ELSE 0 END) AS IsDataChanged
@@ -250,13 +250,13 @@ BEGIN
 											,	Remark			VARCHAR(500)	PATH "$.Remark"
 											)) AS tmpJs
 			LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmpJs.CustID = cls.CustID 
-																			AND cls.ParentID = CONST_PARENTID_AGENT_VVIP
-																			AND cls.CategoryID = CONST_CATEID_AGENT_VVIP;
+																			AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP
+																			AND cls.CategoryID = CONST_AGENCY_CATEID_VVIP;
 
 	ELSE
 		
 		/*5 - PA-Category*/
-		IF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY,CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY) THEN 
+		IF ip_InputFlowID IN (CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY,CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY) THEN 
 			
 			INSERT INTO Temp_NewClassification(
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
@@ -371,7 +371,7 @@ BEGIN
 								;
 
 		/*9 - Normal*/
-		ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL THEN 
+		ELSEIF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL THEN 
 			INSERT INTO Temp_NewClassification(
 					CustID,CTSCustID,DWCategoryID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate
 				,	TWTicketRejectRate,TWDesktopUsageRate,TaggingID,TaggingType,PerformanceTime,ScanTaggingType
@@ -426,7 +426,7 @@ BEGIN
 			WHERE EXISTS (	SELECT 1
 							FROM CTS_DataCenter.CTSCustomerClassification AS cls
 							WHERE temp.CustID = cls.CustID
-								AND cls.ParentID = CONST_PARENTID_AGENT_PA
+								AND cls.ParentID = CONST_AGENCY_PARENTID_PA
 						 );
 			
 			/*UPDATE Temp_NewClassification AS temp
@@ -450,8 +450,8 @@ BEGIN
 		WHERE EXISTS (	SELECT 1
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						WHERE temp.CustID = cls.CustID
-							AND cls.ParentID = CONST_PARENTID_AGENT_VVIP
-							AND cls.CategoryID = CONST_CATEID_AGENT_VVIP
+							AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP
+							AND cls.CategoryID = CONST_AGENCY_CATEID_VVIP
 					 );
 
     END IF;
