@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/ 
-DROP PROCEDURE IF EXISTS `CTS_DC_Association_DetectGroup`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_DetectGroup_xpre`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_DetectGroup`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_DetectGroup_xpre`(
 		IN	ip_CTSCustIDs				LONGTEXT
 	,	IN	ip_Device 					JSON 
 	,	IN	ip_AI    					JSON 
@@ -43,6 +43,11 @@ BEGIN
 
 	*/
 	DECLARE	CONST_PARENTID_WRAPPER 				INT;
+    DECLARE CONST_ROLEID_MEMBER					SMALLINT DEFAULT 1;
+	DECLARE CONST_ROLEID_AGENT					SMALLINT DEFAULT 2;
+    DECLARE CONST_ROLEID_MASTER					SMALLINT DEFAULT 3;
+    DECLARE CONST_ROLEID_SUPER					SMALLINT DEFAULT 4;
+    
 
     DECLARE lv_OrigID 							BIGINT;
     DECLARE lv_GroupID 							BIGINT DEFAULT 1;
@@ -60,6 +65,7 @@ BEGIN
 			RowNumber			INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
 		,	CTSCustID			BIGINT UNSIGNED 
 		,	CustID 				BIGINT UNSIGNED
+        ,	RoleID				SMALLINT
 		,	Username			VARCHAR(50)
 		,	CustStatus			VARCHAR(50)
 		,	Recommend			BIGINT UNSIGNED
@@ -75,6 +81,7 @@ BEGIN
 		,	SubscriberID		INT
 		,	INDEX IX_Temp_Cust_CustID (CustID)
 		,	INDEX IX_Temp_Cust_Processed (Processed)
+        ,	INDEX IX_Temp_Cust_RoleID (RoleID)
 		,	UNIQUE IX_Temp_Cust_CTSCustID (CTSCustID)
 	);
     
@@ -156,9 +163,10 @@ BEGIN
 	);
 
     /*****************************Extract Data From Input**************************************************/
-    INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,RoleID,CreatedDate,Processed,IsLicensee,SubscriberID)
+    INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,RoleID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,RoleID,CreatedDate,Processed,IsLicensee,SubscriberID)
 	SELECT 	tmp.CTSCustID
 		, 	cus.CustID
+        , 	cus.RoleID
         ,	cus.Username
         ,	sta.ItemName AS CustStatus
         ,	cus.Recommend
@@ -439,7 +447,7 @@ BEGIN
 	ON DUPLICATE KEY UPDATE AssociationType = CASE WHEN AssociationType LIKE '%Betting Pattern%' THEN AssociationType
 												   ELSE CONCAT(AssociationType,', Betting Pattern') END;
 	
-     IF (ip_IsGetLogTransInfo IS TRUE)
+	IF (ip_IsGetLogTransInfo IS TRUE)
     THEN
         SET lv_ToDate	= CURRENT_DATE();
         SET lv_FromDate = DATE_ADD(lv_ToDate, INTERVAL -90 DAY);
@@ -540,7 +548,28 @@ BEGIN
 					LIMIT 1	) AS tmpcls
 	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss	ON clss.CustID = tmpcls.CustID AND clss.ParentID = tmpcls.ParentID
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID;
-	
+	WHERE cus.RoleID = CONST_ROLEID_MEMBER;
+    
+    #==================CATEGORY FOR AGENCY==========================================
+	INSERT IGNORE INTO Temp_CustCategory(CustID, CategoryID, ParentID, CategoryName, ColorTypeID, CustomerClassPriority)
+	SELECT	cus.CustID
+		,	cat.CategoryID
+		,	cat.ParentID
+		,	cat.CategoryName
+		,	cat.ColorTypeID
+		,	cat.CustomerClassPriority
+	FROM Temp_Cust AS cus
+	,	LATERAL (	SELECT cus.CustID, clss.ParentID
+					FROM CTS_DataCenter.CTSCustomerClassification AS clss
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
+					WHERE clss.CustID = cus.CustID AND clss.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY cat.CustomerClassPriority ASC, clss.LastModifiedDate DESC
+					LIMIT 1	) AS tmpcls
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss	ON clss.CustID = tmpcls.CustID AND clss.ParentID = tmpcls.ParentID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
+	WHERE cus.RoleID IN (CONST_ROLEID_AGENT, CONST_ROLEID_MASTER,CONST_ROLEID_SUPER);
+
+
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory2;    
     CREATE TEMPORARY TABLE Temp_CustCategory2 LIKE Temp_CustCategory;
     
@@ -552,13 +581,15 @@ BEGIN
 		,	ColorTypeID
 		,	CustomerClassPriority
     FROM Temp_CustCategory;
-    
+	
     /*****************************Handle CustomerClass Info**************************************************/
     SELECT GROUP_CONCAT(DISTINCT CustID) 
     INTO lv_CustIDs
     FROM Temp_Cust;
     
     CALL CTS_DataCenter.CTS_DC_Common_GetCCAndDangerLevel(lv_CustIDs);
+    
+    #==================CATEGORY FOR MEMBER==========================================
     
     SELECT 	cus.RowNumber 
 		,	grp.GroupID

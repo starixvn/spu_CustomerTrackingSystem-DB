@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_DailyScan_GetNormal`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassificationAgency_DailyScan_GetNormal`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_DailyScan_GetNormal`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_DailyScan_GetNormal`(
 		OUT op_LastCategoryID 	INT 
 	,	OUT op_LastCustID 		BIGINT UNSIGNED 
 
@@ -10,25 +10,24 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_DailyScan_Get
     SQL SECURITY INVOKER
 BEGIN
 	/*
-		Created: 20220328@Aries.Nguyen
-		Task: Add new category/class for PA Probation [Redmine ID: #170468]
-		DB: CTS_DataCenter
-        
+		Created:	20240927@Casey.Huynh
+		Task:		Create New Category for New Agent
+		DB:			CTS_DataCenter
 		Original:
-		Revisions:
-			- 20220328@Aries.Nguyen: Created [Redmine ID: #170468]
-            - 20221007@Harvey.Nguyen: Return CurrentCategoryID [Redmine ID: #178022]
-            - 20240702@Victoria.le: Renovate CC - Phase2 - Remove hardcode [Redmine ID: #205317]
+		Revisions: 
+				- 20240927@Casey.Huynh: Created [Redmine ID: #185799]
 
-		Param's Explanation (filtered by):      
-			- CALL CTS_DC_CustClassification_DailyScan_GetNormal (@op_LastCategoryID, @op_LastCustID);
+		Param's Explanation(filtered by):
+        
+        Example:     
+			- CALL CTS_DC_CustClassificationAgency_DailyScan_GetNormal (@op_LastCategoryID, @op_LastCustID);
 	*/
 	
-	DECLARE CONST_PARENTID_VVIP 						INT;
-	DECLARE CONST_PARENTID_NORMAL		    			INT;
-	DECLARE CONST_PARENTID_WRAPPER		    			INT;
+	DECLARE CONST_AGENCY_PARENTID_VVIP 						INT;
+	DECLARE CONST_AGENCY_PARENTID_NORMAL		    			INT;
+	DECLARE CONST_AGENCY_PARENTID_WRAPPER		    			INT;
 
-	DECLARE CONST_CATEGROUPID_PROBATION	    			INT;
+	DECLARE CONST_AGENCY_CATEGROUPID_PROBATION	    			INT;
 
 	DECLARE lv_LastCategoryID 							INT;
 	DECLARE lv_LastCustID 								BIGINT UNSIGNED;
@@ -39,46 +38,45 @@ BEGIN
 	DECLARE lv_NextCustID 								BIGINT UNSIGNED;
 	DECLARE lv_NextScanDateValid 						DATETIME;
 
-	SET CONST_PARENTID_VVIP 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
-	SET CONST_PARENTID_NORMAL 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
-	SET CONST_PARENTID_WRAPPER 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
-
-	SET CONST_CATEGROUPID_PROBATION						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_PROBATION');
+	SET CONST_AGENCY_PARENTID_VVIP 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
+	SET CONST_AGENCY_PARENTID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
+	SET CONST_AGENCY_PARENTID_WRAPPER 		= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_WRAPPER');
+	SET CONST_AGENCY_CATEGROUPID_PROBATION	= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_PROBATION');
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
 	CREATE TEMPORARY TABLE Temp_Category(
-			CategoryID				INT PRIMARY KEY 	
-        ,	ScanDate				DATETIME
+			CategoryID	INT PRIMARY KEY 	
+        ,	ScanDate	DATETIME
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Normal;
     CREATE TEMPORARY TABLE 	Temp_Normal (
-			CustID 					BIGINT UNSIGNED PRIMARY KEY
-		,	CurrentCategoryID		INT
+			CustID 				BIGINT UNSIGNED PRIMARY KEY
+		,	CurrentCategoryID	INT
 	);
     
     INSERT INTO Temp_Category(CategoryID, ScanDate)
 	SELECT 	CategoryID
         , 	DATE_SUB(NOW(), INTERVAL ScanIntervalInSecond - 86400 SECOND)
-	FROM CTS_DataCenter.CustomerCategory
-	WHERE ParentID = CONST_PARENTID_NORMAL 
+	FROM CTS_DataCenter.CustomerCategoryAgency
+	WHERE ParentID = CONST_AGENCY_PARENTID_NORMAL 
 		AND IsActive = 1
 		AND ScanIntervalInSecond > 0; 
     
     SELECT ParameterValue 
     INTO lv_BatchSize 
     FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 84; 
+    WHERE ParameterID = 175; 
     
     SELECT ParameterValue 
     INTO lv_LastCategoryID 
     FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 85;
+    WHERE ParameterID = 176;
     
     SELECT ParameterValue 
     INTO lv_LastCustID 
     FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 86;
+    WHERE ParameterID = 177;
     
     IF lv_LastCategoryID IS NULL OR  lv_LastCategoryID = 0 THEN
 		SELECT CategoryID 
@@ -95,13 +93,13 @@ BEGIN
 
     INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
 	SELECT clss.CustID, clss.CategoryID
-	FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCC_CategoryID_CustID_LastScannedDate)
+	FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss USE INDEX(IX_CTSCCAgency_CategoryID_CustID_LastScannedDate)
 	,	LATERAL (
 			SELECT cls.CustID, cls.CategoryID, cat.CategoryGroupID, cat.ParentID
-			FROM CTS_DataCenter.CTSCustomerClassification AS cls 
-				INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
+			FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls 
+				INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
 			WHERE cls.CustID = clss.CustID
-				AND cls.ParentID <> CONST_PARENTID_WRAPPER
+				AND cls.ParentID <> CONST_AGENCY_PARENTID_WRAPPER
 			ORDER BY cat.CategoryPriority ASC, cls.LastModifiedDate DESC
 			LIMIT 1
 		) AS ltc
@@ -109,8 +107,8 @@ BEGIN
 		AND clss.CategoryID = ltc.CategoryID
 		AND ltc.CategoryID = lv_LastCategoryID
 		AND clss.LastScannedDate <= lv_ScanDateValid
-		AND ltc.ParentID <> CONST_PARENTID_VVIP
-		AND ltc.CategoryGroupID <> CONST_CATEGROUPID_PROBATION
+		AND ltc.ParentID <> CONST_AGENCY_PARENTID_VVIP
+		AND ltc.CategoryGroupID <> CONST_AGENCY_CATEGROUPID_PROBATION
 	ORDER BY clss.CategoryID ASC
 		,	clss.CustID ASC
 	LIMIT lv_BatchSize
@@ -122,21 +120,21 @@ BEGIN
         INTO 	lv_NextCategoryID
 			,	lv_NextScanDateValid
 		FROM Temp_Category  AS cate
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON cate.CategoryID = clss.CategoryID 
+			INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS clss ON cate.CategoryID = clss.CategoryID 
 			,	LATERAL (
 					SELECT cls.CategoryID, cat.CategoryGroupID, cat.ParentID
-					FROM CTS_DataCenter.CTSCustomerClassification AS cls 
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
+					FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls 
+						INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
 					WHERE cls.CustID = clss.CustID
-						AND cls.ParentID <> CONST_PARENTID_WRAPPER
+						AND cls.ParentID <> CONST_AGENCY_PARENTID_WRAPPER
 					ORDER BY cat.CategoryPriority ASC, cls.LastModifiedDate DESC
 					LIMIT 1
 				) AS ltc
 		WHERE 	clss.CategoryID = ltc.CategoryID
 			AND ltc.CategoryID > lv_LastCategoryID
 			AND clss.LastScannedDate <= cate.ScanDate
-			AND ltc.ParentID <> CONST_PARENTID_VVIP
-			AND ltc.CategoryGroupID <> CONST_CATEGROUPID_PROBATION
+			AND ltc.ParentID <> CONST_AGENCY_PARENTID_VVIP
+			AND ltc.CategoryGroupID <> CONST_AGENCY_CATEGROUPID_PROBATION
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1;
 		
@@ -150,13 +148,13 @@ BEGIN
 		
 		INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
 		SELECT clss.CustID, clss.CategoryID
-		FROM CTS_DataCenter.CTSCustomerClassification AS clss USE INDEX(IX_CTSCC_CategoryID_CustID_LastScannedDate)
+		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss USE INDEX(IX_CTSCC_CategoryID_CustID_LastScannedDate)
 		,	LATERAL (
 				SELECT cls.CategoryID, cat.CategoryGroupID, cat.ParentID
-				FROM CTS_DataCenter.CTSCustomerClassification AS cls 
-					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
+				FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls 
+					INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
 				WHERE cls.CustID = clss.CustID
-					AND cls.ParentID <> CONST_PARENTID_WRAPPER
+					AND cls.ParentID <> CONST_AGENCY_PARENTID_WRAPPER
 				ORDER BY cat.CategoryPriority ASC, cls.LastModifiedDate DESC
 				LIMIT 1
 			) AS ltc
@@ -164,8 +162,8 @@ BEGIN
 			AND clss.CategoryID = ltc.CategoryID
 			AND ltc.CategoryID = lv_NextCategoryID
 			AND clss.LastScannedDate <= lv_NextScanDateValid
-			AND ltc.ParentID <> CONST_PARENTID_VVIP
-			AND ltc.CategoryGroupID <> CONST_CATEGROUPID_PROBATION
+			AND ltc.ParentID <> CONST_AGENCY_PARENTID_VVIP
+			AND ltc.CategoryGroupID <> CONST_AGENCY_CATEGROUPID_PROBATION
 		ORDER BY clss.CategoryID ASC
 			,	clss.CustID ASC
 		LIMIT lv_BatchSize
@@ -197,7 +195,7 @@ BEGIN
 		tmpNr.CustID
 	,	cc.CategoryGroupID AS CurrentCategoryID
     FROM Temp_Normal AS tmpNr
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON tmpNr.CurrentCategoryID = cc.CategoryID;
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON tmpNr.CurrentCategoryID = cc.CategoryID;
 	
 END$$
 DELIMITER ;
