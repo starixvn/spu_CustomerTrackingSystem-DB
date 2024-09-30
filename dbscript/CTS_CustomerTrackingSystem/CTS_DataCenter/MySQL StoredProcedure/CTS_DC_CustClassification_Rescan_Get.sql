@@ -501,22 +501,9 @@ sp: BEGIN
 						AND cc.CategoryID = CONST_CATEID_INITIALSMART);
 
     /***********************Rescan Potential Category****************************/        
-    DROP TEMPORARY TABLE IF EXISTS Temp_PotentialCategory2;    
-    CREATE TEMPORARY TABLE Temp_PotentialCategory2 LIKE Temp_PotentialCategory;
-    
-    INSERT INTO Temp_PotentialCategory2 
-    SELECT * 
-    FROM Temp_PotentialCategory;
-
     INSERT IGNORE INTO Temp_CustCategory (CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, SportType, CreatedDate, LastModifiedDate, InputFlowID)       
     SELECT tmppc.CTSCustID, tmppc.CustID, tmppc.CategoryID, tmppc.TVSReasonID, tmppc.RoleID, tmppc.SubscriberID, tmppc.IsLicensee, tmppc.Remark, tmppc.CreatedBy, tmppc.IsMarkedDirectly, tmppc.IsFromTVS, tmppc.IsFromTW, tmppc.IsFromCTS, tmppc.IsFromAI, tmppc.IsFromImperva, tmppc.SportType, tmppc.CreatedDate, tmppc.LastModifiedDate, tmppc.InputFlowID
-    FROM Temp_PotentialCategory2 AS pc
-		,	LATERAL (SELECT ppc.*
-					 FROM Temp_PotentialCategory AS ppc
-						 INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ppc.CategoryID
-					 WHERE ppc.CustID = pc.CustID
-					 ORDER BY cc.CategoryPriority ASC
-					 LIMIT 1) AS tmppc;
+    FROM Temp_PotentialCategory AS tmppc;
     
 	/***********************Return****************************/ 
 	SELECT cust.CTSCustID
