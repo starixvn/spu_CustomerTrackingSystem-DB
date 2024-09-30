@@ -307,9 +307,9 @@ BEGIN
     FROM Temp_CTSCustomer AS tmpCus
     WHERE tmpCus.RoleID = 1
         AND tmpCus.CustSubID = 0;    
-   
+
 	CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);
-    
+
     #====CREATE CATEGORY FOR NEW OR REACTIVATED AGENT (RoleID = 2)=====================================
 	TRUNCATE TABLE Temp_CustNewCategory;
     INSERT INTO Temp_CustNewCategory(CustID, IsInternal, SiteID)
@@ -319,9 +319,9 @@ BEGIN
     FROM Temp_CTSCustomer AS tmpCus
     WHERE tmpCus.RoleID = 2
         AND tmpCus.CustSubID = 0;    
-   
+
 	CALL CTS_DataCenter.CTS_DC_CustClassificationSMA_Insert_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);    
-    
+
     #=====INSERT NEW CUSTOMER=====================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
 			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , Danger4 , Danger5, DangerSabaSc, DangerSabaBkb , InsertedTime , ModifiedTime, IsLicensee, IsInternal)
