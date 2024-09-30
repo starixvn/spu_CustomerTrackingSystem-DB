@@ -563,7 +563,7 @@ BEGIN
 
 	IF @ViewMode = 0 --Get ALL Ticket from orig
 	BEGIN		
-		IF @BatchSize = 0 
+		IF @BatchSize <= 0 
 		BEGIN -- Get total Trans
 			INSERT INTO #tmpRefno(Refno)
 			SELECT DISTINCT b.Refno
@@ -579,7 +579,7 @@ BEGIN
 				AND bt.BetType = 29
 				AND bt.Matchid = 29						
 		END
-		ELSE IF @BatchSize <> 0 -- GET Ticket Details Info By Batch Size
+		ELSE IF @BatchSize > 0 -- GET Ticket Details Info By Batch Size
 		BEGIN 
 
 			INSERT INTO #tmpRefno(Refno, SequenceID)
