@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="1"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassificationSMA_Insert_NewCategory`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassificationAgency_Insert_NewCategory`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationSMA_Insert_NewCategory`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_Insert_NewCategory`(
 		IN ip_TableName VARCHAR(200)
 	,	IN ip_IsNewCustomer	BOOLEAN
 )
@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation(filtered by):
         
         Example:
-				- CALL CTS_DataCenter.CTS_DC_CustClassificationSMA_Insert_NewCategory('Temp_CustNewCategory', true);
+				- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_NewCategory('Temp_CustNewCategory', true);
 */ 
 	DECLARE	CONST_PARENTID_AGENCY_NORMAL 				INT;
     DECLARE CONST_CATEID_AGENCY_NEW						INT;
@@ -77,7 +77,7 @@ BEGIN
      ELSE
 		DELETE tmp
 		FROM Temp_Customer AS tmp
-		WHERE EXISTS(SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationSMA  AS clss WHERE clss.CustID = tmp.CustID);
+		WHERE EXISTS(SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency  AS clss WHERE clss.CustID = tmp.CustID);
 		
 		UPDATE Temp_Customer AS temp
 			,	LATERAL
@@ -107,7 +107,7 @@ BEGIN
      WHERE tmp.CategoryID IS NULL;
 
     /* 1: INSERT .CustomerCategorySMA  */
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationSMA(CustID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency(CustID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT	tmp.CustID					AS CustID
 		,	CONST_PARENTID_AGENCY_NORMAL	AS ParentID
 		,	tmp.CategoryID				AS CategoryID
@@ -127,9 +127,9 @@ BEGIN
 		LEFT JOIN CTSCustomerClassification_History AS cls ON tmp.CustID = cls.CustID
 	WHERE cls.CustID IS NULL;
     
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationSMA_History(CustID, ParentID, CategoryID, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate)
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency_History(CustID, ParentID, CategoryID, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate)
 	SELECT	tmp.CustID							AS CustID
-		,	CONST_PARENTID_AGENCY_NORMAL				AS ParentID
+		,	CONST_PARENTID_AGENCY_NORMAL		AS ParentID
 		,	tmp.CategoryID						AS CategoryID
 		,	tmp.CustomerClass					AS TargetCC
 		,	CASE 	WHEN tmp.CategoryID = CONST_CATEID_AGENCY_INACTIVENORMAL THEN CONST_SOURCETYPE_INACTIVENORMAL
@@ -146,7 +146,7 @@ BEGIN
 	FROM 	Temp_CustomerHistory AS tmp;
 
     /* 3: WRITE CTSCustomerClassification_Log(TRACE DATA) */
-	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationSMA_Log(CustID, ParentID, CategoryID, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate)
+	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency_Log(CustID, ParentID, CategoryID, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate)
 	SELECT	tmp.CustID							AS CustID
 		,	CONST_PARENTID_AGENCY_NORMAL			AS ParentID
 		,	tmp.CategoryID						AS CategoryID

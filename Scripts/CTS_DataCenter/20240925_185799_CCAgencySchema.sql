@@ -12,8 +12,8 @@ Reviewer:
 
 USE CTS_DataCenter;
 
-DROP TABLE IF EXISTS CustomerCategorySMA;
-CREATE TABLE CustomerCategorySMA(
+DROP TABLE IF EXISTS CustomerCategoryAgency;
+CREATE TABLE CustomerCategoryAgency(
   CategoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
   CategoryName VARCHAR(50) DEFAULT NULL,
   CategorySpec VARCHAR(200) DEFAULT NULL,
@@ -59,16 +59,16 @@ CREATE TABLE CustomerCategorySMA(
   Ext_SabaIntelligentRiskLevelTHB VARCHAR(50) DEFAULT NULL,
   Ext_SabaIntelligentRiskLevelIND VARCHAR(50) DEFAULT NULL,
   PRIMARY KEY(CategoryID),
-  INDEX IX_CustomerCategory_ParentID(ParentID),
-  INDEX IX_CustomerCategory_IsActive(IsActive),
-  INDEX IX_CustomerCategory_CategoryGroupID(CategoryGroupID),
-  INDEX IX_CustomerCategory_TVSReasonID(TVSReasonID),
-  INDEX IX_CustomerCategory_OldCategoryID(OldCategoryID)
+  INDEX IX_CustomerCategoryAgency_ParentID(ParentID),
+  INDEX IX_CustomerCategoryAgency_IsActive(IsActive),
+  INDEX IX_CustomerCategoryAgency_CategoryGroupID(CategoryGroupID),
+  INDEX IX_CustomerCategoryAgency_TVSReasonID(TVSReasonID),
+  INDEX IX_CustomerCategoryAgency_OldCategoryID(OldCategoryID)
 ) ENGINE=InnoDB;
 
 #===================================================
-DROP TABLE IF EXISTS CustomerCategorySettingsSMA;
-CREATE TABLE CustomerCategorySettingsSMA(
+DROP TABLE IF EXISTS CustomerCategorySettingsAgency;
+CREATE TABLE CustomerCategorySettingsAgency(
   CategoryID INT UNSIGNED NOT NULL,
   CategoryGroupID INT UNSIGNED NOT NULL,
   ParentID INT UNSIGNED DEFAULT NULL,
@@ -77,11 +77,11 @@ CREATE TABLE CustomerCategorySettingsSMA(
   IsKeepOldCateID TINYINT(1) DEFAULT NULL,
   RemarkTemplateID INT DEFAULT NULL,
   PRIMARY KEY(CategoryID,CategoryGroupID),
-  INDEX IX_CustomerCategorySettingsSMA_ParentID(ParentID)
+  INDEX IX_CustomerCategorySettingsAgency_ParentID(ParentID)
 ) ENGINE=InnoDB;
 #===================================================
-DROP TABLE IF EXISTS CustomerClassificationSMA_Remark;
-CREATE TABLE CustomerClassificationSMA_Remark(
+DROP TABLE IF EXISTS CustomerClassificationAgency_Remark;
+CREATE TABLE CustomerClassificationAgency_Remark(
   RemarkID INT UNSIGNED NOT NULL,
   RemarkTemplate TEXT,
   Description VARCHAR(200) DEFAULT NULL,
@@ -89,8 +89,8 @@ CREATE TABLE CustomerClassificationSMA_Remark(
   PRIMARY KEY(RemarkID)
 ) ENGINE=InnoDB;
 #===================================================
-DROP TABLE IF EXISTS CTSCustomerClassificationSMA;
-CREATE TABLE CTSCustomerClassificationSMA(
+DROP TABLE IF EXISTS CTSCustomerClassificationAgency;
+CREATE TABLE CTSCustomerClassificationAgency(
   CustID BIGINT UNSIGNED NOT NULL,
   CTSCustID BIGINT UNSIGNED DEFAULT NULL,
   SubscriberID INT UNSIGNED DEFAULT NULL,
@@ -115,15 +115,15 @@ CREATE TABLE CTSCustomerClassificationSMA(
   ParentID INT UNSIGNED NOT NULL,
   CategoryID INT UNSIGNED NOT NULL,
   PRIMARY KEY(CustID,ParentID,CategoryID),
-  INDEX IX_CTSCCSMA_TVSRequestID(TVSRequestID),
-  INDEX IX_CTSCCSMA_CTSCustID_ParentID_LastModifiedDate(CTSCustID,ParentID,LastModifiedDate),
-  INDEX IX_CTSCCSMA_SubscriberID_ParentID(SubscriberID,ParentID),
-  INDEX IX_CTSCCSMA_ParentID_CreatedDate(ParentID,CreatedDate),
-  INDEX IX_CTSCCSMA_CategoryID_CustID_LastScannedDate(CategoryID,CustID,LastScannedDate)
+  INDEX IX_CTSCCAgency_TVSRequestID(TVSRequestID),
+  INDEX IX_CTSCCAgency_CTSCustID_ParentID_LastModifiedDate(CTSCustID,ParentID,LastModifiedDate),
+  INDEX IX_CTSCCAgency_SubscriberID_ParentID(SubscriberID,ParentID),
+  INDEX IX_CTSCCAgency_ParentID_CreatedDate(ParentID,CreatedDate),
+  INDEX IX_CTSCCAgency_CategoryID_CustID_LastScannedDate(CategoryID,CustID,LastScannedDate)
 ) ENGINE=InnoDB;
 #==========================================
-DROP TABLE IF EXISTS CTSCustomerClassificationSMA_History;
-CREATE TABLE CTSCustomerClassificationSMA_History(
+DROP TABLE IF EXISTS CTSCustomerClassificationAgency_History;
+CREATE TABLE CTSCustomerClassificationAgency_History(
   ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   CustID BIGINT UNSIGNED DEFAULT NULL,
   CTSCustID BIGINT UNSIGNED DEFAULT NULL,
@@ -170,15 +170,14 @@ CREATE TABLE CTSCustomerClassificationSMA_History(
   OldCategoryID INT UNSIGNED DEFAULT NULL,
   DWCategoryID INT UNSIGNED DEFAULT NULL,
   PRIMARY KEY(ID),
-  INDEX IX_CTSCCSMA_History_InsertDate(InsertDate),
-  INDEX IX_CTSCCSMA_History_CTSCustID(CTSCustID),
-  INDEX IX_CTSCCSMA_History_TVSRequestID(TVSRequestID),
-  INDEX IX_CTSCCSMA_History_CustID_Infor(CustID,ParentID,LastModifiedDate,IsDataChanged)
+  INDEX IX_CTSCCAgency_History_InsertDate(InsertDate),
+  INDEX IX_CTSCCAgency_History_CTSCustID(CTSCustID),
+  INDEX IX_CTSCCAgency_History_TVSRequestID(TVSRequestID),
+  INDEX IX_CTSCCAgency_History_CustID_Infor(CustID,ParentID,LastModifiedDate,IsDataChanged)
 ) ENGINE=InnoDB;
-
 #======================================================================================
-DROP TABLE IF EXISTS CTSCustomerClassificationSMA_Log;
-CREATE TABLE CTSCustomerClassificationSMA_Log(
+DROP TABLE IF EXISTS CTSCustomerClassificationAgency_Log;
+CREATE TABLE CTSCustomerClassificationAgency_Log(
   ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   CustID BIGINT UNSIGNED DEFAULT NULL,
   CTSCustID BIGINT UNSIGNED DEFAULT NULL,
@@ -218,7 +217,7 @@ CREATE TABLE CTSCustomerClassificationSMA_Log(
   IssueTypeID TINYINT DEFAULT NULL,
   PerformanceTime DATETIME DEFAULT NULL,
   PRIMARY KEY(ID,InsertDate),
-  INDEX IX_CTSCCSMA_Log_CustID(CustID)
+  INDEX IX_CTSCCAgency_Log_CustID(CustID)
 ) ENGINE=InnoDB
 /*!50100 PARTITION BY RANGE(extract(year_month from InsertDate))
 (PARTITION pm202408 VALUES LESS THAN(202409) ENGINE = InnoDB,
@@ -241,7 +240,8 @@ CREATE TABLE CTSCustomerClassificationSMA_Log(
 #************************************************************************************************************
 #************************************************************************************************************
 USE CTS_Archive;
-CREATE TABLE CTSCustomerAssociationStatusSMA (
+DROP TABLE IF EXISTS CTSCustomerAssociationStatusAgency;
+CREATE TABLE CTSCustomerAssociationStatusAgency(
   CTSCustID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   CustID INT UNSIGNED DEFAULT NULL,
   RoleID TINYINT,
@@ -250,24 +250,26 @@ CREATE TABLE CTSCustomerAssociationStatusSMA (
   IsRollBack TINYINT(1) DEFAULT 0,
   RollBackDate DATETIME DEFAULT NULL,
   CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (CTSCustID),
-  INDEX IX_CTSCustomerAssociationStatusSMA_CustID (CustID),
-  INDEX IX_CTSCustomerAssociationStatusSMA_IsRollBack_RollBackDate (IsRollBack,RollBackDate),
-  INDEX IX_CTSCustomerAssociationStatusSMA_Archive (IsArchived,CTSCustID,LastTicketDate),
-  INDEX IX_CTSCustomerAssociationStatusSMA_LastTicketDate (LastTicketDate)
+  PRIMARY KEY(CTSCustID),
+  INDEX IX_CTSCustomerAssociationStatusAgency_CustID(CustID),
+  INDEX IX_CTSCustomerAssociationStatusAgency_IsRollBack_RollBackDate(IsRollBack,RollBackDate),
+  INDEX IX_CTSCustomerAssociationStatusAgency_Archive(IsArchived,CTSCustID,LastTicketDate),
+  INDEX IX_CTSCustomerAssociationStatusAgency_LastTicketDate(LastTicketDate)
 ) ENGINE=InnoDB;
-
-CREATE TABLE CTSCustomerAssociationArchive_ProcessSMA (
+#==========================================================================================
+DROP TABLE IF EXISTS CTSCustomerAssociationArchiveAgency_Process;
+CREATE TABLE CTSCustomerAssociationArchiveAgency_Process(
   CTSCustID BIGINT UNSIGNED NOT NULL,
   CustID INT UNSIGNED NOT NULL,
   RoleID INT UNSIGNED  NOT NULL,
-  PRIMARY KEY (CTSCustID),
-  INDEX IX_CTSCustomerAssociationArchive_CustID (CustID)
+  PRIMARY KEY(CTSCustID),
+  INDEX IX_CTSCustomerAssociationArchiveAgency_CustID(CustID)
 ) ENGINE=InnoDB;
-
-CREATE TABLE CTSCustomerAssociationRollBackSMA_Process (
+#==========================================================================================
+DROP TABLE IF EXISTS CTSCustomerAssociationRollBackAgency_Process;
+CREATE TABLE CTSCustomerAssociationRollBackAgency_Process(
   CTSCustID BIGINT UNSIGNED NOT NULL,
   CustID INT UNSIGNED NOT NULL,
-  PRIMARY KEY (CTSCustID),
-  INDEX IX_CTSCustomerAssociationRollBackSMA_CustID (CustID)
+  PRIMARY KEY(CTSCustID),
+  INDEX IX_CTSCustomerAssociationRollBackAgency_CustID(CustID)
 ) ENGINE=InnoDB;

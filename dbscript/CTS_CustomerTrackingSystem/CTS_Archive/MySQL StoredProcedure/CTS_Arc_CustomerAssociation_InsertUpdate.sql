@@ -15,7 +15,7 @@ BEGIN
 		Revisions:
 			- 20211026@Aries.Nguyen: Created [Redmine ID: #163087]         
 			- 20230207@Long.Luu: Get exact lastticketdate [Redmine ID: #183281]
-            - 20240927@Casey.Huynh: Insert New SMA to CTSCustomerAssociationStatusSMA [Redmine ID: #185799]
+            - 20240927@Casey.Huynh: Insert New Agent to CTSCustomerAssociationStatusAgency [Redmine ID: #185799]
         Param's Explanation (filtered by):
         
         Example:
@@ -59,7 +59,7 @@ BEGIN
 	WHERE tmp.RoleID = CONST_ROLEID_MEMBER
 		AND NOT EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationStatus AS arc  WHERE arc.CTSCustID = tmp.CTSCustID);
         
-	INSERT INTO CTS_Archive.CTSCustomerAssociationStatusSMA(CTSCustID, CustID, RoleID, LastTicketDate)
+	INSERT INTO CTS_Archive.CTSCustomerAssociationStatusAgency(CTSCustID, CustID, RoleID, LastTicketDate)
 	SELECT	tmp.CTSCustID
 		,	tmp.CustID
 		,	tmp.RoleID

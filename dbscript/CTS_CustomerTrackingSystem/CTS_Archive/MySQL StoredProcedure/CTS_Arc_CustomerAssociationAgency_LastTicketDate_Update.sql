@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_Archive" databaseType="2" executers="ctsServiceAdmin,ctsWebAdmin,ctsAPIAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_Arc_CustomerAssociationSMA_LastTicketDate_Update`;
+DROP PROCEDURE IF EXISTS `CTS_Arc_CustomerAssociationAgency_LastTicketDate_Update`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_Arc_CustomerAssociationSMA_LastTicketDate_Update`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_Arc_CustomerAssociationAgency_LastTicketDate_Update`(
 		IN ip_CustInfo 		JSON
 )
     SQL SECURITY INVOKER
@@ -18,7 +18,7 @@ BEGIN
 		Param's Explanation(filtered by):
 
         Example: 
-			- CALL CTS_Arc_CustomerAssociationSMA_LastTicketDate_Update('[{"CustId":7681925, "LastTicketDate": '2023-04-25 00:00:00'}]');
+			- CALL CTS_Arc_CustomerAssociationAgency_LastTicketDate_Update('[{"CustId":7681925, "LastTicketDate": '2023-04-25 00:00:00'}]');
 */   
 	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;    
 	CREATE TEMPORARY TABLE Temp_Cust( 	  
@@ -46,21 +46,21 @@ BEGIN
     INSERT INTO Temp_CustArchived(CTSCustID, CustID)
     SELECT 	cus.CTSCustID
 		,	cus.CustID
-    FROM CTS_Archive.CTSCustomerAssociationStatusSMA AS cus
+    FROM CTS_Archive.CTSCustomerAssociationStatusAgency AS cus
     WHERE cus.IsArchived = 1 
 		AND EXISTS (SELECT 1 FROM Temp_Cust AS tmp WHERE tmp.CustID = cus.CustID);
         
     DELETE 
-    FROM CTS_Archive.CTSCustomerAssociationArchive_ProcessSMA AS pro
+    FROM CTS_Archive.CTSCustomerAssociationArchiveAgency_Process AS pro
     WHERE EXISTS (SELECT 1 FROM Temp_CustArchived AS tmp WHERE tmp.CTSCustID = pro.CTSCustID);
     
-    UPDATE CTS_Archive.CTSCustomerAssociationStatusSMA AS cus
+    UPDATE CTS_Archive.CTSCustomerAssociationStatusAgency AS cus
     SET 	cus.IsRollBack = 1
         ,	cus.RollBackDate = NOW()
         ,	cus.IsArchived = 0
     WHERE EXISTS (SELECT 1 FROM Temp_CustArchived AS arc WHERE arc.CTSCustID = cus.CTSCustID);
 
-    UPDATE CTS_Archive.CTSCustomerAssociationStatusSMA AS cus
+    UPDATE CTS_Archive.CTSCustomerAssociationStatusAgency AS cus
 		INNER JOIN Temp_Cust AS tmp ON tmp.CustID = cus.CustID
     SET cus.LastTicketDate = tmp.LastTicketDate
     WHERE cus.LastTicketDate < tmp.LastTicketDate

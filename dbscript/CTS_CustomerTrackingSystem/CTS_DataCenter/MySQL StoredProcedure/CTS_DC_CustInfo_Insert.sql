@@ -320,7 +320,7 @@ BEGIN
     WHERE tmpCus.RoleID = 2
         AND tmpCus.CustSubID = 0;    
 
-	CALL CTS_DataCenter.CTS_DC_CustClassificationSMA_Insert_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);    
+	CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);    
 
     #=====INSERT NEW CUSTOMER=====================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
@@ -386,14 +386,14 @@ BEGIN
     */
     
 	#=====UPDATE CTSCustomerClassification====================
-    UPDATE CTS_DataCenter.CTSCustomerClassificationSMA AS cc
+    UPDATE CTS_DataCenter.CTSCustomerClassificationAgency AS cc
     INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID
     SET		cc.CTSCustID = tmpCus.CTSCustID
 		,	cc.SubscriberID = tmpCus.SubscriberID
 		,	cc.RoleID = tmpCus.RoleID;
             
 	#=====UPDATE CTSCustomerClassification_History====================
-    UPDATE CTS_DataCenter.CTSCustomerClassificationSMA_History AS ch
+    UPDATE CTS_DataCenter.CTSCustomerClassificationAgency_History AS ch
     INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
     SET	ch.CTSCustID = tmpCus.CTSCustID;
     
