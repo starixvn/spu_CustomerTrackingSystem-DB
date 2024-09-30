@@ -378,7 +378,7 @@ BEGIN
     INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
     SET	ch.CTSCustID = tmpCus.CTSCustID;   
 
-    /*
+    /* ===> NOT Insert CTSCustID To LOG due to suport trace data team(victoria) 
     #=====UPDATE CTSCustomerClassification_History_Log====================
     UPDATE CTS_DataCenter.CTSCustomerClassification_History_Log AS cl
 		INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cl.CustID
@@ -397,7 +397,7 @@ BEGIN
     INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
     SET	ch.CTSCustID = tmpCus.CTSCustID;
     
-    /*
+    /* ===> NOT Insert CTSCustID To LOG due to suport trace data team(victoria) 
     #=====UPDATE CTSCustomerClassification_History_Log====================
     UPDATE CTS_DataCenter.CTSCustomerClassification_History_Log AS cl
 		INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cl.CustID
