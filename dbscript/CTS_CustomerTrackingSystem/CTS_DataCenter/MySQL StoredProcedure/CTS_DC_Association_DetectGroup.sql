@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/ 
-DROP PROCEDURE IF EXISTS `CTS_DC_Association_DetectGroup_xpre`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Association_DetectGroup`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_DetectGroup_xpre`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_DetectGroup`(
 		IN	ip_CTSCustIDs				LONGTEXT
 	,	IN	ip_Device 					JSON 
 	,	IN	ip_AI    					JSON 
@@ -25,7 +25,7 @@ BEGIN
 			- 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
             - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID and return ColorTypeID [Redmine ID: #205317]
 			- 20240923@Jonas.Huynh: Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
-            
+			- 20240930@Casey.Huynh: Agent CC [Redmine ID: #185799]
 		---------------------------------------------------------------------------------------------------
 		[Before #192172]: CTS_DC_AssociationDetection_DetectGroup 
 			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
@@ -560,13 +560,13 @@ BEGIN
 		,	cat.CustomerClassPriority
 	FROM Temp_Cust AS cus
 	,	LATERAL (	SELECT cus.CustID, clss.ParentID
-					FROM CTS_DataCenter.CTSCustomerClassification AS clss
-						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
+					FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
+						INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
 					WHERE clss.CustID = cus.CustID AND clss.ParentID <> CONST_PARENTID_WRAPPER
 					ORDER BY cat.CustomerClassPriority ASC, clss.LastModifiedDate DESC
 					LIMIT 1	) AS tmpcls
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss	ON clss.CustID = tmpcls.CustID AND clss.ParentID = tmpcls.ParentID
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS clss	ON clss.CustID = tmpcls.CustID AND clss.ParentID = tmpcls.ParentID
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = clss.CategoryID
 	WHERE cus.RoleID IN (CONST_ROLEID_AGENT, CONST_ROLEID_MASTER,CONST_ROLEID_SUPER);
 
 
