@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `Adhoc_DCS_DC_Initial_LoginTransactionSummaryByDevice_Insert`;
+DROP PROCEDURE IF EXISTS `Adhoc_DCS_DT_Initial_LoginTransactionSummaryByDevice_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_DCS_DC_Initial_LoginTransactionSummaryByDevice_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_DCS_DT_Initial_LoginTransactionSummaryByDevice_Insert`(
 		IN ip_BatchSize INT
 )
     SQL SECURITY INVOKER
@@ -19,7 +19,7 @@ BEGIN
         
         Example:
 			SET sql_safe_updates = 0;
-			CALL DCS_DataTrace.Adhoc_DCS_DC_Initial_LoginTransactionSummaryByDevice_Insert(1);
+			CALL DCS_DataTrace.Adhoc_DCS_DT_Initial_LoginTransactionSummaryByDevice_Insert(1);
 	*/
     DECLARE CONST_COOKDATA_BYDEVICE_LISTSUBID 	INT DEFAULT 7;
     DECLARE CONST_INITIAL_MAXTRANSID 			INT DEFAULT 100;
