@@ -71,7 +71,7 @@ BEGIN
      /* 0: INSERT CTSCustomerClassification */
      IF ip_IsNewCustomer = TRUE	THEN
 		UPDATE Temp_Customer AS temp
-			INNER JOIN CTS_DataCenter.CustomerCategorySMA AS cc ON cc.CategoryID = CONST_CATEID_AGENCY_NEW
+			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = CONST_CATEID_AGENCY_NEW
         SET 	temp.CategoryID = CONST_CATEID_AGENCY_NEW
 			,	temp.CustomerClass = cc.CustomerClass;
      ELSE
