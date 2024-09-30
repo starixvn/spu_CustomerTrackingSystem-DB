@@ -16,8 +16,8 @@ SET @InitialMaxTransID = (SELECT VValue FROM `DCS_DataTrace`.`SystemSetting` WHE
 
 INSERT INTO `DCS_DataTrace`.`SystemSetting`(`ID`, `VGroup`, `VName`, `VValue`, `UpdatedTime`)
 VALUES 	(7, 'CookDataByDevice', 'ListSubID', '4400,4629,4610', NOW())
-	,	(100, 'Initial', 'MaxTransID', @InitialMaxTransID, NOW())
-	,	(101, 'Initial', 'LimitTransID', '0', NOW());
+	,	(100, 'InitialCookDataByDevice', 'MaxTransID', @InitialMaxTransID, NOW())
+	,	(101, 'InitialCookDataByDevice', 'LimitTransID', '0', NOW());
 
 DROP TABLE IF EXISTS `DCS_DataTrace`.`LoginTransactionSummaryByDevice`;
 CREATE TABLE `LoginTransactionSummaryByDevice` (

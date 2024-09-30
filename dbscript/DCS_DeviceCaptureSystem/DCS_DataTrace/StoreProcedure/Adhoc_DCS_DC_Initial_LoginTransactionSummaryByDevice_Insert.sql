@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Initial_LoginTransactionSummaryByDevice_Insert`;
+DROP PROCEDURE IF EXISTS `Adhoc_DCS_DC_Initial_LoginTransactionSummaryByDevice_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Initial_LoginTransactionSummaryByDevice_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_DCS_DC_Initial_LoginTransactionSummaryByDevice_Insert`(
 		IN ip_BatchSize INT
 )
     SQL SECURITY INVOKER
@@ -19,7 +19,7 @@ BEGIN
         
         Example:
 			SET sql_safe_updates = 0;
-			CALL DCS_DataTrace.DCS_DC_Initial_LoginTransactionSummaryByDevice_Insert(1);
+			CALL DCS_DataTrace.Adhoc_DCS_DC_Initial_LoginTransactionSummaryByDevice_Insert(1);
 	*/
     DECLARE CONST_COOKDATA_BYDEVICE_LISTSUBID 	INT DEFAULT 7;
     DECLARE CONST_INITIAL_MAXTRANSID 			INT DEFAULT 100;
@@ -29,8 +29,8 @@ BEGIN
     DECLARE lv_MaxTransID 						BIGINT UNSIGNED;
     DECLARE lv_LimitTransID 					BIGINT UNSIGNED;
 	
-    DECLARE lv_From_TransID						BIGINT UNSIGNED;
-    DECLARE lv_To_TransID						BIGINT UNSIGNED;
+    DECLARE lv_FromTransID						BIGINT UNSIGNED;
+    DECLARE lv_ToTransID						BIGINT UNSIGNED;
 	
     DECLARE lv_CurrentDate 						TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
     
@@ -75,12 +75,13 @@ BEGIN
 			FROM DCS_DataCenter.Transaction07 AS trans
 				INNER JOIN Temp_SubscriberID AS tmpSub ON tmpSub.SubscriberID = trans.SubscriberID
 			WHERE trans.TransID > lv_LimitTransID
+				AND trans.TransID <= lv_MaxTransID
 			ORDER BY trans.TransID ASC
 			LIMIT ip_BatchSize
         )
         SELECT 	MIN(cte.TransID)
 			,	MAX(cte.TransID)
-		INTO lv_From_TransID, lv_To_TransID
+		INTO lv_FromTransID, lv_ToTransID
         FROM cte;
         
         DELETE FROM Temp_TotalTransByDevice;
@@ -92,7 +93,7 @@ BEGIN
 			,	COUNT(1) AS TotalTrans
 		FROM DCS_DataCenter.Transaction07 AS trans
 			INNER JOIN Temp_SubscriberID AS tmpSub ON tmpSub.SubscriberID = trans.SubscriberID
-        WHERE trans.TransID BETWEEN lv_From_TransID AND lv_To_TransID
+        WHERE trans.TransID BETWEEN lv_FromTransID AND lv_ToTransID
 		GROUP BY _TransDate, trans.SubscriberID, _AccountID, _DeviceID;
 
 		UPDATE DCS_DataTrace.LoginTransactionSummaryByDevice AS trans
@@ -113,7 +114,7 @@ BEGIN
 		FROM Temp_TotalTransByDevice AS tmp
 		WHERE tmp.IsUpdate = 0;
         
-        SET lv_LimitTransID = lv_To_TransID;
+        SET lv_LimitTransID = lv_ToTransID;
 		IF lv_LimitTransID IS NOT NULL AND lv_LimitTransID > 0 THEN
 			UPDATE DCS_DataTrace.SystemSetting AS sys
 			SET sys.VValue = CONCAT('', lv_LimitTransID),
