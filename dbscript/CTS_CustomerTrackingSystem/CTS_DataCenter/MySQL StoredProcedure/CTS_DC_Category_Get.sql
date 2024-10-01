@@ -20,8 +20,9 @@ BEGIN
 			- 20240930@Casey.Huynh: Agent CC [Redmine ID: #185799]
             
 		Param's Explanation (filtered by):
-        Example:
-				CALL CTS_DC_Category_Get();
+        
+        Example: "RoleGroup" : 1 Member, 2: Agency
+				CALL CTS_DC_Category_Get();                
 	*/
 	DECLARE CONST_BIZCATEGROUPID_PA				INT;
 	DECLARE CONST_BIZCATEGROUPID_PAASSOCIATED	INT;
