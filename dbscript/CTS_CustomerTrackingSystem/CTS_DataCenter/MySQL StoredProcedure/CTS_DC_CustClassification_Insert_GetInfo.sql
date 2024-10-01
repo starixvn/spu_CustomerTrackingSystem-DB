@@ -26,6 +26,7 @@ BEGIN
 			
 		Revisions: 
 			- 20240618@Victoria.Le:			Initial Writing [Redmine ID: #205317]
+			- 20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -116,6 +117,7 @@ BEGIN
 		,	ParentID					INT UNSIGNED
 		,	OldTargetCC					INT 
 		,	TargetCC					INT 
+		,	FinalTargetCC				INT 
 		,	TargetDangerLevel			SMALLINT UNSIGNED
 		,	CategoryPriority			SMALLINT  
 		,	CustomerClassPriority		SMALLINT  
