@@ -231,7 +231,7 @@ BEGIN
 				,	cus.IsLicenseeVIP
 				,	cus.IsLicenseeBA
 				,	tmpJs.CreatedBy 
-				,	tmpJs.Remark END AS Remark
+				,	tmpJs.Remark AS Remark
 				,	tmpJs.IsMarkedDirectly
 				, 	IFNULL(tmpJs.WinlossStatus,2) AS  WinlossStatus
 				, 	tmpJs.TurnoverRM
