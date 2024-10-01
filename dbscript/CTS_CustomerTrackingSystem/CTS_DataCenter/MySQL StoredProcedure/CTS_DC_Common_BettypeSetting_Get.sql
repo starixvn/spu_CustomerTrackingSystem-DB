@@ -55,6 +55,7 @@ BEGIN
 		,   INDEX IX_Temp_BettypeID(BettypeID)
 	);
 	IF ip_FunctionID IS NULL THEN
+
 		SELECT DISTINCT bs.BetTypeID
 					, 	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
 									ELSE bs.BettypeNameDisplay END) AS BettypeNameDisplay					
@@ -75,7 +76,8 @@ BEGIN
 					,	js.NameDetailsX
 					, 	bs.BetTypeNameDisplay
 					,	bs.BetChoiceType
-					,	bs.BetIDPattern;        
+					,	bs.BetIDPattern;       
+
     ELSE 
 		IF(ip_IsFilterMMDetection = 0)
 		THEN
@@ -130,7 +132,7 @@ BEGIN
 				INNER JOIN CTS_DataCenter.BettypeSetting AS bs ON bs.BettypeID = sbs.BetTypeID
 				INNER JOIN Temp_SportTypeID AS tmpSt ON IFNULL(tmpSt.SportTypeID,sbs.SportTypeID) = sbs.SportTypeID
 				INNER JOIN Temp_BettypeID AS tmpBt ON IFNULL(tmpBt.BettypeID,sbs.BettypeID) = sbs.BettypeID
-				, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(BetTypeNameDetailsX,''), ',', '","'), '"]'),
+				, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(bs.BetTypeNameDetailsX,''), ',', '","'), '"]'),
 							  '$[*]' COLUMNS (NameDetailsX VARCHAR(1) PATH '$')) js
 			WHERE 	sbs.Status = ip_Status
 				AND	sbs.FunctionID = ip_FunctionID			
@@ -190,3 +192,5 @@ BEGIN
 	END IF;
 END$$
 DELIMITER ;
+
+	
