@@ -422,7 +422,7 @@ BEGIN
 		FROM	#tmpRefno AS rn WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.bettransm14 b WITH(NOLOCK) ON rn.Refno = b.Refno	
 			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
-			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND sb.BetID = b.betcheck
+			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND ISNULL(sb.BetID,b.betcheck) = b.betcheck
 		WHERE m.eventdate BETWEEN @BalanceUpDay AND @MoveBetsDay;
 
 		DELETE rn
@@ -464,9 +464,9 @@ BEGIN
 			,	m.LeagueId
 			,	m.SportType
 		FROM	#tmpRefno AS rn WITH(NOLOCK)
-			INNER JOIN bodb_Archive.dbo.bettrans_bk b WITH(NOLOCK) ON rn.Refno = b.Refno	
+			INNER JOIN bodb_Archive.dbo.bettransm b WITH(NOLOCK) ON rn.Refno = b.Refno	
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
-			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND sb.BetID = b.BetID
+			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND ISNULL(sb.BetID,b.betcheck) = b.betcheck
 		WHERE m.eventdate < @BalanceUpDay;
 
 		DELETE rn
@@ -599,7 +599,7 @@ BEGIN
 
 			SET @MinSequenceID = (SELECT MIN(SequenceID) FROM #tmpRefno WITH(NOLOCK));
 		END
-		
+
 --SELECT 'Debug_vm0-SubOri' AS Step, GetDate() AS ExecTime;		
 		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,TicketOrder,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,MalayOdds, Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,Matchid,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
 		SELECT 	b.refno
@@ -638,7 +638,7 @@ BEGIN
 		FROM	#tmpRefno AS rn WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.bettransm AS b WITH(NOLOCK) ON rn.Refno = b.Refno	
 			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
-			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND sb.BetID = b.BetID
+			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND ISNULL(sb.BetID,b.betcheck) = b.betcheck
 		WHERE m.eventdate > @MoveBetsDay;
 
 		DELETE rn
@@ -683,7 +683,7 @@ BEGIN
 		FROM	#tmpRefno AS rn WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.bettransm14 b WITH(NOLOCK) ON rn.Refno = b.Refno	
 			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
-			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND sb.BetID = b.BetID
+			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND ISNULL(sb.BetID,b.betcheck) = b.betcheck
 		WHERE m.eventdate BETWEEN @BalanceUpDay AND @MoveBetsDay;
 
 		DELETE rn
@@ -728,7 +728,7 @@ BEGIN
 		FROM	#tmpRefno AS rn WITH(NOLOCK)
 			INNER JOIN bodb_Archive.dbo.bettrans_bk b WITH(NOLOCK) ON rn.Refno = b.Refno	
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
-			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND sb.BetID = b.BetID
+			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND ISNULL(sb.BetID,b.betcheck) = b.betcheck
 		WHERE m.eventdate < @BalanceUpDay;
 
 		DELETE rn
@@ -1103,6 +1103,7 @@ BEGIN
 			--========================Fitler By HDP(BetTeam)==================	
 			IF (@ListHDPBetTeam IS NOT NULL)
 			BEGIN
+
 				IF EXISTS (	SELECT 1 
 							FROM #tmpBetType AS st WITH(NOLOCK) 
 							WHERE st.BetChoiceType = 1) --Filter BetTeam
@@ -1113,10 +1114,12 @@ BEGIN
 					INSERT INTO #tmpDelRefnoFilter(Refno)
 					SELECT DISTINCT t.Refno
 					FROM #tmpTicketDetails AS t
+						INNER JOIN #tmpBetType AS st ON t.BetType = st.BettypeID AND st.BetChoiceType = 1
 						LEFT JOIN CTE_BetTeam AS bt ON bt.BetTeam = t.BetTeam
 					WHERE bt.BetTeam IS NULL
-						AND t.TicketOrder = 1;				
+						AND t.TicketOrder = 1;		
 				END
+			
 				ELSE IF EXISTS (SELECT 1 
 								FROM #tmpBetType AS st WITH(NOLOCK) 
 								WHERE st.BetChoiceType = 2) --Filter Hdp
@@ -1127,6 +1130,7 @@ BEGIN
 					INSERT INTO #tmpDelRefnoFilter(Refno)
 					SELECT DISTINCT t.Refno
 					FROM #tmpTicketDetails AS t
+						INNER JOIN #tmpBetType AS st ON t.BetType = st.BettypeID AND st.BetChoiceType = 2
 						LEFT JOIN CTE_Hdp AS h ON h.Hdp = t.Hdp
 						LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
 					WHERE h.Hdp IS NULL
