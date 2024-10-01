@@ -69,10 +69,15 @@ BEGIN
 		,	IsExistPA					TINYINT(1) DEFAULT 0
 		,	IsFromOld					TINYINT(1) DEFAULT 0
 		
-		, 	TurnoverRM					DECIMAL(20,4)
+		, 	TurnoverRM					DECIMAL(20,4)		
 		, 	WinlossRM					DECIMAL(20,4)
 		, 	BetCount					BIGINT
-		, 	ActiveDays					INT	
+		,	LastXDaysTurnoverRM			DECIMAL(20,4)
+		,	LastXDaysWinlossRM			DECIMAL(20,4)
+		, 	LastXDaysBetCount			BIGINT
+		,	LastYDaysTurnoverRM			DECIMAL(20,4)
+		,	LastYDaysWinlossRM			DECIMAL(20,4)
+		, 	LastYDaysBetCount			BIGINT
 		,	PerformanceTime				DATETIME
 
 		, 	DWCategoryID		    	INT UNSIGNED
@@ -117,7 +122,7 @@ BEGIN
 		,	IsMarkedDirectly			TINYINT(1) DEFAULT 0
 		,	IsReturnData				TINYINT(1) DEFAULT 1
 		,	Remark						VARCHAR(500)
-		,	IsRobot						TINYINT(1) DEFAULT 0
+		/*,	IsRobot						TINYINT(1) DEFAULT 0*/
 		, 	PRIMARY KEY (CustID, DWCategoryID)
 		,	KEY IX_Temp_NewCC_CustID_NewCateID (CustID, NewCategoryGroupID)
 		,	KEY IX_Temp_NewCC_CustID_Priority (CustID,CustomerClassPriority)
@@ -158,7 +163,6 @@ BEGIN
 		,	IsFromImperva				TINYINT(1)
 		,	InsertTime					DATETIME
 		,	IsMarkedDirectly			TINYINT(1)
-		,	SpecialCC	       			SMALLINT 
 		,	CustomerClass				INT 
 		,	CategoryPriority			SMALLINT
 		,	CustomerClassPriority		SMALLINT
@@ -175,8 +179,8 @@ BEGIN
 		SET lv_SourceTypeID = CASE 	WHEN ip_FromAction = 1 THEN CONST_SOURCETYPE_VVIP_MANUAL
 									WHEN ip_FromAction = 3 AND ip_UplineRoleID = 4 THEN CONST_SOURCETYPE_VVIP_AFFECTED_SUPER
 									WHEN ip_FromAction = 3 AND ip_UplineRoleID = 3 THEN CONST_SOURCETYPE_VVIP_AFFECTED_MASTER
-									WHEN ip_FromAction = 3 AND ip_UplineRoleID = 2 THEN CONST_SOURCETYPE_VVIP_AFFECTED_AGENT
-									WHEN ip_FromAction = 3 AND ip_UplineRoleID IS NULL THEN CONST_SOURCETYPE_VVIP_AFFECTED_DIRECTUPLINE
+									/*WHEN ip_FromAction = 3 AND ip_UplineRoleID = 2 THEN CONST_SOURCETYPE_VVIP_AFFECTED_AGENT
+									WHEN ip_FromAction = 3 AND ip_UplineRoleID IS NULL THEN CONST_SOURCETYPE_VVIP_AFFECTED_DIRECTUPLINE*/
 								END;
 								
 		IF ip_FromAction = 1 THEN
@@ -218,9 +222,9 @@ BEGIN
 			
 			INSERT INTO Temp_NewClassification(
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
-				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromCTS
+				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, IsFromCTS
 				,	IsPAProbation, RelevantCategoryID, CreatedDate, IsFromTW, IsFromAI, IsFromImperva
-				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, IsRobot)
+				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime/*, IsRobot*/)
 			SELECT 	tmpJs.CustID
 				,	CASE WHEN tmpJs.CTSCustID = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
 				,	CASE WHEN tmpJs.RoleID = 0 THEN cus.RoleID ELSE tmpJs.RoleID END
@@ -237,7 +241,12 @@ BEGIN
 				, 	tmpJs.TurnoverRM
 				, 	tmpJs.WinlossRM 
 				, 	tmpJs.BetCount 
-				, 	tmpJs.ActiveDays
+				,	tmpJs.LastXDaysTurnoverRM
+				,	tmpJs.LastXDaysWinlossRM
+				, 	tmpJs.LastXDaysBetCount
+				,	tmpJs.LastYDaysTurnoverRM
+				,	tmpJs.LastYDaysWinlossRM
+				, 	tmpJs.LastYDaysBetCount
 				,	tmpJs.IsFromCTS
 				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
 				,	cat.RelevantCategoryID
@@ -250,7 +259,7 @@ BEGIN
 				,	cat.ParentID
 				,	0 AS IsDataChanged
 				,	tmpJs.PerformanceTime
-				,	CASE WHEN cat.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot
+				/*,	CASE WHEN cat.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot*/
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
@@ -266,7 +275,12 @@ BEGIN
 											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
 											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
 											, 	BetCount					BIGINT 				PATH "$.BetCount"
-											, 	ActiveDays					INT 				PATH "$.ActiveDays"
+											,	LastXDaysTurnoverRM			DECIMAL(20,4)		PATH "$.LastXDaysTurnoverRM"
+											,	LastXDaysWinlossRM			DECIMAL(20,4)		PATH "$.LastXDaysWinlossRM"
+											, 	LastXDaysBetCount			BIGINT				PATH "$.LastXDaysBetCount"											
+											,	LastYDaysTurnoverRM			DECIMAL(20,4)		PATH "$.LastYDaysTurnoverRM"										
+											,	LastYDaysWinlossRM			DECIMAL(20,4)		PATH "$.LastYDaysWinlossRM"
+											, 	LastYDaysBetCount			BIGINT				PATH "$.LastYDaysBetCount"
 											, 	IsFromCTS					TINYINT(1) 			PATH "$.IsFromCTS"
 											, 	CreatedDate					DATETIME			PATH "$.CreatedDate"
 											, 	PerformanceTime				DATETIME			PATH "$.PerformanceTime"
@@ -274,12 +288,17 @@ BEGIN
 											,	IsFromAI					TINYINT(1)			PATH "$.IsFromAI"
 											,	IsFromImperva				TINYINT(1)			PATH "$.IsFromImperva"
 											)) AS tmpJs
-				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0 AND cus.RoleID > 1
 				LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = tmpJs.DWCategoryID
-			ON DUPLICATE KEY UPDATE TurnoverRM = IFNULL(Temp_NewClassification.TurnoverRM, tmpJs.TurnoverRM)  
-								,	WinlossRM = IFNULL(Temp_NewClassification.WinlossRM, tmpJs.WinlossRM)  
-								,	BetCount = IFNULL(Temp_NewClassification.BetCount, tmpJs.BetCount)  
-								,	ActiveDays = IFNULL(Temp_NewClassification.ActiveDays, tmpJs.ActiveDays)
+			ON DUPLICATE KEY UPDATE TurnoverRM = IFNULL(Temp_NewClassification.TurnoverRM, tmpJs.TurnoverRM) 
+								,	WinlossRM = IFNULL(Temp_NewClassification.WinlossRM, tmpJs.WinlossRM)
+								,	BetCount = IFNULL(Temp_NewClassification.BetCount, tmpJs.BetCount)
+								,	LastXDaysTurnoverRM = IFNULL(Temp_NewClassification.LastXDaysTurnoverRM, tmpJs.LastXDaysTurnoverRM)
+								,	LastXDaysWinlossRM = IFNULL(Temp_NewClassification.LastXDaysWinlossRM, tmpJs.LastXDaysWinlossRM)  
+								,	LastXDaysBetCount = IFNULL(Temp_NewClassification.LastXDaysBetCount, tmpJs.LastXDaysBetCount)
+								,	LastYDaysTurnoverRM = IFNULL(Temp_NewClassification.LastYDaysTurnoverRM, tmpJs.LastYDaysTurnoverRM) 
+								,	LastYDaysWinlossRM = IFNULL(Temp_NewClassification.LastYDaysWinlossRM, tmpJs.LastYDaysWinlossRM)			
+								,	LastYDaysBetCount = IFNULL(Temp_NewClassification.LastYDaysBetCount, tmpJs.LastYDaysBetCount)
 								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_NewClassification.IsFromCTS END
 								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_NewClassification.IsMarkedDirectly END
 								,	IsFromImperva = CASE WHEN tmpJs.IsFromImperva = 1 THEN 1 ELSE Temp_NewClassification.IsFromImperva END
@@ -290,8 +309,8 @@ BEGIN
 		/*9 - Normal*/
 		ELSEIF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL THEN 
 			INSERT INTO Temp_NewClassification(
-					CustID,CTSCustID,DWCategoryID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,PerformanceTime
-				,	SubscriberID,RoleID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsDataChanged)
+					CustID,CTSCustID,DWCategoryID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,LastXDaysTurnoverRM,LastXDaysWinlossRM,LastXDaysBetCount
+				,	LastYDaysTurnoverRM,LastYDaysWinlossRM,LastYDaysBetCount,PerformanceTime,SubscriberID,RoleID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsDataChanged)
 			SELECT DISTINCT
 					tmpJs.CustID
 				,	cus.CTSCustID
@@ -300,7 +319,12 @@ BEGIN
                 , 	tmpJs.TurnoverRM
                 , 	tmpJs.WinlossRM
                 , 	tmpJs.BetCount
-                , 	tmpJs.ActiveDays
+				,	tmpJs.LastXDaysTurnoverRM
+				,	tmpJs.LastXDaysWinlossRM
+				, 	tmpJs.LastXDaysBetCount
+				,	tmpJs.LastYDaysTurnoverRM
+				,	tmpJs.LastYDaysWinlossRM
+				, 	tmpJs.LastYDaysBetCount
                 ,	tmpJs.PerformanceTime
 				,	cus.SubscriberID
 				,	cus.RoleID
@@ -315,11 +339,16 @@ BEGIN
 											, 	DWCategoryGroupID		INT UNSIGNED		PATH "$.CategoryGroupID"
 											, 	TurnoverRM				DECIMAL(20,4)		PATH "$.TurnoverRM"
 											, 	WinlossRM				DECIMAL(20,4)		PATH "$.WinlossRM"
-											, 	BetCount				BIGINT				PATH "$.BetCount"
-											, 	ActiveDays				INT					PATH "$.ActiveDays"		
+											, 	BetCount				BIGINT				PATH "$.BetCount"		
+											,	LastXDaysTurnoverRM		DECIMAL(20,4)		PATH "$.LastXDaysTurnoverRM"
+											,	LastXDaysWinlossRM		DECIMAL(20,4)		PATH "$.LastXDaysWinlossRM"
+											, 	LastXDaysBetCount		BIGINT				PATH "$.LastXDaysBetCount"
+											,	LastYDaysTurnoverRM		DECIMAL(20,4)		PATH "$.LastYDaysTurnoverRM"										
+											,	LastYDaysWinlossRM		DECIMAL(20,4)		PATH "$.LastYDaysWinlossRM"
+											, 	LastYDaysBetCount		BIGINT				PATH "$.LastYDaysBetCount"
 											, 	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
 										)) AS tmpJs
-				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0;
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0 AND cus.RoleID > 1;
 				
 			UPDATE Temp_NewClassification AS temp
 			SET temp.IsExistPA = 1
