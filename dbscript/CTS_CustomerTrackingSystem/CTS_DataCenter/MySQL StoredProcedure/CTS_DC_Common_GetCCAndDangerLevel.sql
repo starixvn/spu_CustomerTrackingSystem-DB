@@ -53,20 +53,10 @@ BEGIN
     DECLARE CONST_ROLEID_SUPER					SMALLINT DEFAULT 4;
       
     DECLARE	CONST_AGENCY_PARENTID_PA 				INT;
-	DECLARE	CONST_AGENCY_PARENTID_WRAPPER			INT;
     
 	DECLARE	CONST_AGENCY_CATEID_VVIP				INT;
 	DECLARE	CONST_AGENCY_CATEID_LICBA				INT;
-	DECLARE	CONST_AGENCY_CATEID_LICVIPSUSPICIOUS	INT;
-	DECLARE	CONST_AGENCY_CATEID_LICVIPDANGEROUS		INT;
 
-    DECLARE	lv_Agency_LicVIP_DangerousCCName 		VARCHAR(50);
-    DECLARE	lv_Agency_LicVIP_SuspiciousCCName		VARCHAR(50);
-    DECLARE	lv_Agency_LicBACC_Name					VARCHAR(50);
-    DECLARE lv_Agency_LicBACC						INT UNSIGNED;
-    DECLARE lv_Agency_LicBAPriority					SMALLINT UNSIGNED;
-    DECLARE lv_Agency_LicVIPCC_Danger				INT UNSIGNED;
-    DECLARE lv_Agency_LicVIPCC_Suspicious			INT UNSIGNED;
     DECLARE lv_Agency_VVIPCC						INT UNSIGNED; 
     
     #===================================GET Staticlist Define constant for Member====================================================================        
@@ -80,11 +70,8 @@ BEGIN
     
 	#===================================GET Staticlist Define constant for Agency==================================================================== 
     SET CONST_AGENCY_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get('CONST_AGENCY_PARENTID_PA');
-	SET CONST_AGENCY_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get('CONST_AGENCY_PARENTID_WRAPPER');
 	SET CONST_AGENCY_CATEID_VVIP 						= CTS_DC_CategoryTypeParent_Get('CONST_AGENCY_CATEID_VVIP');
 	SET CONST_AGENCY_CATEID_LICBA 						= CTS_DC_CategoryTypeParent_Get('CONST_AGENCY_CATEID_LICBA');
-	SET CONST_AGENCY_CATEID_LICVIPSUSPICIOUS 			= CTS_DC_CategoryTypeParent_Get('CONST_AGENCY_CATEID_LICVIPSUSPICIOUS');
-	SET CONST_AGENCY_CATEID_LICVIPDANGEROUS 			= CTS_DC_CategoryTypeParent_Get('CONST_AGENCY_CATEID_LICVIPDANGEROUS');
 	
     #=====================SCHEMA=======================
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
@@ -254,23 +241,12 @@ BEGIN
                 
     # =================GET AGENCY CC INFO====================================================================
         
-    /* INIT MEMBER AGENCY */    
-    SELECT CustomerClass, CustomerClassPriority, CustomerClassName
-    INTO lv_Agency_LicBACC, lv_Agency_LicBAPriority, lv_Agency_LicBACC_Name
-    FROM CustomerCategoryAgency WHERE CategoryID = CONST_AGENCY_CATEID_LICBA;
-    
-    SELECT CustomerClass, CustomerClassName
-    INTO lv_Agency_LicVIPCC_Danger, lv_Agency_LicVIP_DangerousCCName
-    FROM CustomerCategoryAgency WHERE CategoryID = CONST_AGENCY_CATEID_LICVIPDANGEROUS;
-    
-    SELECT CustomerClass, CustomerClassName
-    INTO lv_Agency_LicVIPCC_Suspicious, lv_Agency_LicVIP_SuspiciousCCName
-    FROM CustomerCategoryAgency WHERE CategoryID = CONST_AGENCY_CATEID_LICVIPSUSPICIOUS;    
-    
+     /* INIT MEMBER AGENCY */    
+
     SELECT CustomerClass
     INTO lv_Agency_VVIPCC
     FROM CustomerCategoryAgency WHERE CategoryID = CONST_AGENCY_CATEID_VVIP;
-    
+      
 	INSERT INTO Temp_CustLatestCate(CustID,LatesCCPriority)
     SELECT tmp.CustID, MIN(clss.CustomerClassPriority)
     FROM Temp_CustInfo AS tmp
@@ -278,7 +254,6 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1
                 WHERE clss.CustID = tmp.CustID
-					AND clss.ParentID <> CONST_AGENCY_PARENTID_WRAPPER
                 ORDER BY  cate.CustomerClassPriority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss
@@ -291,7 +266,7 @@ BEGIN
 		,	clss.CustomerClass
         ,	clss.CustomerClassName  
 		,	clss.ParentID
-		,	clss.TaggingType
+		,	NULL TaggingType
         ,	dangerlvl.DangerLevel
         ,	CASE 
 				WHEN dangerlvl.DangerLevel IS NULL THEN 0
@@ -305,12 +280,7 @@ BEGIN
 							WHEN(tmp.SpecialCC IS NULL) OR(tmp.SpecialCCPriority <> -1)
 									THEN CASE
 											WHEN cate.CustomerClass = lv_Agency_VVIPCC THEN lv_Agency_VVIPCC
-											WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN lv_Agency_LicVIPCC_Suspicious
-                                            WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation IS NOT NULL THEN lv_Agency_LicVIPCC_Danger
-											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_Agency_LicVIPCC_Suspicious
-                                            WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_Agency_LicVIPCC_Danger
-                                            WHEN tmp.IsLicenseeBA = 1 AND cate.CustomerClassPriority > lv_Agency_LicBAPriority THEN lv_Agency_LicBACC                                            
-                                            WHEN tmp.SpecialCCPriority <> -1 AND cate.CustomerClassPriority > tmp.SpecialCCPriority THEN tmp.SpecialCC
+											WHEN tmp.SpecialCCPriority <> -1 AND cate.CustomerClassPriority > tmp.SpecialCCPriority THEN tmp.SpecialCC
                                             ELSE cate.CustomerClass
 										END
 							ELSE tmp.SpecialCC
@@ -319,18 +289,12 @@ BEGIN
 							WHEN(tmp.SpecialCC IS NULL) OR(tmp.SpecialCCPriority <> -1)
 									THEN CASE
 											WHEN cate.CustomerClass = lv_Agency_VVIPCC THEN cate.CustomerClassName
-											WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 1 THEN lv_Agency_LicVIP_SuspiciousCCName
-                                            WHEN tmp.IsLicenseeVIP = 1 AND t.LatesCCPriority > tmp.SpecialCCPriority AND tmp.SpecialCCDangerProbation = 0 THEN lv_Agency_LicVIP_DangerousCCName
-											WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 1 THEN lv_Agency_LicVIP_SuspiciousCCName
-                                            WHEN tmp.IsLicenseeVIP = 1 AND cate.IsDangerProbation = 0 THEN lv_Agency_LicVIP_DangerousCCName
-                                            WHEN tmp.IsLicenseeBA = 1 AND cate.CustomerClassPriority > lv_Agency_LicBAPriority THEN lv_Agency_LicBACC_Name                                            
-                                            WHEN tmp.SpecialCCPriority <> -1 AND cate.CustomerClassPriority > tmp.SpecialCCPriority THEN tmp.SpecialCCName
+											WHEN tmp.SpecialCCPriority <> -1 AND cate.CustomerClassPriority > tmp.SpecialCCPriority THEN tmp.SpecialCCName
                                             ELSE cate.CustomerClassName
 										END
 							ELSE tmp.SpecialCCName
 						END AS CustomerClassName
 					,	cate.ParentID
-					,	cate.TaggingType
 				FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1
                 WHERE clss.CustID = tmp.CustID
@@ -343,12 +307,10 @@ BEGIN
                     ,	cc.Ext_DangerLevelType 
 				FROM CTS_DataCenter.CTSCustomerClassificationAgency AS c
 					INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON c.CategoryID = cc.CategoryID AND cc.IsActive = 1
-                WHERE c.CustID = tmp.CustID
-					AND c.ParentID <> CONST_PARENTID_WRAPPER
+                WHERE c.CustID = tmp.CustID			
                 ORDER BY  cc.CustomerClassPriority ASC  
 						, c.LastModifiedDate DESC
-                LIMIT 1) AS dangerlvl;
-                
+                LIMIT 1) AS dangerlvl;         
     #=========================================================================================================            
 	INSERT INTO Temp_CustClassificationInfo(CustID, RoleID, CategoryID, CustomerClass, CustomerClassName, ParentID, TaggingType, DangerLevel, DangerLevelType)	
 	SELECT 	tmp.CustID

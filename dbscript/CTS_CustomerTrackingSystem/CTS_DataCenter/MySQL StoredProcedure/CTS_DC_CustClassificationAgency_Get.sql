@@ -8,7 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_Get`(
     SQL SECURITY INVOKER
 BEGIN
 	/*
-				Created:	20241001@Casey.Huynh	
+		Created:	20241001@Casey.Huynh	
 		Task :		Get information on customer profile of Agency
 		DB:			CTS_DataCenter
 		
