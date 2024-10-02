@@ -146,11 +146,12 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;
 	CREATE TEMPORARY TABLE	Temp_CustCategory (
-			CustID 			BIGINT UNSIGNED
-		,	CategoryID		INT UNSIGNED
-		,	ParentID		INT UNSIGNED
-		,	CategoryName	VARCHAR(50)
-		,	ColorTypeID		TINYINT
+			CustID 					BIGINT UNSIGNED
+		,	CategoryID				INT UNSIGNED
+        ,	CustomerClassPriority	SMALLINT
+		,	ParentID				INT UNSIGNED
+		,	CategoryName			VARCHAR(50)
+		,	ColorTypeID				TINYINT
 		,	PRIMARY KEY(CustID, CategoryID)
 	);
 
@@ -523,12 +524,13 @@ BEGIN
 
     END IF;
     
-	INSERT IGNORE INTO Temp_CustCategory(CustID, CategoryID, ParentID, CategoryName, ColorTypeID)
+	INSERT IGNORE INTO Temp_CustCategory(CustID, CategoryID, ParentID, CategoryName, ColorTypeID, CustomerClassPriority)
 	SELECT	cus.CustID
 		,	cat.CategoryID
 		,	cat.ParentID
 		,	cat.CategoryName
 		,	cat.ColorTypeID
+        ,	cat.CustomerClassPriority
 	FROM Temp_Cust AS cus
 	,	LATERAL (	SELECT cus.CustID, clss.ParentID
 					FROM CTS_DataCenter.CTSCustomerClassification AS clss
