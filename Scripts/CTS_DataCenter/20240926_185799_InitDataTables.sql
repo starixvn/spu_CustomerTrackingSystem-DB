@@ -13,7 +13,7 @@ Reviewer:
 USE CTS_DataCenter;
 
 INSERT INTO CustomerCategoryAgency(CategoryID,CategoryName,CategorySpec,ParentID,CustomerClass,CustomerClassName,CategoryGroupID,CategoryPriority,CustomerClassPriority,BusinessCategoryGroupID,IsActive,ScanIntervalInSecond,RelevantCategoryID,IsPAProbation,AFCFraudID,DataSource,CreatedDate,CategoryNameCN,CategoryNameCN3,CategoryNameTHB,CategoryNameIND,CustomerClassNameCN,SabaSportType,OldCategoryID,ColorTypeID,Ext_ABIDangerLevel_Licensee,Ext_ABIDangerLevel_Credit,Ext_DangerLevelType,Ext_CategoryGroupID,Ext_EvidenceID_Licensee,Ext_EvidenceID_Credit)
-VALUES (101010,'VVIP Agent','VVIP Agent',101000,999,'Healthy',101010,10,10,20,1,Null,Null,0,Null,'',NOW(),'超级贵宾',Null,Null,Null,'健康','',210,1,Null,Null,1,101010,Null,Null),
+VALUES (101010,'VVIP Agent','VVIP Agent',101000,999,'Healthy',101010,10,10,30,1,Null,Null,0,Null,'',NOW(),'超级贵宾',Null,Null,Null,'健康','',210,1,Null,Null,1,101010,Null,Null),
 (120100,'Group Betting','Group Betting',120000,30000,'Problem',120100,400,400,10,1,Null,125100,0,1,'NAP',NOW(),'群组投注',Null,Null,Null,'问题','1,2',52,6,11,1,2,120100,43,41),
 (120200,'Hedging','Hedging',120000,30000,'Problem',120200,400,400,10,1,Null,125200,0,2,'NAP',NOW(),'出货群组',Null,Null,Null,'问题','2',53,6,14,4,2,120200,46,56),
 (120300,'Arbitrage','Arbitrage',120000,30000,'Problem',120300,400,400,10,1,Null,125300,0,3,'NAP',NOW(),'打水套利',Null,Null,Null,'问题','1,2',54,6,13,3,2,120300,45,55),
@@ -30,13 +30,13 @@ VALUES (101010,'VVIP Agent','VVIP Agent',101000,999,'Healthy',101010,10,10,20,1,
 (125600,'Formula Bet (Losing)','Formula Bet (Losing)',120000,30001,'Problem -',125600,400,400,10,1,Null,120600,1,6,'NAP',NOW(),'系统计算投注（输钱）',Null,Null,Null,'问题 -','2',99,7,16,6,2,125600,48,58),
 (125800,'Info Bet (Losing)','Info Bet (Losing)',120000,30001,'Problem -',125800,400,400,10,1,Null,120800,1,7,'NAP',NOW(),'资讯单（输钱）',Null,Null,Null,'问题 -','',102,7,19,9,2,125800,51,61),
 (126100,'Robot (Losing)','Robot (Losing)',120000,30001,'Problem -',126100,400,400,10,1,Null,121100,1,Null,'',NOW(),'机械（输钱）',Null,Null,Null,'问题 -','2',164,7,Null,Null,2,126100,Null,Null),
-(140100,'New Agent','New Agent',140000,20000,'New',140100,1000,1000,20,1,Null,Null,0,Null,'',NOW(),'新代理',Null,Null,Null,'新代理','',Null,1,Null,Null,1,140100,Null,Null),
-(140200,'Good Agent','Good Agent',140000,20001,'High-value',140200,1000,1000,20,1,604800,Null,0,Null,'',NOW(),'优质代理',Null,Null,Null,'高价值','',Null,1,Null,Null,1,140200,Null,Null),
-(140300,'Normal Agent','Normal Agent',140000,20002,'Suspicious',140300,1000,1000,20,1,604800,Null,0,Null,'',NOW(),'普通代理',Null,Null,Null,'可疑','',Null,1,Null,Null,1,140300,Null,Null),
-(140400,'Early Stage Probation Agent','Early Stage Probation Agent',140000,20003,'Moderate',140400,1000,1000,20,1,604800,Null,0,Null,'',NOW(),'前期阶段观察中代理',Null,Null,Null,'中等','',Null,2,Null,Null,1,140400,Null,Null),
-(140500,'Smart Agent','Smart Agent',140000,20004,'Suspicious',140500,1000,1000,20,1,604800,Null,0,Null,'',NOW(),'精明代理',Null,Null,Null,'可疑','',Null,2,Null,Null,1,140500,Null,Null),
-(140600,'Risky Agent','Risky Agent',140000,20005,'Low-value',140600,1000,1000,20,1,604800,Null,0,Null,'',NOW(),'高危代理',Null,Null,Null,'低价值','',Null,2,Null,Null,1,140600,Null,Null),
-(140700,'Inactive Agent','Inactive Agent',140000,90000,'Dormant',140700,1000,1000,30,1,86400,Null,0,Null,'',NOW(),'不活跃代理',Null,Null,Null,'不活跃','',Null,8,Null,Null,1,140700,Null,Null);
+(140100,'New Agent','New Agent',140000,20000,'New',140100,1000,1000,30,1,Null,Null,0,Null,'',NOW(),'新代理',Null,Null,Null,'新代理','',Null,1,Null,Null,1,140100,Null,Null),
+(140200,'Good Agent','Good Agent',140000,20001,'High-value',140200,1000,1000,30,1,604800,Null,0,Null,'',NOW(),'优质代理',Null,Null,Null,'高价值','',Null,1,Null,Null,1,140200,Null,Null),
+(140300,'Normal Agent','Normal Agent',140000,20002,'Suspicious',140300,1000,1000,30,1,604800,Null,0,Null,'',NOW(),'普通代理',Null,Null,Null,'可疑','',Null,1,Null,Null,1,140300,Null,Null),
+(140400,'Early Stage Probation Agent','Early Stage Probation Agent',140000,20003,'Moderate',140400,1000,1000,30,1,604800,Null,0,Null,'',NOW(),'前期阶段观察中代理',Null,Null,Null,'中等','',Null,2,Null,Null,1,140400,Null,Null),
+(140500,'Smart Agent','Smart Agent',140000,20004,'Suspicious',140500,1000,1000,30,1,604800,Null,0,Null,'',NOW(),'精明代理',Null,Null,Null,'可疑','',Null,2,Null,Null,1,140500,Null,Null),
+(140600,'Risky Agent','Risky Agent',140000,20005,'Low-value',140600,1000,1000,30,1,604800,Null,0,Null,'',NOW(),'高危代理',Null,Null,Null,'低价值','',Null,2,Null,Null,1,140600,Null,Null),
+(140700,'Inactive Agent','Inactive Agent',140000,90000,'Dormant',140700,1000,1000,40,1,86400,Null,0,Null,'',NOW(),'不活跃代理',Null,Null,Null,'不活跃','',Null,8,Null,Null,1,140700,Null,Null);
 
 INSERT INTO CustomerCategorySettingsAgency(CategoryID,CategoryGroupID,ParentID,IsParallelParentID,IsMultiCateIDSameParentID,IsKeepOldCateID,RemarkTemplateID)
 VALUES (101010,101010,101000,0,0,0,Null),

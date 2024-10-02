@@ -139,8 +139,8 @@ BEGIN
 		, 	IsLicenseeBA				TINYINT(1) DEFAULT 0
 	);
 	
-	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassification_Old;
-	CREATE TEMPORARY TABLE Temp_CTSCustomerClassification_Old (
+	DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassificationAgency_Old;
+	CREATE TEMPORARY TABLE Temp_CTSCustomerClassificationAgency_Old (
 			CustID						BIGINT UNSIGNED
 		,	CTSCustID					BIGINT UNSIGNED
 		,	SubscriberID				INT UNSIGNED
