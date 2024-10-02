@@ -52,12 +52,12 @@ BEGIN
     DECLARE CONST_ROLEID_MASTER					SMALLINT DEFAULT 3;
     DECLARE CONST_ROLEID_SUPER					SMALLINT DEFAULT 4;
       
-    DECLARE	CONST_AGENCY_PARENTID_PA 				INT;
+    DECLARE	CONST_AGENCY_PARENTID_PA 			INT;
     
-	DECLARE	CONST_AGENCY_CATEID_VVIP				INT;
-	DECLARE	CONST_AGENCY_CATEID_LICBA				INT;
+	DECLARE	CONST_AGENCY_CATEID_VVIP			INT;
+	DECLARE	CONST_AGENCY_CATEID_LICBA			INT;
 
-    DECLARE lv_Agency_VVIPCC						INT UNSIGNED; 
+    DECLARE lv_Agency_VVIPCC					INT UNSIGNED; 
     
     #===================================GET Staticlist Define constant for Member====================================================================        
 	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get('CONST_PARENTID_PA');
