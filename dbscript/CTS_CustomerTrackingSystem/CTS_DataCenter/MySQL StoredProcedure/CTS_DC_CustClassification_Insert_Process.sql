@@ -664,27 +664,6 @@ BEGIN
 					LIMIT 1) AS tmpLt
 		; 
 		
-		TRUNCATE TABLE Temp_NewClassification_Dup;
-		
-		INSERT INTO Temp_NewClassification_Dup (CustID,NewCategoryID,TargetCC,CustomerClassPriority)
-		SELECT temp.CustID, temp.NewCategoryID, temp.TargetCC, temp.CustomerClassPriority
-		FROM Temp_NewClassification AS temp
-			INNER JOIN Temp_CustProbationStatus AS tmpCp ON tmpCp.CustID = temp.CustID 
-															AND tmpCp.IsPAProbation <> temp.IsPAProbation
-															AND tmpCp.WinlossStatus <> 1 
-		WHERE temp.SpecialCC IS NULL;
-		
-		UPDATE Temp_NewClassification AS temp
-			, LATERAL (	SELECT new_dup.NewCategoryID , new_dup.TargetCC, new_dup.CustID
-						FROM Temp_NewClassification_Dup AS new_dup
-						WHERE temp.CustID = new_dup.CustID
-						ORDER BY new_dup.CustomerClassPriority
-						LIMIT 1
-						) AS NewTargetCC
-		SET temp.FinalTargetCC = NewTargetCC.TargetCC
-		WHERE temp.CustID = NewTargetCC.CustID
-			AND temp.IsLicenseeVIP = 0;
-
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_LicVIPCust AS tmpVip ON temp.CustID = tmpVip.CustID
 		SET temp.TargetCC = IFNULL(temp.SpecialCC, tmpVip.CustomerClass)
@@ -696,7 +675,7 @@ BEGIN
             LEFT JOIN Temp_CTSCustomerClassification_Old as temp_old ON temp_old.CustID = temp.CustID AND temp_old.CategoryGroupID = temp.NewCategoryGroupID
 		SET temp.IsDataChanged = 1
 		WHERE temp_old.CustID IS NULL 
-			AND ((temp.NewCategoryGroupID <> tmpHis.CategoryID AND temp.ParentID <> tmpHis.ParentID) OR temp.FinalTargetCC <> tmpHis.TargetCC);
+			AND ((temp.NewCategoryGroupID <> tmpHis.CategoryID AND temp.ParentID <> tmpHis.ParentID) OR temp.TargetCC <> tmpHis.TargetCC);
 
 		-- Potential Risk - Rescan SpecialCC
 		UPDATE Temp_NewClassification AS temp
@@ -704,7 +683,7 @@ BEGIN
             LEFT JOIN Temp_CTSCustomerClassification_Old as temp_old ON temp_old.CustID = temp.CustID AND temp_old.CategoryGroupID = temp.NewCategoryGroupID
 		SET temp_old.IsRemove = 0
 		WHERE temp_old.CustID IS NOT NULL AND temp_old.IsRemove = 1
-			AND ((temp.NewCategoryGroupID <> tmpHis.CategoryID AND temp.ParentID <> tmpHis.ParentID) OR temp.FinalTargetCC <> tmpHis.TargetCC);
+			AND ((temp.NewCategoryGroupID <> tmpHis.CategoryID AND temp.ParentID <> tmpHis.ParentID) OR temp.TargetCC <> tmpHis.TargetCC);
 
 		-- Potential Risk - Not remove IsDataChanged = 0
 		UPDATE Temp_NewClassification AS temp

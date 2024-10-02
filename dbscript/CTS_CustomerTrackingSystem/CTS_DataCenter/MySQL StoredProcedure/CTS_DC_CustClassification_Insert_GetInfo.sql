@@ -117,7 +117,6 @@ BEGIN
 		,	ParentID					INT UNSIGNED
 		,	OldTargetCC					INT 
 		,	TargetCC					INT 
-		,	FinalTargetCC				INT 
 		,	TargetDangerLevel			SMALLINT UNSIGNED
 		,	CategoryPriority			SMALLINT  
 		,	CustomerClassPriority		SMALLINT  
