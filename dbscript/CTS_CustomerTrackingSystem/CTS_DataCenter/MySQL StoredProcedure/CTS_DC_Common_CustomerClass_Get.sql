@@ -66,8 +66,7 @@ BEGIN
 	WHERE 	cat.IsActive = 1
         AND cat.CustomerClass IS NOT NULL
         AND cat.ParentID NOT IN (CONST_PARENTID_VVIP, CONST_PARENTID_WRAPPER)
-	GROUP BY cat.CustomerClass, cat.CategoryGroupID, cat.BusinessCategoryGroupID
-    ORDER BY cat.CategoryIDs;
+	GROUP BY cat.CustomerClass, cat.CategoryGroupID, cat.BusinessCategoryGroupID;
     
    UPDATE Temp_CustomerClass
    SET OrderID = CASE WHEN CustomerClassGroup = CONST_GROUPNAME_PA THEN 1
