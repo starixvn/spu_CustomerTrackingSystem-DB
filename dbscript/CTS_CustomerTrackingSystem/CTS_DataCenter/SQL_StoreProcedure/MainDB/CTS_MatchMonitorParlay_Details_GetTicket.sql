@@ -1235,6 +1235,7 @@ BEGIN
 			,	(CASE WHEN TicketOrder > 0 AND st.Hdp IS NULL THEN st.BetTeam ELSE CONVERT(VARCHAR(10),st.Hdp) END) AS Choice
 			,	st.LiveHomeScore
 			,	st.LiveAwayScore
+			,	st.LiveIndicator
 			,	mt.TransDate
 			,	mt.BetFrom
 			,	mt.AGroup
