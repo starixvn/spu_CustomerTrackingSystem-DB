@@ -16,6 +16,7 @@ BEGIN
 	Revisions:
 		- 20240314@Jonathan.Doan: Created [Redmine ID: 199295]
 		- 20240503@Jonathan.Doan: HotFix FlaggedGroupID is incorrect [Redmine ID: 204733]
+		- 20240924@Jonathan.Doan: Add table LoginTransactionSummaryByDevice [Redmine ID: #211161]
 		
 	Param's Explanation (filtered by):
 
@@ -24,20 +25,25 @@ BEGIN
         CALL DCS_DataTrace.DCS_DT_Summary_LoginTransaction_CookData(10);
 	*/
     DECLARE CONST_COOKDATA_TRANSACTION07_TRANSID 	INT 		DEFAULT 5;
+    DECLARE CONST_COOKDATA_BYDEVICE_LISTSUBID 		INT 		DEFAULT 7;
     DECLARE CONST_FLAGGEDGROUPID_INVALIDBROWSER		SMALLINT 	DEFAULT 2;
     DECLARE CONST_FLAGGEDGROUPID_BOTTRANS 			SMALLINT 	DEFAULT 3;
     
     DECLARE lv_MaxTransID  			BIGINT UNSIGNED;
     DECLARE lv_RawUserAgentIDs		LONGTEXT;
+    DECLARE lv_ListSubID			VARCHAR(500);
     DECLARE lv_CurrentDatetime 		DATETIME DEFAULT CURRENT_TIMESTAMP();
     
     SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_COOKDATA_TRANSACTION07_TRANSID);
+    SET lv_ListSubID = (SELECT VValue FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_COOKDATA_BYDEVICE_LISTSUBID);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
 	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTrans;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransByAccount;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransByFlagged;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransByBrowser;
+	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransByDevice;
+	DROP TEMPORARY TABLE IF EXISTS Temp_SubscriberID;
     
 	CREATE TEMPORARY TABLE Temp_Trans07(
 			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY
@@ -74,7 +80,7 @@ BEGIN
 			ID							INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
 		, 	TransDate					DATE NOT NULL
 		, 	SubscriberID				INT UNSIGNED
-		, 	AccountID					INT UNSIGNED
+		, 	AccountID					BIGINT UNSIGNED
 		, 	TotalTrans					INT UNSIGNED DEFAULT 0
 		, 	TotalInvalidBrowers			INT UNSIGNED DEFAULT 0
 		, 	TotalBotTrans				INT UNSIGNED DEFAULT 0
@@ -102,6 +108,24 @@ BEGIN
 		, 	TotalBotTrans				INT UNSIGNED DEFAULT 0
 		, 	IsUpdate					BIT DEFAULT 0
 	);
+    
+	CREATE TEMPORARY TABLE Temp_TotalTransByDevice(
+			ID							INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
+		, 	TransDate					DATE NOT NULL
+		, 	SubscriberID				INT UNSIGNED
+		, 	AccountID					BIGINT UNSIGNED
+		, 	DeviceID					BIGINT UNSIGNED
+		, 	TotalTrans					INT UNSIGNED DEFAULT 0
+		, 	IsUpdate					BIT DEFAULT 0
+	);
+    
+	CREATE TEMPORARY TABLE Temp_SubscriberID(
+			SubscriberID				INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
+	);
+    
+    SET @sql = CONCAT("INSERT IGNORE INTO Temp_SubscriberID (SubscriberID) VALUES ('", REPLACE(lv_ListSubID, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
     
     INSERT INTO Temp_Trans07(TransID, TransDate, AccountID, SubscriberID, DeviceID, FPDeviceID, RawUserAgentID, Flagged, TransTime)
     SELECT 	TransID
@@ -292,6 +316,39 @@ BEGIN
         ,	lv_CurrentDatetime AS CreatedTime
         ,	lv_CurrentDatetime AS ModifiedTime
 	FROM Temp_TotalTransByBrowser AS tmp
+    WHERE tmp.IsUpdate = 0;
+    
+    
+    /* == Insert into LoginTransactionSummaryByDevice == */
+    INSERT INTO Temp_TotalTransByDevice(TransDate, SubscriberID, AccountID, DeviceID, TotalTrans)
+    SELECT 	tmp.TransDate
+        ,	tmp.SubscriberID
+        ,	tmp.AccountID
+        ,	tmp.DeviceID
+        ,	COUNT(1) AS TotalTrans
+	FROM Temp_Trans07 AS tmp
+		INNER JOIN Temp_SubscriberID AS tmpSub ON tmpSub.SubscriberID = tmp.SubscriberID
+    GROUP BY tmp.TransDate, tmp.SubscriberID, tmp.AccountID, tmp.DeviceID;
+    
+    ALTER TABLE Temp_TotalTransByDevice
+    ADD KEY IX_Temp_TotalTransByDevice_Group(TransDate, SubscriberID, AccountID, DeviceID);
+    
+    UPDATE DCS_DataTrace.LoginTransactionSummaryByDevice AS trans
+		INNER JOIN Temp_TotalTransByDevice AS tmp 	ON 	trans.TransDate 	= tmp.TransDate 
+													AND trans.SubscriberID 	= tmp.SubscriberID
+													AND trans.AccountID 	= tmp.AccountID
+													AND trans.DeviceID 		= tmp.DeviceID
+	SET 	trans.TotalTrans 	= trans.TotalTrans + tmp.TotalTrans
+		,	trans.ModifiedTime 	= lv_CurrentDatetime
+		,	tmp.IsUpdate 		= 1;
+        
+    INSERT INTO DCS_DataTrace.LoginTransactionSummaryByDevice(TransDate, SubscriberID, AccountID, DeviceID, TotalTrans)
+    SELECT 	tmp.TransDate
+        ,	tmp.SubscriberID
+        ,	tmp.AccountID
+        ,	tmp.DeviceID
+        ,	tmp.TotalTrans
+	FROM Temp_TotalTransByDevice AS tmp
     WHERE tmp.IsUpdate = 0;
     
     
