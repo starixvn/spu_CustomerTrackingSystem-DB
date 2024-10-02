@@ -108,6 +108,7 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_LastHistory(
 			CustID					BIGINT UNSIGNED PRIMARY KEY
 		,	CategoryID				INT 
+		,	CustomerClassPriority	SMALLINT 
 		,	ParentID				INT
 		,	TargetCC				INT
 	);
@@ -518,44 +519,24 @@ BEGIN
 						) AS OldTargetCC
 		SET temp_old.CustomerClass = OldTargetCC.TargetCC
 		WHERE temp_old.CustID = OldTargetCC.CustID
-			AND temp_old.ExistCategoryID <> OldTargetCC.ExistCategoryID
 			AND NOT EXISTS (SELECT 1 FROM Temp_LicVIPCust AS tmpVip WHERE temp_old.CustID = tmpVip.CustID);
 		
 		UPDATE Temp_CTSCustomerClassification_Old AS temp_old
 			INNER JOIN Temp_LicVIPCust AS tmpVip ON temp_old.CustID = tmpVip.CustID
 		SET temp_old.CustomerClass = IFNULL(temp_old.SpecialCC, tmpVip.CustomerClass)
-		WHERE temp_old.SpecialCC IS NULL; 
-		
-		DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification_Dup;
-        CREATE TEMPORARY TABLE Temp_NewClassification_Dup (CustID BIGINT,NewCategoryID INT,TargetCC INT,CustomerClassPriority SMALLINT);
-        
-        INSERT INTO Temp_NewClassification_Dup (CustID , NewCategoryID ,TargetCC ,CustomerClassPriority )
-		SELECT temp.CustID, temp.NewCategoryID, temp.TargetCC, temp.CustomerClassPriority
-		FROM Temp_NewClassification AS temp
-		WHERE temp.SpecialCC IS NULL;
-		
-		UPDATE Temp_NewClassification AS temp
-			, LATERAL (	SELECT new_dup.NewCategoryID , new_dup.TargetCC, new_dup.CustID
-						FROM Temp_NewClassification_Dup AS new_dup
-						WHERE temp.CustID = new_dup.CustID
-						ORDER BY new_dup.CustomerClassPriority
-						LIMIT 1
-						) AS NewTargetCC
-		SET temp.FinalTargetCC = NewTargetCC.TargetCC
-		WHERE temp.CustID = NewTargetCC.CustID
-			AND temp.IsLicenseeVIP = 0;
+		WHERE temp_old.SpecialCC IS NULL;            
 
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_LicVIPCust AS tmpVip ON temp.CustID = tmpVip.CustID
 		SET temp.TargetCC = IFNULL(temp.SpecialCC, tmpVip.CustomerClass)
-			,	temp.FinalTargetCC = IFNULL(temp.SpecialCC, tmpVip.CustomerClass)
 		WHERE temp.SpecialCC IS NULL; 
 		
-        INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC, ParentID)
-		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC, tmpHis.ParentID
+        INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC, ParentID, CustomerClassPriority)
+		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC, tmpHis.ParentID, tmpHis.CustomerClassPriority
 		FROM Temp_NewClassification AS temp,
-		LATERAL (	SELECT h.CategoryID, IFNULL(h.TargetCC,-1) AS TargetCC, h.ParentID
+		LATERAL (	SELECT h.CategoryID, IFNULL(h.TargetCC,-1) AS TargetCC, h.ParentID, cate.CustomerClassPriority
 					FROM CTS_DataCenter.CTSCustomerClassification_History AS h
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = h.CategoryID
 					WHERE h.CustID = temp.CustID 
 					ORDER BY h.LastModifiedDate DESC, h.ID DESC
 					LIMIT 1) AS tmpHis
@@ -579,10 +560,10 @@ BEGIN
 																			AND temp_old.ParentID IS NOT NULL
 																			AND temp_old.IsNew = 0
 																			AND temp.NewCategoryGroupID = temp_old.CategoryGroupID
-		SET 	temp.DataChangeType		= CASE WHEN temp.FinalTargetCC <> h.TargetCC THEN 1 ELSE temp.DataChangeType END
-			,	temp.IsDataChanged 		= CASE WHEN temp.FinalTargetCC <> h.TargetCC THEN 1 ELSE temp.IsDataChanged END
+		SET 	temp.DataChangeType		= CASE WHEN temp.TargetCC <> h.TargetCC THEN 1 ELSE temp.DataChangeType END
+			,	temp.IsDataChanged 		= CASE WHEN temp.TargetCC <> h.TargetCC AND (lv_IsRescan = 1 OR temp.CustomerClassPriority < h.CustomerClassPriority) THEN 1 ELSE temp.IsDataChanged END
 			,	temp.OldCategoryID 		= temp_old.ExistCategoryID			
-			,	temp.ActionType 		= CASE WHEN temp.FinalTargetCC <> h.TargetCC THEN CONST_ACTIONTYPE_UPDATE ELSE temp.ActionType END
+			,	temp.ActionType 		= CASE WHEN temp.TargetCC <> h.TargetCC THEN CONST_ACTIONTYPE_UPDATE ELSE temp.ActionType END
 			,	temp.CreatedBy 			= CASE WHEN lv_IsRescan = 1 THEN temp.CreatedBy ELSE temp_old.CreatedBy END
 		WHERE 	temp.IsDataChanged 		= 0;
 		
