@@ -8,6 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_ProblemAccountManagement_Get`(
     ,	IN ip_Sites			LONGTEXT
     ,	IN ip_CategoryIDs	TEXT
     ,	IN ip_UserName		VARCHAR(50)
+    ,	IN ip_RoleIDs		TEXT
     ,	IN ip_HasDownline	SMALLINT
 )
     SQL SECURITY INVOKER
@@ -25,6 +26,7 @@ sp :BEGIN
 			- 20230404@Victoria.Le		TVS Abnormal Bet and Abnormal Account - Add IsParlay,SportType,IssueTypeId [Redmine ID: #185319] 
 			- 20240103@Thomas.Nguyen:   Return CategoryID [RedmineID: #197710] 
 			- 20240628@Thomas.Nguyen:	Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
+            - 20241002@Tony.Nguyen:		Agent CC [Redmine ID: #185799]
 
 		Param's Explanation (filtered by):   
         Example: 
@@ -59,6 +61,12 @@ sp :BEGIN
         , 	PRIMARY KEY (CategoryID)
 	);
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_RoleID;
+    CREATE TEMPORARY TABLE 		Temp_RoleID (
+			RoleID 		SMALLINT UNSIGNED
+        , 	PRIMARY KEY (RoleID)
+	);
+    
     IF ip_Sites IS NULL OR ip_Sites = '' THEN
 		INSERT IGNORE INTO Temp_SiteID(SiteID)
         SELECT map.SiteID 
@@ -86,7 +94,13 @@ sp :BEGIN
 			,	cate.CategoryName
         FROM CTS_DataCenter.CustomerCategory AS cate
 			INNER JOIN Temp_CategoryID AS tmp ON tmp.CategoryID = cate.CategoryID;
-    END IF; 
+    END IF;
+    
+    IF ip_RoleIDs IS NOT NULL AND ip_RoleIDs != '' THEN
+		SET @sql = CONCAT("INSERT IGNORE INTO Temp_RoleID (RoleID) VALUES ('", REPLACE(ip_RoleIDs, ",", "'),('"),"');");
+		PREPARE 	stmt1 FROM @sql;
+		EXECUTE 	stmt1;
+	END IF;
     
      IF ip_UserName IS NOT NULL AND  ip_UserName != '' THEN 
 		SELECT  CTSCustID
@@ -106,6 +120,7 @@ sp :BEGIN
 	SELECT 	cus.CTSCustID
 	, 	cus.CustID
 	, 	cus.UserName
+    ,	cus.RoleID
 	, 	cus.Site
 	, 	cus.SiteID
 	,	cus.Currency
@@ -121,6 +136,7 @@ sp :BEGIN
 	,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(class.SportType,0) ORDER BY class.CreatedDate ASC,class.LastModifiedDate ASC,class.CategoryID ASC SEPARATOR ', '),',',1) AS SportType
 	,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(class.IssueTypeID,0) ORDER BY class.CreatedDate ASC,class.LastModifiedDate ASC,class.CategoryID ASC SEPARATOR ', '),',',1) AS IssueTypeID
 	FROM CTS_DataCenter.CTSCustomerClassification AS class
+		INNER JOIN CTS_DataCenter.Temp_RoleID AS r ON class.RoleID = r.RoleID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
         STRAIGHT_JOIN CTS_DataCenter.Temp_CustomerCategory AS tmpCat ON class.CategoryID = tmpCat.CategoryID
         LEFT JOIN CTS_Admin.CTSUser AS us ON class.CreatedBy = us.UserID
