@@ -355,9 +355,7 @@ BEGIN
 						 ELSE NULL END) AS ChoiceOrder
 			,	b.BetCheck AS BetId
 			,	b.Odds
-			,	(CASE WHEN b.Odds <= 1 THEN b.Odds
-					 WHEN b.Odds > 1 THEN -(1/NULLIF(b.Odds,0))
-				 END) AS MalayOdds
+			,	NULL AS MalayOdds
 			,	b.Hdp1
 			,	b.Hdp2
 			,	ABS(CASE WHEN sb.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
@@ -401,9 +399,7 @@ BEGIN
 						 ELSE NULL END) AS ChoiceOrder
 			,	b.BetCheck AS BetId
 			,	b.Odds
-			,	(CASE WHEN b.Odds <= 1 THEN b.Odds
-					 WHEN b.Odds > 1 THEN -(1/NULLIF(b.Odds,0))
-				 END) AS MalayOdds
+			,	NULL AS MalayOdds
 			,	b.Hdp1
 			,	b.Hdp2
 			,	ABS(CASE WHEN sb.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
@@ -445,9 +441,7 @@ BEGIN
 						 ELSE NULL END) AS ChoiceOrder
 			,	b.BetCheck AS BetId
 			,	b.Odds
-			,	(CASE WHEN b.Odds <= 1 THEN b.Odds
-					 WHEN b.Odds > 1 THEN -(1/NULLIF(b.Odds,0))
-				 END) AS MalayOdds
+			,	NULL AS MalayOdds
 			,	b.Hdp1
 			,	b.Hdp2
 			,	ABS(CASE WHEN sb.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
@@ -471,9 +465,9 @@ BEGIN
 
 		DELETE rn
 		FROM #tmpRefno AS rn 
+		
 		--===============================GET MAIN PARLAY TICKET - ORIGINAL===========================================
 
---SELECT 'Debug_vm1-OgrMain' AS Step, GetDate() AS ExecTime;
 		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Stake,OrgStake,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
 		SELECT	bt.Refno
 			,	bt.TransID
@@ -485,10 +479,10 @@ BEGIN
 			,	bt.Stake * bt.ActualRate AS Stake
 			,	bt.Stake AS OrgStake
 			,	bt.BetFrom
-			,	rn.Reason
+			,	ISNULL(rn.Reason,'0')
 			,	rn.Reason AS ListReason
-			,	rn.AGroup
-			,	rn.MGroup
+			,	ISNULL(rn.AGroup,0)
+			,	ISNULL(rn.MGroup,0)
 			,	bt.CustID
 			,	e.Currency AS CurrencyName
 			,	e.ExchangeId AS CurrencyID
@@ -501,7 +495,6 @@ BEGIN
 		FROM #tmpRefnoInfo AS rn 
 			INNER JOIN #tmpMainTicket AS td WITH(NOLOCK) ON td.Refno = rn.Refno;
 
---SELECT 'Debug_vm1-14Main' AS Step, GetDate() AS ExecTime;	
 		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Stake,OrgStake,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
 		SELECT	bt.Refno
 			,	bt.TransID
@@ -513,10 +506,10 @@ BEGIN
 			,	bt.Stake * bt.ActualRate AS Stake
 			,	bt.Stake AS OrgStake
 			,	bt.BetFrom
-			,	rn.Reason
+			,	ISNULL(rn.Reason,'0')
 			,	rn.Reason AS ListReason
-			,	rn.AGroup
-			,	rn.MGroup
+			,	ISNULL(rn.AGroup,0)
+			,	ISNULL(rn.MGroup,0)
 			,	bt.CustID
 			,	e.Currency AS CurrencyName
 			,	e.ExchangeId AS CurrencyID
@@ -545,10 +538,10 @@ BEGIN
 			,	bt.Stake * bt.ActualRate AS Stake
 			,	bt.Stake AS OrgStake
 			,	bt.BetFrom
-			,	rn.Reason
+			,	ISNULL(rn.Reason,'0')
 			,	rn.Reason AS ListReason
-			,	rn.AGroup
-			,	rn.MGroup
+			,	ISNULL(rn.AGroup,0)
+			,	ISNULL(rn.MGroup,0)
 			,	bt.CustID
 			,	e.Currency AS CurrencyName
 			,	e.ExchangeId AS CurrencyID
@@ -581,7 +574,6 @@ BEGIN
 		END
 		ELSE IF @BatchSize > 0 -- GET Ticket Details Info By Batch Size
 		BEGIN 
-
 			INSERT INTO #tmpRefno(Refno, SequenceID)
 			SELECT DISTINCT TOP(@BatchSize) bt.Refno, bt.sequenceid
 			FROM bodb02.dbo.bettransm AS b WITH(NOLOCK)
@@ -600,7 +592,6 @@ BEGIN
 			SET @MinSequenceID = (SELECT MIN(SequenceID) FROM #tmpRefno WITH(NOLOCK));
 		END
 
---SELECT 'Debug_vm0-SubOri' AS Step, GetDate() AS ExecTime;		
 		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,TicketOrder,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,MalayOdds, Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,Matchid,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
 		SELECT 	b.refno
 			,	@DBSource_Orig AS DBSource
@@ -617,9 +608,7 @@ BEGIN
 						 ELSE NULL END) AS ChoiceOrder
 			,	b.BetCheck AS BetId
 			,	b.Odds
-			,	(CASE WHEN b.Odds <= 1 THEN b.Odds
-					 WHEN b.Odds > 1 THEN -(1/NULLIF(b.Odds,0))
-				 END) AS MalayOdds
+			,	NULL AS MalayOdds
 			,	b.Hdp1
 			,	b.Hdp2
 			,	ABS(CASE WHEN sb.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
@@ -645,7 +634,6 @@ BEGIN
 		FROM #tmpRefno AS rn 
 			INNER JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON td.Refno = rn.Refno;
 
---SELECT 'Debug_vm0-Sub14' AS Step, GetDate() AS ExecTime;	
 		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,TicketOrder,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,MalayOdds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,Matchid,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
 		SELECT 	b.refno
 			,	@DBSource_14 AS DBSource
@@ -662,9 +650,7 @@ BEGIN
 						 ELSE NULL END) AS ChoiceOrder
 			,	b.BetCheck AS BetId
 			,	b.Odds
-			,	(CASE WHEN b.Odds <= 1 THEN b.Odds
-					 WHEN b.Odds > 1 THEN -(1/NULLIF(b.Odds,0))
-				 END) AS MalayOdds
+			,	NULL AS MalayOdds
 			,	b.Hdp1
 			,	b.Hdp2
 			,	ABS(CASE WHEN sb.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
@@ -690,7 +676,6 @@ BEGIN
 		FROM #tmpRefno AS rn 
 			INNER JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON td.Refno = rn.Refno;
 
---SELECT 'Debug_vm0-SubBk' AS Step, GetDate() AS ExecTime;	
 		INSERT INTO #tmpTicketDetails(Refno,DBSource,TransID,CustID,TicketOrder,BetType,BetTeamGroup,BetTeam,BetTeamFullname,ChoiceOrder,BetId,Odds,MalayOdds,Hdp1,Hdp2,HDP,LiveHomeScore,LiveAwayScore,LiveIndicator,TicketStatus,Matchid,EventDate,EventStatus,GlobalShowTime,HomeId,AwayId,LeagueId,SportType)
 		SELECT 	b.refno
 			,	@DBSource_bk AS DBSource
@@ -707,9 +692,7 @@ BEGIN
 						 ELSE NULL END) AS ChoiceOrder
 			,	b.BetCheck AS BetId
 			,	b.Odds
-			,	(CASE WHEN b.Odds <= 1 THEN b.Odds
-					 WHEN b.Odds > 1 THEN -(1/NULLIF(b.Odds,0))
-				 END) AS MalayOdds
+			,	NULL AS MalayOdds
 			,	b.Hdp1
 			,	b.Hdp2
 			,	ABS(CASE WHEN sb.BetChoiceType = 2 THEN b.Hdp1 - b.Hdp2 END) AS HDP
@@ -726,19 +709,19 @@ BEGIN
 			,	m.LeagueId
 			,	m.SportType
 		FROM	#tmpRefno AS rn WITH(NOLOCK)
-			INNER JOIN bodb_Archive.dbo.bettrans_bk b WITH(NOLOCK) ON rn.Refno = b.Refno	
+			INNER JOIN bodb_Archive.dbo.bettransm b WITH(NOLOCK) ON rn.Refno = b.Refno	
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
 			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND ISNULL(sb.BetID,b.betcheck) = b.betcheck
 		WHERE m.eventdate < @BalanceUpDay;
 
 		DELETE rn
 		FROM #tmpRefno AS rn 
+
 		--===============================GET MAIN PARLAY TICKET - ORIGINAL===========================================
 		INSERT INTO #tmpRefno(Refno)
 		SELECT DISTINCT rn.Refno 
 		FROM #tmpTicketDetails AS rn WITH(NOLOCK);
 
---SELECT 'Debug_vm0-OgrMain' AS Step, GetDate() AS ExecTime;
 		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Stake,OrgStake,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
 		SELECT	bt.Refno
 			,	bt.TransID
@@ -750,10 +733,10 @@ BEGIN
 			,	bt.Stake * bt.ActualRate AS Stake
 			,	bt.Stake AS Stake
 			,	bt.BetFrom
-			,	rn.Reason
+			,	ISNULL(rn.Reason,'0')
 			,	rn.Reason AS ListReason
-			,	rn.AGroup
-			,	rn.MGroup
+			,	ISNULL(rn.AGroup,0)
+			,	ISNULL(rn.MGroup,0)
 			,	bt.CustID
 			,	e.Currency AS CurrencyName
 			,	e.ExchangeId AS CurrencyID
@@ -761,13 +744,12 @@ BEGIN
 			INNER JOIN bodb02.dbo.bettrans AS bt WITH(NOLOCK) ON rf.Refno = bt.Refno
 			INNER JOIN bodb02.dbo.Exchange AS e WITH(NOLOCK) ON e.ExchangeId = bt.currency
 			LEFT JOIN #tmpRefnoInfo AS rn WITH(NOLOCK) ON rn.Refno = rf.Refno
-		WHERE (@FromTransDate IS NULL OR (bt.TransDate >= @FromTransDate AND bt.TransDate < @ToTransDate))
-		;
+		WHERE (@FromTransDate IS NULL OR (bt.TransDate >= @FromTransDate AND bt.TransDate < @ToTransDate));
 
 		DELETE rn
 		FROM #tmpRefnoInfo AS rn 
 			INNER JOIN #tmpMainTicket AS td WITH(NOLOCK) ON td.Refno = rn.Refno;
---SELECT 'Debug_vm0-14Main' AS Step, GetDate() AS ExecTime;	
+
 		INSERT INTO #tmpMainTicket(Refno,TransID,TransDate,Combinition,TicketType,Stake,OrgStake,BetFrom,Reason,ListReason,AGroup,MGroup,CustID,CurrencyName,CurrencyID)
 		SELECT	bt.Refno
 			,	bt.TransID
@@ -779,10 +761,10 @@ BEGIN
 			,	bt.Stake * bt.ActualRate AS Stake
 			,	bt.Stake AS OrgStake
 			,	bt.BetFrom
-			,	rn.Reason
+			,	ISNULL(rn.Reason,'0')
 			,	rn.Reason AS ListReason
-			,	rn.AGroup
-			,	rn.MGroup
+			,	ISNULL(rn.AGroup,0)
+			,	ISNULL(rn.MGroup,0)
 			,	bt.CustID
 			,	e.Currency AS CurrencyName
 			,	e.ExchangeId AS CurrencyID
@@ -796,7 +778,6 @@ BEGIN
 		FROM #tmpRefno AS rn 
 			INNER JOIN #tmpMainTicket AS td WITH(NOLOCK) ON td.Refno = rn.Refno;
 
---SELECT 'Debug_vm0-BkMain' AS Step, GetDate() AS ExecTime;			
 		INSERT INTO #tmpCustRefno(CustID, Refno)
 		SELECT DISTINCT td.CustID, td.Refno 
 		FROM #tmpRefno AS rn WITH(NOLOCK)
@@ -813,10 +794,10 @@ BEGIN
 			,	bt.Stake * bt.ActualRate AS Stake
 			,	bt.Stake AS OrgStake
 			,	bt.BetFrom
-			,	rn.Reason
+			,	ISNULL(rn.Reason,'0')
 			,	rn.Reason AS ListReason
-			,	rn.AGroup
-			,	rn.MGroup
+			,	ISNULL(rn.AGroup,0)
+			,	ISNULL(rn.MGroup,0)
 			,	bt.CustID
 			,	e.Currency AS CurrencyName
 			,	e.ExchangeId AS CurrencyID
@@ -829,33 +810,42 @@ BEGIN
 			AND mt.Refno IS NULL;
 
 	END;
+	
+	----==================UPDATE Malay Odds==================
+	UPDATE t WITH(ROWLOCK, UPDLOCK)
+	SET t.MalayOdds = ( CASE WHEN ot.OddsType IS NOT NULL THEN (CASE WHEN t.odds <= 2 THEN (t.odds - 1)
+																		WHEN t.odds > 2 THEN -(1/NULLIF((t.odds - 1),0)) 
+																END)
+							ELSE(	CASE WHEN t.odds <= 1 THEN t.odds
+											WHEN t.odds > 1 THEN -(1/NULLIF(t.odds,0)) 
+									END) 
+						END)
+	FROM #tmpTicketDetails AS t
+		LEFT JOIN bodb02.dbo.f_Set_OddsTypeBetTypes() AS ot ON ot.BetType = t.BetType;
 
---SELECT 'Debug_vm1-CalculateOdds' AS Step, GetDate() AS ExecTime;		
-		INSERT INTO #tmpMainTicketFormat(Refno, Odds, MalayOdds, BetTeam, ChoiceOrder, TicketStatus)
-		SELECT	st.Refno
-			,	EXP(SUM(LOG(st.Odds))) AS Odds
-			,	(CASE WHEN SUM(CASE WHEN st.MalayOdds < 0 THEN 1 ELSE NULL END)%2 = 1 
-						THEN - 1 ELSE 1 END)*EXP(SUM(LOG(ABS(st.MalayOdds)))) AS MalayOdds
-			,	MIN(CASE WHEN st.TicketOrder = 1 THEN st.Betteam ELSE NULL END)
-			,	MIN(CASE WHEN st.TicketOrder = 1 THEN st.ChoiceOrder ELSE NULL END)
-			,	MIN(CASE WHEN st.TicketOrder = 1 THEN st.TicketStatus  ELSE NULL END)
-		FROM #tmpTicketDetails AS st WITH(NOLOCK)
-		GROUP BY st.Refno
+	INSERT INTO #tmpMainTicketFormat(Refno, Odds, MalayOdds, BetTeam, ChoiceOrder, TicketStatus)
+	SELECT	st.Refno
+		,	EXP(SUM(LOG(st.Odds))) AS Odds
+		,	NULL MalayOdds
+		,	MIN(CASE WHEN st.TicketOrder = 1 THEN st.Betteam ELSE NULL END)
+		,	MIN(CASE WHEN st.TicketOrder = 1 THEN st.ChoiceOrder ELSE NULL END)
+		,	MIN(CASE WHEN st.TicketOrder = 1 THEN st.TicketStatus  ELSE NULL END)
+	FROM #tmpTicketDetails AS st WITH(NOLOCK)
+	GROUP BY st.Refno
 
---SELECT 'Debug_vm1-InsertMain' AS Step, GetDate() AS ExecTime;	
-		INSERT INTO #tmpTicketDetails(Refno,CustID, DBSource,TransId,TicketOrder,Odds, MalayOdds, Betteam, ChoiceOrder, TicketStatus)
-		SELECT 	mt.refno
-			,	mt.CustID
-			,	0 AS DBSource
-			,	mt.TransID AS TransIdm
-			,	@Order_MainTicket AS TicketOrder
-			,	mf.Odds
-			,	mf.MalayOdds
-			,	mf.Betteam
-			,	mf.ChoiceOrder
-			,	mf.TicketStatus
-		FROM #tmpMainTicket AS mt WITH(NOLOCK)
-			INNER JOIN #tmpMainTicketFormat AS mf WITH(NOLOCK) ON mt.Refno = mf.Refno		
+	INSERT INTO #tmpTicketDetails(Refno,CustID, DBSource,TransId,TicketOrder,Odds, MalayOdds, Betteam, ChoiceOrder, TicketStatus)
+	SELECT 	mt.refno
+		,	mt.CustID
+		,	0 AS DBSource
+		,	mt.TransID AS TransIdm
+		,	@Order_MainTicket AS TicketOrder
+		,	mf.Odds
+		,	mf.MalayOdds
+		,	mf.Betteam
+		,	mf.ChoiceOrder
+		,	mf.TicketStatus
+	FROM #tmpMainTicket AS mt WITH(NOLOCK)
+		INNER JOIN #tmpMainTicketFormat AS mf WITH(NOLOCK) ON mt.Refno = mf.Refno		
 	
 	----==================UPDATE Trans Info==================
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
@@ -884,9 +874,8 @@ BEGIN
 		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
 		INNER JOIN bodb02.dbo.CustProductStatus AS s WITH(NOLOCK) ON s.custid = c.custid
 	WHERE t.IsLicensee IS NULL;
-	
-	----==================FILTERS=========================	
 
+	----==================FILTERS=========================	
 	IF (@ListScore IS NOT NULL) OR (@IsLicensee IS NOT NULL) OR (@ListCustomerClass <> '') OR (@ListDanger IS NOT NULL)
 		OR (@ListCurrency IS NOT NULL) OR (@ListReason <> '') OR (@ListAGroup <> '') OR (@ListMGroup <> '') OR (@ListHDPBetTeam IS NOT NULL)
 		OR (@ListStatus IS NOT NULL) OR (@CustAmountRM > 0) OR (@CustAmountRM > 0)
@@ -901,18 +890,8 @@ BEGIN
 	
 	CHECK_FILTER:
 		IF (@IsFilter = 1)
-		BEGIN
-			--====================Fitler By Score==================	
-			
-			IF	OBJECT_ID('tempdb..#tmpDelRefnoFilter') IS NOT NULL
-			BEGIN
-				DROP TABLE #tmpDelRefnoFilter;
-			END;
-
-			CREATE TABLE #tmpDelRefnoFilter(
-					Refno BIGINT PRIMARY KEY
-			);
-
+		BEGIN	
+			--====================Fitler By Score==================				
 			IF (@ListScore IS NOT NULL)
 			BEGIN
 
@@ -920,26 +899,37 @@ BEGIN
 					SELECT LTRIM(LEFT(ssk.Value,CHARINDEX('-',ssk.Value)-1)) AS LiveHomeScore
 						, RTRIM(RIGHT(ssk.Value,CHARINDEX('-',ssk.Value)-1)) AS LiveAwayScore
 					FROM STRING_SPLIT(@ListScore, ',') ssk
-				)
-				INSERT INTO #tmpDelRefnoFilter(Refno)
-				SELECT DISTINCT td.Refno
-				FROM #tmpTicketDetails AS td
+				)			
+				DELETE td
+				FROM #tmpTicketDetails AS td WITH(NOLOCK)
 					LEFT JOIN CTE_Score AS s ON s.LiveHomeScore = td.LiveHomeScore AND s.LiveAwayScore = td.LiveAwayScore
 				WHERE s.LiveHomeScore IS NULL
 					AND td.TicketOrder = 1;
 
+				DELETE t
+				FROM #tmpMainTicket AS t WITH(NOLOCK)
+					LEFT JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON t.Refno = td.Refno AND td.TicketOrder = 1
+				WHERE td.Refno IS NULL;
+
+				DELETE td
+				FROM #tmpTicketDetails AS td WITH(NOLOCK)
+				LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+				WHERE t.Refno IS NULL;
 			END;
 
 			--========================Fitler By Site(IsLicensee)==================
 			IF (@IsLicensee IS NOT NULL)
 			BEGIN
 				
-				INSERT INTO #tmpDelRefnoFilter(Refno)
-				SELECT DISTINCT t.Refno
-				FROM #tmpMainTicket AS t
-					LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
-				WHERE t.IsLicensee != @IsLicensee
-					AND del.Refno IS NULL;
+				DELETE t
+				FROM #tmpMainTicket AS t WITH(NOLOCK)
+				WHERE t.IsLicensee != @IsLicensee;
+
+				DELETE td
+				FROM #tmpTicketDetails AS td WITH(NOLOCK)
+					LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+				WHERE t.Refno IS NULL;
+
 			END;
 
 			--========================Fitler By CustomerClass==================
@@ -948,13 +938,15 @@ BEGIN
 				WITH CTE_CC AS (
 					SELECT ssk.value AS CustomerClass FROM STRING_SPLIT(@ListCustomerClass, ',') AS ssk
 				)
-				INSERT INTO #tmpDelRefnoFilter(Refno)
-				SELECT DISTINCT t.Refno
+				DELETE t
 				FROM #tmpMainTicket AS t
 					LEFT JOIN CTE_CC AS c ON c.CustomerClass = ISNULL(t.CustomerClass,0)
-					LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
-				WHERE c.CustomerClass IS NULL
-					AND del.Refno IS NULL;
+				WHERE c.CustomerClass IS NULL;
+
+				DELETE td
+				FROM #tmpTicketDetails AS td WITH(NOLOCK)
+					LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+				WHERE t.Refno IS NULL;
 			END;
 
 			--========================Fitler By Danger==================		
@@ -972,40 +964,44 @@ BEGIN
 				
 				IF NOT EXISTS (SELECT 1 FROM @tmpSupportedDanger AS t WHERE t.Danger1 = 0 AND t.Danger2 = 0 AND t.Danger3 = 0 AND t.Danger4 = 0 AND t.Danger5 = 0)
 				BEGIN
-					INSERT INTO #tmpDelRefnoFilter(Refno)
-					SELECT DISTINCT t.Refno
+					DELETE t
 					FROM #tmpMainTicket AS t
 						LEFT JOIN @tmpSupportedDanger AS d1 ON d1.Danger1 = t.Danger1 AND t.Danger1 > 0
 						LEFT JOIN @tmpSupportedDanger AS d2 ON d2.Danger2 = t.Danger2 AND t.Danger2 > 0
 						LEFT JOIN @tmpSupportedDanger AS d3 ON d3.Danger3 = t.Danger3 AND t.Danger3 > 0
 						LEFT JOIN @tmpSupportedDanger AS d4 ON d4.Danger4 = t.Danger4 AND t.Danger4 > 0
 						LEFT JOIN @tmpSupportedDanger AS d5 ON d5.Danger5 = t.Danger5 AND t.Danger5 > 0
-						LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
 					WHERE d1.Danger1 IS NULL 
 						AND d2.Danger2 IS NULL 
 						AND d3.Danger3 IS NULL
 						AND d4.Danger4 IS NULL
 						AND d5.Danger5 IS NULL
-						AND del.Refno IS NULL;
+
+					DELETE td
+					FROM #tmpTicketDetails AS td WITH(NOLOCK)
+						LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+					WHERE t.Refno IS NULL;
 				END
 				ELSE
 				BEGIN
-					INSERT INTO #tmpDelRefnoFilter(Refno)
-					SELECT DISTINCT t.Refno
+					DELETE t
 					FROM #tmpMainTicket AS t
 						LEFT JOIN @tmpSupportedDanger AS d1 ON d1.Danger1 = t.Danger1 AND t.Danger1 > 0
 						LEFT JOIN @tmpSupportedDanger AS d2 ON d2.Danger2 = t.Danger2 AND t.Danger2 > 0
 						LEFT JOIN @tmpSupportedDanger AS d3 ON d3.Danger3 = t.Danger3 AND t.Danger3 > 0
 						LEFT JOIN @tmpSupportedDanger AS d4 ON d4.Danger4 = t.Danger4 AND t.Danger4 > 0
-						LEFT JOIN @tmpSupportedDanger AS d5 ON d5.Danger5 = t.Danger5 AND t.Danger5 > 0						
-						LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
+						LEFT JOIN @tmpSupportedDanger AS d5 ON d5.Danger5 = t.Danger5 AND t.Danger5 > 0	
 					WHERE NOT (t.Danger1 = 0 AND t.Danger2 = 0 AND t.Danger3 = 0 AND t.Danger4 = 0 AND t.Danger5 = 0)
 						AND d1.Danger1 IS NULL 
 						AND d2.Danger2 IS NULL 
 						AND d3.Danger3 IS NULL
 						AND d4.Danger4 IS NULL
 						AND d5.Danger5 IS NULL
-						AND del.Refno IS NULL;
+
+					DELETE td
+					FROM #tmpTicketDetails AS td WITH(NOLOCK)
+						LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+					WHERE t.Refno IS NULL;
 				END;
 
 			END;
@@ -1016,15 +1012,17 @@ BEGIN
 				WITH CTE_Currency AS (
 					SELECT ssk.value AS CurrencyId FROM STRING_SPLIT(@ListCurrency, ',') AS ssk
 				)
-				INSERT INTO #tmpDelRefnoFilter(Refno)
-				SELECT DISTINCT t.Refno
+				DELETE t
 				FROM #tmpMainTicket AS t
-					LEFT JOIN CTE_Currency AS curr ON curr.CurrencyId = t.CurrencyId						
-					LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
+					LEFT JOIN CTE_Currency AS curr ON curr.CurrencyId = t.CurrencyId	
 				WHERE curr.CurrencyId IS NULL
-					AND del.Refno IS NULL;
-			END;
 
+				DELETE td
+				FROM #tmpTicketDetails AS td WITH(NOLOCK)
+					LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+				WHERE t.Refno IS NULL;
+			END;
+	
 			--========================Fitler By Reason==================
 			IF (@ListReason <> '') AND @ListRefno <> ''
 			BEGIN
@@ -1042,8 +1040,8 @@ BEGIN
 				);
 			
 				INSERT INTO @tmpSupportedReason (Reason)
-				SELECT ssk.value FROM STRING_SPLIT(@ListReason, ',') ssk;				
-				
+				SELECT ssk.value FROM STRING_SPLIT(@ListReason, ',') ssk;	
+
 				--Delete Dup ticket 
 				INSERT INTO #tmpTransIdReason(TransID, ListReason, MinReason)
 				SELECT	tmpTr.TransID
@@ -1060,29 +1058,33 @@ BEGIN
 					INNER JOIN #tmpTransIdReason AS tmpTr ON tmpTk.TransId = tmpTr.TransID
 				
 				--Delete ticket is not in Reason Filter
-				INSERT INTO #tmpDelRefnoFilter(Refno)
-				SELECT DISTINCT t.Refno
+				DELETE t
 				FROM #tmpMainTicket AS t
 					LEFT JOIN @tmpSupportedReason AS c ON c.Reason = ISNULL(t.Reason,'0')
-					LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
 				WHERE c.Reason IS NULL
-					AND del.Refno IS NULL;
+
+				DELETE td
+				FROM #tmpTicketDetails AS td WITH(NOLOCK)
+					LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+				WHERE t.Refno IS NULL;
 
 			END;
-
+		
 			--========================Fitler By AGroup==================
 			IF @ListAGroup <> ''
 			BEGIN
 				WITH CTE_AGroup AS (
 					SELECT ssk.value AS AGroup FROM STRING_SPLIT(@ListAGroup, ',') AS ssk
 				)
-				INSERT INTO #tmpDelRefnoFilter(Refno)
-				SELECT DISTINCT t.Refno
+				DELETE t
 				FROM #tmpMainTicket AS t
 					LEFT JOIN CTE_AGroup AS c ON c.AGroup = ISNULL(t.AGroup,0)
-					LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
 				WHERE c.AGroup IS NULL
-					AND del.Refno IS NULL;	
+
+				DELETE td
+				FROM #tmpTicketDetails AS td WITH(NOLOCK)
+					LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+				WHERE t.Refno IS NULL;
 			END;
 
 			--========================Fitler By MGroup==================
@@ -1091,13 +1093,15 @@ BEGIN
 				WITH CTE_MGroup AS (
 					SELECT ssk.value AS MGroup FROM STRING_SPLIT(@ListMGroup, ',') AS ssk
 				)
-				INSERT INTO #tmpDelRefnoFilter(Refno)
-				SELECT DISTINCT t.Refno
+				DELETE t
 				FROM #tmpMainTicket AS t	
 					LEFT JOIN CTE_MGroup AS c ON c.MGroup = ISNULL(t.MGroup,0)
-					LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
-				WHERE c.MGroup IS NULL
-					AND del.Refno IS NULL;
+				WHERE c.MGroup IS NULL;
+
+				DELETE td
+				FROM #tmpTicketDetails AS td WITH(NOLOCK)
+					LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+				WHERE t.Refno IS NULL;
 			END;
 
 			--========================Fitler By HDP(BetTeam)==================	
@@ -1111,13 +1115,22 @@ BEGIN
 					WITH CTE_BetTeam AS (
 						SELECT ssk.value AS BetTeam FROM STRING_SPLIT(@ListHDPBetTeam, ',') AS ssk
 					)
-					INSERT INTO #tmpDelRefnoFilter(Refno)
-					SELECT DISTINCT t.Refno
+					DELETE t
 					FROM #tmpTicketDetails AS t
 						INNER JOIN #tmpBetType AS st ON t.BetType = st.BettypeID AND st.BetChoiceType = 1
 						LEFT JOIN CTE_BetTeam AS bt ON bt.BetTeam = t.BetTeam
 					WHERE bt.BetTeam IS NULL
 						AND t.TicketOrder = 1;		
+
+					DELETE t
+					FROM #tmpMainTicket AS t WITH(NOLOCK)
+						LEFT JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON t.Refno = td.Refno AND td.TicketOrder = 1
+					WHERE td.Refno IS NULL;
+
+					DELETE td
+					FROM #tmpTicketDetails AS td WITH(NOLOCK)
+						LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+					WHERE t.Refno IS NULL;
 				END
 			
 				ELSE IF EXISTS (SELECT 1 
@@ -1127,16 +1140,23 @@ BEGIN
 					;WITH CTE_Hdp AS (
 						SELECT ssk.value AS Hdp FROM STRING_SPLIT(@ListHDPBetTeam, ',') AS ssk
 					)
-					INSERT INTO #tmpDelRefnoFilter(Refno)
-					SELECT DISTINCT t.Refno
+					DELETE t
 					FROM #tmpTicketDetails AS t
 						INNER JOIN #tmpBetType AS st ON t.BetType = st.BettypeID AND st.BetChoiceType = 2
 						LEFT JOIN CTE_Hdp AS h ON h.Hdp = t.Hdp
-						LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
 					WHERE h.Hdp IS NULL
-						AND del.Refno IS NULL
-						AND t.TicketOrder = 1
 						AND t.hdp IS NOT NULL;
+					
+					DELETE t
+					FROM #tmpMainTicket AS t WITH(NOLOCK)
+						LEFT JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON t.Refno = td.Refno AND td.TicketOrder = 1
+					WHERE td.Refno IS NULL;
+
+					DELETE td
+					FROM #tmpTicketDetails AS td WITH(NOLOCK)
+						LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+					WHERE t.Refno IS NULL;
+					
 				END;
 			END;	
 
@@ -1146,14 +1166,22 @@ BEGIN
 				WITH CTE_Status AS (
 					SELECT ssk.value AS StatusID FROM STRING_SPLIT(@ListStatus, ',') AS ssk
 				)
-				INSERT INTO #tmpDelRefnoFilter(Refno)
-				SELECT DISTINCT t.Refno
+				DELETE t
 				FROM #tmpTicketDetails AS t
 					LEFT JOIN CTE_Status AS s ON s.StatusID = t.TicketStatus
-					LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON t.Refno = del.Refno
 				WHERE s.StatusID IS NULL
-					AND t.TicketOrder = 1 --Sub Ticket of View Match
-					AND del.Refno IS NULL;
+					AND t.TicketOrder = 1 --Sub Ticket of View Match							
+				
+				DELETE t
+				FROM #tmpMainTicket AS t WITH(NOLOCK)
+					LEFT JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON t.Refno = td.Refno AND td.TicketOrder = 1
+				WHERE td.Refno IS NULL;
+
+				DELETE td
+				FROM #tmpTicketDetails AS td WITH(NOLOCK)
+					LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+				WHERE t.Refno IS NULL;	
+
 			END;		
 
 			--========================Cust Amount(RM)==================	
@@ -1180,22 +1208,24 @@ BEGIN
 
 				CREATE CLUSTERED INDEX CIX_tmpCustAmount_Group ON #tmpCustAmount (CustID, BetTeamGroup);
 
-				INSERT INTO #tmpDelRefnoFilter(Refno)
-				SELECT tmpTk.Refno
+				DELETE tmpTk
 				FROM #tmpTicketDetails AS tmpTk WITH(NOLOCK)
 					LEFT JOIN #tmpCustAmount AS tmpCa WITH(NOLOCK) ON tmpCa.CustId = tmpTk.CustId and tmpCa.BetTeamGroup = tmpTk.BetTeamGroup
-					LEFT JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON tmpTk.Refno = del.Refno
 				WHERE tmpTk.TicketOrder = 1
 					AND tmpCa.CustId IS NULL
-					AND del.Refno IS NULL;
-			END;		
 
-			DELETE td
-			FROM #tmpTicketDetails AS td WITH(NOLOCK)
-				INNER JOIN #tmpDelRefnoFilter AS del WITH(NOLOCK) ON del.Refno = td.Refno;
+				DELETE t
+				FROM #tmpMainTicket AS t WITH(NOLOCK)
+					LEFT JOIN #tmpTicketDetails AS td WITH(NOLOCK) ON t.Refno = td.Refno AND td.TicketOrder = 1
+				WHERE td.Refno IS NULL;
+
+				DELETE td
+				FROM #tmpTicketDetails AS td WITH(NOLOCK)
+					LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
+				WHERE t.Refno IS NULL;
+			END;		
 		END;	
 
---SELECT 'Debug_ReturnData' AS Step, GetDate() AS ExecTime;	
 	--=========================--RETURN DATA============================--
 	IF (@BatchSize = 0)
 	BEGIN		
@@ -1252,5 +1282,4 @@ BEGIN
 		ORDER BY mt.Refno ASC, TicketOrder ASC, Matchid DESC;
 	END;
 
---SELECT 'Debug_END'
 END
