@@ -107,8 +107,7 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_LastHistory;
 	CREATE TEMPORARY TABLE Temp_LastHistory(
 			CustID					BIGINT UNSIGNED PRIMARY KEY
-		,	CategoryID				INT 
-		,	CustomerClassPriority	SMALLINT 
+		,	CategoryID				INT
 		,	ParentID				INT
 		,	TargetCC				INT
 	);
@@ -531,10 +530,10 @@ BEGIN
 		SET temp.TargetCC = IFNULL(temp.SpecialCC, tmpVip.CustomerClass)
 		WHERE temp.SpecialCC IS NULL; 
 		
-        INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC, ParentID, CustomerClassPriority)
-		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC, tmpHis.ParentID, tmpHis.CustomerClassPriority
+        INSERT IGNORE INTO Temp_LastHistory(CustID, CategoryID, TargetCC, ParentID)
+		SELECT temp.CustID, tmpHis.CategoryID, tmpHis.TargetCC, tmpHis.ParentID
 		FROM Temp_NewClassification AS temp,
-		LATERAL (	SELECT h.CategoryID, IFNULL(h.TargetCC,-1) AS TargetCC, h.ParentID, cate.CustomerClassPriority
+		LATERAL (	SELECT h.CategoryID, IFNULL(h.TargetCC,-1) AS TargetCC, h.ParentID
 					FROM CTS_DataCenter.CTSCustomerClassification_History AS h
 						INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = h.CategoryID
 					WHERE h.CustID = temp.CustID 
@@ -561,7 +560,7 @@ BEGIN
 																			AND temp_old.IsNew = 0
 																			AND temp.NewCategoryGroupID = temp_old.CategoryGroupID
 		SET 	temp.DataChangeType		= CASE WHEN temp.TargetCC <> h.TargetCC THEN 1 ELSE temp.DataChangeType END
-			,	temp.IsDataChanged 		= CASE WHEN temp.TargetCC <> h.TargetCC AND (lv_IsRescan = 1 OR temp.CustomerClassPriority < h.CustomerClassPriority) THEN 1 ELSE temp.IsDataChanged END
+			,	temp.IsDataChanged 		= CASE WHEN temp.TargetCC <> h.TargetCC AND lv_IsRescan = 1 THEN 1 ELSE temp.IsDataChanged END
 			,	temp.OldCategoryID 		= temp_old.ExistCategoryID			
 			,	temp.ActionType 		= CASE WHEN temp.TargetCC <> h.TargetCC THEN CONST_ACTIONTYPE_UPDATE ELSE temp.ActionType END
 			,	temp.CreatedBy 			= CASE WHEN lv_IsRescan = 1 THEN temp.CreatedBy ELSE temp_old.CreatedBy END
@@ -582,7 +581,8 @@ BEGIN
 		/*existing PotentialPA + PA - existing and new: the same CateGroup - not change WinlossStatus (KEEP)*/
 		DELETE temp_old
 		FROM Temp_CTSCustomerClassification_Old AS temp_old
-			INNER JOIN Temp_NewClassification AS temp ON temp_old.ParentID IS NOT NULL 
+			INNER JOIN Temp_NewClassification AS temp ON temp.CustID = temp_old.CustID
+															AND temp_old.ParentID IS NOT NULL 
 															AND temp.RelevantCategoryGroupID = temp_old.CategoryGroupID
 															AND temp_old.IsNew = 0
 															AND temp.WinlossStatus <> 1;
