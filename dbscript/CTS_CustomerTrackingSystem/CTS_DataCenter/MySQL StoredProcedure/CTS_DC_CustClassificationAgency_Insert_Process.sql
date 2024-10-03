@@ -25,16 +25,10 @@ BEGIN
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL		INT;
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY	INT;
 	DECLARE CONST_AGENCY_CATEID_VVIP			 				INT;
-	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 				INT;
-	DECLARE CONST_CATEID_LICVIPDANGEROUS 				INT;
 	DECLARE CONST_AGENCY_CATEID_INACTIVENORMAL 				INT;
-	DECLARE CONST_CATEID_INACTIVESMART	 				INT;
 
 	DECLARE CONST_AGENCY_CATEGROUPID_INACTIVE					INT;
 	DECLARE CONST_AGENCY_CATEGROUPID_NEW						INT;
-	DECLARE CONST_AGENCY_CATEGROUPID_NORMAL					INT;
-	DECLARE CONST_AGENCY_CATEGROUPID_GOOD						INT;
-	DECLARE CONST_AGENCY_CATEGROUPID_PROBATION					INT;
 	DECLARE CONST_AGENCY_CATEGROUPID_SMART						INT;
 	DECLARE CONST_AGENCY_CATEGROUPID_RISKY						INT;
 
@@ -42,13 +36,9 @@ BEGIN
     DECLARE CONST_AGENCY_PARENTID_NORMAL		    			INT;
 	
 	DECLARE CONST_AGENCY_CC_VVIP			 					INT;
-	DECLARE CONST_CC_LICVIPSUSPICIOUS 					INT;
-	DECLARE CONST_CC_LICVIPDANGEROUS 					INT;
-	DECLARE CONST_CC_LICBA			 					INT;
 	
     DECLARE CONST_ACTIONTYPE_INSERT 					INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 					INT DEFAULT 1;
-	DECLARE CONST_ACTIONTYPE_REMOVE 					INT DEFAULT 2;
     DECLARE CONST_ACTIONTYPE_EXISTEDPA 					INT DEFAULT 3;
     DECLARE CONST_ACTIONTYPE_EXISTEDVVIP				INT DEFAULT 4;
     DECLARE CONST_ACTIONTYPE_RESCAN_CHANGECATEGORY		INT DEFAULT 7;
@@ -57,9 +47,7 @@ BEGIN
     DECLARE CONST_SOURCETYPE_LESSTHAN40TICKETS 			INT DEFAULT 1;
 	DECLARE	CONST_SOURCETYPE_AFTER40TICKETS 			INT DEFAULT 2;
 	DECLARE CONST_SOURCETYPE_SCANONSCHEDULE				INT DEFAULT 3;
-    DECLARE CONST_SOURCETYPE_PASSPROBATION 				INT DEFAULT 4;
     DECLARE CONST_SOURCETYPE_INACTIVENORMAL 			INT DEFAULT 18;
-    DECLARE CONST_SOURCETYPE_INACTIVEPROPUNTER			INT DEFAULT 19;
 	
 	DECLARE	lv_CurrentDateTime							DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_IsRescan									TINYINT(1) DEFAULT 0; 
@@ -67,16 +55,10 @@ BEGIN
 	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL');
 	SET CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY		= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
 	SET CONST_AGENCY_CATEID_VVIP			 					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_VVIP');
-	SET CONST_CATEID_LICVIPSUSPICIOUS 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
-	SET CONST_CATEID_LICVIPDANGEROUS 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
-	SET CONST_AGENCY_CATEID_INACTIVENORMAL 					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_INACTIVENORMAL');
-	SET CONST_CATEID_INACTIVESMART 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INACTIVESMART');
+	SET CONST_AGENCY_CATEID_INACTIVENORMAL 						= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_INACTIVENORMAL');
 	
 	SET CONST_AGENCY_CATEGROUPID_INACTIVE						= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_INACTIVE');
 	SET CONST_AGENCY_CATEGROUPID_NEW							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_NEW');
-	SET CONST_AGENCY_CATEGROUPID_NORMAL						= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_NORMAL');
-	SET CONST_AGENCY_CATEGROUPID_GOOD							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_GOOD');
-	SET CONST_AGENCY_CATEGROUPID_PROBATION						= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_PROBATION');
 	SET CONST_AGENCY_CATEGROUPID_SMART							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_SMART');
 	SET CONST_AGENCY_CATEGROUPID_RISKY							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_RISKY');
 	
@@ -84,9 +66,6 @@ BEGIN
 	SET CONST_AGENCY_PARENTID_NORMAL	 						= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
 	
 	SET CONST_AGENCY_CC_VVIP			 						= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CC_VVIP');
-	SET CONST_CC_LICVIPSUSPICIOUS 						= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICVIPSUSPICIOUS');
-	SET CONST_CC_LICVIPDANGEROUS	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICVIPDANGEROUS');
-	SET CONST_CC_LICBA				 					= CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICBA');
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_UpdateCustomerClass;    
 	CREATE TEMPORARY TABLE Temp_UpdateCustomerClass(	  
@@ -204,9 +183,7 @@ BEGIN
 		SET 	IsDataChanged = 1
 			,	SourceTypeID = (CASE
 									WHEN NewCategoryGroupID = CONST_AGENCY_CATEGROUPID_INACTIVE AND NewCategoryID = CONST_AGENCY_CATEID_INACTIVENORMAL 
-										THEN CONST_SOURCETYPE_INACTIVENORMAL 
-									WHEN NewCategoryGroupID = CONST_AGENCY_CATEGROUPID_INACTIVE AND NewCategoryID = CONST_CATEID_INACTIVESMART 
-										THEN CONST_SOURCETYPE_INACTIVEPROPUNTER
+										THEN CONST_SOURCETYPE_INACTIVENORMAL
 									ELSE CONST_SOURCETYPE_SCANONSCHEDULE
 								END)
 			,	ActionType = CONST_ACTIONTYPE_UPDATE
@@ -235,7 +212,6 @@ BEGIN
 			,	TurnoverRM				DECIMAL(20,4)
 			,	WinlossRM				DECIMAL(20,4)
 			, 	BetCount				BIGINT 
-			, 	ActiveDays				INT
 			,	WinlossStatus			TINYINT
 			,	IsLicensee				TINYINT(1)
 		); 
@@ -252,7 +228,7 @@ BEGIN
 			FROM Temp_NewClassification AS temp
 				INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cls ON temp.CustID = cls.CustID
 				INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cls.CategoryID = cc.CategoryID
-			WHERE cls.ParentID IN (CONST_AGENCY_PARENTID_PA);
+			WHERE cls.ParentID = CONST_AGENCY_PARENTID_PA;
 		
 		ELSE
 			INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
@@ -356,7 +332,7 @@ BEGIN
 			,	ccs.IsMultiCateIDSameParentID
 			,	ccs.IsKeepOldCateID
 		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
-			INNER JOIN CTS_DataCenter.CustomerCategoryAgencySettings AS ccs ON ccs.CategoryID = cls.CategoryID 
+			INNER JOIN CTS_DataCenter.CustomerCategorySettingsAgency AS ccs ON ccs.CategoryID = cls.CategoryID 
 			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = ccs.CategoryID AND cc.IsActive = 1
 		WHERE cls.ParentID IN (CONST_AGENCY_PARENTID_PA,CONST_AGENCY_PARENTID_NORMAL);
 			
@@ -440,25 +416,24 @@ BEGIN
 															AND temp_old.IsNew = 0
 															AND temp.WinlossStatus <> 1;
 		
-		INSERT IGNORE INTO Temp_CustProbationStatus(CustID, CTSCustID, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsPAProbation, WinlossStatus, IsLicensee)
+		INSERT IGNORE INTO Temp_CustProbationStatus(CustID, CTSCustID, TurnoverRM, WinlossRM, BetCount, IsPAProbation, WinlossStatus, IsLicensee)
 		SELECT DISTINCT 
 				temp.CustID
 			,	temp.CTSCustID
 			,	temp.TurnoverRM
 			,	temp.WinlossRM
 			,	temp.BetCount
-			,	temp.ActiveDays
 			,	(CASE WHEN temp.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation
 			,	temp.WinlossStatus
 			,	temp.IsLicensee
 		FROM Temp_NewClassification AS temp;
 		
-		/*existing PotentialPA + PA - existing and new: the same CateGroup - WinlossStatus <> KEEP*/
+		/*existing PA - existing and new: the same CateGroup - WinlossStatus <> KEEP*/
 		INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, ParentID, DWCategoryID, DWCategoryGroupID, OldCategoryID, NewCategoryID, NewCategoryGroupID
-			, 	TargetCC,  TargetDangerLevel, ToEvidenceID, Remark, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsMarkedDirectly
+			, 	TargetCC,  TargetDangerLevel, ToEvidenceID, Remark, WinlossStatus, TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly
 			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsDataChanged, DataChangeType
-			, 	LastModifiedDate, CreatedBy, IsPAProbation, TVSRequestID, IsTVSParlay, SportType, TVSIssueTypeID)
+			, 	LastModifiedDate, CreatedBy, IsPAProbation)
 		SELECT 	temp_old.CustID
 			,	temp_old.CTSCustID
 			,	temp_old.SubscriberID
@@ -480,7 +455,6 @@ BEGIN
 			,	tmpCp.TurnoverRM
 			,	tmpCp.WinlossRM
 			,	tmpCp.BetCount
-			,	tmpCp.ActiveDays
 			,	temp_old.IsMarkedDirectly
 			,	temp_old.IsFromTVS
 			,	temp_old.IsFromTW
@@ -492,10 +466,6 @@ BEGIN
 			,	temp_old.LastModifiedDate
 			,	temp_old.CreatedBy
 			,	temp_old.IsPAProbation
-			,	temp_old.TVSRequestID
-			,	temp_old.IsTVSParlay
-			,	temp_old.SportType
-			,	temp_old.TVSIssueTypeID
 		FROM Temp_CTSCustomerClassificationAgency_Old AS temp_old
 			INNER JOIN Temp_CustProbationStatus AS tmpCp ON temp_old.ParentID IS NOT NULL AND temp_old.IsNew = 0 AND temp_old.IsRemove <> 1
 																AND tmpCp.CustID = temp_old.CustID 
@@ -511,20 +481,6 @@ BEGIN
 					WHERE temp_old.RelevantCategoryID = cat.CategoryID 
 					LIMIT 1) AS tmpLt
 		;        
-		/*
-		INSERT IGNORE INTO Temp_LicVIPCust(CustID, CategoryID, CustomerClass)
-		SELECT	temp.CustID
-			,	CASE WHEN cat.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END
-			,	CASE WHEN cat.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS ELSE CONST_CC_LICVIPDANGEROUS END
-		FROM Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = temp.NewCategoryID
-		WHERE temp.IsExistVVIP 	= 0
-			AND temp.IsLicenseeVIP = 1;
-
-		UPDATE Temp_NewClassification AS temp
-			INNER JOIN Temp_LicVIPCust AS tmpVip ON temp.CustID = tmpVip.CustID
-		SET temp.TargetCC = IFNULL(temp.SpecialCC, tmpVip.CustomerClass)
-		WHERE temp.SpecialCC IS NULL; */
 		
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_LastHistory AS tmpHis ON temp.CustID = tmpHis.CustID
