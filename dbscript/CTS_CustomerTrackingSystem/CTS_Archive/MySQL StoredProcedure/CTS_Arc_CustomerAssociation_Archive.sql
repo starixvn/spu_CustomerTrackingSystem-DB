@@ -24,7 +24,7 @@ sp : BEGIN
         Example:  
 			- CALL CTS_Arc_CustomerAssociation_Archive();
 */   
-    DECLARE	CONST_15Days 			    INT DEFAULT 15; 
+ DECLARE	CONST_15Days 			    INT DEFAULT 15; 
     DECLARE	CONST_30Days 				INT DEFAULT 30;
     DECLARE	CONST_60Days 				INT DEFAULT 60;
     DECLARE	CONST_90Days 				INT DEFAULT 90;
@@ -122,13 +122,19 @@ sp : BEGIN
 				tmp.CTSCustID
 			,	tmp.CustID
         FROM Temp_CustNoBet AS tmp
-			LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CTSCustID = cus.CTSCustID
-            LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmp.CTSCustID = cls.CTSCustID
-            LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
-        WHERE  (cus.CustStatusID IN (2,3,4,12,13,14) AND (cate.ParentID = CONST_PARENTID_NORMAL AND cate.TaggingType = CONST_Tagging_Normal) AND tmp.Days >= CONST_15Days)
-			OR (cus.CustStatusID NOT IN (2,3,4,12,13,14) AND (cate.ParentID = CONST_PARENTID_NORMAL AND cate.TaggingType = CONST_Tagging_Normal) AND tmp.Days >= CONST_30Days)
-            OR (((cate.ParentID = CONST_PARENTID_NORMAL AND cate.TaggingType IN (CONST_Tagging_WithPA,CONST_Tagging_TW)) OR (cate.ParentID = CONST_PARENTID_PA AND cate.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_NORMAL)) AND tmp.Days >= CONST_60Days)
-            OR (cate.ParentID = CONST_PARENTID_PA AND cate.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL AND tmp.Days >= CONST_90Days);
+			INNER JOIN  CTS_DataCenter.CTSCustomer AS cus ON tmp.CTSCustID = cus.CTSCustID
+		,	LATERAL (
+				SELECT cate.ParentID, cate.TaggingType, cate.BusinessCategoryGroupID
+                FROM CTS_DataCenter.CTSCustomerClassification AS cls
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
+				WHERE tmp.CTSCustID = cls.CTSCustID
+				ORDER BY CategoryPriority ASC
+                LIMIT 1
+            ) AS ltc
+        WHERE  (cus.CustStatusID IN (2,3,4,12,13,14) AND (ltc.ParentID = CONST_PARENTID_NORMAL AND ltc.TaggingType = CONST_Tagging_Normal) AND tmp.Days >= CONST_15Days)
+			OR (cus.CustStatusID NOT IN (2,3,4,12,13,14) AND (ltc.ParentID = CONST_PARENTID_NORMAL AND ltc.TaggingType = CONST_Tagging_Normal) AND tmp.Days >= CONST_30Days)
+            OR (((ltc.ParentID = CONST_PARENTID_NORMAL AND ltc.TaggingType IN (CONST_Tagging_WithPA,CONST_Tagging_TW)) OR (ltc.ParentID = CONST_PARENTID_PA AND ltc.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_NORMAL)) AND tmp.Days >= CONST_60Days)
+            OR (ltc.ParentID = CONST_PARENTID_PA AND ltc.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL AND tmp.Days >= CONST_90Days);
         
         IF NOT EXISTS (SELECT 1 FROM  CTS_Archive.CTSCustomerAssociationArchive_Process) THEN
 			
