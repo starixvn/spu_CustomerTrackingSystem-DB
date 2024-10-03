@@ -96,13 +96,13 @@ BEGIN
 	END IF;	
 
 	IF (SELECT COUNT(DISTINCT ParentID) FROM Temp_LatestRecordOfCategory) > 1 THEN
-		SELECT MIN(CustomerClassPriority)
+		SELECT MIN(ParentID)
 		INTO lv_LowestParentIDPriority
 		FROM Temp_LatestRecordOfCategory;
 
 		DELETE tmp
 		FROM Temp_LatestRecordOfCategory AS tmp
-		WHERE tmp.CustomerClassPriority > lv_LowestParentIDPriority;
+		WHERE tmp.ParentID > lv_LowestParentIDPriority;
     END IF;
 
 	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CTSCustID = ip_CTSCustID) THEN 
