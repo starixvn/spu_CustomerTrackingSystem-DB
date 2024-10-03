@@ -11,6 +11,8 @@ ALTER PROCEDURE [dbo].[CTS_MatchMonitorParlay_Details_GetTicket]
 	,	@ListRefno				VARCHAR(MAX)
 	,	@Matchid				INT = 0
 	,	@IsLive					BIT = 1
+	,	@Bettype				INT 
+	,	@BetID					BIGINT 
 	,	@ListBetType			VARCHAR(MAX)
 	,	@FromTransDate			DATETIME = NULL
 	,	@ToTransDate			DATETIME = NULL	
@@ -96,7 +98,6 @@ AS
 */
 BEGIN
 
---SELECT 'Debug_Start' AS Step, GetDate() AS ExecTime;
 	SET NOCOUNT ON;
 
 	DECLARE @BalanceUpDay			SMALLDATETIME
@@ -289,6 +290,11 @@ BEGIN
 	BEGIN
 		SET @BatchSize = 0
 	END
+
+	IF @BatchSize IS NULL OR @BetID = 0
+	BEGIN
+		SET @BetID = ''
+	END
 	--==================================================================
 	IF @ListBetType <> ''
 		BEGIN
@@ -376,7 +382,6 @@ BEGIN
 			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
 			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND ISNULL(sb.BetID,b.betcheck) = b.betcheck
 		WHERE m.eventdate > @MoveBetsDay
-			;
 
 		DELETE rn
 		FROM #tmpRefno AS rn 
@@ -419,7 +424,7 @@ BEGIN
 			INNER JOIN bodb02.dbo.bettransm14 b WITH(NOLOCK) ON rn.Refno = b.Refno	
 			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
 			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND ISNULL(sb.BetID,b.betcheck) = b.betcheck
-		WHERE m.eventdate BETWEEN @BalanceUpDay AND @MoveBetsDay;
+		WHERE m.eventdate BETWEEN @BalanceUpDay AND @MoveBetsDay
 
 		DELETE rn
 		FROM #tmpRefno AS rn 
@@ -461,7 +466,7 @@ BEGIN
 			INNER JOIN bodb_Archive.dbo.bettransm b WITH(NOLOCK) ON rn.Refno = b.Refno	
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
 			LEFT JOIN #tmpBetType AS sb WITH(NOLOCK) ON sb.BetTypeID = b.BetType AND ISNULL(sb.BetID,b.betcheck) = b.betcheck
-		WHERE m.eventdate < @BalanceUpDay;
+		WHERE m.eventdate < @BalanceUpDay
 
 		DELETE rn
 		FROM #tmpRefno AS rn 
@@ -570,7 +575,10 @@ BEGIN
 					OR CAST(bt.BetCheck AS INT) & 4 = 4) -- Combo 3 bit 3
 				AND bt.BetTeam = 1						-- 1:Mix Parlay
 				AND bt.BetType = 29
-				AND bt.Matchid = 29						
+				AND bt.Matchid = 29	
+				AND b.liveindicator = @IsLive
+				AND b.bettype = @Bettype
+				AND b.Betcheck = @BetID
 		END
 		ELSE IF @BatchSize > 0 -- GET Ticket Details Info By Batch Size
 		BEGIN 
@@ -586,6 +594,9 @@ BEGIN
 				AND bt.BetTeam = 1						-- 1:Mix Parlay
 				AND bt.BetType = 29
 				AND bt.Matchid = 29
+				AND b.liveindicator = @IsLive
+				AND b.bettype = @Bettype
+				AND b.Betcheck = @BetID
 				AND bt.SequenceID < @LastScannedSequenceID				
 			ORDER BY bt.SequenceID DESC
 
