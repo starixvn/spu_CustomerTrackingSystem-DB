@@ -116,6 +116,7 @@ BEGIN
         ,	CategoryGroupID
 		,	CASE WHEN CategoryID = CONST_CATEID_VVIP THEN 1 ELSE 0 END AS IsVVIP
 		,	CASE WHEN ParentID = CONST_PARENTID_PA AND BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN 1 ELSE 0 END AS IsPA
+        ,	CASE WHEN ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsMultiplePA
 		,	ColorTypeID
         ,	CategoryPriority
 	FROM Temp_LatestRecordOfCategory;
