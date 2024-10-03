@@ -61,23 +61,25 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
-			CategoryID				INT UNSIGNED
-		,   CategoryName   			VARCHAR(200) 
-        ,	CategoryGroupID   		INT UNSIGNED
-		,	CategoryPriority		SMALLINT UNSIGNED
-		,	ParentID				INT UNSIGNED
-		,	CustomerClassPriority	SMALLINT UNSIGNED
-		,	IsProbation				BIT DEFAULT 0
-		,	ColorTypeID				TINYINT UNSIGNED
+			CategoryID					INT UNSIGNED
+		,   CategoryName   				VARCHAR(200) 
+        ,	CategoryGroupID   			INT UNSIGNED
+        ,	BusinessCategoryGroupID 	INT UNSIGNED
+		,	CategoryPriority			SMALLINT UNSIGNED
+		,	ParentID					INT UNSIGNED
+		,	CustomerClassPriority		SMALLINT UNSIGNED
+		,	IsProbation					BIT DEFAULT 0
+		,	ColorTypeID					TINYINT UNSIGNED
     );
    
-	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName,CategoryGroupID, CategoryPriority, ParentID, CustomerClassPriority, IsProbation, ColorTypeID)
+	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName, CategoryGroupID, BusinessCategoryGroupID, CategoryPriority, ParentID, CustomerClassPriority, IsProbation, ColorTypeID)
 	SELECT DISTINCT (CASE 
                         WHEN cc.ParentID = CONST_PARENTID_PA AND cc.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN cc.CategoryGroupID
                         ELSE cate.CategoryID 
 					END)
 				,	cc.CategoryName
                 ,	cc.CategoryGroupID
+                ,	cc.BusinessCategoryGroupID
 				,	cc.CategoryPriority
 				,	cc.ParentID
 				,	cc.CustomerClassPriority
@@ -113,7 +115,7 @@ BEGIN
 		,	CategoryName
         ,	CategoryGroupID
 		,	CASE WHEN CategoryID = CONST_CATEID_VVIP THEN 1 ELSE 0 END AS IsVVIP
-		,	CASE WHEN ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN ParentID = CONST_PARENTID_PA AND BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN 1 ELSE 0 END AS IsPA
 		,	ColorTypeID
         ,	CategoryPriority
 	FROM Temp_LatestRecordOfCategory;
