@@ -332,6 +332,11 @@ BEGIN
 			INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.Currency
 		WHERE b.Matchid = @Matchid
 			AND b.Liveindicator = @IsLive
+			AND (CAST(bt.BetCheck AS INT) & 2 = 2 -- Combo 2 bit 2
+					OR CAST(bt.BetCheck AS INT) & 4 = 4) -- Combo 3 bit 3
+			AND bt.BetTeam = 1						-- 1:Mix Parlay
+			AND bt.BetType = 29
+			AND bt.Matchid = 29	
 			AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND bt.Currency NOT IN (20,27,28)))
 			AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 			AND bt.SequenceId < @MaxSequenceId
