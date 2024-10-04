@@ -33,7 +33,7 @@ BEGIN
 	*/ 
 	
     INSERT INTO CTS_DataCenter.MatchMonitorDetailsVerifiedTrans(MatchID, LiveIndicator, BettypeID, BetID, ListTransID, VerifiedBy, VerifiedDate, TicketType)
-    VALUES (ip_MatchID, ip_LiveIndicator, ip_BettypeID, ip_BetID, ip_ListTransID, ip_VerifiedBy, ip_TicketType, CURRENT_TIME());	   
+    VALUES (ip_MatchID, ip_LiveIndicator, ip_BettypeID, ip_BetID, ip_ListTransID, ip_VerifiedBy, CURRENT_TIME(), ip_TicketType);	   
 	
 END$$
 DELIMITER ;
