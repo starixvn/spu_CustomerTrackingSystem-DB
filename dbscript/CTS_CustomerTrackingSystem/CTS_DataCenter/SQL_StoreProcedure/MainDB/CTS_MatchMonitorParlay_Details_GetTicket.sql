@@ -1120,8 +1120,8 @@ BEGIN
 			BEGIN
 
 				IF EXISTS (	SELECT 1 
-							FROM #tmpBetType AS st WITH(NOLOCK) 
-							WHERE st.BetChoiceType = 1) --Filter BetTeam
+							FROM #tmpBetType bt 
+							WHERE bt.BetTypeID = @Bettype AND bt.BetChoiceType = 1) --Filter BetTeam
 				BEGIN
 					WITH CTE_BetTeam AS (
 						SELECT ssk.value AS BetTeam FROM STRING_SPLIT(@ListHDPBetTeam, ',') AS ssk
@@ -1144,9 +1144,9 @@ BEGIN
 					WHERE t.Refno IS NULL;
 				END
 			
-				ELSE IF EXISTS (SELECT 1 
-								FROM #tmpBetType AS st WITH(NOLOCK) 
-								WHERE st.BetChoiceType = 2) --Filter Hdp
+				ELSE IF EXISTS (SELECT 1
+								FROM #tmpBetType bt 
+								WHERE bt.BetTypeID = @Bettype AND bt.BetChoiceType = 2) --Filter Hdp
 				BEGIN
 					;WITH CTE_Hdp AS (
 						SELECT ssk.value AS Hdp FROM STRING_SPLIT(@ListHDPBetTeam, ',') AS ssk
@@ -1156,7 +1156,8 @@ BEGIN
 						INNER JOIN #tmpBetType AS st ON t.BetType = st.BettypeID AND st.BetChoiceType = 2
 						LEFT JOIN CTE_Hdp AS h ON h.Hdp = t.Hdp
 					WHERE h.Hdp IS NULL
-						AND t.hdp IS NOT NULL;
+						AND t.hdp IS NOT NULL
+						AND t.TicketOrder = 1;
 					
 					DELETE t
 					FROM #tmpMainTicket AS t WITH(NOLOCK)
@@ -1166,7 +1167,7 @@ BEGIN
 					DELETE td
 					FROM #tmpTicketDetails AS td WITH(NOLOCK)
 						LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
-					WHERE t.Refno IS NULL;
+					WHERE t.Refno IS NULL
 					
 				END;
 			END;	
