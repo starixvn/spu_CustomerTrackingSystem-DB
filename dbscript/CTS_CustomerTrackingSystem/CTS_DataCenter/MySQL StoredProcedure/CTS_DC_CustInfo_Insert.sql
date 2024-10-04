@@ -317,7 +317,7 @@ BEGIN
 		,	tmpCus.IsInternal
         ,	tmpCus.SiteID
     FROM Temp_CTSCustomer AS tmpCus
-    WHERE tmpCus.RoleID = 2
+    WHERE tmpCus.RoleID = 2 AND tmpCus.IsLicensee = 0
         AND tmpCus.CustSubID = 0;    
 
 	CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);    
