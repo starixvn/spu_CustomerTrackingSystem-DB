@@ -114,6 +114,12 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_Priority](
 ) ON [PRIMARY]
 GO
 
+INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, FunctionId, FunctionName, Priority)
+VALUES (1, 'ByFlow', 1, 'Realtime', 100);
+
+INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, FunctionId, FunctionName, Priority)
+VALUES (1, 'ByFlow', 2, 'Daily', 200);
+
 -- #5. ADD TABLE CustomerClassificationAgency_RealtimeChanges
 CREATE TABLE [dbo].[CustomerClassificationAgency_RealtimeChanges](
 	[ID] [bigint] IDENTITY(1,1) NOT NULL,
