@@ -56,8 +56,8 @@ GO
 -- #2. ADD TABLE CustomerClassificationAgency_NormalPool
 CREATE TABLE [dbo].[CustomerClassificationAgency_NormalPool](
 	[ID] [bigint] IDENTITY(1,1) NOT NULL,
-	[RoleId] [tinyint] NOT NULL,
 	[CustId] [int] NOT NULL,
+	[RoleId] [tinyint] NOT NULL,
 	[Priority] [smallint] NULL,
 	[FunctionId] [smallint] NOT NULL,
 	[CreatedTime] [datetime] NOT NULL,
