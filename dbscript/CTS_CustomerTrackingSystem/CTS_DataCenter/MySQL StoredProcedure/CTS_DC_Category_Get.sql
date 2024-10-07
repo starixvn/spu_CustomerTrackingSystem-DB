@@ -35,7 +35,7 @@ BEGIN
 	DECLARE CONST_AGENCY_BIZCATEGROUPID_OTHERS			INT;
     
     DECLARE CONST_ROLEGROUP_MEMBER				SMALLINT DEFAULT 1; # MEmber Cust.RoleID IN (1)
-    DECLARE CONST_ROLEGROUP_AGENCY				SMALLINT DEFAULT 2; # Agency(SMA) Cust.RoleID IN (2,3,4)
+    DECLARE CONST_ROLEGROUP_SUPERMASTER			SMALLINT DEFAULT 0; # Agency(SMA) Cust.RoleID IN (3,4)
 
 	SET CONST_BIZCATEGROUPID_PA				= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_PA');
 	SET CONST_BIZCATEGROUPID_PAASSOCIATED	= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_PAASSOCIATED');
@@ -109,53 +109,55 @@ BEGIN
 		,	'Problem Account Category' AS CategoryGroup		    
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs 
-        ,	CONST_ROLEGROUP_AGENCY
+        ,	(CASE WHEN RoleID IS NULL THEN CONST_ROLEGROUP_SUPERMASTER ELSE RoleID END) AS RoleGroup
 	FROM	CTS_DataCenter.CustomerCategoryAgency AS cat
 	WHERE 	cat.BusinessCategoryGroupID = CONST_AGENCY_BIZCATEGROUPID_PA
 		AND cat.IsActive = 1
-	GROUP BY cat.CategoryName, cat.BusinessCategoryGroupID
+	GROUP BY RoleID, cat.CategoryName, cat.BusinessCategoryGroupID
 	UNION
 	SELECT 	cat.BusinessCategoryGroupID AS ID
 		,	'PA Associated Category' AS CategoryGroup		    
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs
-        ,	CONST_ROLEGROUP_AGENCY
+        ,	(CASE WHEN RoleID IS NULL THEN CONST_ROLEGROUP_SUPERMASTER ELSE RoleID END) AS RoleGroup
 	FROM	CTS_DataCenter.CustomerCategoryAgency AS cat
 	WHERE 	cat.BusinessCategoryGroupID = CONST_AGENCY_BIZCATEGROUPID_PAASSOCIATED
 		AND cat.IsActive = 1
-	GROUP BY cat.CategoryName, cat.BusinessCategoryGroupID
+	GROUP BY RoleID, cat.CategoryName, cat.BusinessCategoryGroupID
 	UNION
 	SELECT	cat.BusinessCategoryGroupID AS ID
 		,	'Normal Account Category' AS CategoryGroup
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs
-        ,	CONST_ROLEGROUP_AGENCY
+        ,	(CASE WHEN RoleID IS NULL THEN CONST_ROLEGROUP_SUPERMASTER ELSE RoleID END) AS RoleGroup
 	FROM	CTS_DataCenter.CustomerCategoryAgency AS cat
 	WHERE 	cat.BusinessCategoryGroupID = CONST_AGENCY_BIZCATEGROUPID_NORMAL
 		AND cat.IsActive = 1
-	GROUP BY cat.CategoryName, cat.BusinessCategoryGroupID
+	GROUP BY RoleID, cat.CategoryName, cat.BusinessCategoryGroupID
 	UNION
 	SELECT	cat.BusinessCategoryGroupID AS ID
 		,	'Others' AS CategoryGroup
 		,	cat.CategoryName
 		,	GROUP_CONCAT(cat.CategoryID SEPARATOR ',')  AS CategoryIDs
-        ,	CONST_ROLEGROUP_AGENCY
+        ,	(CASE WHEN RoleID IS NULL THEN CONST_ROLEGROUP_SUPERMASTER ELSE RoleID END) AS RoleGroup
 	FROM	CTS_DataCenter.CustomerCategoryAgency AS cat
 	WHERE 	cat.BusinessCategoryGroupID = CONST_AGENCY_BIZCATEGROUPID_OTHERS
 		AND cat.IsActive = 1
-	GROUP BY cat.CategoryName, cat.BusinessCategoryGroupID
+	GROUP BY RoleID, cat.CategoryName, cat.BusinessCategoryGroupID
 	UNION
-	SELECT CONST_AGENCY_BIZCATEGROUPID_OTHERS AS ID
+	SELECT	CONST_AGENCY_BIZCATEGROUPID_OTHERS AS ID
 		,	'Others'  AS CategoryGroup
 		,	'No Category' AS CategoryName
 		, 	0 AS CategoryIDs
-        ,	CONST_ROLEGROUP_AGENCY;
+        ,	CONST_ROLEGROUP_SUPERMASTER;
+        
 	#===================================================================================================
-	SELECT	RoleGroup
+	SELECT	RoleGroup # 1:Member, 2:Agent, 3:Master, 4:Super, 0:SuperMasterAgent
 		,	CategoryGroup
 		,	CategoryName
 		,	CategoryIDs        
 	FROM Temp_CategoryFilter
 	ORDER BY RoleGroup ASC, ID ASC, CategoryName ASC; 
+    
 END$$
 DELIMITER ;
