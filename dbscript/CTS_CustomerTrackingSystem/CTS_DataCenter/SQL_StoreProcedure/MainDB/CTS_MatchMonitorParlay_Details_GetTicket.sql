@@ -908,7 +908,7 @@ BEGIN
 
 				;WITH CTE_Score AS (
 					SELECT LTRIM(LEFT(ssk.Value,CHARINDEX('-',ssk.Value)-1)) AS LiveHomeScore
-						, RTRIM(RIGHT(ssk.Value,CHARINDEX('-',ssk.Value)-1)) AS LiveAwayScore
+						, RTRIM(RIGHT(ssk.Value,LEN(ssk.Value) - CHARINDEX('-',ssk.Value))) AS LiveAwayScore
 					FROM STRING_SPLIT(@ListScore, ',') ssk
 				)			
 				DELETE td
