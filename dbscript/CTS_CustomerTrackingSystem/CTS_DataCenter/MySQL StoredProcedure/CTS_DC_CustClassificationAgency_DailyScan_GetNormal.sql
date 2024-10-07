@@ -25,7 +25,6 @@ BEGIN
 	
 	DECLARE CONST_AGENCY_PARENTID_VVIP 						INT;
 	DECLARE CONST_AGENCY_PARENTID_NORMAL		    			INT;
-	DECLARE CONST_AGENCY_PARENTID_WRAPPER		    			INT;
 
 	DECLARE CONST_AGENCY_CATEGROUPID_PROBATION	    			INT;
 
@@ -40,7 +39,6 @@ BEGIN
 
 	SET CONST_AGENCY_PARENTID_VVIP 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
 	SET CONST_AGENCY_PARENTID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
-	SET CONST_AGENCY_PARENTID_WRAPPER 		= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_WRAPPER');
 	SET CONST_AGENCY_CATEGROUPID_PROBATION	= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_PROBATION');
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
@@ -99,7 +97,6 @@ BEGIN
 			FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls 
 				INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
 			WHERE cls.CustID = clss.CustID
-				AND cls.ParentID <> CONST_AGENCY_PARENTID_WRAPPER
 			ORDER BY cat.CategoryPriority ASC, cls.LastModifiedDate DESC
 			LIMIT 1
 		) AS ltc
@@ -126,7 +123,6 @@ BEGIN
 					FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls 
 						INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
 					WHERE cls.CustID = clss.CustID
-						AND cls.ParentID <> CONST_AGENCY_PARENTID_WRAPPER
 					ORDER BY cat.CategoryPriority ASC, cls.LastModifiedDate DESC
 					LIMIT 1
 				) AS ltc
@@ -154,7 +150,6 @@ BEGIN
 				FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls 
 					INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
 				WHERE cls.CustID = clss.CustID
-					AND cls.ParentID <> CONST_AGENCY_PARENTID_WRAPPER
 				ORDER BY cat.CategoryPriority ASC, cls.LastModifiedDate DESC
 				LIMIT 1
 			) AS ltc
