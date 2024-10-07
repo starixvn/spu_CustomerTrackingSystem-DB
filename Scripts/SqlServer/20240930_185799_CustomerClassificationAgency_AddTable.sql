@@ -56,6 +56,7 @@ GO
 -- #2. ADD TABLE CustomerClassificationAgency_NormalPool
 CREATE TABLE [dbo].[CustomerClassificationAgency_NormalPool](
 	[ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[RoleId] [tinyint] NOT NULL,
 	[CustId] [int] NOT NULL,
 	[Priority] [smallint] NULL,
 	[FunctionId] [smallint] NOT NULL,
@@ -116,6 +117,7 @@ GO
 -- #5. ADD TABLE CustomerClassificationAgency_RealtimeChanges
 CREATE TABLE [dbo].[CustomerClassificationAgency_RealtimeChanges](
 	[ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[RoleId] [tinyint] NOT NULL,
 	[CustId] [int] NOT NULL,
 	[CreatedTime] [datetime] NOT NULL,
 	PRIMARY KEY CLUSTERED 
