@@ -268,14 +268,14 @@ BEGIN
 			,	cls.IsFromTW 			=   CASE WHEN temp.IsFromTW 		= 1 THEN temp.IsFromTW 			ELSE cls.IsFromTW 			END
 			,	cls.IsFromCTS 			=   CASE WHEN temp.IsFromCTS 		= 1 THEN temp.IsFromCTS 		ELSE cls.IsFromCTS 			END
 			,	cls.IsFromAI 			=   CASE WHEN temp.IsFromAI 		= 1 THEN temp.IsFromAI 			ELSE cls.IsFromAI 			END
-			,	cls.IsFromTVS 			=   CASE WHEN temp.IsFromTVS 		= 1 THEN temp.IsFromTVS 		ELSE cls.IsFromTVS 			END
-			,	cls.IsFromImperva		=   CASE WHEN temp.IsFromImperva	= 1 THEN temp.IsFromImperva 	ELSE cls.IsFromImperva 		END
+			/*,	cls.IsFromTVS 			=   CASE WHEN temp.IsFromTVS 		= 1 THEN temp.IsFromTVS 		ELSE cls.IsFromTVS 			END
+			,	cls.IsFromImperva		=   CASE WHEN temp.IsFromImperva	= 1 THEN temp.IsFromImperva 	ELSE cls.IsFromImperva 		END*/
 			,	cls.IsMarkedDirectly	=   CASE WHEN temp.IsMarkedDirectly	= 1 THEN temp.IsMarkedDirectly 	ELSE cls.IsMarkedDirectly 	END
 			; 
 					
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency(
 				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, ParentID, CreatedDate, CreatedBy, LastModifiedDate
-			, 	LastModifiedBy, LastScannedDate, IsMarkedDirectly, Remark, IsFromCTS, IsFromAI, IsFromImperva, IsFromTVS, IsFromTW)
+			, 	LastModifiedBy, LastScannedDate, IsMarkedDirectly, Remark, IsFromCTS, IsFromAI, /*IsFromImperva, IsFromTVS,*/ IsFromTW)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			, 	temp.SubscriberID
@@ -291,8 +291,8 @@ BEGIN
 			,	temp.Remark
 			,	temp.IsFromCTS
 			,	temp.IsFromAI
-			,	temp.IsFromImperva
-			,	temp.IsFromTVS
+			/*,	temp.IsFromImperva
+			,	temp.IsFromTVS*/
 			,	temp.IsFromTW
 		FROM Temp_NewClassification AS temp 
 		WHERE 	(temp.DataChangeType = 0 AND temp.IsDataChanged = 1) 
@@ -302,7 +302,7 @@ BEGIN
 
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency_History(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1
-			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, OldCategoryID, DWCategoryID, PerformanceTime)
+			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, /*IsFromTVS,*/ IsFromTW, IsFromCTS, IsFromAI, /*IsFromImperva,*/ OldCategoryID, DWCategoryID, PerformanceTime)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.NewCategoryID AS CategoryID
@@ -324,11 +324,11 @@ BEGIN
 			, 	temp.BetCount
 			,	temp.IsMarkedDirectly
 			,	temp.Remark
-			,	temp.IsFromTVS
+			/*,	temp.IsFromTVS*/
 			,	temp.IsFromTW
 			,	temp.IsFromCTS
 			,	temp.IsFromAI
-			,	temp.IsFromImperva
+			/*,	temp.IsFromImperva*/
 			,	temp.OldCategoryID
 			,	temp.DWCategoryID
 			,	temp.PerformanceTime
@@ -339,7 +339,7 @@ BEGIN
 		
 		INSERT INTO CTS_DataCenter.CTSCustomerClassificationAgency_Log(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1
-			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, OldCategoryID, DWCategoryID, PerformanceTime)
+			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, /*IsFromTVS,*/ IsFromTW, IsFromCTS, IsFromAI, /*IsFromImperva,*/ OldCategoryID, DWCategoryID, PerformanceTime)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			,	temp.NewCategoryID
@@ -362,11 +362,11 @@ BEGIN
 			,	temp.BetCount
 			,	temp.IsMarkedDirectly
 			,	temp.Remark
-			,	temp.IsFromTVS
+			/*,	temp.IsFromTVS*/
 			,	temp.IsFromTW
 			,	temp.IsFromCTS
 			,	temp.IsFromAI
-			,	temp.IsFromImperva
+			/*,	temp.IsFromImperva*/
 			,	temp.OldCategoryID
 			,	temp.DWCategoryID
 			,	temp.PerformanceTime

@@ -294,8 +294,8 @@ BEGIN
 		
 		INSERT IGNORE INTO Temp_CTSCustomerClassificationAgency_Old(
 				CustID, CTSCustID, SubscriberID, RoleID, ParentID, CategoryID, CategoryGroupID, ExistCategoryID, RelevantCategoryID
-			, 	Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, IsFromTVS
-			, 	IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, InsertTime, IsMarkedDirectly, CustomerClass, CategoryPriority, CustomerClassPriority
+			, 	Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate/*, IsFromTVS*/
+			, 	IsFromTW, IsFromCTS, IsFromAI, /*IsFromImperva,*/ InsertTime, IsMarkedDirectly, CustomerClass, CategoryPriority, CustomerClassPriority
 			,	IsPAProbation, IsNew, IsMultiCateIDSameParentID, IsKeepOldCateID) 
 		SELECT	cls.CustID
 			,	cls.CTSCustID
@@ -312,11 +312,11 @@ BEGIN
 			,	cls.LastModifiedDate
 			,	cls.LastModifiedBy
 			,	cls.LastScannedDate
-			,	cls.IsFromTVS
+			/*,	cls.IsFromTVS*/
 			,	cls.IsFromTW
 			,	cls.IsFromCTS
 			,	cls.IsFromAI
-			,	cls.IsFromImperva
+			/*,	cls.IsFromImperva*/
 			,	lv_CurrentDateTime AS InsertTime
 			,	cls.IsMarkedDirectly
 			,	cc.CustomerClass
@@ -427,7 +427,7 @@ BEGIN
 		INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, ParentID, DWCategoryID, DWCategoryGroupID, OldCategoryID, NewCategoryID, NewCategoryGroupID
 			, 	TargetCC,  TargetDangerLevel, ToEvidenceID, Remark, WinlossStatus, TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly
-			, 	IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, IsDataChanged, DataChangeType
+			, 	/*IsFromTVS,*/ IsFromTW, IsFromCTS, IsFromAI, /*IsFromImperva,*/ IsDataChanged, DataChangeType
 			, 	LastModifiedDate, CreatedBy, IsPAProbation)
 		SELECT 	temp_old.CustID
 			,	temp_old.CTSCustID
@@ -448,11 +448,11 @@ BEGIN
 			,	tmpCp.WinlossRM
 			,	tmpCp.BetCount
 			,	temp_old.IsMarkedDirectly
-			,	temp_old.IsFromTVS
+			/*,	temp_old.IsFromTVS*/
 			,	temp_old.IsFromTW
 			,	temp_old.IsFromCTS
 			,	temp_old.IsFromAI
-			,	temp_old.IsFromImperva
+			/*,	temp_old.IsFromImperva*/
 			,	1 AS IsDataChanged
 			,	(CASE WHEN tmpCp.WinlossStatus IS NULL THEN NULL ELSE 1 END) AS DataChangeType
 			,	temp_old.LastModifiedDate

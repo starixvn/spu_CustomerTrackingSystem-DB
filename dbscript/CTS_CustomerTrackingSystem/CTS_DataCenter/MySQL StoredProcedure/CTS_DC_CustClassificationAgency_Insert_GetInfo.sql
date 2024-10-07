@@ -108,11 +108,11 @@ BEGIN
 		, 	WinlossStatus				SMALLINT /*LOSING  = 0 (PROBATION), KEEPSTATE = 1 (NOT CHANGE), WINNING = 2 (NOT PROBATION);*/
 		,	SourceTypeID      			SMALLINT
 
-		,	IsFromTVS					TINYINT(1)  DEFAULT 0
+		/*,	IsFromTVS					TINYINT(1)  DEFAULT 0*/
 		,	IsFromTW					TINYINT(1)  DEFAULT 0
 		,	IsFromCTS					TINYINT(1)  DEFAULT 0
 		,	IsFromAI					TINYINT(1)  DEFAULT 0
-		,	IsFromImperva				TINYINT(1) 	DEFAULT 0
+		/*,	IsFromImperva				TINYINT(1) 	DEFAULT 0*/
 			
 		,	CreatedDate					DATETIME
 		,	LastModifiedDate			DATETIME
@@ -151,11 +151,11 @@ BEGIN
 		,	LastModifiedDate			DATETIME
 		,	LastModifiedBy				INT UNSIGNED
 		,	LastScannedDate				DATETIME
-		,	IsFromTVS					TINYINT(1) 
+		/*,	IsFromTVS					TINYINT(1) */
 		,	IsFromTW					TINYINT(1) 
 		,	IsFromCTS					TINYINT(1) 
 		,	IsFromAI					TINYINT(1)
-		,	IsFromImperva				TINYINT(1)
+		/*,	IsFromImperva				TINYINT(1)*/
 		,	InsertTime					DATETIME
 		,	IsMarkedDirectly			TINYINT(1)
 		,	CustomerClass				INT 
@@ -218,7 +218,7 @@ BEGIN
 			INSERT INTO Temp_NewClassification(
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount/*, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount*/
-				,	IsFromCTS, IsPAProbation, RelevantCategoryID, CreatedDate, IsFromTVS, IsFromTW, IsFromAI, IsFromImperva, CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime)
+				,	IsFromCTS, IsPAProbation, RelevantCategoryID, CreatedDate, /*IsFromTVS,*/ IsFromTW, IsFromAI, /*IsFromImperva,*/ CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
 				,	CASE WHEN tmpJs.CTSCustID = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
 				,	CASE WHEN tmpJs.RoleID = 0 THEN cus.RoleID ELSE tmpJs.RoleID END
@@ -243,10 +243,10 @@ BEGIN
 				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
 				,	cat.RelevantCategoryID
 				,	tmpJs.CreatedDate
-				,	tmpJs.IsFromTVS
+				/*,	tmpJs.IsFromTVS*/
 				,	tmpJs.IsFromTW
 				,	tmpJs.IsFromAI
-				,	tmpJs.IsFromImperva
+				/*,	tmpJs.IsFromImperva*/
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
 				,	cat.ParentID
@@ -276,10 +276,10 @@ BEGIN
 											, 	IsFromCTS					TINYINT(1) 			PATH "$.IsFromCTS"
 											, 	CreatedDate					DATETIME			PATH "$.CreatedDate"
 											, 	PerformanceTime				DATETIME			PATH "$.PerformanceTime"
-											,	IsFromTVS					TINYINT(1)			PATH "$.IsFromTVS"
+											/*,	IsFromTVS					TINYINT(1)			PATH "$.IsFromTVS"*/
 											,	IsFromTW					TINYINT(1)			PATH "$.IsFromTW"
 											,	IsFromAI					TINYINT(1)			PATH "$.IsFromAI"
-											,	IsFromImperva				TINYINT(1)			PATH "$.IsFromImperva"
+											/*,	IsFromImperva				TINYINT(1)			PATH "$.IsFromImperva"*/
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0 AND cus.RoleID > 1
 				LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = tmpJs.DWCategoryID
@@ -294,8 +294,8 @@ BEGIN
 								,	LastYDaysBetCount = IFNULL(Temp_NewClassification.LastYDaysBetCount, tmpJs.LastYDaysBetCount)*/
 								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_NewClassification.IsFromCTS END
 								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_NewClassification.IsMarkedDirectly END
-								,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_NewClassification.IsFromTVS END
-								,	IsFromImperva = CASE WHEN tmpJs.IsFromImperva = 1 THEN 1 ELSE Temp_NewClassification.IsFromImperva END
+								/*,	IsFromTVS = CASE WHEN tmpJs.IsFromTVS = 1 THEN 1 ELSE Temp_NewClassification.IsFromTVS END
+								,	IsFromImperva = CASE WHEN tmpJs.IsFromImperva = 1 THEN 1 ELSE Temp_NewClassification.IsFromImperva END*/
 								,	IsFromTW = CASE WHEN tmpJs.IsFromTW = 1 THEN 1 ELSE Temp_NewClassification.IsFromTW END
 								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_NewClassification.IsFromAI END
 								;
