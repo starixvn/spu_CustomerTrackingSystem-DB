@@ -18,6 +18,7 @@ CREATE TABLE CustomerCategoryAgency(
   CategoryName VARCHAR(50) DEFAULT NULL,
   CategorySpec VARCHAR(200) DEFAULT NULL,
   ParentID INT UNSIGNED DEFAULT NULL,
+  RoleID TINYINT DEFAULT NULL,
   CustomerClass INT UNSIGNED DEFAULT NULL,
   CustomerClassName VARCHAR(50) DEFAULT NULL,
   CategoryGroupID INT UNSIGNED DEFAULT NULL,
@@ -62,6 +63,7 @@ CREATE TABLE CustomerCategoryAgency(
   INDEX IX_CustomerCategoryAgency_ParentID(ParentID),
   INDEX IX_CustomerCategoryAgency_IsActive(IsActive),
   INDEX IX_CustomerCategoryAgency_CategoryGroupID(CategoryGroupID),
+  INDEX IX_CustomerCategoryAgency_RoleID(RoleID),
   /*INDEX IX_CustomerCategoryAgency_TVSReasonID(TVSReasonID),*/
   INDEX IX_CustomerCategoryAgency_OldCategoryID(OldCategoryID)
 ) ENGINE=InnoDB;
