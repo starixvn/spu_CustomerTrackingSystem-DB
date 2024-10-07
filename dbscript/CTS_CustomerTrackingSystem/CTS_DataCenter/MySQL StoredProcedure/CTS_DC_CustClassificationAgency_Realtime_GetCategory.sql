@@ -18,17 +18,9 @@ BEGIN
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_CustClassificationAgency_Realtime_GetCategory('761925')
 	*/  
-    DECLARE	CONST_PARENTID_NORMAL 		INT;
-	DECLARE	CONST_PARENTID_PA 			INT;
-	DECLARE	CONST_PARENTID_POTENTIALPA	INT;
-   	DECLARE CONST_PARENTID_WRAPPER		INT;
-    DECLARE	CONST_CATEGROUPID_NEW 		INT;
+    DECLARE	CONST_AGENCY_CATEGROUPID_NEW 		INT;
     
-    SET CONST_PARENTID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
-    SET CONST_PARENTID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
-    SET CONST_PARENTID_POTENTIALPA 		= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
-   	SET CONST_PARENTID_WRAPPER 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
-	SET CONST_CATEGROUPID_NEW 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_NEW');
+	SET CONST_AGENCY_CATEGROUPID_NEW 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_NEW');
        
     DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
 	CREATE TEMPORARY TABLE Temp_Customers(
@@ -64,7 +56,6 @@ BEGIN
 					INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS ca ON ca.CategoryID = cc.CategoryID
 				WHERE temp.CustID = cc.CustID 
 					AND ca.IsActive = 1
-                    AND ca.ParentID <> CONST_PARENTID_WRAPPER
 				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
                 LIMIT 1
 		   ) tmplc;
