@@ -52,15 +52,14 @@ BEGIN
 			))) AS temp;
 	
     -- #1: Get customer category
-	INSERT INTO Temp_CustomerCategory(CustID, CTSCustID, ParentID, CategoryID, RelevantCategoryID)
+	INSERT INTO Temp_CustomerCategory(CustID, CTSCustID, ParentID, CategoryID)
 	SELECT 		tmplc.CustID
 			,	tmplc.CTSCustID
 			, 	tmplc.ParentID
             ,	tmplc.CategoryID
-            ,	tmplc.RelevantCategoryID
 	FROM Temp_Customers AS temp
     	, LATERAL	
-			(	SELECT cc.CustID, cc.CTSCustID, cc.CategoryID, ca.ParentID, ca.RelevantCategoryID
+			(	SELECT cc.CustID, cc.CTSCustID, cc.CategoryID, ca.ParentID
 				FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cc 
 					INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS ca ON ca.CategoryID = cc.CategoryID
 				WHERE temp.CustID = cc.CustID 
