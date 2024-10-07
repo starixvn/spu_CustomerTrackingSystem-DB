@@ -65,6 +65,6 @@ BEGIN
 	FROM Temp_Customers AS temp
 		LEFT JOIN Temp_CustomerCategory AS cate ON cate.CustID = temp.CustID
 	WHERE cate.CategoryID IS NULL 
-		OR cate.CategoryID = CONST_CATEGROUPID_NEW;	
+		OR cate.CategoryID = CONST_AGENCY_CATEGROUPID_NEW;	
 END$$
 DELIMITER ;
