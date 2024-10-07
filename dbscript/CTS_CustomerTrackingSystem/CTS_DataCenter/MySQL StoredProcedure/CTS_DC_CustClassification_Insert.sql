@@ -44,6 +44,7 @@ BEGIN
 		Revisions: 
 			- 20240618@Victoria.Le:		Initial Writing [Redmine ID: #205317]
             - 20240923@Jonas.Huynh:		Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
+			- 20240927@Thomas.Nguyen:	Moved AffectedDownline to Agent's CC flow [Redmine ID: #185799]
             
 */
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -179,10 +180,10 @@ BEGIN
 		
 	END IF;
 	
-	/*STEP 6: AffectedDownline*/
+	/*STEP 6: AffectedDownline
 	IF (ip_IsToQueue = 1 OR (ip_FromAction = 3 AND ip_IsAffectDownline = 1)) THEN
 		CALL CTS_DataCenter.CTS_DC_CustClassification_AffectedDownline_Insert ('Temp_NewClassification',ip_InputFlowID);
-	END IF;
+	END IF;*/
 	
 	/*STEP 7: Insert Evidence*/
 	IF ip_InputFlowID IN (CONST_INPUTFLOWID_GENERAL_INSERT_PACATEGORY,CONST_INPUTFLOWID_GENERAL_INSERT_PAREASON,
