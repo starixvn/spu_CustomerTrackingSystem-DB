@@ -65,6 +65,7 @@ BEGIN
 		,	IsLicensee					TINYINT(1) DEFAULT 0
 		,	IsExistVVIP					TINYINT(1) DEFAULT 0
 		,	IsExistPA					TINYINT(1) DEFAULT 0
+		,	IsFromOldPA					TINYINT(1) DEFAULT 0
 		,	IsFromOld					TINYINT(1) DEFAULT 0
 		
 		, 	TurnoverRM					DECIMAL(20,4)		
@@ -119,7 +120,6 @@ BEGIN
 		,	IsMarkedDirectly			TINYINT(1) DEFAULT 0
 		,	IsReturnData				TINYINT(1) DEFAULT 1
 		,	Remark						VARCHAR(500)
-		/*,	IsRobot						TINYINT(1) DEFAULT 0*/
 		, 	PRIMARY KEY (CustID, DWCategoryID)
 		,	KEY IX_Temp_NewCC_CustID_NewCateID (CustID, NewCategoryGroupID)
 		,	KEY IX_Temp_NewCC_CustID_Priority (CustID,CustomerClassPriority)
@@ -218,9 +218,7 @@ BEGIN
 			INSERT INTO Temp_NewClassification(
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount/*, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount*/
-				,	IsFromCTS
-				,	IsPAProbation, RelevantCategoryID, CreatedDate, IsFromTVS, IsFromTW, IsFromAI, IsFromImperva
-				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime/*, IsRobot*/)
+				,	IsFromCTS, IsPAProbation, RelevantCategoryID, CreatedDate, IsFromTVS, IsFromTW, IsFromAI, IsFromImperva, CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime)
 			SELECT 	tmpJs.CustID
 				,	CASE WHEN tmpJs.CTSCustID = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
 				,	CASE WHEN tmpJs.RoleID = 0 THEN cus.RoleID ELSE tmpJs.RoleID END
@@ -254,7 +252,6 @@ BEGIN
 				,	cat.ParentID
 				,	0 AS IsDataChanged
 				,	tmpJs.PerformanceTime
-				/*,	CASE WHEN cat.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot*/
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"

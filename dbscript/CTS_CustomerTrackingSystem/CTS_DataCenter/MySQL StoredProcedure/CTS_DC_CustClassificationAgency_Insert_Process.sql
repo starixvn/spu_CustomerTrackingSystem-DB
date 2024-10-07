@@ -193,7 +193,7 @@ BEGIN
 		
 		UPDATE Temp_NewClassification AS temp 
 			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS d ON d.CategoryID = temp.NewCategoryID 
-		SET 	temp.TargetDangerLevel = CASE WHEN temp.IsLicensee = 1 THEN d.Ext_ABIDangerLevel_Licensee ELSE d.Ext_ABIDangerLevel_Credit END
+		SET 	temp.TargetDangerLevel = CASE WHEN temp.IsLicensee = 0 THEN d.Ext_ABIDangerLevel_Credit ELSE NULL END
 		WHERE 	temp.IsDataChanged  = 1;
 	
 	ELSE
@@ -254,9 +254,7 @@ BEGIN
 		UPDATE Temp_NewClassification AS temp
             ,	LATERAL(SELECT 	cat.CategoryGroupID
 							,	cat.CustomerClass
-							,	cat.Ext_ABIDangerLevel_Licensee
 							,	cat.Ext_ABIDangerLevel_Credit
-							,	cat.Ext_EvidenceID_Licensee
 							,	cat.Ext_EvidenceID_Credit
 							,	cat.RelevantCategoryID
 						FROM CTS_DataCenter.CustomerCategoryAgency AS cat 
@@ -266,11 +264,8 @@ BEGIN
 		SET 	temp.NewCategoryGroupID = tmpCat.CategoryGroupID	
 			,	temp.NewCategoryID = tmpCat.CategoryGroupID
 			,	temp.TargetCC = IFNULL(tmpCat.CustomerClass,-99)
-			,	temp.TargetDangerLevel = (CASE  WHEN temp.IsLicensee = 1 THEN tmpCat.Ext_ABIDangerLevel_Licensee
-												WHEN temp.IsLicensee = 0 THEN tmpCat.Ext_ABIDangerLevel_Credit END) 
-			,	temp.ToEvidenceID = (CASE 	WHEN temp.IsLicensee = 1 THEN tmpCat.Ext_EvidenceID_Licensee
-											WHEN temp.IsLicensee = 0 THEN tmpCat.Ext_EvidenceID_Credit
-											ELSE NULL END)
+			,	temp.TargetDangerLevel = (CASE WHEN temp.IsLicensee = 0 THEN tmpCat.Ext_ABIDangerLevel_Credit ELSE NULL END) 
+			,	temp.ToEvidenceID = (CASE WHEN temp.IsLicensee = 0 THEN tmpCat.Ext_EvidenceID_Credit ELSE NULL END)
 			,	temp.RelevantCategoryID = tmpCat.RelevantCategoryID;
 	
 		UPDATE Temp_NewClassification AS temp
@@ -444,12 +439,9 @@ BEGIN
 			,	temp_old.ExistCategoryID AS OldCategoryID
 			,	tmpLt.CategoryGroupID AS NewCategoryID
 			,	tmpLt.CategoryGroupID AS NewCategoryGroupID
-			,	(CASE 	WHEN temp_old.SpecialCC IS NOT NULL THEN temp_old.SpecialCC 
-						ELSE IFNULL(tmpLt.CustomerClass,-99) END) AS TargetCC
-			, 	(CASE 	WHEN tmpCp.IsLicensee = 1 THEN tmpLt.Ext_ABIDangerLevel_Licensee
-						WHEN tmpCp.IsLicensee = 0 THEN tmpLt.Ext_ABIDangerLevel_Credit END) AS TargetDangerLevel
-			,	(CASE 	WHEN tmpCp.IsLicensee = 1 THEN tmpLt.Ext_EvidenceID_Licensee
-						WHEN tmpCp.IsLicensee = 0 THEN tmpLt.Ext_EvidenceID_Credit ELSE NULL END) AS ToEvidenceID
+			,	IFNULL(tmpLt.CustomerClass,-99) AS TargetCC
+			, 	CASE WHEN tmpCp.IsLicensee = 0 THEN tmpLt.Ext_ABIDangerLevel_Credit ELSE NULL END AS TargetDangerLevel
+			,	CASE WHEN tmpCp.IsLicensee = 0 THEN tmpLt.Ext_EvidenceID_Credit ELSE NULL END AS ToEvidenceID
 			,	temp_old.Remark
 			,	tmpCp.WinlossStatus
 			,	tmpCp.TurnoverRM
@@ -462,7 +454,7 @@ BEGIN
 			,	temp_old.IsFromAI
 			,	temp_old.IsFromImperva
 			,	1 AS IsDataChanged
-			,	(CASE WHEN tmpCp.WinlossStatus = NULL THEN NULL ELSE 1 END) AS DataChangeType
+			,	(CASE WHEN tmpCp.WinlossStatus IS NULL THEN NULL ELSE 1 END) AS DataChangeType
 			,	temp_old.LastModifiedDate
 			,	temp_old.CreatedBy
 			,	temp_old.IsPAProbation
@@ -473,9 +465,7 @@ BEGIN
 																AND tmpCp.WinlossStatus <> 1 
 		, 	LATERAL (SELECT cat.CategoryGroupID
 						,	cat.CustomerClass
-						,	cat.Ext_ABIDangerLevel_Licensee
 						,	cat.Ext_ABIDangerLevel_Credit
-						,	cat.Ext_EvidenceID_Licensee
 						,	cat.Ext_EvidenceID_Credit
 					FROM CTS_DataCenter.CustomerCategoryAgency AS cat 
 					WHERE temp_old.RelevantCategoryID = cat.CategoryID 

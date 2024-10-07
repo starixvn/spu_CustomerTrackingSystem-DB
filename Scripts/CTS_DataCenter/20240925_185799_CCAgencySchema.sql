@@ -198,8 +198,9 @@ CREATE TABLE CTSCustomerClassificationAgency_Log(
   LastModifiedDate DATETIME DEFAULT NULL,
   LastModifiedBy INT UNSIGNED DEFAULT NULL,
   InsertDate DATETIME NOT NULL,
-  TaggingType SMALLINT DEFAULT '1',
+  /*TaggingType SMALLINT DEFAULT '1',*/
   TargetDangerLevel1 SMALLINT DEFAULT NULL,
+  /*TaggingType SMALLINT DEFAULT '1',
   TWGroupBettingRate DECIMAL(10,4) DEFAULT NULL,
   TWTicketRejectRate DECIMAL(10,4) DEFAULT NULL,
   TWBetCount BIGINT DEFAULT NULL,
