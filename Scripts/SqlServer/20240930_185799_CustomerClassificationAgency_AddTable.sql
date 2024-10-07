@@ -94,9 +94,7 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassificationAgency_InputLog_CustIdFuncti
 
 CREATE NONCLUSTERED INDEX [IX_CustomerClassificationAgency_InputLog_CreatedDate] ON [dbo].[CustomerClassificationAgency_InputLog]
 (
-	[CustId],
-	[FunctionId],
-	[RoleId]
+	[CreatedDate]
 )
 GO
 
@@ -107,6 +105,11 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_Priority](
 	[FunctionId] [int] NOT NULL,
 	[FunctionName] [nvarchar](50) NOT NULL,
 	[Priority] [smallint] NOT NULL
+	PRIMARY KEY CLUSTERED 
+	(
+		[GroupId] ASC,
+		[FunctionId]
+	)
 ) ON [PRIMARY]
 GO
 

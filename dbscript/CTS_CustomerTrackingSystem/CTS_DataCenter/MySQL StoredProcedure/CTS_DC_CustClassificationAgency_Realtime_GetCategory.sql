@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassificationAgency_Realtime_GetCurrentCategory`;
+DROP procedure IF EXISTS `CTS_DataCenter`.`	CTS_DC_CustClassificationAgency_Realtime_GetCategory`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassificationAgency_Realtime_GetCurrentCategory`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassificationAgency_Realtime_GetCategory`(
 	  IN ip_CustIDs      	TEXT
 )
     SQL SECURITY INVOKER
@@ -16,7 +16,7 @@ BEGIN
 			- 20241003@Jonas.Huynh: Created [Redmine ID: #185799]
             
 		Param's Explanation (filtered by):    
-			CALL CTS_DC_CustClassificationAgency_Realtime_GetCurrentCategory('761925')
+			CALL CTS_DC_CustClassificationAgency_Realtime_GetCategory('761925')
 	*/  
     DECLARE	CONST_PARENTID_NORMAL 		INT;
 	DECLARE	CONST_PARENTID_PA 			INT;
