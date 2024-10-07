@@ -113,7 +113,7 @@ BEGIN
 	FROM	CTS_DataCenter.CustomerCategoryAgency AS cat
 	WHERE 	cat.BusinessCategoryGroupID = CONST_AGENCY_BIZCATEGROUPID_PA
 		AND cat.IsActive = 1
-	GROUP BY RoleID, cat.CategoryName, cat.BusinessCategoryGroupID
+	GROUP BY cat.RoleID, cat.CategoryName, cat.BusinessCategoryGroupID
 	UNION
 	SELECT 	cat.BusinessCategoryGroupID AS ID
 		,	'PA Associated Category' AS CategoryGroup		    
@@ -123,7 +123,7 @@ BEGIN
 	FROM	CTS_DataCenter.CustomerCategoryAgency AS cat
 	WHERE 	cat.BusinessCategoryGroupID = CONST_AGENCY_BIZCATEGROUPID_PAASSOCIATED
 		AND cat.IsActive = 1
-	GROUP BY RoleID, cat.CategoryName, cat.BusinessCategoryGroupID
+	GROUP BY cat.RoleID, cat.CategoryName, cat.BusinessCategoryGroupID
 	UNION
 	SELECT	cat.BusinessCategoryGroupID AS ID
 		,	'Normal Account Category' AS CategoryGroup
@@ -133,7 +133,7 @@ BEGIN
 	FROM	CTS_DataCenter.CustomerCategoryAgency AS cat
 	WHERE 	cat.BusinessCategoryGroupID = CONST_AGENCY_BIZCATEGROUPID_NORMAL
 		AND cat.IsActive = 1
-	GROUP BY RoleID, cat.CategoryName, cat.BusinessCategoryGroupID
+	GROUP BY cat.RoleID, cat.CategoryName, cat.BusinessCategoryGroupID
 	UNION
 	SELECT	cat.BusinessCategoryGroupID AS ID
 		,	'Others' AS CategoryGroup
@@ -143,7 +143,7 @@ BEGIN
 	FROM	CTS_DataCenter.CustomerCategoryAgency AS cat
 	WHERE 	cat.BusinessCategoryGroupID = CONST_AGENCY_BIZCATEGROUPID_OTHERS
 		AND cat.IsActive = 1
-	GROUP BY RoleID, cat.CategoryName, cat.BusinessCategoryGroupID
+	GROUP BY cat.RoleID, cat.CategoryName, cat.BusinessCategoryGroupID
 	UNION
 	SELECT	CONST_AGENCY_BIZCATEGROUPID_OTHERS AS ID
 		,	'Others'  AS CategoryGroup
@@ -152,12 +152,12 @@ BEGIN
         ,	CONST_ROLEGROUP_SUPERMASTER;
         
 	#===================================================================================================
-	SELECT	RoleGroup # 1:Member, 2:Agent, 3:Master, 4:Super, 0:SuperMasterAgent
-		,	CategoryGroup
-		,	CategoryName
-		,	CategoryIDs        
-	FROM Temp_CategoryFilter
-	ORDER BY RoleGroup ASC, ID ASC, CategoryName ASC; 
+	SELECT	tmp.RoleGroup # 1:Member, 2:Agent, 3:Master, 4:Super, 0:SuperMasterAgent
+		,	tmp.CategoryGroup
+		,	tmp.CategoryName
+		,	tmp.CategoryIDs        
+	FROM Temp_CategoryFilter AS tmp
+	ORDER BY tmp.RoleGroup ASC, tmp.ID ASC, tmp.CategoryName ASC; 
     
 END$$
 DELIMITER ;
