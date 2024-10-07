@@ -4,6 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_Association_Profile_Get`;
 DELIMITER $$ 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_Get`(
 		IN ip_CTSCustID 		BIGINT UNSIGNED
+	,	IN ip_RoleIDList		INT
 	,	IN ip_AssociationType	INT
 	,	IN ip_AssociationStatus INT 
     ,	IN ip_AccountStatusIDs	VARCHAR(100)
@@ -189,6 +190,11 @@ sp : BEGIN
 			AssTypeItemValue INT PRIMARY KEY            
 	);
     
+	#=============================================================
+	DROP TEMPORARY TABLE IF EXISTS Temp_RoleID;
+	CREATE TEMPORARY TABLE 	Temp_RoleID (
+		RoleID SMALLINT PRIMARY KEY         
+	);
     #===========GET AssociationByAI status is Applied==============================================    
     INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
     SELECT atd.AssTypeItemValue
@@ -206,7 +212,11 @@ sp : BEGIN
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_CategoryID (CategoryID) VALUES ('", REPLACE(ip_CategoryIDs, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1;
-
+	
+	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_RoleID (RoleID) VALUES ('", REPLACE(ip_RoleIDList, ",", "'),('"),"');");
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1;
+    
     /* Get CustID */    
     SELECT CustID 
     INTO lv_CustID
@@ -393,7 +403,7 @@ sp : BEGIN
         ,	cuAs.AssociationStatus
         ,	cuAs.AssociationDate
      FROM Temp_Association AS cuAs
-        STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cust ON cuAs.CTSCustID_Aff = cust.CTSCustID
+        STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cust ON cuAs.CTSCustID_Aff = cust.CTSCustID AND cust.RoleID IN (SELECT RoleID FROM Temp_RoleID)
         STRAIGHT_JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 2 AND sta.ItemID = cuAs.AssociationType 
 	    STRAIGHT_JOIN CTS_DataCenter.StaticList AS sta1 ON sta1.ListID = 1 AND sta1.ItemID = cust.CustStatusID
         STRAIGHT_JOIN CTS_DataCenter.MappingSubscriberSite AS maSu ON maSu.SubscriberID = cust.SubscriberID AND maSu.SiteID = cust.SiteID
