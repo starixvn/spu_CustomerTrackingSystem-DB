@@ -21,8 +21,7 @@ BEGIN
             
 		Param's Explanation (filtered by):
         
-        Example: "RoleGroup" : 1 Member, 2: Agency
-				CALL CTS_DC_Category_Get();                
+        Example: "RoleGroup" : # 1:Member, 2:Agent, 3:Master, 4:Super, 0:SuperMasterAgent   
 	*/
 	DECLARE CONST_BIZCATEGROUPID_PA				INT;
 	DECLARE CONST_BIZCATEGROUPID_PAASSOCIATED	INT;
