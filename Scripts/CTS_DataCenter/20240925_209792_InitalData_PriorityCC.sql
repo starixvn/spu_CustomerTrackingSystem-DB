@@ -22,9 +22,10 @@ SET @CONST_PARENTID_POTENTIALPA			 = CTS_DC_CategoryTypeParent_Get ('CONST_PAREN
 
 DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
 CREATE TEMPORARY TABLE Temp_Customers(
-		CustID		BIGINT UNSIGNED PRIMARY KEY
-    ,   ParentID	INT NOT NULL
-    ,   CategoryID 	INT NOT NULL        
+		CustID		BIGINT UNSIGNED
+	,   ParentID	INT NOT NULL
+    ,   CategoryID 	INT NOT NULL   
+    , 	PRIMARY KEY (CustID, CategoryID)
 );
 
 INSERT INTO Temp_Customers(CustID, ParentID, CategoryID)
@@ -54,5 +55,7 @@ UPDATE CTS_DataCenter.CTSCustomerClassification_Log AS cc
 		AND c.CategoryID = cc.CategoryID
 SET cc.ParentID = @CONST_PARENTID_PA;
  
--- #4. Skip Table CTSCustomerClassification_History_Renovate_Archive
--- #5. Skip Table ArchiveCustomer_CTSCustomer (Count = 0)
+ -- #4
+ 
+-- #5. Skip Table CTSCustomerClassification_History_Renovate_Archive
+-- #6. Skip Table ArchiveCustomer_CTSCustomer (Count = 0)
