@@ -21,8 +21,8 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Normal_GetCurrentCategory('5941,5942,100,7681925');
 	 */ 	
 	DECLARE	CONST_AGENCY_PARENTID_NORMAL	INT ; 
-	DECLARE lv_CurrentTime 			DATETIME DEFAULT CURRENT_TIMESTAMP();
-	DECLARE lv_CurrentDate 			DATE DEFAULT CURRENT_DATE();
+	DECLARE lv_CurrentTime 					DATETIME DEFAULT CURRENT_TIMESTAMP();
+	DECLARE lv_CurrentDate 					DATE DEFAULT CURRENT_DATE();
        
 	SET CONST_AGENCY_PARENTID_NORMAL 	= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
         
@@ -78,7 +78,7 @@ BEGIN
 				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 				LIMIT 1
 		   ) tmplc 
-	WHERE tmplc.ParentID = CONST_PARENTID_NORMAL;
+	WHERE tmplc.ParentID = CONST_AGENCY_PARENTID_NORMAL;
    
     #3. Return data set
 	SELECT	DISTINCT tmpCust.CustID
