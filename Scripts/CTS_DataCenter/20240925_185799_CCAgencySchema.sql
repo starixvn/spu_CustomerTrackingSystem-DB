@@ -251,6 +251,18 @@ CREATE TABLE CTSCustomerClassificationAgency_Log(
  PARTITION pm202510 VALUES LESS THAN(202511) ENGINE = InnoDB,
  PARTITION pm202511 VALUES LESS THAN(202512) ENGINE = InnoDB,
  PARTITION pm999999 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */;
+
+#======================================================================
+DROP TABLE IF EXISTS CustomerCategory_AffectDownlineMapping;
+CREATE TABLE CustomerCategory_AffectDownlineMapping(
+		FromCategoryID	INT NOT NULL
+    ,	FromRoleID		INT 
+	,	ToCategoryID	INT NOT NULL
+    ,	ToRoleID		INT
+
+    ,	PRIMARY KEY PK_CustomerCategory_AffectDownlineMapping(FromCategoryID,FromRoleID,ToCategoryID,ToRoleID)
+) ENGINE=InnoDB;
+
 #************************************************************************************************************
 #************************************************************************************************************
 USE CTS_Archive;
