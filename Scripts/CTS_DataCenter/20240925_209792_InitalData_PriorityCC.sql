@@ -56,6 +56,13 @@ UPDATE CTS_DataCenter.CTSCustomerClassification_Log AS cc
 SET cc.ParentID = @CONST_PARENTID_PA;
  
  -- #4
- 
+UPDATE CTS_DataCenter.CTSCustomerClassification_History AS cc
+SET cc.ParentID = @CONST_PARENTID_PA
+WHERE cc.ParentID = @CONST_PARENTID_POTENTIALPA;
+
+UPDATE CTS_DataCenter.CTSCustomerClassification_Log AS cc
+SET cc.ParentID = @CONST_PARENTID_PA
+WHERE cc.ParentID = @CONST_PARENTID_POTENTIALPA;
+
 -- #5. Skip Table CTSCustomerClassification_History_Renovate_Archive
 -- #6. Skip Table ArchiveCustomer_CTSCustomer (Count = 0)
