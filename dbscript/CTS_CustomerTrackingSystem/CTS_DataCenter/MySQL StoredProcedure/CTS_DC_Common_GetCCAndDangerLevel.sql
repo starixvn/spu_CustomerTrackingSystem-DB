@@ -274,25 +274,13 @@ BEGIN
 			END AS DangerLevelType
     FROM Temp_CustInfo AS tmp
 		INNER JOIN Temp_CustLatestCate AS t ON tmp.CustID = t.CustID,
-		LATERAL(SELECT 	CASE WHEN clss.ParentID = CONST_AGENCY_PARENTID_PA AND tmp.SpecialCC IS NULL THEN cate.Ext_CategoryGroupID 
+		LATERAL(SELECT 	CASE WHEN clss.ParentID = CONST_AGENCY_PARENTID_PA THEN cate.Ext_CategoryGroupID 
 							 ELSE NULL END AS CategoryID
-					,	CASE  
-							WHEN(tmp.SpecialCC IS NULL) OR(tmp.SpecialCCPriority <> -1)
-									THEN CASE
-											WHEN cate.CustomerClass = lv_Agency_VVIPCC THEN lv_Agency_VVIPCC
-											WHEN tmp.SpecialCCPriority <> -1 AND cate.CustomerClassPriority > tmp.SpecialCCPriority THEN tmp.SpecialCC
-                                            ELSE cate.CustomerClass
-										END
-							ELSE tmp.SpecialCC
+					,	CASE WHEN cate.CustomerClass = lv_Agency_VVIPCC THEN lv_Agency_VVIPCC 
+							ELSE cate.CustomerClass						
 						END AS CustomerClass
-					,	CASE  
-							WHEN(tmp.SpecialCC IS NULL) OR(tmp.SpecialCCPriority <> -1)
-									THEN CASE
-											WHEN cate.CustomerClass = lv_Agency_VVIPCC THEN cate.CustomerClassName
-											WHEN tmp.SpecialCCPriority <> -1 AND cate.CustomerClassPriority > tmp.SpecialCCPriority THEN tmp.SpecialCCName
-                                            ELSE cate.CustomerClassName
-										END
-							ELSE tmp.SpecialCCName
+					,	CASE WHEN cate.CustomerClass = lv_Agency_VVIPCC THEN cate.CustomerClassName
+							ELSE cate.CustomerClassName
 						END AS CustomerClassName
 					,	cate.ParentID
 				FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
@@ -301,8 +289,7 @@ BEGIN
                 ORDER BY  cate.CustomerClassPriority ASC  
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss,
-		LATERAL(SELECT 	CASE WHEN tmp.IsLicensee = 1 THEN cc.Ext_ABIDangerLevel_Licensee
-							 WHEN tmp.IsLicensee = 0 THEN cc.Ext_ABIDangerLevel_Credit
+		LATERAL(SELECT 	CASE WHEN tmp.IsLicensee = 0 THEN cc.Ext_ABIDangerLevel_Credit
 						 END AS DangerLevel
                     ,	cc.Ext_DangerLevelType 
 				FROM CTS_DataCenter.CTSCustomerClassificationAgency AS c

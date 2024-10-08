@@ -65,7 +65,6 @@ BEGIN
 			RowNumber			INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
 		,	CTSCustID			BIGINT UNSIGNED 
 		,	CustID 				BIGINT UNSIGNED
-        ,	RoleID				SMALLINT
 		,	Username			VARCHAR(50)
 		,	CustStatus			VARCHAR(50)
 		,	Recommend			BIGINT UNSIGNED
@@ -163,7 +162,7 @@ BEGIN
 	);
 
     /*****************************Extract Data From Input**************************************************/
-    INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,RoleID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,RoleID,CreatedDate,Processed,IsLicensee,SubscriberID)
+    INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,RoleID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,CreatedDate,Processed,IsLicensee,SubscriberID)
 	SELECT 	tmp.CTSCustID
 		, 	cus.CustID
         , 	cus.RoleID
@@ -175,7 +174,6 @@ BEGIN
         ,	cus.Danger3
         ,	cus.Danger4
         ,	cus.Danger5
-        ,	cus.RoleID
         ,	cus.CreatedDate
         ,	CASE WHEN cus.CTSCustID IS NULL OR cus.IsInternal = 1 THEN 1 ELSE 0 END AS Processed
         ,   cus.IsLicensee
@@ -659,3 +657,5 @@ BEGIN
 END$$
 
 DELIMITER ;
+call CTS_DataCenter.CTS_DC_Association_DetectGroup_Casey('11217,11216,11215', '[{\"O\":11215,\"D\":30240515002,\"A\":1},{\"O\":11216,\"D\":30240515002,\"A\":1},{\"O\":11217,\"D\":30240515002,\"A\":1}]', '[]', '[]', '[]', '[]', '[]', 1);
+
