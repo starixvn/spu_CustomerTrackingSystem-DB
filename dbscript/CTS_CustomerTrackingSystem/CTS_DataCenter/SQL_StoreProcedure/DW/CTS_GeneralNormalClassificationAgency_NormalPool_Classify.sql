@@ -21,7 +21,7 @@ AS
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
 		@IsScanOnlyTagging  : 0-Performance Classification, 1-Behaviour Classification (Tagging)
     Script:
-        EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassificationAgency_NormalPool_Classify 
+        EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassificationAgency_NormalPool_Classify
 			@CustomersXML = N'<Root>
 								<r CustId="5002646" RoleId = "2" CategoryId="201" IsNewCreated="0" IsRealtimeOnly= "0" />
 								<r CustId="5022391" RoleId = "2" CategoryId="0"  IsNewCreated="1" IsRealtimeOnly= "1" />
@@ -76,8 +76,8 @@ BEGIN
 		WinlossRM			 DECIMAL(19, 4)		NOT NULL,
 		TurnoverORG			 DECIMAL(19, 4)		NOT NULL,
 		WinlossORG			 DECIMAL(19, 4)		NOT NULL,
-		BetCount			 BIGINT				NOT NULL,
-		FirstBetDate		 INT				NOT NULL,
+		BetCount			 INT				NOT NULL,
+		FirstBetDate		 DATETIME			NOT NULL,
         LastXDaysTurnoverRM  DECIMAL(19, 4)		NOT NULL,
         LastXDaysWinlossRM	 DECIMAL(19, 4)		NOT NULL,
         LastXDaysBetCount	 INT				NOT NULL,
@@ -100,7 +100,7 @@ BEGIN
 		TurnoverRM				DECIMAL(19, 4)	NOT NULL,
 		WinlossRM				DECIMAL(19, 4)	NOT NULL,
 		Margin					DECIMAL(19, 4)	NOT NULL,
-		BetCount				BIGINT			NOT NULL,
+		BetCount				INT				NOT NULL,
 		FirstBetDate			INT				NOT NULL,
         LastXDaysTurnoverRM		DECIMAL(19, 4)	NOT NULL,
         LastXDaysWinlossRM		DECIMAL(19, 4)	NOT NULL,
@@ -129,7 +129,7 @@ BEGIN
 		CustId		INT,
 		RoleId		INT NOT NULL,
 		CategoryId	INT	NOT NULL,
-		BetCount	BIGINT NULL
+		BetCount	INT NULL
 	);
 
 	CREATE CLUSTERED INDEX CIX_tmpBetCount_CustIdRoleId ON #tmpBetCount(
@@ -168,6 +168,7 @@ BEGIN
 									  FOR XML PATH('')), 1, 1, '');
 
 		-- #4: Get accummulated performance
+		
 		INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, ProcessedTime)
 		EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetSMAAccumulatedInfo @ListCustID = @ListCustIds, @RangeDays = @RANGDAYS, @IsAccumulated = 1;
 		
@@ -177,7 +178,7 @@ BEGIN
 				SUM(a.WinlossRM),
 				CASE WHEN SUM(a.TurnoverRM) = 0 THEN 0 ELSE SUM(a.WinlossRM) / SUM(a.TurnoverRM) * 100 END,
 				SUM(a.BetCount),
-				MIN(a.FirstBetDate),
+				DATEDIFF(DAY, MIN(a.FirstBetDate), @CurrentDateTime),
 				SUM(a.LastXDaysTurnoverRM),
 				SUM(a.LastXDaysWinlossRM),
 				CASE WHEN SUM(a.LastXDaysTurnoverRM) = 0 THEN 0 ELSE SUM(a.LastXDaysWinlossRM) / SUM(a.LastXDaysTurnoverRM) * 100 END,
@@ -186,7 +187,7 @@ BEGIN
 				SUM(a.LastYDaysWinlossRM),
 				CASE WHEN SUM(a.LastYDaysTurnoverRM) = 0 THEN 0 ELSE SUM(a.LastYDaysWinlossRM) / SUM(a.LastYDaysTurnoverRM) * 100 END,
 				SUM(a.LastYDaysBetCount),
-				CASE WHEN SUM(a.LastXDaysWinlossRM) = 0 || SUM(a.LastYDaysWinlossRM) = 0 THEN 0 ELSE SUM(a.LastXDaysWinlossRM) / SUM(a.LastYDaysWinlossRM) * 100 END,
+				CASE WHEN SUM(a.LastXDaysWinlossRM) = 0 OR SUM(a.LastYDaysWinlossRM) = 0 THEN 0 ELSE SUM(a.LastXDaysWinlossRM) / SUM(a.LastYDaysWinlossRM) * 100 END,
 				MAX(a.ProcessedTime)
 		FROM #tmpRawData AS a
 		GROUP BY a.CustId;
