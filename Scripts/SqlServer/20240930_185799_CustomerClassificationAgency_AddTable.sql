@@ -62,7 +62,7 @@ DROP TABLE [dbo].[CustomerClassificationAgency_NormalPool]
 CREATE TABLE [dbo].[CustomerClassificationAgency_NormalPool](
 	[ID] [bigint] IDENTITY(1,1) NOT NULL,
 	[CustId] [int] NOT NULL,
-	[RoleId] [tinyint] NOT NULL,
+	[RoleId] [tinyint] NULL,
 	[Priority] [smallint] NULL,
 	[FunctionId] [smallint] NOT NULL,
 	[CreatedTime] [datetime] NOT NULL,
