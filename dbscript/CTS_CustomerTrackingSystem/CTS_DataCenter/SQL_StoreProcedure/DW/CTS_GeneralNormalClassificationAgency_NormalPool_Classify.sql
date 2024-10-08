@@ -33,28 +33,21 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE @GENERAL_SPORTID				SMALLINT  = 200;
+	DECLARE @CATEGORY_NULL					INT = NULL;
+	DECLARE	@CATEGORY_INACTIVE				INT = 140700;
+	DECLARE	@CATEGORY_NEW					INT = 140100;
+	DECLARE	@CATEGORY_GOOD					INT = 140200;
+	DECLARE	@CATEGORY_NORMAL				INT = 140300;
+	DECLARE	@CATEGORY_PROBATION				INT = 140400;
+	DECLARE	@CATEGORY_SMART					INT = 140500;
+	DECLARE	@CATEGORY_RISKY					INT = 140600;
+
+	DECLARE	@LASTXDAYS						VARCHAR(5) = '60';
+	DECLARE	@LASTYDAYS						VARCHAR(5) = '365';
+
 	DECLARE @CurrentDateTime				DATETIME  = GETDATE();
 	DECLARE	@ToDate							DATE	  = GETDATE();
-	DECLARE @YesterdayDate					DATE	  = DATEADD(DAY, -1, @ToDate);
 	DECLARE @From30Date						DATE	  = DATEADD(DAY, -29, @ToDate);
-
-	DECLARE @CATEGORY_NULL					INT = NULL,
-			@CATEGORY_INACTIVE				INT = 40700,
-			@CATEGORY_NEW					INT = 40100,
-			@CATEGORY_GOOD					INT = 40200,
-			@CATEGORY_NORMAL				INT = 40300,
-			@CATEGORY_PROBATION				INT = 40400,
-			@CATEGORY_SMART					INT = 40500,
-			@CATEGORY_RISKY					INT = 40600;
-
-	DECLARE @SportGroup_SabaVRSoccer		SMALLINT = 145,
-			@SportGroup_SabaVRBasketball	SMALLINT = 912,
-			@SportGroup_NonSport			SMALLINT = 229;
-
-	DECLARE @ScanTaggingType_NotExist		TINYINT = 0,
-			@ScanTaggingType_Exist			TINYINT = 1,
-			@ScanTaggingType_ExistOnly		TINYINT = 2;
 
 	DECLARE @ListCustIds					VARCHAR(MAX);
 
@@ -64,18 +57,13 @@ BEGIN
 	END
 
 	CREATE TABLE #tmpCustomers(
-		CustId			       INT,
+		CustId			       INT PRIMARY KEY,
 		RoleId				   TINYINT	NOT NULL,
 		CurrentCategoryId      INT		NOT NULL,
 		IsNewCreated	       BIT	    NOT NULL DEFAULT 0,
 		IsRealtimeOnly		   BIT	    NOT NULL DEFAULT 0,
 		IsProbationLastDay	   BIT		NOT NULL DEFAULT 0,
 		IsActiveWithin30Days   BIT		NOT NULL DEFAULT 0
-	);
-	
-	CREATE CLUSTERED INDEX CIX_tmpCustomers_CustIdRoleId ON #tmpCustomers(
-		CustId,
-		RoleId
 	);
 	
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -123,6 +111,7 @@ BEGIN
 		LastYDaysMargin			DECIMAL(19, 4)	NOT NULL,
         LastYDaysWinlossRM		DECIMAL(19, 4)	NOT NULL,
         LastYDaysBetCount		INT				NOT NULL,
+		LastXYDaysWinlossRatio	SMALLINT		NOT NULL,
 		PerformanceTime			DATETIME		NOT NULL
 	);
 
@@ -173,54 +162,56 @@ BEGIN
 	WHERE   a.IsRealtimeOnly = 1 
 		AND a.CurrentCategoryId NOT IN (@CATEGORY_NULL, @CATEGORY_NEW, @CATEGORY_INACTIVE);
 	
-	-- #3: Get list customers to retrieve performances
-	SELECT @ListCustIds = STUFF(( SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
-								  FROM #tmpCustomers WITH (NOLOCK)
-								  FOR XML PATH('')), 1, 1, '');
+	IF (EXISTS (SELECT 1 FROM #tmpCustomers))
+	BEGIN
+		-- #3: Get list customers to retrieve performances
+		SELECT @ListCustIds = STUFF(( SELECT DISTINCT ',', CONVERT(VARCHAR(15), CustId) 
+									  FROM #tmpCustomers WITH (NOLOCK)
+									  FOR XML PATH('')), 1, 1, '');
 
+		-- #4: Get accummulated performance
+		INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, ProcessedTime)
+		EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetSMAAccumulatedInfo @ListCustID = @ListCustIds, @RangeDays = CONCAT_WS(',',@LASTXDAYS,@LASTYDAYS), @IsAccumulated = 1;
+		
+		INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysMargin, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysMargin, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
+		SELECT a.CustId,
+				SUM(a.TurnoverRM),
+				SUM(a.WinlossRM),
+				CASE WHEN SUM(a.TurnoverRM) = 0 THEN 0 ELSE SUM(a.WinlossRM) / SUM(a.TurnoverRM) * 100 END,
+				SUM(a.BetCount),
+				MIN(a.FirstBetDate),
+				SUM(a.LastXDaysTurnoverRM),
+				SUM(a.LastXDaysWinlossRM),
+				CASE WHEN SUM(a.LastXDaysTurnoverRM) = 0 THEN 0 ELSE SUM(a.LastXDaysWinlossRM) / SUM(a.LastXDaysTurnoverRM) * 100 END,
+				SUM(a.LastXDaysBetCount),
+				SUM(a.LastYDaysTurnoverRM),
+				SUM(a.LastYDaysWinlossRM),
+				CASE WHEN SUM(a.LastYDaysTurnoverRM) = 0 THEN 0 ELSE SUM(a.LastYDaysWinlossRM) / SUM(a.LastYDaysTurnoverRM) * 100 END,
+				SUM(a.LastYDaysBetCount),
+				CASE WHEN SUM(a.LastXDaysWinlossRM) = 0 || SUM(a.LastYDaysWinlossRM) = 0 THEN 0 ELSE SUM(a.LastXDaysWinlossRM) / SUM(a.LastYDaysWinlossRM) * 100 END,
+				MAX(a.ProcessedTime)
+		FROM #tmpRawData AS a
+		GROUP BY a.CustId;
 
-	UPDATE a WITH(ROWLOCK, UPDLOCK)
+		-- #5: Check Agency's active days
+		UPDATE a WITH(ROWLOCK, UPDLOCK)
 		SET a.IsActiveWithin30Days = 1
 		FROM #tmpCustomers AS a
-			LEFT JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
+			LEFT JOIN dbo.CustomerClassificationAgency_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
 		WHERE (c.CustId IS NOT NULL AND c.LastTransDate >= @From30Date)
 			OR a.IsNewCreated = 1;
 
-	-- #7: Get accummulated performance
-	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, ProcessedTime)
-	EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetSMAAccumulatedInfo @ListCustID = @ListCustIds, @RangeDays = '60,120', @IsAccumulated = 1;
-		
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysMargin, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysMargin, LastYDaysBetCount, PerformanceTime)
-	SELECT a.CustId,
-			SUM(a.TurnoverRM),
-			SUM(a.WinlossRM),
-			CASE WHEN SUM(a.TurnoverRM) = 0 THEN 0 ELSE SUM(a.WinlossRM) / SUM(a.TurnoverRM) * 100 END,
-			SUM(a.BetCount),
-			MIN(a.FirstBetDate),
-			SUM(a.LastXDaysTurnoverRM),
-			SUM(a.LastXDaysWinlossRM),
-			CASE WHEN SUM(a.LastXDaysTurnoverRM) = 0 THEN 0 ELSE SUM(a.LastXDaysWinlossRM) / SUM(a.LastXDaysTurnoverRM) * 100 END,
-			SUM(a.LastXDaysBetCount),
-			SUM(a.LastYDaysTurnoverRM),
-			SUM(a.LastYDaysWinlossRM),
-			CASE WHEN SUM(a.LastYDaysTurnoverRM) = 0 THEN 0 ELSE SUM(a.LastYDaysWinlossRM) / SUM(a.LastYDaysTurnoverRM) * 100 END,
-			SUM(a.LastYDaysBetCount),
-			MAX(a.ProcessedTime)
-	FROM #tmpRawData AS a
-	GROUP BY a.CustId;
-
-	IF (EXISTS (SELECT 1 FROM #tmpCustomers))
-	BEGIN
-		-- #9: Map relevant customer info
+		-- #6: Map relevant customer info
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
 		SET a.CurrentCategoryId = c.CurrentCategoryId,
+			a.RoleId = c.RoleId,
 			a.IsRealtimeOnly = c.IsRealtimeOnly,
 			a.IsActiveWithin30Days = c.IsActiveWithin30Days,
 			a.IsProbationLastDay = c.IsProbationLastDay
 		FROM #tmpCustomerAccummulatedInfo AS a
 			INNER JOIN #tmpCustomers AS c ON a.CustId = c.custid;
 
-		-- #10: Remove accounts with settle bet count has not reach the schedule (FOR REALTIME ONLY)
+		-- #7: Remove accounts with settle bet count has not reach the schedule (FOR REALTIME ONLY)
 		---- less than 10 settle tickets compared to last scan for New Member
 		INSERT INTO #tmpRemoveCust(CustId)
 		SELECT a.CustId
@@ -229,7 +220,7 @@ BEGIN
 		WHERE a.IsRealtimeOnly = 1 
 				AND (a.CurrentCategoryId = @CATEGORY_NEW AND a.BetCount - b.BetCount < 10);
 
-		-- #11.2: Remove invalid realtime conditions data
+		-- #8: Remove invalid realtime conditions data
 		DELETE a WITH (ROWLOCK)
 		FROM #tmpCustomerAccummulatedInfo AS a
 			INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId;
@@ -238,26 +229,16 @@ BEGIN
 		FROM #tmpCustomers AS a
 			INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId;
 
-		-- #12: Insert scanned cust daily
-		UPDATE b WITH(ROWLOCK, UPDLOCK)
-		SET	b.CreatedDate = @ToDate
-		FROM #tmpCustomers AS a
-			INNER JOIN dbo.CustomerClassification_ScannedDailyCust AS b ON b.CustId = a.CustId;
-
-		INSERT INTO dbo.CustomerClassification_ScannedDailyCust(CustId, CreatedDate)
-		SELECT a.CustId, @ToDate
-		FROM #tmpCustomers AS a
-			LEFT JOIN dbo.CustomerClassification_ScannedDailyCust AS b WITH(NOLOCK) ON b.CustId = a.CustId
-		WHERE b.CustId IS NULL;
-
-		-- #13: Classify customer without performance 
-		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, ProcessedTime)
+		-- #9: Classify customer without performance 
+		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, ProcessedTime)
+		OUTPUT INSERTED.CustId, INSERTED.RoleId, INSERTED.CategoryId, 0 INTO #tmpBetCount
 		SELECT t.CustId
-			,  @GENERAL_SPORTID
+			,  t.RoleId
 			,  CASE WHEN t.IsActiveWithin30Days = 1 THEN @CATEGORY_NEW ELSE @CATEGORY_INACTIVE END
 			,  @CATEGORY_NULL
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime
+			,  NULL
 			,  NULL
 			,  NULL
 			,  NULL
@@ -274,84 +255,61 @@ BEGIN
 			LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId
 		WHERE c.CustId IS NULL;	
 
-		-- #14: Classify classification by general rule
+		-- #10: Classify classification by general rule
 		UPDATE t WITH(ROWLOCK, UPDLOCK)
-		SET t.NewCategoryId = b.CategoryId,
-			t.CurrentCategoryId = ISNULL(t.CurrentCategoryId, b.CategoryId)
+		SET t.NewCategoryId = b.CategoryId
 		FROM (
 				SELECT  a.CustId
 					,   r.CategoryId
 					,	ROW_NUMBER() OVER(PARTITION BY a.CustId ORDER BY r.Prioity ASC) AS RowNum
 					FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK) 
-						INNER JOIN dbo.CustomerClassificationAgency_Rule AS r WITH(NOLOCK) ON a.CurrentCategoryId = r.CurrentCategory AND a.RoleId = r.RoleId
-					WHERE 	   (r.RuleGroupId = 1 AND a.BetCount < r.BetCount
-						OR (r.RuleGroupId = 2 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM > r.WinlossRM)			-- NEW MEMBER	
-						OR (r.RuleGroupId = 3 AND a.BetCount > r.BetCount AND a.Margin < r.Margin AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays)				-- GOOD
-						OR (r.RuleGroupId = 4 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin < r.Margin2)				-- NORMAL
-						OR (r.RuleGroupId = 5 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND NOT (a.BetCount > r.BetCount2 AND a.TurnoverRM > r.TurnoverRM AND a.ActiveDays >= r.ActiveDays))	-- NORMAL
-						OR (r.RuleGroupId = 6 AND a.IsSpecialSite = r.IsSpecialSite AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.WinlossRM <= r.WinlossRM)		-- NORMAL
-						OR (r.RuleGroupId = 7 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM < r.WinlossRM)				-- NORMAL
-						OR (r.RuleGroupId = 8 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM <= r.WinlossRM)					-- PROBATION
-						OR (r.RuleGroupId = 9 AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM <= r.WinlossRM)					-- PROBATION
-						OR (r.RuleGroupId = 10 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin)												-- PROBATION
-						OR (r.RuleGroupId = 11 AND a.IsDeposit = r.IsDeposit AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)				-- PROBATION
-						OR (r.RuleGroupId = 12 AND (r.IsProbationLastDay IS NULL OR (r.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay)) AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM) -- SMART
-						OR (r.RuleGroupId = 13 AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)				-- SMART
-						OR (r.RuleGroupId = 14 AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM AND a.WinlossRM <= r.WinlossRM2)											-- SMART
-						OR (r.RuleGroupId = 15 AND a.Margin >= r.Margin AND a.Margin <= r.Margin2 AND a.WinlossRM > r.WinlossRM)												-- SMART
-						OR (r.RuleGroupId = 16 AND (r.IsProbationLastDay IS NULL OR (r.IsProbationLastDay IS NOT NULL AND a.IsProbationLastDay = r.IsProbationLastDay)) AND a.BetCount >= r.BetCount AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM) -- RISKY
-						OR (r.RuleGroupId = 17 AND a.Margin > r.Margin AND a.WinlossRM > r.WinlossRM))																			-- RISKY
+						INNER JOIN dbo.CustomerClassificationAgency_Rule AS r WITH(NOLOCK) ON a.RoleId = r.RoleId
+					WHERE 	   (r.RuleGroupId = 1 AND a.BetCount < r.BetCount)
+						OR (r.RuleGroupId = 100 AND a.FirstBetDate < r.FirstBetDate AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.Margin2 < r.Margin2)
+						OR (r.RuleGroupId = 200 AND a.FirstBetDate > r.FirstBetDate AND a.BetCount > r.BetCount AND a.Margin >= r.Margin AND  a.Margin2 < r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
+						OR (r.RuleGroupId = 300 AND a.FirstBetDate <= r.FirstBetDate  AND a.BetCount >= r.BetCount)
+						OR (r.RuleGroupId = 400 AND a.FirstBetDate > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.Margin2 >= r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
+						OR (r.RuleGroupId = 500 AND a.FirstBetDate > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)
 			) AS b
 			INNER JOIN #tmpCustomerAccummulatedInfo AS t ON t.CustId = b.CustId
-			WHERE b.RowNum = 1;
+		WHERE b.RowNum = 1;
 
-		--#15: Insert to CustomerClassification
-		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
-		OUTPUT INSERTED.CustId, @GENERAL_SPORTID, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
+		--#11: Insert to CustomerClassification
+		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, ProcessedTime)
+		OUTPUT INSERTED.CustId, INSERTED.RoleId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
 		SELECT a.CustId
-			,  @GENERAL_SPORTID
-			,  CASE 
+			,	a.RoleId
+			,	CASE 
+					WHEN a.IsActiveWithin30Days = 0 THEN @CATEGORY_INACTIVE
 					WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId 
-					WHEN a.NewCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY) AND a.CurrentCategoryId NOT IN (@CATEGORY_PROBATION, @CATEGORY_SMART, @CATEGORY_RISKY) THEN @CATEGORY_PROBATION
-					ELSE a.NewCategoryId END
-			,  a.CurrentCategoryId
-			,  @ToDate AS CreatedDate
-			,  @CurrentDateTime AS CreatedTime
-			,  a.TurnoverRM
-			,  a.WinlossRM
-			,  a.BetCount
-			,  a.ActiveDays
-			,  ISNULL(a.PerformanceTime, @CurrentDateTime)
-			,  a.ScanTaggingType
-		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
-		WHERE a.IsActiveWithin30Days = 1;
-
-		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
-		SELECT a.CustId
-			,  @GENERAL_SPORTID
-			,  CASE WHEN a.NewCategoryId IN (@CATEGORY_SMART, @CATEGORY_RISKY, @CATEGORY_PROBATION) THEN @CATEGORY_SMARTINACTIVE ELSE @CATEGORY_NORMALINACTIVE END AS CategoryId
-			,  a.CurrentCategoryId
-			,  @ToDate AS CreatedDate
-			,  @CurrentDateTime AS CreatedTime
-			,  a.TurnoverRM
-			,  a.WinlossRM
-			,  a.BetCount
-			,  a.ActiveDays
-			,  ISNULL(a.PerformanceTime, @CurrentDateTime)
-			,  a.ScanTaggingType
-		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK)
-		WHERE a.IsActiveWithin30Days = 0;
+					ELSE a.NewCategoryId 
+				END
+			,	a.CurrentCategoryId
+			,	@ToDate AS CreatedDate
+			,	@CurrentDateTime AS CreatedTime
+			,	a.TurnoverRM
+			,	a.WinlossRM
+			,	a.BetCount
+			,	a.FirstBetDate
+			,	a.LastXDaysTurnoverRM
+			,	a.LastXDaysWinlossRM
+			,	a.LastXDaysBetCount
+			,	a.LastYDaysTurnoverRM
+			,	a.LastYDaysWinlossRM
+			,	a.LastYDaysBetCount
+			,	a.LastXYDaysWinlossRatio
+			,	ISNULL(a.PerformanceTime, @CurrentDateTime)
+		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK);
 	
-		-- #16: Update last settle betcounts
-		EXEC dbo.CTS_NormalClassification_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 1;
-	END;
+		-- #12: Update last settle betcounts
+		EXEC dbo.CTS_NormalClassificationAgency_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 1;
 
-	DROP TABLE #tmpCustomerAccummulatedInfo;
-	DROP TABLE #tmpCustomers;
-	DROP TABLE #tmpRawData;		
-	DROP TABLE #tmpBetCount;
-	DROP TABLE #tmpRemoveCust;
-	DROP TABLE #tmpScanTaggingCustomer;
+		DROP TABLE #tmpCustomerAccummulatedInfo;
+		DROP TABLE #tmpCustomers;
+		DROP TABLE #tmpRawData;		
+		DROP TABLE #tmpBetCount;
+		DROP TABLE #tmpRemoveCust;
+	END;
 END;
 GO
 
