@@ -299,7 +299,7 @@ BEGIN
 		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK);
 	
 		-- #12: Update last settle betcounts
-		EXEC dbo.CTS_NormalClassificationAgency_BetCount_Update @CurrentDateTime = @CurrentDateTime, @IsGeneralFlow = 1;
+		EXEC dbo.CTS_NormalClassificationAgency_BetCount_Update @CurrentDateTime = @CurrentDateTime;
 
 		DROP TABLE #tmpCustomerAccummulatedInfo;
 		DROP TABLE #tmpCustomers;
