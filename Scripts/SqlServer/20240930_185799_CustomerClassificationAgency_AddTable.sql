@@ -21,7 +21,7 @@ CREATE TABLE [dbo].[CustomerClassificationAgency](
 	[CustId] [int] NOT NULL,
 	[RoleId] [tinyint] NOT NULL,
 	[CurrentCategoryId] [int] NULL,
-	[CategoryId] [int] NULL,
+	[CategoryId] [int] NOT NULL,
 	[CreatedDate] [date] NOT NULL,
 	[CreatedTime] [datetime] NULL,
 	[TurnoverRM] [decimal](19, 4) NULL,
@@ -36,6 +36,7 @@ CREATE TABLE [dbo].[CustomerClassificationAgency](
 	[LastYDaysTurnoverRM] [decimal](19, 4) NULL,
 	[LastYDaysWinlossRM] [decimal](19, 4) NULL,
 	[LastYDaysBetCount] [decimal](19, 4) NULL,
+	[LastXYDaysWinlossRatio] [smallint] NULL,
 	[PerformanceTime] [datetime] NULL
 )
 GO
@@ -193,8 +194,7 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_Rule](
 	[Margin2] [decimal](19, 4) NULL,
 	[WinlossRM] [decimal](19, 4) NULL,
 	[WinlossRM2] [decimal](19, 4) NULL,
-	[TurnoverRM] [decimal](19, 4) NULL,
-	[IsProbationLastDay] [bit] NULL,
+	[TurnoverRM] [decimal](19, 4) NULL
 	PRIMARY KEY NONCLUSTERED
 	(
 		[RuleId] ASC
@@ -215,23 +215,23 @@ VALUES (1, 2, 140100, 'New', 6, 10);
 
 -- GOOD
 INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount, FirstBetDate, Margin, Margin2)
-VALUES (2, 2, 140200, 'Good', 5, 40, 60, 0, 0);
+VALUES (100, 2, 140200, 'Good', 5, 40, 60, 0, 0);
 
 -- NORMAL
 INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount, FirstBetDate, Margin, Margin2, WinlossRM)
-VALUES (4, 1, 140300, 'Normal', 4, 40, 60, 0, 0, 50);
+VALUES (200, 2, 140300, 'Normal', 4, 40, 60, 0, 0, 50);
 
--- PROBATION
+-- EARLY STAGE PROBATION
 INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount, FirstBetDate)
-VALUES (2, 2, 140400, 'Good', 3, 40, 60);
+VALUES (300, 2, 140400, 'Early Stage Probation', 3, 40, 60);
 
 -- SMART
-INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount, FirstBetDate, Margin, Margin2, WinlossRM, IsProbationLastDay)
-VALUES (2, 2, 140500, 'Smart', 2, 40, 60, 0, 0, 50, 1);
+INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount, FirstBetDate, Margin, Margin2, WinlossRM)
+VALUES (400, 2, 140500, 'Smart', 2, 40, 60, 0, 0, 50, 1);
 
 --RISKY
-INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount, FirstBetDate, Margin, Margin2, IsProbationLastDay)
-VALUES (17, 1, 204, 'Risky', 1, 40, 60, 0, 0, 1);
+INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount, FirstBetDate, Margin, Margin2)
+VALUES (500, 2, 140600, 'Risky', 1, 40, 60, 0, 0, 1);
 GO
 
 -- #10. INITIALIZE TABLE CustomerClassification_Parameter
