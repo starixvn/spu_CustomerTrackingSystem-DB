@@ -23,10 +23,10 @@ AS
     Script:
         EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassificationAgency_NormalPool_Classify 
 			@CustomersXML = N'<Root>
-								<r CustId="5002646" CategoryId="201" IsNewCreated="0" IsRealtimeOnly= "0" IsProbationLastDay="0" ScanTaggingType="0"/>
-								<r CustId="5022391" CategoryId="0"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="0" ScanTaggingType="0"/>
-								<r CustId="1275" CategoryId="205"  IsNewCreated="0" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
-								<r CustId="1280" CategoryId="202"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
+								<r CustId="5002646" RoleId = "2" CategoryId="201" IsNewCreated="0" IsRealtimeOnly= "0" />
+								<r CustId="5022391" RoleId = "2" CategoryId="0"  IsNewCreated="1" IsRealtimeOnly= "1" />
+								<r CustId="1275" RoleId = "2" CategoryId="205"  IsNewCreated="0" IsRealtimeOnly= "1" />
+								<r CustId="1280" RoleId = "2" CategoryId="202"  IsNewCreated="1" IsRealtimeOnly= "1" />
 							</Root>';
 */
 BEGIN
@@ -62,7 +62,6 @@ BEGIN
 		CurrentCategoryId      INT		NOT NULL,
 		IsNewCreated	       BIT	    NOT NULL DEFAULT 0,
 		IsRealtimeOnly		   BIT	    NOT NULL DEFAULT 0,
-		IsProbationLastDay	   BIT		NOT NULL DEFAULT 0,
 		IsActiveWithin30Days   BIT		NOT NULL DEFAULT 0
 	);
 	
@@ -96,7 +95,6 @@ BEGIN
 		CurrentCategoryId		INT				NULL,
 		NewCategoryId			INT				NULL,
 		IsActiveWithin30Days	BIT				NOT NULL DEFAULT 0,
-		IsProbationLastDay		BIT				NOT NULL DEFAULT 0,
 		IsRealtimeOnly			BIT				NOT NULL DEFAULT 0,
 		TurnoverRM				DECIMAL(19, 4)	NOT NULL,
 		WinlossRM				DECIMAL(19, 4)	NOT NULL,
@@ -146,13 +144,12 @@ BEGIN
 	);
 
 	-- #1: Get list customers
-	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay)
+	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly)
 	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
 		,	T.C.value('./@RoleId', 'TINYINT')			AS RoleId
 		,	T.C.value('./@CategoryId', 'INT')			AS CurrentCategoryId
 		,	T.C.value('./@IsNewCreated', 'BIT')			AS IsNewCreated
 		,	T.C.value('./@IsRealtimeOnly', 'BIT')		AS IsRealtimeOnly
-		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
@@ -206,8 +203,7 @@ BEGIN
 		SET a.CurrentCategoryId = c.CurrentCategoryId,
 			a.RoleId = c.RoleId,
 			a.IsRealtimeOnly = c.IsRealtimeOnly,
-			a.IsActiveWithin30Days = c.IsActiveWithin30Days,
-			a.IsProbationLastDay = c.IsProbationLastDay
+			a.IsActiveWithin30Days = c.IsActiveWithin30Days
 		FROM #tmpCustomerAccummulatedInfo AS a
 			INNER JOIN #tmpCustomers AS c ON a.CustId = c.custid;
 
