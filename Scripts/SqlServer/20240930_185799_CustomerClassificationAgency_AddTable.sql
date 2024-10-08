@@ -162,7 +162,21 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_LatestActiveDay](
 ) ON [PRIMARY]
 GO
 
--- #8. ADD TABLE CustomerClassificationAgency_Rule
+-- #8. ADD TABLE CustomerClassificationAgency_BetCount
+CREATE TABLE [dbo].[CustomerClassificationAgency_BetCount](
+	[CustId] [int] NOT NULL,
+	[RoleId] [tinyint] NOT NULL,
+	[BetCount] [int] NULL,
+	[LastScannedDate] [datetime] NULL,
+	PRIMARY KEY CLUSTERED 
+	(
+		[CustId] ASC,
+		[RoleId] ASC
+	)
+) ON [PRIMARY]
+GO
+
+-- #9. ADD TABLE CustomerClassificationAgency_Rule
 CREATE TABLE [dbo].[CustomerClassificationAgency_Rule](
 	[RuleId] [int] IDENTITY(1,1) NOT NULL,
 	[RuleGroupId] [int] NOT NULL,
@@ -187,7 +201,7 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_Rule](
 	)
 ) ON [PRIMARY]
 
-CREATE CLUSTERED INDEX [IX_CustomerClassificationAgency_Rule_RoleID_RuleGroupId_CurrentCategory] ON [dbo].[CustomerClassificationAgency_Rule]
+CREATE CLUSTERED INDEX [IX_CustomerClassificationAgency_Rule_RoleID_RuleGroupId_CusrrentCategory] ON [dbo].[CustomerClassificationAgency_Rule]
 (
 	[RoleId] ASC,
 	[RuleGroupId] ASC ,
@@ -220,11 +234,11 @@ INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, Cate
 VALUES (17, 1, 204, 'Risky', 1, 40, 60, 0, 0, 1);
 GO
 
--- #9. INITIALIZE TABLE CustomerClassification_Parameter
+-- #10. INITIALIZE TABLE CustomerClassification_Parameter
 INSERT INTO [dbo].[CustomerClassification_Parameter] ([DataId], [DataDescription], [DataType], [Value]) 
 VALUES (1000, 'Normal Customer Classification Agency - General - Lastest Scan Rowversion', 'ROWVERSION', CONVERT(VARCHAR(200), 0));
 
--- #10. GRANT PERMISSION
+-- #11. GRANT PERMISSION
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_Rule] TO [wsv_cts]
 GO
 
@@ -241,4 +255,7 @@ GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_LatestActiveDay] TO
 GO
 
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_RealtimeChanges] TO [wsv_cts]
+GO
+
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_BetCount] TO [wsv_cts]
 GO
