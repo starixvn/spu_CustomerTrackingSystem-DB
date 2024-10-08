@@ -27,8 +27,6 @@ BEGIN
 	DECLARE CONST_AGENCY_CATEID_VVIP 								INT;
 	DECLARE CONST_AGENCY_PARENTID_NORMAL							INT;
 	DECLARE CONST_REMARKID_PAMARKEDDIRECTLY					        INT;
-	DECLARE CONST_REMARKID_ROBOTMARKEDDIRECTLY				        INT;
-	DECLARE CONST_REMARKID_RESCANROBOT						        INT;
 	DECLARE CONST_REMARKID_PAAFFECTEDBYUPLINE				        INT;
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP			INT;
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY		INT;
@@ -48,8 +46,6 @@ BEGIN
 	SET CONST_AGENCY_CATEID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_VVIP');
 	SET CONST_AGENCY_PARENTID_NORMAL 								= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
 	SET CONST_REMARKID_PAMARKEDDIRECTLY 					        = CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_PAMARKEDDIRECTLY');
-	SET CONST_REMARKID_ROBOTMARKEDDIRECTLY 					        = CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTMARKEDDIRECTLY');
-	SET CONST_REMARKID_RESCANROBOT 							        = CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_RESCANROBOT');
 	SET CONST_REMARKID_PAAFFECTEDBYUPLINE 					        = CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_PAAFFECTEDBYUPLINE');
 	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP');
 	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY');
@@ -268,14 +264,12 @@ BEGIN
 			,	cls.IsFromTW 			=   CASE WHEN temp.IsFromTW 		= 1 THEN temp.IsFromTW 			ELSE cls.IsFromTW 			END
 			,	cls.IsFromCTS 			=   CASE WHEN temp.IsFromCTS 		= 1 THEN temp.IsFromCTS 		ELSE cls.IsFromCTS 			END
 			,	cls.IsFromAI 			=   CASE WHEN temp.IsFromAI 		= 1 THEN temp.IsFromAI 			ELSE cls.IsFromAI 			END
-			/*,	cls.IsFromTVS 			=   CASE WHEN temp.IsFromTVS 		= 1 THEN temp.IsFromTVS 		ELSE cls.IsFromTVS 			END
-			,	cls.IsFromImperva		=   CASE WHEN temp.IsFromImperva	= 1 THEN temp.IsFromImperva 	ELSE cls.IsFromImperva 		END*/
 			,	cls.IsMarkedDirectly	=   CASE WHEN temp.IsMarkedDirectly	= 1 THEN temp.IsMarkedDirectly 	ELSE cls.IsMarkedDirectly 	END
 			; 
 					
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency(
 				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, ParentID, CreatedDate, CreatedBy, LastModifiedDate
-			, 	LastModifiedBy, LastScannedDate, IsMarkedDirectly, Remark, IsFromCTS, IsFromAI, /*IsFromImperva, IsFromTVS,*/ IsFromTW)
+			, 	LastModifiedBy, LastScannedDate, IsMarkedDirectly, Remark, IsFromCTS, IsFromAI, IsFromTW)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			, 	temp.SubscriberID
@@ -291,18 +285,14 @@ BEGIN
 			,	temp.Remark
 			,	temp.IsFromCTS
 			,	temp.IsFromAI
-			/*,	temp.IsFromImperva
-			,	temp.IsFromTVS*/
 			,	temp.IsFromTW
 		FROM Temp_NewClassification AS temp 
 		WHERE 	(temp.DataChangeType = 0 AND temp.IsDataChanged = 1) 
 			OR 	(temp.IsFromOldPA 	= 1 AND lv_IsRescan = 0);
-		
-		/*SET lv_InsertedCount = FOUND_ROWS();*/
 
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency_History(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1
-			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, /*IsFromTVS,*/ IsFromTW, IsFromCTS, IsFromAI, /*IsFromImperva,*/ OldCategoryID, DWCategoryID, PerformanceTime)
+			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, IsFromTW, IsFromCTS, IsFromAI, OldCategoryID, DWCategoryID, PerformanceTime)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			, 	temp.NewCategoryID AS CategoryID
@@ -313,8 +303,6 @@ BEGIN
 			, 	DATE(lv_CurrentDateTime) AS InsertDate
 			, 	temp.TargetCC
 			, 	(CASE	WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
-						/*WHEN lv_IsRescan = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT*/
-						/*WHEN temp.IsMarkedDirectly = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_ROBOTMARKEDDIRECTLY*/
 						WHEN temp.IsMarkedDirectly = 1 THEN CONST_REMARKID_PAMARKEDDIRECTLY 
 						WHEN temp.IsMarkedDirectly = 0 THEN CONST_REMARKID_PAAFFECTEDBYUPLINE END) AS SourceTypeID
 			,  	temp.IsDataChanged
@@ -324,11 +312,9 @@ BEGIN
 			, 	temp.BetCount
 			,	temp.IsMarkedDirectly
 			,	temp.Remark
-			/*,	temp.IsFromTVS*/
 			,	temp.IsFromTW
 			,	temp.IsFromCTS
 			,	temp.IsFromAI
-			/*,	temp.IsFromImperva*/
 			,	temp.OldCategoryID
 			,	temp.DWCategoryID
 			,	temp.PerformanceTime
@@ -339,7 +325,7 @@ BEGIN
 		
 		INSERT INTO CTS_DataCenter.CTSCustomerClassificationAgency_Log(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1
-			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, /*IsFromTVS,*/ IsFromTW, IsFromCTS, IsFromAI, /*IsFromImperva,*/ OldCategoryID, DWCategoryID, PerformanceTime)
+			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, IsFromTW, IsFromCTS, IsFromAI, OldCategoryID, DWCategoryID, PerformanceTime)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			,	temp.NewCategoryID
@@ -351,8 +337,6 @@ BEGIN
 			,	DATE(lv_CurrentDateTime) AS InsertDate
 			,	temp.TargetCC
 			, 	(CASE	WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
-						/*WHEN lv_IsRescan = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT
-						WHEN temp.IsMarkedDirectly = 1 AND temp.IsRobot = 1 THEN CONST_REMARKID_ROBOTMARKEDDIRECTLY*/
 						WHEN temp.IsMarkedDirectly = 1 THEN CONST_REMARKID_PAMARKEDDIRECTLY 
 						WHEN temp.IsMarkedDirectly = 0 THEN CONST_REMARKID_PAAFFECTEDBYUPLINE END) AS SourceTypeID
 			,	temp.IsDataChanged
@@ -362,11 +346,9 @@ BEGIN
 			,	temp.BetCount
 			,	temp.IsMarkedDirectly
 			,	temp.Remark
-			/*,	temp.IsFromTVS*/
 			,	temp.IsFromTW
 			,	temp.IsFromCTS
 			,	temp.IsFromAI
-			/*,	temp.IsFromImperva*/
 			,	temp.OldCategoryID
 			,	temp.DWCategoryID
 			,	temp.PerformanceTime
