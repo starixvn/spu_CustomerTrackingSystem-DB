@@ -40,8 +40,7 @@ BEGIN
 	INSERT INTO dbo.CustomerClassificationAgency_BetCount(CustId, RoleId, BetCount, LastScannedDate)
 	SELECT a.CustId, a.RoleId, a.BetCount, @CurrentDateTime
 	FROM #tmpBetCount AS a WITH(NOLOCK) 
-	WHERE NOT EXISTS (SELECT 1 FROM dbo.CustomerClassificationAgency_BetCount AS b WITH(NOLOCK) WHERE b.CustId = a.CustId)
-		AND a.BetCount > b.BetCount;
+	WHERE NOT EXISTS (SELECT 1 FROM dbo.CustomerClassificationAgency_BetCount AS b WITH(NOLOCK) WHERE b.CustId = a.CustId);
 END;
 GO
 
