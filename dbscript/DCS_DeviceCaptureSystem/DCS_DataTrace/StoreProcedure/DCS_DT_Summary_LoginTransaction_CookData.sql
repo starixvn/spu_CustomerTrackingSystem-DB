@@ -346,8 +346,9 @@ BEGIN
     
     /* == Update SystemSetting == */
     IF(lv_MaxTransID IS NOT NULL AND lv_MaxTransID > 0) THEN
-        UPDATE DCS_DataTrace.SystemSetting 
-        SET VValue = lv_MaxTransID
+        UPDATE DCS_DataTrace.SystemSetting
+        SET VValue = lv_MaxTransID,
+			UpdatedTime = lv_CurrentDatetime
         WHERE ID = CONST_COOKDATA_TRANSACTION07_TRANSID;
     END IF;
 END$$

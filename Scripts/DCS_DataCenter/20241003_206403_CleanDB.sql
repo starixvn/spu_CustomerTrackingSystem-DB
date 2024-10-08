@@ -52,6 +52,7 @@ DROP TABLE `DCS_DataCenter`.`EvolvedTransaction`;
 DROP TABLE `DCS_DataCenter`.`AssociationMapping`;
 DROP TABLE `DCS_DataCenter`.`AssociationNew`;
 
+DROP PROCEDURE IF EXISTS `DCS_DC_Initial_FP_Association`;
 DROP PROCEDURE IF EXISTS `DCS_DC_Transform_Cookie_Insert`;
 DROP PROCEDURE IF EXISTS `DCS_DC_Transform_RawUserAgent_Insert`;
 DROP PROCEDURE IF EXISTS `DCS_DC_Transform_RawFingerPrint_Insert`;
