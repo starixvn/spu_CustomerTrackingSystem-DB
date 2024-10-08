@@ -44,6 +44,7 @@ BEGIN
 
 	DECLARE	@LASTXDAYS						VARCHAR(5) = '60';
 	DECLARE	@LASTYDAYS						VARCHAR(5) = '365';
+	DECLARE @RANGDAYS						VARCHAR(10) = CONCAT_WS(',',@LASTXDAYS,@LASTYDAYS);
 
 	DECLARE @CurrentDateTime				DATETIME  = GETDATE();
 	DECLARE	@ToDate							DATE	  = GETDATE();
@@ -144,7 +145,7 @@ BEGIN
 	);
 
 	-- #1: Get list customers
-	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly)
+	INSERT INTO #tmpCustomers(CustId, RoleId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly)
 	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
 		,	T.C.value('./@RoleId', 'TINYINT')			AS RoleId
 		,	T.C.value('./@CategoryId', 'INT')			AS CurrentCategoryId
@@ -168,7 +169,7 @@ BEGIN
 
 		-- #4: Get accummulated performance
 		INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, ProcessedTime)
-		EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetSMAAccumulatedInfo @ListCustID = @ListCustIds, @RangeDays = CONCAT_WS(',',@LASTXDAYS,@LASTYDAYS), @IsAccumulated = 1;
+		EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetSMAAccumulatedInfo @ListCustID = @ListCustIds, @RangeDays = @RANGDAYS, @IsAccumulated = 1;
 		
 		INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysMargin, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysMargin, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
 		SELECT a.CustId,
