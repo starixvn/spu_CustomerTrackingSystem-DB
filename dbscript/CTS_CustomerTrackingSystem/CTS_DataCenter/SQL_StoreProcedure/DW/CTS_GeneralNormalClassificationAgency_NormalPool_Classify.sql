@@ -228,7 +228,7 @@ BEGIN
 			INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId;
 
 		-- #9: Classify customer without performance 
-		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, ProcessedTime)
+		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
 		OUTPUT INSERTED.CustId, INSERTED.RoleId, INSERTED.CategoryId, 0 INTO #tmpBetCount
 		SELECT t.CustId
 			,  t.RoleId
@@ -236,7 +236,6 @@ BEGIN
 			,  @CATEGORY_NULL
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime
-			,  NULL
 			,  NULL
 			,  NULL
 			,  NULL
@@ -263,17 +262,17 @@ BEGIN
 					FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK) 
 						INNER JOIN dbo.CustomerClassificationAgency_Rule AS r WITH(NOLOCK) ON a.RoleId = r.RoleId
 					WHERE 	   (r.RuleGroupId = 1 AND a.BetCount < r.BetCount)
-						OR (r.RuleGroupId = 100 AND a.FirstBetDate < r.FirstBetDate AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.Margin2 < r.Margin2)
-						OR (r.RuleGroupId = 200 AND a.FirstBetDate > r.FirstBetDate AND a.BetCount > r.BetCount AND a.Margin >= r.Margin AND  a.Margin2 < r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
+						OR (r.RuleGroupId = 100 AND a.FirstBetDate < r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin < r.Margin2)
+						OR (r.RuleGroupId = 200 AND a.FirstBetDate > r.FirstBetDate AND a.BetCount > r.BetCount AND a.LastXDaysMargin >= r.Margin AND  a.LastYDaysMargin < r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
 						OR (r.RuleGroupId = 300 AND a.FirstBetDate <= r.FirstBetDate  AND a.BetCount >= r.BetCount)
-						OR (r.RuleGroupId = 400 AND a.FirstBetDate > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.Margin < r.Margin AND a.Margin2 >= r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
-						OR (r.RuleGroupId = 500 AND a.FirstBetDate > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.Margin >= r.Margin AND a.WinlossRM >= r.WinlossRM)
+						OR (r.RuleGroupId = 400 AND a.FirstBetDate > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin >= r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
+						OR (r.RuleGroupId = 500 AND a.FirstBetDate > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin >= r.Margin AND a.LastYDaysMargin >= r.Margin2)
 			) AS b
 			INNER JOIN #tmpCustomerAccummulatedInfo AS t ON t.CustId = b.CustId
 		WHERE b.RowNum = 1;
 
 		--#11: Insert to CustomerClassification
-		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, ProcessedTime)
+		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
 		OUTPUT INSERTED.CustId, INSERTED.RoleId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
 		SELECT a.CustId
 			,	a.RoleId

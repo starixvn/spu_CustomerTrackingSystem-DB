@@ -15,6 +15,8 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 -- #1. ADD TABLE CustomerClassificationAgency
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassificationAgency]
 CREATE TABLE [dbo].[CustomerClassificationAgency](
 	[ID] [bigint] IDENTITY(1,1) NOT NULL PRIMARY KEY,
 	[RowVersion] [timestamp] NOT NULL,
@@ -55,6 +57,8 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassificationAgency_RowVersion] ON [dbo].
 GO
 
 -- #2. ADD TABLE CustomerClassificationAgency_NormalPool
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_NormalPool]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassificationAgency_NormalPool]
 CREATE TABLE [dbo].[CustomerClassificationAgency_NormalPool](
 	[ID] [bigint] IDENTITY(1,1) NOT NULL,
 	[CustId] [int] NOT NULL,
@@ -70,6 +74,8 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_NormalPool](
 GO
 
 -- #3. ADD TABLE CustomerClassificationAgency_InputLog
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_InputLog]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassificationAgency_InputLog]
 CREATE TABLE [dbo].[CustomerClassificationAgency_InputLog](
 	[CustId] [int] NOT NULL,
 	[RoleId] [tinyint] NOT NULL,
@@ -101,6 +107,8 @@ CREATE NONCLUSTERED INDEX [IX_CustomerClassificationAgency_InputLog_CreatedDate]
 GO
 
 -- #4. ADD TABLE CustomerClassificationAgency_InputLog
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_Priority]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassificationAgency_Priority]
 CREATE TABLE [dbo].[CustomerClassificationAgency_Priority](
 	[GroupId] [bigint] NOT NULL,
 	[GroupName] [nvarchar](10) NOT NULL,
@@ -122,6 +130,8 @@ INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, F
 VALUES (1, 'ByFlow', 2, 'Daily', 200);
 
 -- #5. ADD TABLE CustomerClassificationAgency_RealtimeChanges
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_RealtimeChanges]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassificationAgency_RealtimeChanges]
 CREATE TABLE [dbo].[CustomerClassificationAgency_RealtimeChanges](
 	[ID] [bigint] IDENTITY(1,1) NOT NULL,
 	[RoleId] [tinyint] NOT NULL,
@@ -135,6 +145,8 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_RealtimeChanges](
 GO
 
 -- #6. ADD TABLE CustomerClassificationAgency_Log
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_Log]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassificationAgency_Log]
 CREATE TABLE [dbo].[CustomerClassificationAgency_Log](
 	[ID] [bigint] IDENTITY(1,1) NOT NULL,
 	[CustId] [int] NOT NULL,
@@ -149,6 +161,8 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_Log](
 GO
 
 -- #7. ADD TABLE CustomerClassificationAgency_LatestActiveDay
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_LatestActiveDay]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassificationAgency_LatestActiveDay]
 CREATE TABLE [dbo].[CustomerClassificationAgency_LatestActiveDay](
 	[CustId] [int] NOT NULL,
 	[RoleId] [tinyint] NOT NULL,
@@ -164,6 +178,8 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_LatestActiveDay](
 GO
 
 -- #8. ADD TABLE CustomerClassificationAgency_BetCount
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_BetCount]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassificationAgency_BetCount]
 CREATE TABLE [dbo].[CustomerClassificationAgency_BetCount](
 	[CustId] [int] NOT NULL,
 	[RoleId] [tinyint] NOT NULL,
@@ -178,6 +194,8 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_BetCount](
 GO
 
 -- #9. ADD TABLE CustomerClassificationAgency_Rule
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_Rule]') AND type in (N'U'))
+DROP TABLE [dbo].[CustomerClassificationAgency_Rule]
 CREATE TABLE [dbo].[CustomerClassificationAgency_Rule](
 	[RuleId] [int] IDENTITY(1,1) NOT NULL,
 	[RuleGroupId] [int] NOT NULL,
@@ -227,11 +245,11 @@ VALUES (300, 2, 140400, 'Early Stage Probation', 3, 40, 60);
 
 -- SMART
 INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount, FirstBetDate, Margin, Margin2, WinlossRM)
-VALUES (400, 2, 140500, 'Smart', 2, 40, 60, 0, 0, 50, 1);
+VALUES (400, 2, 140500, 'Smart', 2, 40, 60, 0, 0, 50);
 
 --RISKY
 INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount, FirstBetDate, Margin, Margin2)
-VALUES (500, 2, 140600, 'Risky', 1, 40, 60, 0, 0, 1);
+VALUES (500, 2, 140600, 'Risky', 1, 40, 60, 0, 0);
 GO
 
 -- #10. INITIALIZE TABLE CustomerClassification_Parameter
