@@ -20,26 +20,22 @@ BEGIN
 		Param's Explanation(filtered by):
         
         Example:     
-			- CALL CTS_DC_CustClassificationAgency_DailyScan_GetNormal_xpre(@op_LastCategoryID, @op_LastCustID);
+			- CALL CTS_DC_CustClassificationAgency_DailyScan_GetNormal(@op_LastCategoryID, @op_LastCustID);
+
 	*/
 	
-	DECLARE CONST_AGENCY_PARENTID_VVIP 						INT;
-	DECLARE CONST_AGENCY_PARENTID_NORMAL		    			INT;
+	DECLARE CONST_AGENCY_PARENTID_NORMAL	INT;
 
-	DECLARE CONST_AGENCY_CATEGROUPID_PROBATION	    			INT;
+	DECLARE lv_LastCategoryID 				INT;
+	DECLARE lv_LastCustID 					BIGINT UNSIGNED;
+	DECLARE lv_BatchSize 					BIGINT;
+	DECLARE lv_ScanDateValid 				DATETIME;
 
-	DECLARE lv_LastCategoryID 							INT;
-	DECLARE lv_LastCustID 								BIGINT UNSIGNED;
-	DECLARE lv_BatchSize 								BIGINT;
-	DECLARE lv_ScanDateValid 							DATETIME;
+	DECLARE lv_NextCategoryID 				INT;
+	DECLARE lv_NextCustID 					BIGINT UNSIGNED;
+	DECLARE lv_NextScanDateValid 			DATETIME;
 
-	DECLARE lv_NextCategoryID 							INT;
-	DECLARE lv_NextCustID 								BIGINT UNSIGNED;
-	DECLARE lv_NextScanDateValid 						DATETIME;
-
-	SET CONST_AGENCY_PARENTID_VVIP 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
 	SET CONST_AGENCY_PARENTID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
-	SET CONST_AGENCY_CATEGROUPID_PROBATION	= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_PROBATION');
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Category;
 	CREATE TEMPORARY TABLE Temp_Category(
@@ -104,8 +100,6 @@ BEGIN
 		AND clss.CategoryID = ltc.CategoryID
 		AND ltc.CategoryID = lv_LastCategoryID
 		AND clss.LastScannedDate <= lv_ScanDateValid
-		AND ltc.ParentID <> CONST_AGENCY_PARENTID_VVIP
-		AND ltc.CategoryGroupID <> CONST_AGENCY_CATEGROUPID_PROBATION
 	ORDER BY clss.CategoryID ASC
 		,	clss.CustID ASC
 	LIMIT lv_BatchSize
@@ -129,8 +123,6 @@ BEGIN
 		WHERE 	clss.CategoryID = ltc.CategoryID
 			AND ltc.CategoryID > lv_LastCategoryID
 			AND clss.LastScannedDate <= cate.ScanDate
-			AND ltc.ParentID <> CONST_AGENCY_PARENTID_VVIP
-			AND ltc.CategoryGroupID <> CONST_AGENCY_CATEGROUPID_PROBATION
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1;
 		
@@ -157,8 +149,6 @@ BEGIN
 			AND clss.CategoryID = ltc.CategoryID
 			AND ltc.CategoryID = lv_NextCategoryID
 			AND clss.LastScannedDate <= lv_NextScanDateValid
-			AND ltc.ParentID <> CONST_AGENCY_PARENTID_VVIP
-			AND ltc.CategoryGroupID <> CONST_AGENCY_CATEGROUPID_PROBATION
 		ORDER BY clss.CategoryID ASC
 			,	clss.CustID ASC
 		LIMIT lv_BatchSize
