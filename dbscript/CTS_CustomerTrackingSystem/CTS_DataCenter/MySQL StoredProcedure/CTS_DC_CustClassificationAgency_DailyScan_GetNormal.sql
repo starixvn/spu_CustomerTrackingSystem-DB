@@ -20,7 +20,7 @@ BEGIN
 		Param's Explanation(filtered by):
         
         Example:     
-			- CALL CTS_DC_CustClassificationAgency_DailyScan_GetNormal (@op_LastCategoryID, @op_LastCustID);
+			- CALL CTS_DC_CustClassificationAgency_DailyScan_GetNormal_xpre(@op_LastCategoryID, @op_LastCustID);
 	*/
 	
 	DECLARE CONST_AGENCY_PARENTID_VVIP 						INT;
@@ -144,7 +144,7 @@ BEGIN
 		
 		INSERT IGNORE INTO Temp_Normal (CustID, CurrentCategoryID)
 		SELECT clss.CustID, clss.CategoryID
-		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss USE INDEX(IX_CTSCC_CategoryID_CustID_LastScannedDate)
+		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss USE INDEX(IX_CTSCCAgency_CategoryID_CustID_LastScannedDate)
 		,	LATERAL (
 				SELECT cls.CategoryID, cat.CategoryGroupID, cat.ParentID
 				FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls 

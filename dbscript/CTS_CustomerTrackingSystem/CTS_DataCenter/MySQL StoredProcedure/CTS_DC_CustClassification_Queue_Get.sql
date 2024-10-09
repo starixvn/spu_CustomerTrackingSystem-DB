@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin,ctsServiceAdmin,ctsAPIAdmin" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DC_CustClassification_Queue_Get`;
+DROP procedure IF EXISTS `CTS_DC_CustClassification_Queue_Get_Casey`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Queue_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Queue_Get_Casey`(
 		OUT op_QueueID					BIGINT UNSIGNED
 	,	OUT op_LastDownlineCTSCustID 	BIGINT
 	,	OUT op_ActionType				TINYINT
@@ -19,6 +19,7 @@ BEGIN
 		Revisions:
 			- 20220601@Casey.Huynh: Created [Redmine ID: #172061]
             - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Change column CategoryGroup to CategoryGroupID  [Redmine ID: #205317]
+            - 20241009@Casey.Huynh: Return Agent [Redmine ID: #185799]
 
 		Param's Explanation:
         
@@ -53,23 +54,15 @@ BEGIN
     WHERE sys.ParameterID = 91;
     
     #=========GET QUEUE Info====================================
-    SELECT 	que.ID, que.LastDownlineCTSCustID, que.ActionType
-    
-		,   que.CTSCustID, que.CustID, que.SubscriberID, que.RoleID
-        
-		, 	IFNULL(que.CategoryID,-1) AS CategoryID, IFNULL(que.CategoryGroupID,-1) AS CategoryGroup
-        
-        , 	que.CreatedBy, IFNULL(que.Remark,'') AS Remark
-        
+    SELECT 	que.ID, que.LastDownlineCTSCustID, que.ActionType    
+		,   que.CTSCustID, que.CustID, que.SubscriberID, que.RoleID        
+		, 	IFNULL(que.CategoryID,-1) AS CategoryID, IFNULL(que.CategoryGroupID,-1) AS CategoryGroup        
+        , 	que.CreatedBy, IFNULL(que.Remark,'') AS Remark        
         , 	IFNULL(que.IsExceptDirectDownline,0) AS IsExceptDirectDownline, que.IsFromTVS, que.IsFromTW, que.IsFromCTS, IFNULL(que.TVSRequestID,0) AS TVSRequestID
-    INTO 	lv_QueueID, lv_LastDownlineCTSCustID, lv_ActionType
-		
-        , 	lv_CTSCustID, lv_CustID , lv_SubscriberID, lv_RoleID
-        
-        , 	lv_CategoryID, lv_CategoryGroup
-        
-        , 	lv_CreatedBy, lv_Remark
-        
+    INTO 	lv_QueueID, lv_LastDownlineCTSCustID, lv_ActionType		
+        , 	lv_CTSCustID, lv_CustID , lv_SubscriberID, lv_RoleID        
+        , 	lv_CategoryID, lv_CategoryGroup        
+        , 	lv_CreatedBy, lv_Remark        
         ,	lv_IsExceptDirectDownline, lv_IsFromTVS, lv_IsFromTW, lv_IsFromCTS, lv_TVSRequestID
     FROM CTS_DataCenter.CTSCustomerClassificationQueue AS que
     ORDER BY ID ASC
@@ -101,7 +94,9 @@ BEGIN
 		WHERE CustSubID = 0 AND cus.SRecommend = ',lv_CustID,' AND cus.CTSCustID > ',lv_LastDownlineCTSCustID,' AND cus.RoleID != ', lv_RoleID,'
         ORDER BY cus.CTSCustID ASC
         LIMIT ',lv_BatchSize);
-	
+		
+        SELECT @sqlstr;
+        
         PREPARE stmt1 FROM @sqlstr;
 		EXECUTE stmt1;
 
