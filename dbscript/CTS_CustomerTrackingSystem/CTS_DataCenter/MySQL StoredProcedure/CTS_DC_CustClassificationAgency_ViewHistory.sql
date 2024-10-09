@@ -52,8 +52,6 @@ BEGIN
     SELECT 	temp.LastModifiedDate AS CreatedTime
         ,   (CASE WHEN temp.CategoryID IS NULL THEN '-' ELSE cc1.CategoryName END) AS CategoryName
         ,   (CASE WHEN temp.TargetCC IN (-1, -99) THEN '-' /* -1: Remove, -99: No mapping CC */ ELSE temp.TargetCC END) AS CustomerClass
-        /*,   s.ItemNameDisplay AS SourceTypeName
-        , 	s.ItemID AS SourceTypeID*/
         ,   IFNULL(u.UserName, temp.LastModifiedBy) AS CreatedBy
         ,	TRIM(TRAILING '|' FROM TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
                             '[Winloss]', IFNULL(FORMAT(temp.WinlossRM, 2),0))
@@ -70,7 +68,6 @@ BEGIN
     FROM 	CTS_DataCenter.CTSCustomerClassificationAgency_History AS temp
         LEFT JOIN Temp_CustRemark AS tmpcr ON tmpcr.HistoryID = temp.ID
         LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cc1 ON temp.CategoryID = cc1.CategoryID
-        /*LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 4 AND temp.SourceTypeID = s.ItemID*/
         LEFT JOIN CTS_Admin.CTSUser AS u ON temp.LastModifiedBy = u.UserID
     WHERE 	temp.CTSCustID = ip_CTSCustID AND temp.IsDataChanged = 1
     ORDER BY temp.ID DESC; 
