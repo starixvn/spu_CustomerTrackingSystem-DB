@@ -355,7 +355,11 @@ BEGIN
 			,	b.BetType
 			,	(CASE WHEN sb.BetChoiceType = 2 THEN b.BetTeam ELSE '1' END) AS BetTeamGroup
 			,	b.BetTeam
-			,	(CASE WHEN sb.BetTypeID IS NULL THEN b.Betteam ELSE sb.BetChoiceAwayFullName END) AS BetTeamFullname
+			,	(CASE WHEN sb.BetTypeID IS NULL THEN b.Betteam 
+					ELSE CASE WHEN b.Betteam = sb.BetChoiceHome THEN sb.BetChoiceHomeFullName
+							WHEN b.Betteam = sb.BetChoiceAway THEN sb.BetChoiceAwayFullName 
+						 END
+					END) AS BetTeamFullname
 			,	(CASE WHEN b.BetTeam = sb.BetChoiceHome THEN 10
 						 WHEN b.BetTeam = sb.BetChoiceAway THEN 20
 						 ELSE NULL END) AS ChoiceOrder
@@ -398,7 +402,11 @@ BEGIN
 			,	b.BetType
 			,	(CASE WHEN sb.BetChoiceType = 2 THEN b.BetTeam ELSE '1' END) AS BetTeamGroup
 			,	b.BetTeam
-			,	(CASE WHEN sb.BetTypeID IS NULL THEN b.Betteam ELSE sb.BetChoiceAwayFullName END) AS BetTeamFullname
+			,	(CASE WHEN sb.BetTypeID IS NULL THEN b.Betteam 
+					ELSE CASE WHEN b.Betteam = sb.BetChoiceHome THEN sb.BetChoiceHomeFullName
+							WHEN b.Betteam = sb.BetChoiceAway THEN sb.BetChoiceAwayFullName 
+						 END
+					END) AS BetTeamFullname
 			,	(CASE WHEN b.BetTeam = sb.BetChoiceHome THEN 10
 						 WHEN b.BetTeam = sb.BetChoiceAway THEN 20
 						 ELSE NULL END) AS ChoiceOrder
@@ -440,7 +448,11 @@ BEGIN
 			,	b.BetType
 			,	(CASE WHEN sb.BetChoiceType = 2 THEN b.BetTeam ELSE '1' END) AS BetTeamGroup
 			,	b.BetTeam
-			,	(CASE WHEN sb.BetTypeID IS NULL THEN b.Betteam ELSE sb.BetChoiceAwayFullName END) AS BetTeamFullname
+			,	(CASE WHEN sb.BetTypeID IS NULL THEN b.Betteam 
+					ELSE CASE WHEN b.Betteam = sb.BetChoiceHome THEN sb.BetChoiceHomeFullName
+							WHEN b.Betteam = sb.BetChoiceAway THEN sb.BetChoiceAwayFullName 
+						 END
+					END) AS BetTeamFullname
 			,	(CASE WHEN b.BetTeam = sb.BetChoiceHome THEN 10
 						 WHEN b.BetTeam = sb.BetChoiceAway THEN 20
 						 ELSE NULL END) AS ChoiceOrder
@@ -613,7 +625,11 @@ BEGIN
 			,	b.BetType
 			,	(CASE WHEN sb.BetChoiceType = 2 THEN b.BetTeam ELSE '1' END) AS BetTeamGroup
 			,	b.BetTeam
-			,	(CASE WHEN sb.BetTypeID IS NULL THEN b.Betteam ELSE sb.BetChoiceAwayFullName END) AS BetTeamFullname
+			,	(CASE WHEN sb.BetTypeID IS NULL THEN b.Betteam 
+					ELSE CASE WHEN b.Betteam = sb.BetChoiceHome THEN sb.BetChoiceHomeFullName
+							WHEN b.Betteam = sb.BetChoiceAway THEN sb.BetChoiceAwayFullName 
+						 END
+					END) AS BetTeamFullname
 			,	(CASE WHEN b.BetTeam = sb.BetChoiceHome THEN 10
 						 WHEN b.BetTeam = sb.BetChoiceAway THEN 20
 						 ELSE NULL END) AS ChoiceOrder
@@ -655,7 +671,11 @@ BEGIN
 			,	b.BetType
 			,	(CASE WHEN sb.BetChoiceType = 2 THEN b.BetTeam ELSE '1' END) AS BetTeamGroup
 			,	b.BetTeam
-			,	(CASE WHEN sb.BetTypeID IS NULL THEN b.Betteam ELSE sb.BetChoiceAwayFullName END) AS BetTeamFullname
+			,	(CASE WHEN sb.BetTypeID IS NULL THEN b.Betteam 
+					ELSE CASE WHEN b.Betteam = sb.BetChoiceHome THEN sb.BetChoiceHomeFullName
+							WHEN b.Betteam = sb.BetChoiceAway THEN sb.BetChoiceAwayFullName 
+						 END
+					END) AS BetTeamFullname
 			,	(CASE WHEN b.BetTeam = sb.BetChoiceHome THEN 10
 						 WHEN b.BetTeam = sb.BetChoiceAway THEN 20
 						 ELSE NULL END) AS ChoiceOrder
@@ -697,7 +717,11 @@ BEGIN
 			,	b.BetType
 			,	(CASE WHEN sb.BetChoiceType = 2 THEN b.BetTeam ELSE '1' END) AS BetTeamGroup
 			,	b.BetTeam
-			,	(CASE WHEN sb.BetTypeID IS NULL THEN b.Betteam ELSE sb.BetChoiceAwayFullName END) AS BetTeamFullname
+			,	(CASE WHEN sb.BetTypeID IS NULL THEN b.Betteam 
+					ELSE CASE WHEN b.Betteam = sb.BetChoiceHome THEN sb.BetChoiceHomeFullName
+							WHEN b.Betteam = sb.BetChoiceAway THEN sb.BetChoiceAwayFullName 
+						 END
+					END) AS BetTeamFullname
 			,	(CASE WHEN b.BetTeam = sb.BetChoiceHome THEN 10
 						 WHEN b.BetTeam = sb.BetChoiceAway THEN 20
 						 ELSE NULL END) AS ChoiceOrder
@@ -887,6 +911,7 @@ BEGIN
 	WHERE t.IsLicensee IS NULL;
 
 	----==================FILTERS=========================	
+
 	IF (@ListScore IS NOT NULL) OR (@IsLicensee IS NOT NULL) OR (@ListCustomerClass <> '') OR (@ListDanger IS NOT NULL)
 		OR (@ListCurrency IS NOT NULL) OR (@ListReason <> '') OR (@ListAGroup <> '') OR (@ListMGroup <> '') OR (@ListHDPBetTeam IS NOT NULL)
 		OR (@ListStatus IS NOT NULL) OR (@CustAmountRM > 0) OR (@CustAmountRM > 0)
@@ -1033,7 +1058,7 @@ BEGIN
 					LEFT JOIN #tmpMainTicket AS t WITH(NOLOCK) ON t.Refno = td.Refno
 				WHERE t.Refno IS NULL;
 			END;
-	
+
 			--========================Fitler By Reason==================
 			IF (@ListReason <> '') AND @ListRefno <> ''
 			BEGIN
