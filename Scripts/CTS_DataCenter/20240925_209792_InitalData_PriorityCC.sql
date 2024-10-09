@@ -55,7 +55,7 @@ UPDATE CTS_DataCenter.CTSCustomerClassification_Log AS cc
 		AND c.CategoryID = cc.CategoryID
 SET cc.ParentID = @CONST_PARENTID_PA;
  
- -- #4
+ -- #4. Update other cases not existing in table CTSCustomerClassification
 UPDATE CTS_DataCenter.CTSCustomerClassification_History AS cc
 SET cc.ParentID = @CONST_PARENTID_PA
 WHERE cc.ParentID = @CONST_PARENTID_POTENTIALPA;
