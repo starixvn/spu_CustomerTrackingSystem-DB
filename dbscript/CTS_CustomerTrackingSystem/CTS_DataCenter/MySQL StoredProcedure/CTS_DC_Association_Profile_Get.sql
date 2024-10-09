@@ -4,7 +4,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_Association_Profile_Get`;
 DELIMITER $$ 
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_Profile_Get`(
 		IN ip_CTSCustID 		BIGINT UNSIGNED
-	,	IN ip_RoleIDList		INT
+	,	IN ip_RoleIDList		VARCHAR(50)
 	,	IN ip_AssociationType	INT
 	,	IN ip_AssociationStatus INT 
     ,	IN ip_AccountStatusIDs	VARCHAR(100)
