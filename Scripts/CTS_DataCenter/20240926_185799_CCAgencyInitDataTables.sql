@@ -148,7 +148,6 @@ VALUES (101010,101010,101000,0,0,0,Null),
 (140700,140700,140000,0,0,0,18),
 (140800,140800,140000,0,0,0,42);
 
-
 INSERT INTO CustomerClassificationAgency_Remark (RemarkID,RemarkTemplate,Description)
 VALUES (1,'Account has less than 40 bets for first time scan','New: New Customer'),
 (2,'Re-scan after 40 bets',''),
@@ -168,3 +167,69 @@ VALUES (1,'Account has less than 40 bets for first time scan','New: New Customer
 (40,'Bet Count = [BetCount]','New Agent'),
 (41,'1-year Win loss = [1yWinloss] | Margin = [1yMargin] | Bet Count = [1yBetCount]<br/>2-months Win loss = [2mWinloss] | Margin = [2mMargin] | Bet Count = [2mBetCount]','Good/Normal/Smart/Risky Agent'),
 (42,'Win loss = [Winloss] | Margin = [Margin] | Bet Count = [BetCount]','Early Stage Probation Agent');
+
+/*SELECT ag.CategoryName, mb.CategoryName, CONCAT(',(',ag.CategoryID,',', 2,',', mb.CategoryID ,',', 1 ,')')
+FROM CustomerCategoryAgency AS ag
+	LEFT JOIN CustomerCategory AS mb ON ag.CategoryID = mb.CategoryID + 100000
+WHERE ag.ParentID = 120000;
+*/
+INSERT INTO CustomerCategoryDownlineMapping(FromCategoryID,FromRoleID,ToCategoryID,ToRoleID)
+VALUES (101011,3,101010,2)
+	,(101010,2,1010,1)
+	,(120100,2,20100,1)
+	,(120101,2,20101,1)
+	,(120102,2,20102,1)
+	,(120103,2,20103,1)
+	,(120200,2,20200,1)
+	,(120201,2,20201,1)
+	,(120202,2,20202,1)
+	,(120203,2,20203,1)
+	,(120300,2,20300,1)
+	,(120301,2,20301,1)
+	,(120302,2,20302,1)
+	,(120303,2,20303,1)
+	,(120400,2,20400,1)
+	,(120401,2,20401,1)
+	,(120402,2,20402,1)
+	,(120403,2,20403,1)
+	,(120500,2,20500,1)
+	,(120501,2,20501,1)
+	,(120502,2,20502,1)
+	,(120503,2,20503,1)
+	,(120600,2,20600,1)
+	,(120601,2,20601,1)
+	,(120602,2,20602,1)
+	,(120603,2,20603,1)
+	,(120800,2,20800,1)
+	,(120801,2,20801,1)
+	,(120802,2,20802,1)
+	,(121100,2,21100,1)
+	,(125100,2,25100,1)
+	,(125101,2,25101,1)
+	,(125102,2,25102,1)
+	,(125103,2,25103,1)
+	,(125200,2,25200,1)
+	,(125201,2,25201,1)
+	,(125202,2,25202,1)
+	,(125203,2,25203,1)
+	,(125300,2,25300,1)
+	,(125301,2,25301,1)
+	,(125302,2,25302,1)
+	,(125303,2,25303,1)
+	,(125400,2,25400,1)
+	,(125401,2,25401,1)
+	,(125402,2,25402,1)
+	,(125403,2,25403,1)
+	,(125500,2,25500,1)
+	,(125501,2,25501,1)
+	,(125502,2,25502,1)
+	,(125503,2,25503,1)
+	,(125600,2,25600,1)
+	,(125601,2,25601,1)
+	,(125602,2,25602,1)
+	,(125603,2,25603,1)
+	,(125800,2,25800,1)
+	,(125801,2,25801,1)
+	,(125802,2,25802,1)
+	,(126100,2,26100,1);
+
