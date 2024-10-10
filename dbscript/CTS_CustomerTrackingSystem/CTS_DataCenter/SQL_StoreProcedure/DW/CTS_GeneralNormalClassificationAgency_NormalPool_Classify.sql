@@ -101,7 +101,8 @@ BEGIN
 		WinlossRM				DECIMAL(19, 4)	NOT NULL,
 		Margin					DECIMAL(19, 4)	NOT NULL,
 		BetCount				INT				NOT NULL,
-		FirstBetDate			INT				NOT NULL,
+		FirstBetDate			DATETIME		NOT NULL,
+		FirstBetDateDiff		INT				NOT NULL,
         LastXDaysTurnoverRM		DECIMAL(19, 4)	NOT NULL,
         LastXDaysWinlossRM		DECIMAL(19, 4)	NOT NULL,
         LastXDaysMargin			DECIMAL(19, 4)	NOT NULL,
@@ -172,12 +173,13 @@ BEGIN
 		INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, ProcessedTime)
 		EXEC bodb_dwrs.dbo.Acc_Rpt_CTS_GetSMAAccumulatedInfo @ListCustID = @ListCustIds, @RangeDays = @RANGDAYS, @IsAccumulated = 1;
 		
-		INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysMargin, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysMargin, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
+		INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, Margin, BetCount, FirstBetDate, FirstBetDateDiff, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysMargin, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysMargin, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
 		SELECT a.CustId,
 				SUM(a.TurnoverRM),
 				SUM(a.WinlossRM),
 				CASE WHEN SUM(a.TurnoverRM) = 0 THEN 0 ELSE SUM(a.WinlossRM) / SUM(a.TurnoverRM) * 100 END,
 				SUM(a.BetCount),
+				MIN(a.FirstBetDate),
 				DATEDIFF(DAY, MIN(a.FirstBetDate), @CurrentDateTime),
 				SUM(a.LastXDaysTurnoverRM),
 				SUM(a.LastXDaysWinlossRM),
@@ -262,11 +264,11 @@ BEGIN
 					FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK) 
 						INNER JOIN dbo.CustomerClassificationAgency_Rule AS r WITH(NOLOCK) ON a.RoleId = r.RoleId
 					WHERE 	   (r.RuleGroupId = 1 AND a.BetCount < r.BetCount)
-						OR (r.RuleGroupId = 100 AND a.FirstBetDate < r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin < r.Margin2)
-						OR (r.RuleGroupId = 200 AND a.FirstBetDate > r.FirstBetDate AND a.BetCount > r.BetCount AND a.LastXDaysMargin >= r.Margin AND  a.LastYDaysMargin < r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
-						OR (r.RuleGroupId = 300 AND a.FirstBetDate <= r.FirstBetDate  AND a.BetCount >= r.BetCount)
-						OR (r.RuleGroupId = 400 AND a.FirstBetDate > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin >= r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
-						OR (r.RuleGroupId = 500 AND a.FirstBetDate > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin >= r.Margin AND a.LastYDaysMargin >= r.Margin2)
+						OR (r.RuleGroupId = 100 AND a.FirstBetDateDiff < r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin < r.Margin2)
+						OR (r.RuleGroupId = 200 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount > r.BetCount AND a.LastXDaysMargin >= r.Margin AND  a.LastYDaysMargin < r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
+						OR (r.RuleGroupId = 300 AND a.FirstBetDateDiff <= r.FirstBetDate  AND a.BetCount >= r.BetCount)
+						OR (r.RuleGroupId = 400 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin >= r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
+						OR (r.RuleGroupId = 500 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin >= r.Margin AND a.LastYDaysMargin >= r.Margin2)
 			) AS b
 			INNER JOIN #tmpCustomerAccummulatedInfo AS t ON t.CustId = b.CustId
 		WHERE b.RowNum = 1;

@@ -30,14 +30,14 @@ CREATE TABLE [dbo].[CustomerClassificationAgency](
 	[WinlossRM] [decimal](19, 4) NULL,
 	[TurnoverORG] [decimal](19, 4) NULL,
 	[WinlossORG] [decimal](19, 4) NULL,
-	[BetCount] [bigint] NULL,
+	[BetCount] [int] NULL,
 	[FirstBetDate] [datetime] NULL,
 	[LastXDaysTurnoverRM] [decimal](19, 4) NULL,
 	[LastXDaysWinlossRM] [decimal](19, 4) NULL,
-	[LastXDaysBetCount] [decimal](19, 4) NULL,
+	[LastXDaysBetCount] [int] NULL,
 	[LastYDaysTurnoverRM] [decimal](19, 4) NULL,
 	[LastYDaysWinlossRM] [decimal](19, 4) NULL,
-	[LastYDaysBetCount] [decimal](19, 4) NULL,
+	[LastYDaysBetCount] [int] NULL,
 	[LastXYDaysWinlossRatio] [smallint] NULL,
 	[PerformanceTime] [datetime] NULL
 )
