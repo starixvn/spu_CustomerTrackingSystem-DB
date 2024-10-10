@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin,ctsServiceAdmin,ctsAPIAdmin" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `CTS_DC_CustClassification_Queue_Get_Casey`;
+DROP procedure IF EXISTS `CTS_DC_CustClassification_Queue_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Queue_Get_Casey`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Queue_Get`(
 		OUT op_QueueID					BIGINT UNSIGNED
 	,	OUT op_LastDownlineCTSCustID 	BIGINT
 	,	OUT op_ActionType				TINYINT
