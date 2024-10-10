@@ -93,7 +93,7 @@ BEGIN
 							  END;
                               
 		UPDATE Temp_Customer AS temp
-			INNER JOIN CTS_DataCenter.CustomerCategorySMA AS cc ON cc.CategoryID = temp.CategoryID
+			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = temp.CategoryID
         SET temp.CustomerClass = cc.CustomerClass; 
         
 	 END IF;
@@ -102,7 +102,7 @@ BEGIN
      FROM Temp_Customer AS tmp
      WHERE tmp.CategoryID IS NULL;
 
-    /* 1: INSERT .CustomerCategorySMA  */
+    /* 1: INSERT .CustomerCategoryAgency  */
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency(CustID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT	tmp.CustID						AS CustID
 		,	CONST_AGENCY_PARENTID_NORMAL	AS ParentID
@@ -114,13 +114,13 @@ BEGIN
 		,	DATE(lv_CurrentDateTime)		AS LastScannedDate
 	FROM Temp_Customer AS tmp;
     
-    /* 2: INSERT CTSCustomerClassification_History*/    
+    /* 2: INSERT CTSCustomerClassificationAgency_History*/    
     INSERT INTO Temp_CustomerHistory(CustID, CustomerClass, CategoryID)
     SELECT tmp.CustID
 		,	tmp.CustomerClass
         ,	tmp.CategoryID
     FROM Temp_Customer AS tmp
-		LEFT JOIN CTSCustomerClassification_History AS cls ON tmp.CustID = cls.CustID
+		LEFT JOIN CTSCustomerClassificationAgency_History AS cls ON tmp.CustID = cls.CustID
 	WHERE cls.CustID IS NULL;
     
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency_History(CustID, ParentID, CategoryID, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate)
@@ -140,7 +140,7 @@ BEGIN
 		,	DATE(lv_CurrentDateTime)			AS InsertDate
 	FROM 	Temp_CustomerHistory AS tmp;
 
-    /* 3: WRITE CTSCustomerClassification_Log(TRACE DATA) */
+    /* 3: WRITE CTSCustomerClassificationAgency_Log(TRACE DATA) */
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency_Log(CustID, ParentID, CategoryID, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, IsAuto, LastModifiedDate, LastModifiedBy, InsertDate)
 	SELECT	tmp.CustID							AS CustID
 		,	CONST_AGENCY_PARENTID_NORMAL			AS ParentID
