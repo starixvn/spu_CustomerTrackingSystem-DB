@@ -92,7 +92,7 @@ BEGIN
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		CustId					INT				NOT NULL,
-		RoleId					TINYINT			NOT NULL,
+		RoleId					TINYINT			NULL,
 		CurrentCategoryId		INT				NULL,
 		NewCategoryId			INT				NULL,
 		IsActiveWithin30Days	BIT				NOT NULL DEFAULT 0,
