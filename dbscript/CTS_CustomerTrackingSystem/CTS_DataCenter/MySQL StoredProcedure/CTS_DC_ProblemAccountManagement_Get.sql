@@ -210,7 +210,7 @@ sp :BEGIN
 	,	MIN(class.CreatedDate) AS CreatedDate
 	,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(us.UserName, class.CreatedBy) ORDER BY class.CreatedDate ASC,class.LastModifiedDate ASC,class.CategoryID ASC SEPARATOR ', '),',',1) AS CreatedBy
 	,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(class.Remark,'') ORDER BY class.CreatedDate ASC,class.LastModifiedDate ASC,class.CategoryID ASC SEPARATOR ', '),',',1) AS Remark
-	,	CAST(SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(class.IsFromTVS,0) ORDER BY class.CreatedDate ASC,class.LastModifiedDate ASC,class.CategoryID ASC SEPARATOR ', '),',',1) AS UNSIGNED) AS IsFromTVS
+	,	0 AS IsFromTVS
 	,	null AS TVSRequestID
 	,	null AS IsParlay
 	,	0 AS SportType
