@@ -189,21 +189,23 @@ BEGIN
     END IF;
 
     SELECT tmpDl.CTSCustID AS CTSCustID
-		,	tmpDl.CustID AS CustID
-		,	lv_FromSubscriberID AS SubscriberID
+		,	tmpDl.CustID AS CustID		
 		,	tmpDl.RoleID 
+        ,	lv_FromSubscriberID AS SubscriberID
 		,	tmpDl.IsLicensee      
         
 		,	tmpDl.CategoryID AS CategoryID
-		,	tmpDl.CategoryGroupID AS CategoryGroupID		
+		,	tmpDl.CategoryGroupID AS CategoryGroupID	
+        
+        ,	lv_CreatedBy AS CreatedBy
+		,	lv_Remark AS Remark	
+        
 		,	lv_IsExceptDirectDownline AS IsExceptDirectDownline
 		,	lv_IsFromTVS AS IsFromTVS
 		,	lv_IsFromTW AS IsFromTW
 		,	lv_IsFromCTS AS IsFromCTS
-		,	lv_TVSRequestID AS TVSRequestID
-		
-        ,	lv_CreatedBy AS CreatedBy
-		,	lv_Remark AS Remark	
+		,	lv_TVSRequestID AS TVSRequestID		
+        
 		,	lv_LastDownlineCTSCustID AS LastDownlineCTSCustID
         
 	FROM Temp_DownlineCustomer AS tmpDl;
