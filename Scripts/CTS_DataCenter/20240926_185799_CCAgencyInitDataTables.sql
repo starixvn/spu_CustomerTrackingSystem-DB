@@ -77,7 +77,7 @@ VALUES (101010,'VVIP Agent','VVIP Agent',101000,2,999,'Healthy',101010,10,10,30,
 (140300,'Normal Agent','Normal Agent',140000,2,20002,'Suspicious',140300,1000,1000,30,1,604800,Null,0,Null,Null,NOW(),'普通代理',Null,Null,Null,'可疑',Null,Null,1,Null,1,140300,Null),
 (140500,'Smart Agent','Smart Agent',140000,2,20004,'Suspicious',140500,1000,1000,30,1,604800,Null,0,Null,Null,NOW(),'精明代理',Null,Null,Null,'可疑',Null,Null,2,Null,1,140500,Null),
 (140600,'Risky Agent','Risky Agent',140000,2,20005,'Low-value',140600,1000,1000,30,1,604800,Null,0,Null,Null,NOW(),'高危代理',Null,Null,Null,'低价值',Null,Null,2,Null,1,140600,Null),
-(140700,'Inactive Agent','Inactive Agent',140000,2,90000,'Dormant',140700,1000,1000,40,1,86400,Null,0,Null,Null,NOW(),'不活跃代理',Null,Null,Null,'不活跃',Null,Null,8,Null,1,140700,Null),
+(140700,'Inactive Agent','Inactive Agent',140000,2,90000,'Dormant',140700,1000,1000,40,1,Null,Null,0,Null,Null,NOW(),'不活跃代理',Null,Null,Null,'不活跃',Null,Null,8,Null,1,140700,Null),
 (140800,'Early Stage Probation Agent','Early Stage Probation Agent',140000,2,20003,'Moderate',140800,1000,1000,30,1,604800,Null,0,Null,Null,NOW(),'前期阶段观察中代理',Null,Null,Null,'中等',Null,Null,2,Null,1,140800,Null);
 
 INSERT INTO CustomerCategorySettingsAgency(CategoryID,CategoryGroupID,ParentID,IsParallelParentID,IsMultiCateIDSameParentID,IsKeepOldCateID,RemarkTemplateID)
@@ -160,13 +160,13 @@ VALUES (1,'Account has less than 40 bets for first time scan','New: New Customer
 (27,'VVIP untag is affected by Super','Remove VVIP For Downline'),
 (28,'VVIP untag is affected by Master','Remove VVIP For Downline'),
 (30,'VVIP tag is affected by direct upline | [Remark]','New incoming Agent'),
-(31,'Problem Account is marked directly | Win loss: [Winloss] | Margin = [Margin] | [Remark]','Problem Account is marked directly'),
-(32,'Problem Account is affected by Uplines | Win loss: [Winloss] | Margin = [Margin] | [Remark]','Problem Account is affected by Uplines'),
+(31,'Problem Account is marked directly | Win loss: [Winloss] | Margin: [Margin] | [Remark]','Problem Account is marked directly'),
+(32,'Problem Account is affected by Uplines | Win loss: [Winloss] | Margin: [Margin] | [Remark]','Problem Account is affected by Uplines'),
 (33,'Problem Account is unmarked directly | [Remark]','Problem Account is unmarked directly'),
 (34,'Unmarking Problem Account is affected by Uplines | [Remark]','Unmarking Problem Account is affected by Uplines'),
-(40,'Bet Count = [BetCount]','New Agent'),
-(41,'1-year Win loss = [1yWinloss] | Margin = [1yMargin] | Bet Count = [1yBetCount]<br/>2-months Win loss = [2mWinloss] | Margin = [2mMargin] | Bet Count = [2mBetCount]','Good/Normal/Smart/Risky Agent'),
-(42,'Win loss = [Winloss] | Margin = [Margin] | Bet Count = [BetCount]','Early Stage Probation Agent');
+(40,'Bet Count: [BetCount]','New Agent'),
+(41,'1-year Win loss: [1yWinloss] | Margin: [1yMargin] | Bet Count: [1yBetCount]<br/>2-months Win loss: [2mWinloss] | Margin: [2mMargin] | Bet Count: [2mBetCount]','Good/Normal/Smart/Risky Agent'),
+(42,'Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]','Early Stage Probation Agent');
 
 /*SELECT ag.CategoryName, mb.CategoryName, CONCAT(',(',ag.CategoryID,',', 2,',', mb.CategoryID ,',', 1 ,')')
 FROM CustomerCategoryAgency AS ag
