@@ -65,6 +65,7 @@ sp: BEGIN
         ,	IsFromTW 				BIT DEFAULT 0
         ,	IsFromAI 				BIT DEFAULT 0
         ,   CreatedDate        		DATETIME(3)
+        ,   LastModifiedDate        DATETIME(3)
 		,	InputFlowID	 			INT
 		,	PRIMARY KEY(CustID,CategoryID)
 	);
@@ -89,7 +90,7 @@ sp: BEGIN
             AND cus.IsLicensee = 0;
         
     /***********************Check affected PA from Upline****************************/   
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, InputFlowID)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
         ,	CASE WHEN cate.IsPAProbation THEN cate.RelevantCategoryID ELSE s.CategoryID END AS CategoryID
@@ -103,19 +104,18 @@ sp: BEGIN
         ,   s.IsFromCTS 					AS IsFromCTS
         ,	s.IsFromAI 						AS IsFromAI
         ,	s.CreatedDate 					AS CreatedDate
+        ,	s.LastModifiedDate				AS LastModifiedDate
         ,   CONST_INPUTFLOWID_RESCAN_PA		AS InputFlowID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS s USE INDEX (PRIMARY) ON s.CustID IN (tmp.SRecommend,tmp.MRecommend) 
 					AND s.CustID <> tmp.CustID
 					AND s.ParentID = CONST_AGENCY_PARENTID_PA 
                     AND s.IsMarkedDirectly = 1
-		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = s.CategoryID AND s.CategoryID NOT IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING)
-	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
-						,	CreatedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.CreatedDate THEN s.CreatedDate ELSE Temp_CustCategory.CreatedDate END
-                        ,	IsFromCTS = CASE WHEN s.IsFromCTS = 1 THEN s.IsFromCTS ELSE Temp_CustCategory.IsFromCTS END;
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = s.CategoryID 
+			AND s.CategoryID NOT IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING);
 	
     /***********************Check PA from main table ****************************/   
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, InputFlowID)
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
         ,	CASE WHEN cate.IsPAProbation THEN cate.RelevantCategoryID ELSE s.CategoryID END AS CategoryID
@@ -129,6 +129,7 @@ sp: BEGIN
         ,   s.IsFromCTS 					AS IsFromCTS
         ,	s.IsFromAI 						AS IsFromAI
         ,	s.CreatedDate 					AS CreatedDate
+        ,	s.LastModifiedDate				AS LastModifiedDate
         ,   CONST_INPUTFLOWID_RESCAN_PA		AS InputFlowID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS s USE INDEX (PRIMARY) ON s.CustID = tmp.CustID AND s.ParentID = CONST_AGENCY_PARENTID_PA 
