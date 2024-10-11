@@ -15,7 +15,7 @@ BEGIN
 		Param's Explanation (filtered by):
         
         Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_PreProcess(9);
+			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_PreProcess(1009);
 				
 		Revisions: 
 			- 20240927@Thomas.Nguyen:			Created [Redmine ID: #185799]

@@ -18,7 +18,7 @@ BEGIN
 			- ip_IsAffectDownline
 		
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_Complete(9);
+			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_Complete(1009);
 			
 		Revisions: 
 			- 20240927@Thomas.Nguyen:			Created [Redmine ID: #185799]
@@ -101,9 +101,10 @@ BEGIN
 		
 		/*Insert VVIP history*/
 		INSERT INTO CTS_DataCenter.CTSCustomerClassificationAgency_History(
-				CustID, CTSCustID, ParentID, CategoryID, LastModifiedDate, InsertDate, LastModifiedBy, Remark, IsAuto, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
+				CustID, CTSCustID, RoleID, ParentID, CategoryID, LastModifiedDate, InsertDate, LastModifiedBy, Remark, IsAuto, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
+			,	temp.RoleID
 			,	temp.ParentID
 			,	temp.NewCategoryID
 			, 	lv_CurrentDateTime AS LastModifiedDate
@@ -121,9 +122,10 @@ BEGIN
 		
 		/*Insert VVIP log*/
 		INSERT INTO CTS_DataCenter.CTSCustomerClassificationAgency_Log(
-				CustID, CTSCustID, ParentID, CategoryID ,LastModifiedDate, InsertDate, LastModifiedBy, IsAuto, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
+				CustID, CTSCustID, RoleID, ParentID, CategoryID ,LastModifiedDate, InsertDate, LastModifiedBy, IsAuto, TargetCC, SourceTypeID, IsDataChanged, IsMarkedDirectly)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
+			,	temp.RoleID
 			,	temp.ParentID
 			,	temp.NewCategoryID
 			, 	lv_CurrentDateTime AS LastModifiedDate
@@ -175,12 +177,13 @@ BEGIN
 		WHERE temp.ActionType = CONST_ACTIONTYPE_INSERT;
 		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency_History (
-				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount
+				CustID, CTSCustID, RoleID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount
 			,	LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount
 			,	IsAuto, InsertDate, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, TargetDangerLevel1, PerformanceTime, ActionType)
 		SELECT DISTINCT	
 				temp.CustID
 			, 	temp.CTSCustID
+			,	temp.RoleID
 			, 	temp.NewCategoryID AS CategoryID
 			, 	CONST_AGENCY_PARENTID_NORMAL AS ParentID
 			, 	lv_CurrentDateTime AS LastModifiedDate
@@ -208,12 +211,13 @@ BEGIN
 		WHERE temp.IsDataChanged  = 1;	
         
         INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency_Log (
-				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount
+				CustID, CTSCustID, RoleID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, TurnoverRM, WinlossRM, BetCount
 			,	LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount,	LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount
 			,	IsAuto, InsertDate, TargetCC, SourceTypeID, OldCategoryID, DWCategoryID, IsDataChanged, TargetDangerLevel1, PerformanceTime, ActionType)
 		SELECT DISTINCT	
 				temp.CustID
 			, 	temp.CTSCustID
+			,	temp.RoleID
 			, 	temp.NewCategoryID AS CategoryID
 			, 	CONST_AGENCY_PARENTID_NORMAL AS ParentID
 			, 	lv_CurrentDateTime AS LastModifiedDate
@@ -291,10 +295,11 @@ BEGIN
 			OR 	(temp.IsFromOldPA 	= 1 AND lv_IsRescan = 0);
 
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency_History(
-				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1
+				CustID, CTSCustID, RoleID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1
 			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, IsFromTW, IsFromCTS, IsFromAI, OldCategoryID, DWCategoryID, PerformanceTime)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
+			,	temp.RoleID
 			, 	temp.NewCategoryID AS CategoryID
 			,	temp.ParentID
 			, 	lv_CurrentDateTime AS LastModifiedDate
@@ -324,10 +329,11 @@ BEGIN
 		ORDER BY temp.LastModifiedDate ASC, temp.NewCategoryID ASC;
 		
 		INSERT INTO CTS_DataCenter.CTSCustomerClassificationAgency_Log(
-				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1
+				CustID, CTSCustID, RoleID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1
 			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, IsFromTW, IsFromCTS, IsFromAI, OldCategoryID, DWCategoryID, PerformanceTime)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
+			,	temp.RoleID
 			,	temp.NewCategoryID
 			,	temp.ParentID
 			,	lv_CurrentDateTime AS LastModifiedDate

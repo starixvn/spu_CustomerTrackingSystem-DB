@@ -16,7 +16,7 @@ BEGIN
 			- ip_InputFlowID
 		
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_Process(9);
+			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_Process(1009);
 			
 		Revisions: 
 			-	20240927@Thomas.Nguyen:			Created [Redmine ID: #185799]

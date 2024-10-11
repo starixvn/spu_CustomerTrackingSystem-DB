@@ -17,7 +17,7 @@ BEGIN
 			-	20240927@Thomas.Nguyen: 		Created [Redmine ID: #185799]
 			
 		Param's Expanation:
-			- CTS_DC_CustClassificationAgency_Remove_GetInfo (225,'');
+			- CALL CTS_DC_CustClassificationAgency_Remove_GetInfo (1225,'[{"CustID":24150964,"RoleID":2,"SubscriberID":168,"CTSCustID":11059,"CreatedBy":8,"Remark":"Thomas unmark PA","IsExceptDirectDownline":false,"IsMarkedDirectly":true}]');
 */
 	
 	DECLARE CONST_AGENCY_PARENTID_VVIP 								INT;

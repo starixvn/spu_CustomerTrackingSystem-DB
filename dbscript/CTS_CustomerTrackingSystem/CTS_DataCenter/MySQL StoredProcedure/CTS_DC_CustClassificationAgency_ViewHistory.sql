@@ -66,7 +66,7 @@ BEGIN
                         ,   '[Remark]', IFNULL(temp.Remark,''))
                         )) AS Remark
     FROM 	CTS_DataCenter.CTSCustomerClassificationAgency_History AS temp
-        LEFT JOIN Temp_CustRemark AS tmpcr ON tmpcr.HistoryID = temp.ID
+        INNER JOIN Temp_CustRemark AS tmpcr ON tmpcr.HistoryID = temp.ID
         LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cc1 ON temp.CategoryID = cc1.CategoryID
         LEFT JOIN CTS_Admin.CTSUser AS u ON temp.LastModifiedBy = u.UserID
     WHERE 	temp.CTSCustID = ip_CTSCustID AND temp.IsDataChanged = 1
