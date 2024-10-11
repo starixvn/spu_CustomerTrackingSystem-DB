@@ -85,7 +85,8 @@ sp: BEGIN
     FROM Temp_CustID AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID 
 			AND cus.CustSubID = 0 
-			AND cus.IsInternal = 0;
+			AND cus.IsInternal = 0
+            AND cus.IsLicensee = 0;
         
     /***********************Check affected PA from Upline****************************/   
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, InputFlowID)
