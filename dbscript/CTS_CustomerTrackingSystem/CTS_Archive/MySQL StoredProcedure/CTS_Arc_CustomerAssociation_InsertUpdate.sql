@@ -66,7 +66,7 @@ BEGIN
 		,	NULL
 	FROM Temp_Cust AS tmp
 	WHERE tmp.RoleID = CONST_ROLEID_AGENT
-		AND NOT EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationStatusSMA AS arc  WHERE arc.CTSCustID = tmp.CTSCustID);
+		AND NOT EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationStatusAgency AS arc  WHERE arc.CTSCustID = tmp.CTSCustID);
     
 END$$
 DELIMITER ;
