@@ -24,8 +24,10 @@ BEGIN
 		Param's Explanation:
         
         Example: 
-        CALL CTS_DC_CustClassification_Queue_Get_Casey(@op_QueueID,@op_LastDownlineCTSCustID,@op_ActionType,@op_UplineRoleID); 
+        CALL CTS_DC_CustClassification_Queue_Get(@op_QueueID,@op_LastDownlineCTSCustID,@op_ActionType,@op_UplineRoleID); 
         select @op_QueueID,@op_LastDownlineCTSCustID,@op_ActionType,@op_UplineRoleID;
+        
+
 	
     */ 
 	DECLARE lv_BatchSize				INT;
@@ -105,8 +107,9 @@ BEGIN
         LIMIT lv_BatchSize;
         
         #====Map Category If downline Category <> Up Line Category
+
         UPDATE Temp_DownlineCustomer AS tmpCCmap
-			INNER JOIN CustomerCategoryDownlineMapping AS map ON map.FromRoleID = lv_FromRoleID AND map.FromCategoryID = lv_FromCategoryID	
+			INNER JOIN CustomerCategoryDownlineMapping AS map ON map.FromRoleID <= lv_FromRoleID AND map.FromCategoryID = lv_FromCategoryID	
 																	AND map.ToRoleID = tmpCCmap.RoleID
 			LEFT JOIN CustomerCategory AS ccm ON ccm.CategoryID = map.ToCategoryID
             LEFT JOIN CustomerCategoryAgency AS cca ON cca.CategoryID = map.ToCategoryID
@@ -123,6 +126,7 @@ BEGIN
     END IF;
     
     IF lv_FromRoleID = 3 THEN    
+    
 		INSERT INTO Temp_DownlineCustomer(CTSCustID, CustID, RoleID, SubscriberID, IsLicensee)
         SELECT	cus.CTSCustID
 			,	cus.CustID
@@ -136,10 +140,10 @@ BEGIN
 			AND cus.RoleID != lv_FromRoleID
         ORDER BY cus.CTSCustID ASC
         LIMIT lv_BatchSize;
-        
+
         #====Map Category If downline Category <> Up Line Category
         UPDATE Temp_DownlineCustomer AS tmpCCmap
-			INNER JOIN CustomerCategoryDownlineMapping AS map ON map.FromRoleID = lv_FromRoleID AND map.FromCategoryID = lv_FromCategoryID	
+			INNER JOIN CustomerCategoryDownlineMapping AS map ON map.FromRoleID <= lv_FromRoleID AND map.FromCategoryID = lv_FromCategoryID	
 																	AND map.ToRoleID = tmpCCmap.RoleID
 			LEFT JOIN CustomerCategory AS ccm ON ccm.CategoryID = map.ToCategoryID
             LEFT JOIN CustomerCategoryAgency AS cca ON cca.CategoryID = map.ToCategoryID
@@ -156,6 +160,7 @@ BEGIN
     END IF;
     
     IF lv_FromRoleID = 2 THEN    
+
 		INSERT INTO Temp_DownlineCustomer(CTSCustID, CustID, RoleID, SubscriberID, IsLicensee)
         SELECT	cus.CTSCustID
 			,	cus.CustID
@@ -172,7 +177,7 @@ BEGIN
         
         #====Map Category If downline Category <> Up Line Category
         UPDATE Temp_DownlineCustomer AS tmpCCmap
-			INNER JOIN CustomerCategoryDownlineMapping AS map ON map.FromRoleID = lv_FromRoleID AND map.FromCategoryID = lv_FromCategoryID	
+			INNER JOIN CustomerCategoryDownlineMapping AS map ON map.FromRoleID <= lv_FromRoleID AND map.FromCategoryID = lv_FromCategoryID	
 																	AND map.ToRoleID = tmpCCmap.RoleID
 			LEFT JOIN CustomerCategory AS ccm ON ccm.CategoryID = map.ToCategoryID
             LEFT JOIN CustomerCategoryAgency AS cca ON cca.CategoryID = map.ToCategoryID
@@ -226,4 +231,3 @@ BEGIN
 END$$
 
 DELIMITER ;
-
