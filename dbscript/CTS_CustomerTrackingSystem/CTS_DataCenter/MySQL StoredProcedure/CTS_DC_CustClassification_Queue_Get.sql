@@ -192,7 +192,8 @@ BEGIN
         WHERE tmpCCmap.CategoryID IS NULL;    
 
     END IF;
-
+	
+    #===========Return Member=======================
     SELECT tmpDl.CTSCustID AS CTSCustID
 		,	tmpDl.CustID AS CustID		
 		,	tmpDl.RoleID 
@@ -213,7 +214,33 @@ BEGIN
         
 		,	lv_LastDownlineCTSCustID AS LastDownlineCTSCustID
         
-	FROM Temp_DownlineCustomer AS tmpDl;
+	FROM Temp_DownlineCustomer AS tmpDl
+    WHERE RoleID = 1 ;
+    
+    #===========Return SMA=======================
+    SELECT tmpDl.CTSCustID AS CTSCustID
+		,	tmpDl.CustID AS CustID		
+		,	tmpDl.RoleID 
+        ,	lv_FromSubscriberID AS SubscriberID
+		,	tmpDl.IsLicensee      
+        
+		,	tmpDl.CategoryID AS CategoryID
+		,	tmpDl.CategoryGroupID AS CategoryGroupID	
+        
+        ,	lv_CreatedBy AS CreatedBy
+		,	lv_Remark AS Remark	
+        
+		,	lv_IsExceptDirectDownline AS IsExceptDirectDownline
+		,	lv_IsFromTVS AS IsFromTVS
+		,	lv_IsFromTW AS IsFromTW
+		,	lv_IsFromCTS AS IsFromCTS
+		,	lv_TVSRequestID AS TVSRequestID		
+        
+		,	lv_LastDownlineCTSCustID AS LastDownlineCTSCustID
+        
+	FROM Temp_DownlineCustomer AS tmpDl
+    WHERE RoleID IN (2,3,4) ;
+    
     
     SET lv_MaxCTSCustID = (SELECT MAX(CTSCustID) FROM Temp_DownlineCustomer);
      
