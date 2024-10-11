@@ -544,8 +544,13 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory2;    
     CREATE TEMPORARY TABLE Temp_CustCategory2 LIKE Temp_CustCategory;
     
-    INSERT INTO Temp_CustCategory2 
-    SELECT * 
+    INSERT INTO Temp_CustCategory2(CustID, CategoryID, ParentID, CategoryName, ColorTypeID, CustomerClassPriority)
+	SELECT	CustID
+		,	CategoryID
+		,	ParentID
+		,	CategoryName
+		,	ColorTypeID
+		,	CustomerClassPriority
     FROM Temp_CustCategory;
     
     /*****************************Handle CustomerClass Info**************************************************/
