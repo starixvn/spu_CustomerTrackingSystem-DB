@@ -102,7 +102,7 @@ sp: BEGIN
         ,   s.IsFromCTS 					AS IsFromCTS
         ,	s.IsFromAI 						AS IsFromAI
         ,	s.CreatedDate 					AS CreatedDate
-        ,   CONST_INPUTFLOWID_CATEGORY_PA	AS InputFlowID
+        ,   CONST_INPUTFLOWID_RESCAN_PA		AS InputFlowID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS s USE INDEX (PRIMARY) ON s.CustID IN (tmp.SRecommend,tmp.MRecommend) 
 					AND s.CustID <> tmp.CustID
@@ -128,7 +128,7 @@ sp: BEGIN
         ,   s.IsFromCTS 					AS IsFromCTS
         ,	s.IsFromAI 						AS IsFromAI
         ,	s.CreatedDate 					AS CreatedDate
-        ,   CONST_INPUTFLOWID_CATEGORY_PA	AS InputFlowID
+        ,   CONST_INPUTFLOWID_RESCAN_PA		AS InputFlowID
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS s USE INDEX (PRIMARY) ON s.CustID = tmp.CustID AND s.ParentID = CONST_PARENTID_PA 
 		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = s.CategoryID
@@ -153,7 +153,7 @@ sp: BEGIN
 		, 	cc.IsFromCTS
 		, 	cc.IsFromAI
         ,	cc.CreatedDate
-		, 	CASE WHEN cc.CategoryID IS NULL THEN CONST_INPUTFLOWID_NORMAL ELSE cc.InputFlowID END AS InputFlowID
+		, 	CASE WHEN cc.CategoryID IS NULL THEN CONST_INPUTFLOWID_INSERT_NORMAL ELSE cc.InputFlowID END AS InputFlowID
 	FROM Temp_CustInfo AS cust
 		LEFT JOIN Temp_CustCategory AS cc ON cc.CustID = cust.CustID
 	WHERE cc.CustID IS NOT NULL
