@@ -52,17 +52,17 @@ sp:BEGIN
     SELECT ParameterValue 
     INTO lv_BatchSize 
     FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 181;
+    WHERE ParameterID = 178;
     
     SELECT ParameterValue 
     INTO lv_LastCategoryID 
     FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 182;
+    WHERE ParameterID = 179;
     
     SELECT ParameterValue 
     INTO lv_LastCustID 
     FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 183;
+    WHERE ParameterID = 180;
     
     IF lv_LastCategoryID IS NULL OR  lv_LastCategoryID = 0 THEN
 		SELECT CategoryID 
