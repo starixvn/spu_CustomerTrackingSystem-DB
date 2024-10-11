@@ -43,11 +43,13 @@ CREATE TEMPORARY TABLE Temp_Customers(
     ,	RelevantCategoryID 		INT NOT NULL 
     ,	CustomerClassPriority 	SMALLINT NOT NULL 
     ,	CustomerClass 			INT NOT NULL 
-    ,	RelevantCustomerClass 	INT NOT NULL 
+    ,	RelevantCustomerClass 	INT NOT NULL
+    ,	CategoryName			VARCHAR(50)
+    ,	RelevantCategoryName	VARCHAR(50)
     , 	PRIMARY KEY (CustID, CategoryID)
 );
 
-INSERT INTO Temp_Customers(CTSCustID, CustID, CategoryID, RelevantCategoryID, CustomerClassPriority, CustomerClass, RelevantCustomerClass)
+INSERT INTO Temp_Customers(CTSCustID, CustID, CategoryID, RelevantCategoryID, CustomerClassPriority, CustomerClass, RelevantCustomerClass, CategoryName, RelevantCategoryName)
 SELECT c.CTSCustID
 	,	cis.CustID
 	,	30300
@@ -55,11 +57,13 @@ SELECT c.CTSCustID
     ,	450
     , 	2600
     ,	2601
+    ,	'Initial Group Betting'
+    ,	'Initial Group Betting (Losing)'
 FROM Customer_InitialGroupBetting cis   
 	INNER JOIN CTSCustomer AS c ON c.CustID = cis.CustID
 WHERE NOT EXISTS (SELECT 1 FROM CTSCustomerClassification cc WHERE cc.CustID = cis.CustID AND cc.CategoryID IN (35300,30300));
 
-INSERT INTO Temp_Customers(CTSCustID, CustID, CategoryID, RelevantCategoryID, CustomerClassPriority, CustomerClass, RelevantCustomerClass)
+INSERT INTO Temp_Customers(CTSCustID, CustID, CategoryID, RelevantCategoryID, CustomerClassPriority, CustomerClass, RelevantCustomerClass, CategoryName, RelevantCategoryName)
 SELECT c.CTSCustID
 	,	cis.CustID
 	, 	30200
@@ -67,11 +71,13 @@ SELECT c.CTSCustID
     ,	500
     ,	2700
     ,	2701
+    ,	'Initial Smart'
+	,	'Initial Smart (Losing)'	
 FROM Customer_InitialSmart cis   
 	 INNER JOIN CTSCustomer AS c ON c.CustID = cis.CustID
 WHERE NOT EXISTS (SELECT 1 FROM CTSCustomerClassification cc WHERE cc.CustID = cis.CustID AND cc.CategoryID IN (35200,30200));      
 
-INSERT INTO Temp_Customers(CTSCustID, CustID, CategoryID, RelevantCategoryID, CustomerClassPriority, CustomerClass, RelevantCustomerClass)
+INSERT INTO Temp_Customers(CTSCustID, CustID, CategoryID, RelevantCategoryID, CustomerClassPriority, CustomerClass, RelevantCustomerClass, CategoryName, RelevantCategoryName)
 SELECT c.CTSCustID
 	,	cis.CustID
 	,	30100
@@ -79,6 +85,8 @@ SELECT c.CTSCustID
     ,	530
     ,	2800
     ,	2801
+    ,	'Early Warning Members'
+    ,	'Early Warning Members (Losing)'
 FROM Customer_DangerousScore  cis
 	INNER JOIN CTSCustomer AS c ON c.CustID = cis.CustID AND cis.ClassifiedScore IS NOT NULL
 WHERE NOT EXISTS (SELECT 1 FROM CTSCustomerClassification cc WHERE cc.CustID = cis.CustID AND cc.CategoryID IN (35100,30100));
@@ -99,8 +107,12 @@ SELECT tmp.CTSCustID
 		 LIMIT 1) AS 'From CC'
 	,	 CASE WHEN GROUP_CONCAT(cate.IsPAProbation + 0) Like '%1%' AND (GROUP_CONCAT(cc.ParentID) LIKE ('%20000%') OR GROUP_CONCAT(cc.ParentID) LIKE ('%30000%')) THEN CONCAT(GROUP_CONCAT(cc.CategoryID), ",", GROUP_CONCAT(DISTINCT(tmp.RelevantCategoryID)))                                
               WHEN GROUP_CONCAT(cate.IsPAProbation + 0) NOT Like '%1%' AND (GROUP_CONCAT(cc.ParentID) LIKE ('%20000%') OR GROUP_CONCAT(cc.ParentID) LIKE ('%30000%')) THEN CONCAT(GROUP_CONCAT(cc.CategoryID), ",", GROUP_CONCAT(DISTINCT(tmp.CategoryID)))                       
-			  ELSE CONCAT(GROUP_CONCAT(tmp.RelevantCategoryID), " or ", GROUP_CONCAT(tmp.CategoryID))
+			  ELSE CONCAT(GROUP_CONCAT(tmp.RelevantCategoryID))
          END AS 'To CategoryID' 
+	,	 CASE WHEN GROUP_CONCAT(cate.IsPAProbation + 0) Like '%1%' AND (GROUP_CONCAT(cc.ParentID) LIKE ('%20000%') OR GROUP_CONCAT(cc.ParentID) LIKE ('%30000%')) THEN CONCAT(GROUP_CONCAT(cate.CategoryName), ",", GROUP_CONCAT(DISTINCT(tmp.RelevantCategoryName)))                                
+			  WHEN GROUP_CONCAT(cate.IsPAProbation + 0) NOT Like '%1%' AND (GROUP_CONCAT(cc.ParentID) LIKE ('%20000%') OR GROUP_CONCAT(cc.ParentID) LIKE ('%30000%')) THEN CONCAT(GROUP_CONCAT(cate.CategoryName), ",", GROUP_CONCAT(DISTINCT(tmp.CategoryName)))                       
+		      ELSE CONCAT(GROUP_CONCAT(tmp.CategoryName))
+         END AS 'To Category Name' 
 	,	( SELECT CASE WHEN sp.CustomerClass IS NOT NULL THEN sp.CustomerClass 
                      WHEN cate2.CustomerClassPriority > MIN(tmp.CustomerClassPriority) AND cate2.IsPAProbation = 1 THEN MIN(tmp.RelevantCustomerClass) 
                      WHEN cate2.CustomerClassPriority > MIN(tmp.CustomerClassPriority) AND cate2.IsPAProbation <> 1 THEN MIN(tmp.CustomerClass)  
