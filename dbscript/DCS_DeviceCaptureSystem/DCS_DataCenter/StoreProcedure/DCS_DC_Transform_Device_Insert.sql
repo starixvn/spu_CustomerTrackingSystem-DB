@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transform_Device_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_Device_Insert`(
-    IN ip_TransJson LONGTEXT
+    IN ip_TransIDs LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -27,21 +27,25 @@ BEGIN
 			- 20230807@Terry.Nguyen: Add Fake IP [Redmine ID: #191829]
 			- 20231123@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
 			- 20240326@Jonathan.Doan: Enhance for EC24 [Redmine: 202878] 
+			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_Device_Insert('[{"TransId": 1},{"TransId": 2}]');
+			SET sql_safe_updates = 0;
+			CALL DCS_DC_Transform_Device_Insert('32');
 	*/
 
 	DECLARE vrDeviceStatusNew			TINYINT DEFAULT 1;			# New Device
 	DECLARE vrDeviceStatusOld			TINYINT DEFAULT 2;			# Old Device
 	DECLARE vrDeviceStatusRecover		TINYINT DEFAULT 3;			# Recover Device
 	
-    # STATS count
-    DECLARE lv_InsertionTime TIMESTAMP(4);
-    SET lv_InsertionTime = CURRENT_TIMESTAMP(4);
+    DECLARE lv_AssociationJson 			LONGTEXT;
+    DECLARE lv_NewAccountDeviceJson 	LONGTEXT;
+    
+    DECLARE lv_InsertionTime 			TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
     
     #============================================
+	DROP TEMPORARY TABLE IF EXISTS Temp_Input;
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedDevice;
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoveredDevice;
@@ -49,11 +53,18 @@ BEGIN
     #==============================================
     
 	#======GET DATA FROM RAW TRANSACTION===========================
+	CREATE TEMPORARY TABLE Temp_Input(
+			TransID			 		BIGINT	UNSIGNED NOT NULL		PRIMARY KEY
+    );
+    
 	CREATE TEMPORARY TABLE Temp_Transaction(
 			TransID					BIGINT	UNSIGNED PRIMARY KEY
+        , 	RawTransID				BIGINT UNSIGNED
 		, 	AccountID				BIGINT	UNSIGNED
+		, 	LoginName				VARCHAR(100)
 		, 	SubscriberID			INT
         , 	UserAgentKey			VARCHAR(32)
+        , 	IP						VARCHAR(50)
 		, 	DeviceCode				VARCHAR(32) 
 		, 	FingerprintCode			VARCHAR(620)
 		, 	FingerprintCode1		VARCHAR(300)
@@ -65,8 +76,10 @@ BEGIN
         , 	FirstDeviceCode			VARCHAR(32)
         , 	DeviceStatus			TINYINT
         , 	DeviceFingerprintID		BIGINT UNSIGNED
-        , 	INDEX 					IX_Temp_Transaction_DeviceCode(DeviceCode)
-        , 	INDEX 					IX_Temp_Transaction_AccountID(AccountID, DeviceCode, FingerprintCode)
+        
+        , 	FP_DeviceID				BIGINT UNSIGNED
+        , 	FP_DeviceMappingID		BIGINT UNSIGNED
+        , 	FP_DeviceStatus			TINYINT
 	);
     
     CREATE TEMPORARY TABLE Temp_ExistedDevice(
@@ -100,33 +113,38 @@ BEGIN
 	
     
 	#========GET INPUT DATA===========================
-	INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberID, UserAgentKey, DeviceCode, CreatedDate, TransTime,  FingerprintCode)
-    WITH CTE_Trans AS (
-		SELECT TransID
-		FROM JSON_TABLE(
-			ip_TransJson,
-			 "$[*]" COLUMNS(
-				TransID BIGINT UNSIGNED PATH "$.TransId" 
-			  )
-		) AS t
-    )
+    SET @sql = CONCAT("INSERT IGNORE INTO Temp_Input(TransID) VALUES ('", REPLACE(ip_TransIDs, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
+    
+    
+	INSERT INTO Temp_Transaction(TransID, RawTransID, AccountID, LoginName, SubscriberID, UserAgentKey, IP, DeviceCode, CreatedDate, TransTime, FingerprintCode)
     SELECT 	trans.TransID
+		, 	trans.RawTransID
 		, 	trans.AccountID
+		, 	trans.LoginName
 		, 	trans.SubscriberID
 		, 	trans.UserAgentKey
+		, 	trans.IP
 		, 	trans.DeviceCode
 		, 	trans.CreatedDate
 		, 	trans.TransTime
 		, 	trans.FingerprintCode
-	FROM CTE_Trans AS cte
-		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = cte.TransID
-    ORDER BY cte.TransID ASC;
+	FROM Temp_Input AS tmp
+		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
+    ORDER BY tmp.TransID ASC;
     
+    /* === Add index Temp_Transaction === */
+	ALTER TABLE Temp_Transaction
+	ADD INDEX IX_Temp_Transaction_RawTransID (RawTransID),
+	ADD INDEX IX_Temp_Transaction_DeviceCode (DeviceCode),
+	ADD INDEX IX_Temp_Transaction_AccountID_DeviceCode_FingerprintCode (AccountID, DeviceCode, FingerprintCode);
+        
     UPDATE Temp_Transaction
 	SET FingerprintCode1 = SUBSTRING_INDEX(FingerprintCode, ';', 1),
 		FingerprintCode2 = SUBSTRING_INDEX(FingerprintCode, ';', -1)
     WHERE FingerprintCode IS NOT NULL;
-
+    
     # START
     -- existed device
     INSERT INTO Temp_ExistedDevice (DeviceID, DeviceCode, DeviceCodeID)
@@ -315,21 +333,123 @@ BEGIN
 		, tts.FirstDeviceCode 		= IF(de.DeviceID > 0, de.FirstDeviceCode, tts.FirstDeviceCode)
 		, tts.DeviceCodeID 			= IF(de.DeviceID > 0, de.DeviceCodeID, tts.DeviceCodeID)
 		, tts.DeviceFingerprintID 	= IF(df.DeviceFingerprintID > 0, df.DeviceFingerprintID, tts.DeviceFingerprintID)
-		, tts.DeviceStatus 			= CASE 
-										WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN vrDeviceStatusOld
+		, tts.DeviceStatus 			= CASE WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN vrDeviceStatusOld
 										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN vrDeviceStatusRecover
                                         WHEN de.DeviceID > 0 AND (tts.TransId = de.FirstTransID OR de.IsNew = 1) THEN vrDeviceStatusNew  
-										ELSE tts.DeviceStatus 
-									END;
-
-	SELECT 	TransID
-		,	DeviceCodeID
-		,	DeviceID
-		,	FirstDeviceCode
-		,	DeviceStatus
-		,	DeviceFingerprintID
-	FROM Temp_Transaction
-	WHERE DeviceID IS NOT NULL;
+										ELSE tts.DeviceStatus END;
+    
+    UPDATE Temp_Transaction AS tmp
+		INNER JOIN DCS_DataCenter.FP_TransactionDeviceMapping AS tdm ON tdm.RawTransID = tmp.RawTransID
+	SET tmp.FP_DeviceMappingID = tdm.FP_DeviceMappingID,
+		tmp.FP_DeviceID = tdm.FP_DeviceID,
+		tmp.FP_DeviceStatus = tdm.FP_DeviceStatus;
+	
+    /* === Insert new Association === */
+    WITH cte_DistinctData AS (
+		SELECT	DISTINCT
+				AccountID
+			,	DeviceID
+			,	FP_DeviceID
+			,	SubscriberID
+			,	TransTime
+			,	CreatedDate
+		FROM Temp_Transaction
+		WHERE AccountID IS NOT NULL
+    )
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+					'AccountID'		, AccountID
+				,	'DeviceID'		, DeviceID
+				,	'FP_DeviceID'	, FP_DeviceID
+				,	'SubscriberID'	, SubscriberID
+				,	'CreatedTime'	, TransTime
+				,	'CreatedDate'	, CreatedDate
+			)
+		) AS json_data
+	INTO lv_AssociationJson
+	FROM cte_DistinctData;
+    
+    SET lv_AssociationJson = IFNULL(lv_AssociationJson,'[{}]');
+	CALL DCS_DC_Transform_Association_Insert(lv_AssociationJson);
+    
+    
+    /* === Insert into NewAccountDevice === */
+    WITH cte_DistinctData AS (
+		SELECT	DISTINCT
+				AccountID
+			,	DeviceID
+            ,	SubscriberID
+            ,	RawTransID
+            ,	CreatedDate
+            ,	LoginName
+            ,	TransTime
+            ,	UserAgentKey
+            ,	IP
+		FROM Temp_Transaction
+		WHERE AccountID IS NOT NULL
+			AND DeviceID IS NOT NULL
+    )
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+					'AccountID'			, AccountID
+				,	'DeviceID'			, DeviceID
+				,	'SubscriberID'		, SubscriberID
+				,	'RawTransID'		, RawTransID
+				,	'CreatedDate'		, CreatedDate
+				,	'LoginName'			, LoginName
+				,	'TransTime'			, TransTime
+				,	'UserAgentKey'		, UserAgentKey
+				,	'IP'				, IP
+			)
+		) AS json_data
+	INTO lv_NewAccountDeviceJson
+	FROM cte_DistinctData;
+    
+    SET lv_NewAccountDeviceJson = IFNULL(lv_NewAccountDeviceJson,'[{}]');
+	CALL DCS_DC_Transform_NewAccountDevice_Insert(lv_NewAccountDeviceJson);
+	
+	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FP_UserAgentID, FP_DeviceMappingID, FP_DeviceID, FP_DeviceStatus)
+	SELECT 	ts.RawTransID
+		,	ts.LoginName
+		,	ts.TransTime
+		,	ts.SubscriberID
+		,	ts.AccountID
+		,	ts.URLID
+		,	tmp.DeviceCodeID
+		,	tmp.DeviceID
+		,	tmp.FirstDeviceCode
+		,	tmp.DeviceStatus
+		,	tmp.DeviceFingerprintID
+		,	ts.UserAgentKey
+		,	ts.IP
+		,	ts.IPID
+		,	ts.ActionResultID
+		,	ts.Flagged
+		,	ts.PluginID
+		,	ts.TransStatus
+		,	ts.CreatedDate
+		,	ts.InsertTime
+		,	ts.BotDetectionValue
+		,	ts.BotComponentID
+		,	ts.FakeIP
+		,	ts.IsIncognitoMode
+		,	ts.JSChallengeInfoID
+		,	ts.FP_UserAgentID
+		,	tmp.FP_DeviceMappingID
+		,	tmp.FP_DeviceID
+		,	tmp.FP_DeviceStatus
+	FROM Temp_Transaction AS tmp
+		INNER JOIN DCS_DataCenter.Transaction AS ts ON ts.TransID = tmp.TransID
+	WHERE tmp.DeviceID IS NOT NULL;
+	
+	DELETE trans
+	FROM DCS_DataCenter.Transaction AS trans
+		INNER JOIN Temp_Transaction AS tmp ON tmp.TransID = trans.TransID
+	WHERE tmp.DeviceID IS NOT NULL;
+    
+    DELETE tdm
+    FROM DCS_DataCenter.FP_TransactionDeviceMapping AS tdm
+		INNER JOIN Temp_Transaction AS tmp ON tmp.RawTransID = tdm.RawTransID;
 END$$
 
 DELIMITER ;

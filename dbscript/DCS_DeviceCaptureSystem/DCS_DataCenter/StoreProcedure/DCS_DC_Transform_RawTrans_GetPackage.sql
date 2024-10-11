@@ -20,36 +20,32 @@ BEGIN
 		    - 20201006@Bobby:Move New Server Phase 2, Enhance Performance [Redmine ID: #143011]
 			- 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
+			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
             
 	    Param's Explanation (filtered by):
+			CALL DCS_DC_Transform_RawTrans_GetPackage(0,10,2);
 	*/
+    DECLARE 	CONST_SYSTEMSETTINGID_MINRAWTRANSID	INT DEFAULT 314127;
 
-	DECLARE		lv_TotalRecord		        INT UNSIGNED DEFAULT 0;
-    DECLARE 	lv_FromTransID		        BIGINT UNSIGNED;
-    DECLARE		lv_GroupLookup		        VARCHAR(128);
-    DECLARE		lv_KeyLookup			    VARCHAR(128);
+	DECLARE		lv_TotalRecord	INT UNSIGNED DEFAULT 0;
+    DECLARE 	lv_FromTransID	BIGINT UNSIGNED;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction; 
     
     CREATE TEMPORARY TABLE Temp_Transaction(		
 		    MinTransID			BIGINT UNSIGNED
         ,   MaxTransID			BIGINT UNSIGNED
-        ,   BatchCount		    INT
-    ) ENGINE = MEMORY; 
+    ); 
 	
-
     SET lv_TotalRecord 	= ip_NoOfTickets*ip_NoOfBatch;
-    SET lv_GroupLookup 	= 'DCS_RawTrans_Transform';
-    SET lv_KeyLookup	= 'MinRawTransId';
-    SET lv_FromTransID 	= IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE VGroup=lv_GroupLookup AND VName=lv_KeyLookup	), 0);
+    SET lv_FromTransID 	= IFNULL((SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_SYSTEMSETTINGID_MINRAWTRANSID), 0);
 
     SET lv_TotalRecord = ip_NoOfTickets * ip_NoOfBatch;
 	set @RowId = 0;
     
-    INSERT INTO Temp_Transaction (MinTransID, MaxTransID, BatchCount)
+    INSERT INTO Temp_Transaction (MinTransID, MaxTransID)
     SELECT  MIN(TransID) AS MinTransID
         ,   MAX(TransID) AS MaxTransID
-        ,   SUM(1) AS BatchCount
 	FROM (
 		SELECT	@RowId := @RowId+1
 			,   rt.TransID	
@@ -62,27 +58,20 @@ BEGIN
 	GROUP BY batchID;
     
 
-    SET lv_FromTransID = IFNULL((SELECT MIN(MinTransID) FROM Temp_Transaction), lv_FromTransID);
-    INSERT INTO DCS_DataCenter.SystemSetting (VGroup, VName, VValue, UpdatedTime)
-    SELECT  VGroup
-        ,   VName
-        ,   VValue
-        ,   UpdatedTime
-    FROM (
-        SELECT lv_GroupLookup AS VGroup
-		    ,   lv_KeyLookup AS VName
-		    ,   CONCAT('', lv_FromTransID) AS VValue
-            ,   CURRENT_TIMESTAMP() AS UpdatedTime
-	) AS t
-	ON DUPLICATE KEY UPDATE  VValue = t.VValue
-		                    ,UpdatedTime = t.UpdatedTime;
-
+    /*****UPDATE MaxTransID in SystemSetting****************************************************/
+    SET lv_FromTransID = (SELECT MIN(MinTransID) FROM Temp_Transaction);
     
-	#RETURN OUTPUT
+    IF lv_FromTransID IS NOT NULL AND lv_FromTransID > 0 THEN
+		UPDATE DCS_DataCenter.SystemSetting AS sys
+		SET sys.VValue 	= CONCAT('', lv_FromTransID),
+		    sys.UpdatedTime = CURRENT_TIMESTAMP()
+		WHERE ID = CONST_SYSTEMSETTINGID_MINRAWTRANSID;
+    END IF;
+    
+    /*****RETURN OUTPUT****************************************************/
     SELECT	tmpTT.MinTransID
 	    ,   tmpTT.MaxTransID
 	FROM Temp_Transaction AS tmpTT;
-
 
 END$$
 DELIMITER ;
