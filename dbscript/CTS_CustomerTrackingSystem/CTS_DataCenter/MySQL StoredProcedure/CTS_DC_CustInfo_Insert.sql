@@ -322,7 +322,7 @@ BEGIN
 
 	CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);    
 
-    #=====INSERT NEW CUSTOMER=====================================
+    #=====INSERT NEW CUSTOMER===================================================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
 			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , Danger4 , Danger5, DangerSabaSc, DangerSabaBkb , InsertedTime , ModifiedTime, IsLicensee, IsInternal)
 	SELECT    tmpCus.SubscriberID
@@ -376,7 +376,8 @@ BEGIN
 	#=====UPDATE CTSCustomerClassification_History====================
     UPDATE CTS_DataCenter.CTSCustomerClassification_History AS ch
     INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
-    SET	ch.CTSCustID = tmpCus.CTSCustID;   
+    SET		ch.CTSCustID = tmpCus.CTSCustID
+		,	ch.RoleID = tmpCust.RoleID;   
 
     /* ===> NOT Insert CTSCustID To LOG due to suport trace data team(victoria) 
     #=====UPDATE CTSCustomerClassification_History_Log====================
@@ -395,7 +396,8 @@ BEGIN
 	#=====UPDATE CTSCustomerClassification_History====================
     UPDATE CTS_DataCenter.CTSCustomerClassificationAgency_History AS ch
     INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
-    SET	ch.CTSCustID = tmpCus.CTSCustID;
+    SET		ch.CTSCustID = tmpCus.CTSCustID	
+		,	ch.RoleID = tmpCust.RoleID; 
     
     /* ===> NOT Insert CTSCustID To LOG due to suport trace data team(victoria) 
     #=====UPDATE CTSCustomerClassification_History_Log====================
