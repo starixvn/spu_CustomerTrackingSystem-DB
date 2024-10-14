@@ -42,7 +42,9 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert(9, 3, NULL, NULL, NULL, false, '[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]', @outParam7);
 			
 		Revisions: 
-			- 20240618@Victoria.Le:			Initial Writing [Redmine ID: #205317]
+			- 20240618@Victoria.Le:		Initial Writing [Redmine ID: #205317]
+            - 20240923@Jonas.Huynh:		Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
+            
 */
 	DECLARE CONST_CATEID_VVIP 								INT;
 	DECLARE CONST_PARENTID_PA               				INT;
@@ -57,6 +59,8 @@ BEGIN
 	
 	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY		INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON		INT;
+    
+	DECLARE CONST_BIZCATEGROUPID_NORMAL						INT;
 	
 	DECLARE lv_MaxCTSCustID									BIGINT;
 	DECLARE lv_LogTypeID									INT;
@@ -79,6 +83,8 @@ BEGIN
 	
 	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
 	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PAREASON');
+	
+    SET CONST_BIZCATEGROUPID_NORMAL 						= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
 	
 	/*STEP 1: Parse raw data and get custinfo*/
 	CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_GetInfo (ip_InputFlowID,ip_FromAction,ip_UplineRoleID,ip_CustInfo);
@@ -209,11 +215,15 @@ BEGIN
 	SELECT DISTINCT 
 			temp.CTSCustID
 		,  	temp.CustID
-		,	CASE WHEN NewCategoryID = CONST_CATEID_VVIP THEN CONST_CC_VVIP ELSE temp.TargetCC END AS CustomerClass
-		,  	CASE WHEN NewCategoryID = CONST_CATEID_VVIP THEN lv_Ext_CateGroupID_VVIP ELSE temp.NewCategoryID END AS CategoryID
-		,	CASE WHEN ParentID = CONST_PARENTID_PA AND temp.IsRobot = 0 THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN temp.NewCategoryID = CONST_CATEID_VVIP THEN CONST_CC_VVIP ELSE temp.TargetCC END AS CustomerClass
+		,  	CASE WHEN temp.NewCategoryID = CONST_CATEID_VVIP THEN lv_Ext_CateGroupID_VVIP ELSE temp.NewCategoryID END AS CategoryID
+		,	CASE WHEN temp.ParentID = CONST_PARENTID_PA 
+						AND temp.IsRobot = 0 
+						AND cate.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL 
+				THEN 1 ELSE 0 END AS IsPA
 		,	lv_CurrentDateTime AS ScannedTime 
 	FROM Temp_NewClassification AS temp
+		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = temp.NewCategoryID
 	WHERE temp.IsReturnData = 1;
 	
 END$$

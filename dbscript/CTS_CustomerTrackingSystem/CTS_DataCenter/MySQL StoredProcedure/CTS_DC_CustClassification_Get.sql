@@ -34,7 +34,8 @@ BEGIN
             - 20240318@Casey.Huynh: Classify Danger Score [Redmine ID: #201358]
             - 20240424@Thomas.Nguyen: Classify initial group betting - Add ParentID = 150 [Redmine ID: #200854]
 			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode, PinCustomerCategory and return more IsVVIP, IsPA, IsPotentialPA, ColorTypeID [Redmine ID: #205317]
-
+			- 20240923@Jonas.Huynh:	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
+            
 		Param's Explanation:
         
 		Example:
@@ -47,6 +48,7 @@ BEGIN
 	DECLARE CONST_PARENTID_NORMAL      		INT;
     DECLARE CONST_PARENTID_VVIP      		INT;
 	DECLARE CONST_CATEID_VVIP				INT;
+	DECLARE CONST_BIZCATEGROUPID_NORMAL		INT;
 
 	DECLARE lv_LowestParentIDPriority		SMALLINT;
 
@@ -55,26 +57,29 @@ BEGIN
 	SET CONST_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
     SET CONST_PARENTID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
 	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
-
+	SET CONST_BIZCATEGROUPID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
-			CategoryID				INT UNSIGNED
-		,   CategoryName   			VARCHAR(200) 
-        ,	CategoryGroupID   		INT UNSIGNED
-		,	CategoryPriority		SMALLINT UNSIGNED
-		,	ParentID				INT UNSIGNED
-		,	CustomerClassPriority	SMALLINT UNSIGNED
-		,	IsProbation				BIT DEFAULT 0
-		,	ColorTypeID				TINYINT UNSIGNED
+			CategoryID					INT UNSIGNED
+		,   CategoryName   				VARCHAR(200) 
+        ,	CategoryGroupID   			INT UNSIGNED
+        ,	BusinessCategoryGroupID 	INT UNSIGNED
+		,	CategoryPriority			SMALLINT UNSIGNED
+		,	ParentID					INT UNSIGNED
+		,	CustomerClassPriority		SMALLINT UNSIGNED
+		,	IsProbation					BIT DEFAULT 0
+		,	ColorTypeID					TINYINT UNSIGNED
     );
    
-	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName,CategoryGroupID, CategoryPriority, ParentID, CustomerClassPriority, IsProbation, ColorTypeID)
+	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName, CategoryGroupID, BusinessCategoryGroupID, CategoryPriority, ParentID, CustomerClassPriority, IsProbation, ColorTypeID)
 	SELECT DISTINCT (CASE 
-                        WHEN cc.ParentID = CONST_PARENTID_PA THEN cc.CategoryGroupID
+                        WHEN cc.ParentID = CONST_PARENTID_PA AND cc.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN cc.CategoryGroupID
                         ELSE cate.CategoryID 
 					END)
 				,	cc.CategoryName
                 ,	cc.CategoryGroupID
+                ,	cc.BusinessCategoryGroupID
 				,	cc.CategoryPriority
 				,	cc.ParentID
 				,	cc.CustomerClassPriority
@@ -91,13 +96,13 @@ BEGIN
 	END IF;	
 
 	IF (SELECT COUNT(DISTINCT ParentID) FROM Temp_LatestRecordOfCategory) > 1 THEN
-		SELECT MIN(CustomerClassPriority)
+		SELECT MIN(ParentID)
 		INTO lv_LowestParentIDPriority
 		FROM Temp_LatestRecordOfCategory;
 
 		DELETE tmp
 		FROM Temp_LatestRecordOfCategory AS tmp
-		WHERE tmp.CustomerClassPriority > lv_LowestParentIDPriority;
+		WHERE tmp.ParentID > lv_LowestParentIDPriority;
     END IF;
 
 	IF EXISTS (SELECT 1 FROM CTS_DataCenter.TaggingExclusion WHERE CTSCustID = ip_CTSCustID) THEN 
@@ -110,8 +115,10 @@ BEGIN
 		,	CategoryName
         ,	CategoryGroupID
 		,	CASE WHEN CategoryID = CONST_CATEID_VVIP THEN 1 ELSE 0 END AS IsVVIP
-		,	CASE WHEN ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN ParentID = CONST_PARENTID_PA AND BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN 1 ELSE 0 END AS IsPA
+        ,	CASE WHEN ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsMultiplePA
 		,	ColorTypeID
+        ,	CategoryPriority
 	FROM Temp_LatestRecordOfCategory;
 END$$
 DELIMITER ;

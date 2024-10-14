@@ -40,7 +40,8 @@ sp : BEGIN
             - 20240319@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
             - 20240425@Thomas.Nguyen:	Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
 			- 20240628@Thomas.Nguyen: 	Renovate CC phase 2 - Remove hardcode and return more IsPA, IsPotentialPA [Redmine ID: #205317]
-
+			- 20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
+            
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
             - ip_AssociationStatus: 0 - All, 1 - Linked, 2 - UnLinked
@@ -58,6 +59,7 @@ sp : BEGIN
     DECLARE CONS_ASSBYAI_ACTIVESTATUS INT DEFAULT 1;
 	DECLARE CONST_PARENTID_PA               	INT;
 	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
+	DECLARE	CONST_BIZCATEGROUPID_NORMAL 		INT;
     #==================================================
 	DECLARE lv_CustID INT;
     
@@ -80,6 +82,7 @@ sp : BEGIN
 	
 	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
+    SET CONST_BIZCATEGROUPID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
 	#========================================================================
     IF (ip_SubscriberIDs IS NULL OR ip_SubscriberIDs = '' OR ip_SubscriberIDs = -1) OR  (ip_CategoryIDs IS NULL OR ip_CategoryIDs = '' OR ip_CategoryIDs = -1) THEN
 		LEAVE sp;
@@ -116,7 +119,7 @@ sp : BEGIN
 		,	CategoryIDs		VARCHAR(1000)
 		,	CategoryNames	VARCHAR(5000)
 		,	ColorTypeIDs	VARCHAR(100)
-		,	IsPAProbation		BIT DEFAULT 0
+		,	IsPAProbation	BIT DEFAULT 0
         , 	PRIMARY KEY (CTSCustID)
 	);
     
@@ -396,22 +399,21 @@ sp : BEGIN
 		WHERE cate.CTSCustID IS NULL;
     END IF;
     
-    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames, ColorTypeIDs, IsPAProbation)
-	SELECT	tmpAcc.CTSCustID
-		,	cc.ParentID -- Each Customer has only 1 ParentID
+   INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames, ColorTypeIDs, IsPAProbation)  
+   SELECT	tmpAcc.CTSCustID
+		,	cate.ParentID -- Each Customer has only 1 ParentID
 		,	GROUP_CONCAT(DISTINCT cate.CategoryID SEPARATOR ',') 
-        ,	GROUP_CONCAT(DISTINCT cc.CategoryName SEPARATOR ',')
-		,	GROUP_CONCAT(DISTINCT cc.ColorTypeID SEPARATOR ',')
-		,	MAX(cc.IsPAProbation)
+        ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ',')
+        ,	GROUP_CONCAT((SELECT cate.ColorTypeID FROM CTS_DataCenter.CustomerCategory AS cate2 WHERE cate2.CategoryID = cate.CategoryID ORDER BY cate.CategoryPriority ASC))
+		,	MAX(cate.IsPAProbation)
 	FROM	Temp_AssociatedAccount AS tmpAcc
-		,	LATERAL (	SELECT cat.CategoryID
+		,	LATERAL (	SELECT cat.CategoryID, cat.ColorTypeID, cat.CategoryName, cat.ParentID, cat.IsPAProbation, cat.CategoryPriority
 						FROM CTS_DataCenter.CTSCustomerClassification AS clss
 							INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
 						WHERE clss.CTSCustID = tmpAcc.CTSCustID
 						ORDER BY cat.CategoryPriority ASC, clss.LastModifiedDate DESC) AS cate
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = tmpCate.CategoryID 
-	GROUP BY tmpAcc.CTSCustID, cc.ParentID;
+	GROUP BY tmpAcc.CTSCustID, cate.ParentID;
     
     /* Update IsFiltered */
     UPDATE 	Temp_AssociatedAccount AS tmpAcc

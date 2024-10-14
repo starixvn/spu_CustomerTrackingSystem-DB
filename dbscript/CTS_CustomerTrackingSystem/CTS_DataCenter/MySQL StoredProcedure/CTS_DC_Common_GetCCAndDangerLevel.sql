@@ -18,7 +18,8 @@ BEGIN
 			- 20240319@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
             - 20240424@Thomas.Nguyen:	Classify Initial Group Betting - Add ParentID = 150, SportGroupID = 150 [Redmine ID: #200854]
 			- 20240628@Thomas.Nguyen:	Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
-
+			- 20240923@Jonas.Huynh:		Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
+                
         Param's Explanation:     
         Example:
 			- CALL CTS_DataCenter.CTS_DC_Common_GetCCAndDangerLevel('1,2,1277,555555');
@@ -30,6 +31,7 @@ BEGIN
 	DECLARE	CONST_CATEID_LICBA					INT;
 	DECLARE	CONST_CATEID_LICVIPSUSPICIOUS		INT;
 	DECLARE	CONST_CATEID_LICVIPDANGEROUS		INT;
+	DECLARE	CONST_BIZCATEGROUPID_NORMAL			INT;
 
     DECLARE	lv_LicVIP_DangerousCCName 			VARCHAR(50);
     DECLARE	lv_LicVIP_SuspiciousCCName			VARCHAR(50);
@@ -46,7 +48,8 @@ BEGIN
 	SET CONST_CATEID_LICBA 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
 	SET CONST_CATEID_LICVIPSUSPICIOUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
 	SET CONST_CATEID_LICVIPDANGEROUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
-
+	SET CONST_BIZCATEGROUPID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE 		Temp_CustInfo (
         	CustID						BIGINT UNSIGNED PRIMARY KEY 
@@ -153,7 +156,9 @@ BEGIN
 			END AS DangerLevelType
     FROM Temp_CustInfo AS tmp
 		INNER JOIN Temp_CustLatestCate AS t ON tmp.CustID = t.CustID,
-		LATERAL(SELECT 	CASE WHEN clss.ParentID = CONST_PARENTID_PA AND tmp.SpecialCC IS NULL THEN cate.Ext_CategoryGroupID 
+		LATERAL(SELECT 	CASE WHEN clss.ParentID = CONST_PARENTID_PA 
+								AND cate.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL 
+								AND tmp.SpecialCC IS NULL THEN cate.Ext_CategoryGroupID 
 							 ELSE NULL END AS CategoryID
 					,	CASE  
 							WHEN (tmp.SpecialCC IS NULL) OR (tmp.SpecialCCPriority <> -1)

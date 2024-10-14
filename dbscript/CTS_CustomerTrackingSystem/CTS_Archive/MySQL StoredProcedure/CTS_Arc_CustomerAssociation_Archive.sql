@@ -17,24 +17,26 @@ sp : BEGIN
 			- 20230112@Victoria.Le: 	Modify SPs due to restructure AssociationByAI [Redmine ID: #181994]
 			- 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
             - 20240426@Thomas.Nguyen:	Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
-
+			- 20240923@Jonas.Huynh:		Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
+            
         Param's Explanation (filtered by):
 
         Example:  
 			- CALL CTS_Arc_CustomerAssociation_Archive();
 */   
-    DECLARE	CONST_15Days 			    INT DEFAULT 15; 
+ DECLARE	CONST_15Days 			    INT DEFAULT 15; 
     DECLARE	CONST_30Days 				INT DEFAULT 30;
     DECLARE	CONST_60Days 				INT DEFAULT 60;
     DECLARE	CONST_90Days 				INT DEFAULT 90;
 
-    DECLARE	CONST_PA 					INT DEFAULT 50;
-	DECLARE	CONST_NORMAL 				INT DEFAULT 200;
-	DECLARE	CONST_POTENTIALPA 			INT DEFAULT 150;
-
     DECLARE	CONST_Tagging_Normal 		INT DEFAULT 0;
     DECLARE	CONST_Tagging_WithPA 		INT DEFAULT 1;
     DECLARE	CONST_Tagging_TW 			INT DEFAULT 2;
+
+	DECLARE CONST_PARENTID_PA					INT;
+	DECLARE CONST_PARENTID_NORMAL				INT;
+	DECLARE CONST_PARENTID_POTENTIALPA			INT;
+	DECLARE	CONST_BIZCATEGROUPID_NORMAL 		INT;
 
 	DECLARE lv_DateValid 			    DATETIME DEFAULT DATE_SUB(NOW(), INTERVAL CONST_15Days DAY); 
     DECLARE lv_NowToDays 			    INT DEFAULT TO_DAYS(NOW());
@@ -44,7 +46,12 @@ sp : BEGIN
     DECLARE lv_Table 				    VARCHAR(100);
     DECLARE lv_Count				    INT DEFAULT 0;
     DECLARE lv_DayProcessing		    INT DEFAULT TO_DAYS(NOW());
-    
+
+	SET CONST_PARENTID_PA 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_PARENTID_NORMAL 			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');    
+    SET CONST_PARENTID_POTENTIALPA 		= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');    
+	SET CONST_BIZCATEGROUPID_NORMAL 	= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
+        
     SELECT ParameterValue
     INTO lv_BatchSize_Cust
     FROM CTS_Archive.SystemParameter
@@ -115,13 +122,19 @@ sp : BEGIN
 				tmp.CTSCustID
 			,	tmp.CustID
         FROM Temp_CustNoBet AS tmp
-			LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CTSCustID = cus.CTSCustID
-            LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON tmp.CTSCustID = cls.CTSCustID
-            LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
-        WHERE  (cus.CustStatusID IN (2,3,4,12,13,14) AND ((cate.ParentID = CONST_NORMAL AND cate.TaggingType = CONST_Tagging_Normal) OR (cate.ParentID = CONST_POTENTIALPA)) AND tmp.Days >= CONST_15Days)
-			OR (cus.CustStatusID NOT IN (2,3,4,12,13,14) AND ((cate.ParentID = CONST_NORMAL  AND cate.TaggingType = CONST_Tagging_Normal) OR (cate.ParentID = CONST_POTENTIALPA)) AND tmp.Days >= CONST_30Days)
-            OR (cate.ParentID = CONST_NORMAL  AND cate.TaggingType IN (CONST_Tagging_WithPA,CONST_Tagging_TW) AND tmp.Days >= CONST_60Days)
-            OR (cate.ParentID = CONST_PA   AND tmp.Days >= CONST_90Days);
+			INNER JOIN  CTS_DataCenter.CTSCustomer AS cus ON tmp.CTSCustID = cus.CTSCustID
+		,	LATERAL (
+				SELECT cate.ParentID, cate.TaggingType, cate.BusinessCategoryGroupID
+                FROM CTS_DataCenter.CTSCustomerClassification AS cls
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
+				WHERE tmp.CTSCustID = cls.CTSCustID
+				ORDER BY CategoryPriority ASC
+                LIMIT 1
+            ) AS ltc
+        WHERE  (cus.CustStatusID IN (2,3,4,12,13,14) AND (ltc.ParentID = CONST_PARENTID_NORMAL AND ltc.TaggingType = CONST_Tagging_Normal) AND tmp.Days >= CONST_15Days)
+			OR (cus.CustStatusID NOT IN (2,3,4,12,13,14) AND (ltc.ParentID = CONST_PARENTID_NORMAL AND ltc.TaggingType = CONST_Tagging_Normal) AND tmp.Days >= CONST_30Days)
+            OR (((ltc.ParentID = CONST_PARENTID_NORMAL AND ltc.TaggingType IN (CONST_Tagging_WithPA,CONST_Tagging_TW)) OR (ltc.ParentID = CONST_PARENTID_PA AND ltc.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_NORMAL)) AND tmp.Days >= CONST_60Days)
+            OR (ltc.ParentID = CONST_PARENTID_PA AND ltc.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL AND tmp.Days >= CONST_90Days);
         
         IF NOT EXISTS (SELECT 1 FROM  CTS_Archive.CTSCustomerAssociationArchive_Process) THEN
 			

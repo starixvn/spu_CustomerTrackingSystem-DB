@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-WASAVerse" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" viewers="" isFunction="0" isNested="0"></info>*/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -17,6 +17,8 @@ AS
 		- 20210722@Harvey.Nguyen: Created [Redmine ID: #155956]
 		- 20230626@Victoria.Le:		Get Group Betting, Reject, Desktop percent within 60 days & and current date [Redmine ID: #189505]
 		- 20240130@Victoria.Le:	  	Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
+		- 20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
+
 	Param's Explanation:
 */
 BEGIN
@@ -72,26 +74,26 @@ BEGIN
 	GROUP BY gbc.CustId;
 	
 	UPDATE cc
-	SET cc.CateId = 8
-	, 	cc.TWDesktopUsageRate = r.TWDesktopUsageRate
-	, 	cc.TWTicketRejectRate = r.TWTicketRejectRate
-	FROM #tmpCustomerClassification cc
-		INNER JOIN #tmpCustomerGroupPercentage AS r ON cc.CustId = r.CustId
-	WHERE r.TWTicketParlayCount = 0
-		AND r.TWDesktopUsageRate > 90
-		AND r.TWTicketRejectRate >= 30;
-
-	UPDATE cc
 	SET cc.CateId = 7
 		, cc.TWBetCount = r.TWBetCount
 		, cc.TWGroupBettingRate = r.TWGroupBettingRate
 	FROM #tmpCustomerClassification cc
 		INNER JOIN #tmpCustomerGroupPercentage AS r ON cc.CustId = r.CustId
-	WHERE cc.CateId IS NULL
-		AND r.TWTicketParlayCount = 0
+	WHERE r.TWTicketParlayCount = 0
 		AND ((r.TWBetCount <= 30 AND r.TWGroupBettingRate >= 6)
 				OR (r.TWBetCount > 30 AND r.TWGroupBettingRate >= 2)
 			);
+
+	UPDATE cc
+	SET cc.CateId = 8
+	, 	cc.TWDesktopUsageRate = r.TWDesktopUsageRate
+	, 	cc.TWTicketRejectRate = r.TWTicketRejectRate
+	FROM #tmpCustomerClassification cc
+		INNER JOIN #tmpCustomerGroupPercentage AS r ON cc.CustId = r.CustId
+	WHERE  cc.CateId IS NULL
+		AND r.TWTicketParlayCount = 0
+		AND r.TWDesktopUsageRate > 90
+		AND r.TWTicketRejectRate >= 30;
 
 	SELECT 	CustId AS 'CustID'
 		,	CateId AS 'TaggingID'

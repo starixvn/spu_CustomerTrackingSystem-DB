@@ -15,6 +15,7 @@ BEGIN
 		- 20240410@Long.Luu:		Add special rule for CC2800/2801: considered as Normal by User but has been arranged as a PA in DB [Redmine ID: #201358]
 		- 20240426@Thomas.Nguyen:	Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
         - 20240620@Jonas.Huynh: 	Renovate CC [RedmineID: #205317]
+        - 20240923@Jonas.Huynh:		Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
         
 	Param's Explanation (filtered by):
 	Example:
@@ -25,6 +26,7 @@ BEGIN
     DECLARE CONST_PARENTID_NORMAL			INT;
     DECLARE CONST_PARENTID_POTENTIALPA		INT;
     DECLARE CONST_CATEGROUPID_INACTIVE		INT;
+    DECLARE CONST_BIZCATEGROUPID_NORMAL		INT;
     
 	DECLARE CONST_CCGROUPID_NORMAL 			SMALLINT DEFAULT 1;
 	DECLARE CONST_CCGROUPID_NORMALLINKED 	SMALLINT DEFAULT 2;
@@ -48,20 +50,24 @@ BEGIN
     SET CONST_PARENTID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
     SET CONST_PARENTID_POTENTIALPA 	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
     SET CONST_CATEGROUPID_INACTIVE 	= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INACTIVE');
-
+	SET CONST_BIZCATEGROUPID_NORMAL = CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
+	
 	INSERT INTO Temp_CustomerCategory (CustomerClassGroupID,CustomerClass,CategoryName)
 	WITH CTE_CC AS
 	(	SELECT 	cc.ParentID
 			,	cc.CustomerClass
             ,	cc.CategoryName
             ,	cc.TaggingType
-            ,	CategoryGroupID
+            ,	cc.CategoryGroupID
+            ,	cat.BusinessCategoryGroupID
             ,	ROW_NUMBER() OVER (PARTITION BY cc.CustomerClass ORDER BY cc.CategoryID) AS RowNumber
 		FROM CTS_DataCenter.CustomerCategory AS cc
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cc.CategoryID
 		WHERE cc.CustomerClass IS NOT NULL
 			AND cc.IsActive = 1
 	)
-	SELECT 	CASE WHEN (c.ParentID = CONST_PARENTID_NORMAL AND TaggingType  = 0 AND CategoryGroupID <> CONST_CATEGROUPID_INACTIVE) OR (c.ParentID = CONST_PARENTID_POTENTIALPA) THEN CONST_CCGROUPID_NORMAL -- Normal
+	SELECT 	CASE WHEN (c.ParentID = CONST_PARENTID_NORMAL AND TaggingType = 0 AND CategoryGroupID <> CONST_CATEGROUPID_INACTIVE) 
+					OR (c.ParentID = CONST_PARENTID_PA && c.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_NORMAL) THEN CONST_CCGROUPID_NORMAL -- Normal
 				 WHEN c.ParentID = CONST_PARENTID_NORMAL AND TaggingType <> 0  THEN CONST_CCGROUPID_NORMALLINKED -- Normal linked Problem
 				 WHEN c.ParentID = CONST_PARENTID_PA THEN CONST_CCGROUPID_PA  -- Problem Account
 				 ELSE CONST_CCGROUPID_OTHER -- Other

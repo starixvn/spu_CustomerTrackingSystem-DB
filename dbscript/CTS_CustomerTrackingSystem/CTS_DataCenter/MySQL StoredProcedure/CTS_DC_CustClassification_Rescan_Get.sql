@@ -23,6 +23,7 @@ sp: BEGIN
 			- 20230517@Victoria.Le:		New Category for Robot OCRD [Redmine ID: #186991]
             - 20240103@Thomas.Nguyen:   New Category for System Detect Unauthorized Login [RedmineID: #197710]
 			- 20240620@Jonas.Huynh: 	Renovate CC [RedmineID: #205317]
+            - 20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
             
         Param's Explanation:
 
@@ -30,8 +31,11 @@ sp: BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Rescan_Get_UAT4("1,2,3,4");
 	*/ 
     DECLARE	CONST_CATEID_UNAUTHORIZEDLOGIN			INT;
+    DECLARE	CONST_CATEID_UNAUTHORIZEDLOGINLOSING	INT;
     DECLARE	CONST_CATEID_ROBOTUSER					INT;
+    DECLARE	CONST_CATEID_ROBOTUSERLOSING			INT;
     DECLARE	CONST_CATEID_ROBOTOCRD					INT;
+    DECLARE	CONST_CATEID_ROBOTOCRDLOSING			INT;
     DECLARE	CONST_CATEID_EARLYWARNING				INT;
     DECLARE	CONST_CATEID_INITIALGB					INT;
     DECLARE CONST_CATEID_INITIALSMART				INT;
@@ -45,13 +49,16 @@ sp: BEGIN
 	DECLARE CONST_CREATEDBY_STARIXITID				INT DEFAULT 10278938;
     
     SET CONST_CATEID_UNAUTHORIZEDLOGIN	 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_UNAUTHORIZEDLOGIN');
+	SET CONST_CATEID_UNAUTHORIZEDLOGINLOSING		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_UNAUTHORIZEDLOGINLOSING');
     SET CONST_CATEID_ROBOTUSER	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
+    SET CONST_CATEID_ROBOTUSERLOSING				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSERLOSING');
     SET CONST_CATEID_ROBOTOCRD	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
+    SET CONST_CATEID_ROBOTOCRDLOSING				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRDLOSING');
     SET CONST_CATEID_EARLYWARNING	 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_EARLYWARNING');
     SET CONST_CATEID_INITIALGB	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALGB');
     SET CONST_CATEID_INITIALSMART	 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMART');
     SET CONST_PARENTID_PA 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
-    
+        
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;    
 	CREATE TEMPORARY TABLE Temp_CustID (	  
 			CustID          BIGINT UNSIGNED PRIMARY KEY 	
@@ -373,7 +380,7 @@ sp: BEGIN
 					AND s.CustID <> tmp.CustID
 					AND s.ParentID = CONST_PARENTID_PA 
                     AND s.IsMarkedDirectly = 1
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = s.CategoryID
+		STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = s.CategoryID AND cate.CategoryGroupID NOT IN (CONST_CATEID_ROBOTUSER, CONST_CATEID_ROBOTUSERLOSING, CONST_CATEID_ROBOTOCRD, CONST_CATEID_ROBOTOCRDLOSING, CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING)
 	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
 						,	LastModifiedDate = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END
 						,	CreatedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.CreatedDate THEN s.CreatedDate ELSE Temp_CustCategory.CreatedDate END
@@ -442,7 +449,7 @@ sp: BEGIN
 	WHERE NOT EXISTS (SELECT 1 
 					  FROM Temp_CustCategory AS cc 
                       WHERE cc.CustID = tmp.CustID 
-						AND cc.InputFlowID = CONST_INPUTFLOWID_CATEGORY_PA);
+						AND cc.CategoryID = CONST_CATEID_EARLYWARNING);
     
     /***********************Check Initial GroupBetting****************************/
     INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, SportType, InputFlowID)
@@ -470,7 +477,7 @@ sp: BEGIN
 	WHERE NOT EXISTS (SELECT 1 
 					  FROM Temp_CustCategory AS cc 
 					  WHERE cc.CustID = tmp.CustID 
-						AND cc.InputFlowID = CONST_INPUTFLOWID_CATEGORY_PA);
+						AND cc.CategoryID = CONST_CATEID_INITIALGB);
 	
     /***********************Check Initial Smart****************************/
 	INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)
@@ -497,25 +504,12 @@ sp: BEGIN
 	WHERE NOT EXISTS (SELECT 1 
 					  FROM Temp_CustCategory AS cc 
 					  WHERE cc.CustID = tmp.CustID 
-						AND cc.InputFlowID = CONST_INPUTFLOWID_CATEGORY_PA);
+						AND cc.CategoryID = CONST_CATEID_INITIALSMART);
 
     /***********************Rescan Potential Category****************************/        
-    DROP TEMPORARY TABLE IF EXISTS Temp_PotentialCategory2;    
-    CREATE TEMPORARY TABLE Temp_PotentialCategory2 LIKE Temp_PotentialCategory;
-    
-    INSERT INTO Temp_PotentialCategory2 
-    SELECT * 
-    FROM Temp_PotentialCategory;
-
     INSERT IGNORE INTO Temp_CustCategory (CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, SportType, CreatedDate, LastModifiedDate, InputFlowID)       
     SELECT tmppc.CTSCustID, tmppc.CustID, tmppc.CategoryID, tmppc.TVSReasonID, tmppc.RoleID, tmppc.SubscriberID, tmppc.IsLicensee, tmppc.Remark, tmppc.CreatedBy, tmppc.IsMarkedDirectly, tmppc.IsFromTVS, tmppc.IsFromTW, tmppc.IsFromCTS, tmppc.IsFromAI, tmppc.IsFromImperva, tmppc.SportType, tmppc.CreatedDate, tmppc.LastModifiedDate, tmppc.InputFlowID
-    FROM Temp_PotentialCategory2 AS pc
-		,	LATERAL (SELECT ppc.*
-					 FROM Temp_PotentialCategory AS ppc
-						 INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ppc.CategoryID
-					 WHERE ppc.CustID = pc.CustID
-					 ORDER BY cc.CategoryPriority ASC
-					 LIMIT 1) AS tmppc;
+    FROM Temp_PotentialCategory AS tmppc;
     
 	/***********************Return****************************/ 
 	SELECT cust.CTSCustID
