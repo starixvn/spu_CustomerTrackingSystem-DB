@@ -56,8 +56,8 @@ BEGIN
 	
     
     #===========================================================
-    DROP TABLE IF EXISTS Temp_DownlineCustomer;
-    CREATE TABLE Temp_DownlineCustomer(
+    DROP TEMPORARY TABLE IF EXISTS Temp_DownlineCustomer;
+    CREATE TEMPORARY TABLE Temp_DownlineCustomer(
 			CTSCustID		BIGINT UNSIGNED
 		,	CustID			BIGINT UNSIGNED
         ,	RoleID			TINYINT
