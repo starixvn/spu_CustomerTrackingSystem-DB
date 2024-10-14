@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[CTS_MatchMonitorParlay_Details_GetFilter]
+CREATE PROCEDURE [dbo].[CTS_MatchMonitorParlay_Details_GetFilter]
 		@ViewMode					TINYINT = 0
 	,	@Matchid					INT = 0
 	,	@EventDate					DATETIME = '1900-09-22'
@@ -297,7 +297,7 @@ BEGIN
 				INNER JOIN bodb02.dbo.bettrans AS bt WITH(NOLOCK) ON b.Refno = bt.Refno
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
 				INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetCheck = ISNULL(st.BetID,b.BetCheck)
-				INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.Currency
+				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.Currency
 			WHERE b.Matchid = @Matchid
 				AND b.Liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND bt.Currency NOT IN (20,27,28)))
@@ -351,8 +351,8 @@ BEGIN
 		,	t.Danger5 = ISNULL(c.Danger5,0)
 		,	t.CustomerClass = ISNULL(c.CustomerClass,0)
 	FROM #tmpTransm AS t
-		INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustID = c.CustID
-		INNER JOIN dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.CustID = c.srecommend;
+		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustID = c.CustID
+		INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.CustID = c.srecommend;
 
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
 	SET 	t.IsLicensee = 0
@@ -363,8 +363,8 @@ BEGIN
 		,	t.Danger5 = ISNULL(c.Danger5,0)
 		,	t.CustomerClass = ISNULL(c.CustomerClass,0)
 	FROM #tmpTransm AS t
-		INNER JOIN dbo.CustInfo AS c WITH(NOLOCK) ON t.CustID = c.CustID
-		INNER JOIN dbo.CustProductStatus AS s WITH (NOLOCK) ON s.CustID = c.CustID
+		INNER JOIN bodb02.dbo.CustInfo AS c WITH(NOLOCK) ON t.CustID = c.CustID
+		INNER JOIN bodb02.dbo.CustProductStatus AS s WITH (NOLOCK) ON s.CustID = c.CustID
 	WHERE t.IsLicensee IS NULL;
 	
 	CREATE NONCLUSTERED INDEX IX_tmpTrans_IsLicensee ON #tmpTransm (IsLicensee) INCLUDE (LiveHomeScore,LiveAwayScore,CustomerClass,Danger1,Danger2,Danger3,Danger4,Danger5,CurrencyId,CurrencyName,Hdp,Betteam,TicketStatus);

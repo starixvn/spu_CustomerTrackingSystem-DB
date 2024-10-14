@@ -344,7 +344,7 @@ BEGIN
 				INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON tmpTs.TransId = b.TransId
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
-				INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 			WHERE b.matchid = @MatchID
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
@@ -498,8 +498,8 @@ BEGIN
 		,	t.Danger5 = ISNULL(c.Danger5,0)
 		,	t.CustomerClass = ISNULL(c.CustomerClass,0)
 	FROM #tmpTrans AS t
-		INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-		INNER JOIN dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend;
+		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
+		INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend;
 
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
 	SET 	t.IsLicensee = 0
@@ -510,8 +510,8 @@ BEGIN
 		,	t.Danger5 = ISNULL(c.Danger5,0)
 		,	t.CustomerClass = ISNULL(c.CustomerClass,0)
 	FROM #tmpTrans AS t
-		INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-		INNER JOIN dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
+		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
+		INNER JOIN bodb02.dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
 	WHERE t.IsLicensee IS NULL;
 	
 	-- CREATE INDEX IX_tmpTickets_IsLicensee ON #tmpTrans (IsLicensee, LiveHomeScore, LiveAwayScore, TicketStatus, CurrencyId, CurrencyName, Hdp, BetTeam, Danger1, Danger2, Danger3, Danger4, Danger5);

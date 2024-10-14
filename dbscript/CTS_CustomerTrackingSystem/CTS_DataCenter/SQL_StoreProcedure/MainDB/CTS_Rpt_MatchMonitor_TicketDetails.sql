@@ -848,7 +848,7 @@ BEGIN
 						,	ISNULL(tmpTs.AGroup,0)
 						,	ISNULL(tmpTs.MGroup,0)
 						FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
-							INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
+							INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID 
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency

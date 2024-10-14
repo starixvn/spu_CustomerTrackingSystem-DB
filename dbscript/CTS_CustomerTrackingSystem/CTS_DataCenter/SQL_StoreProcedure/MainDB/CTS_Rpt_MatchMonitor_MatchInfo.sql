@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
+CREATE PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
 		@MatchIds			VARCHAR(MAX) = ''
 	,	@FromDateTime		DATETIME
 	,	@ToDateTime			DATETIME

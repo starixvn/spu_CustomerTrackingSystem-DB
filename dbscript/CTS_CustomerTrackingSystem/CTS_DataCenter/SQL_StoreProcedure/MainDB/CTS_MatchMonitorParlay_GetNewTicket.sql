@@ -4,7 +4,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[CTS_MatchMonitorParlay_GetNewTicket]
+CREATE PROCEDURE [dbo].[CTS_MatchMonitorParlay_GetNewTicket]
 		@LastScannedSequenceID		BIGINT = 0
 	,	@IsLive						BIT = 1
 	,	@BatchSize					INT = 500

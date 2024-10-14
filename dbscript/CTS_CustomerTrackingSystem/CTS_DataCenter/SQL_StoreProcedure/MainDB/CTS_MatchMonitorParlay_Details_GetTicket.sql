@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[CTS_MatchMonitorParlay_Details_GetTicket]
+CREATE PROCEDURE [dbo].[CTS_MatchMonitorParlay_Details_GetTicket]
 		@ViewMode				TINYINT = 1
 	,	@EventDate				DATETIME = '1900-09-22'
 	,	@ListRefno				VARCHAR(MAX)
