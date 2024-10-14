@@ -189,8 +189,10 @@ VALUES( 16,200,'Match Monitor Reason','Detect By System Parlay','Group Betting P
 SELECT * FROM StaticList WHERE ListID = 16;
 
 #------------------------------------------------------------------------------------------------------
+SET @MaxSequence = <<SELECT MAX(SequenceID) FROM bodb02.dbo.Bettrans>>
+
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES(171,'MatchMonitorParlay_StagingLive_LastSequenceID','MatchMonitorParlay_StagingLive_LastSequenceID','BIGINT UNSIGNED','0')
+VALUES(171,'MatchMonitorParlay_StagingLive_LastSequenceID','MatchMonitorParlay_StagingLive_LastSequenceID','BIGINT UNSIGNED',@MaxSequence)
 , (172,'MatchMonitorParlay_StagingNonLive_LastSequenceID','MatchMonitorParlay_StagingNonLive_LastSequenceID','BIGINT UNSIGNED','0')
 , (173,'MatchMonitorParlay_GB_Live_LastSequenceID','MatchMonitorParlay_GB_Live_LastSequenceID','BIGINT UNSIGNED','0')
 , (174,'MatchMonitorParlay_GB_NonLive_LastSequenceID','MatchMonitorParlay_GB_NonLive_LastSequenceID','BIGINT UNSIGNED','0');
