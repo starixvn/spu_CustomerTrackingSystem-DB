@@ -20,12 +20,12 @@ sp: BEGIN
 			- 202208018@Long.Luu: Use IsDangerProbation in stead of IsPAProbation [Redmine ID: #174219]
             - 20230515@Casey.Huynh:	New Category for Robot OCRD [Redmine ID: #186991]
             - 20240626@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryGroup, ParentID [Redmine ID: #205317]
-            - 20241014@Casey.Huynh: Update get classification for Agent New [Redmine ID: #207397]
+            - 20241014@Casey.Huynh: Update get classification for Agent New [Redmine ID: #185799]
 
         Param's Explanation:
 
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustInfo_CheckCategoryInfoNewCust_xpre(@op_LastCTSCustID);SELECT @op_LastCTSCustID;
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetRescanNewCust(@op_LastCTSCustID);SELECT @op_LastCTSCustID;
 	*/
     DECLARE CONST_AGENCY_PARENTID_VVIP				INT;
     DECLARE	CONST_AGENCY_PARENTID_PA				INT;
