@@ -216,6 +216,8 @@ BEGIN
 		LEFT JOIN Temp_CustExist AS tmpEx ON tmpCus.CustID = tmpEx.CustID AND tmpCus.CustSubID = tmpEx.CustSubID
 		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.UserName = cus.UserName
 	WHERE tmpEx.CustID IS NULL;
+    
+#Error Code: 1054. Unknown column 'tmpCust.RoleID' in 'field list'
 
     UPDATE Temp_CTSCustomer AS tmpCus
 		INNER JOIN Temp_CustExist AS tmpEx ON tmpCus.CustID = tmpEx.CustID AND tmpCus.CustSubID = tmpEx.CustSubID
@@ -396,7 +398,7 @@ BEGIN
     UPDATE CTS_DataCenter.CTSCustomerClassificationAgency_History AS ch
     INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
     SET		ch.CTSCustID = tmpCus.CTSCustID	
-		,	ch.RoleID = tmpCust.RoleID; 
+		,	ch.RoleID = tmpCus.RoleID; 
     
     /* ===> NOT Insert CTSCustID To LOG due to suport trace data team(victoria) 
     #=====UPDATE CTSCustomerClassification_History_Log====================
