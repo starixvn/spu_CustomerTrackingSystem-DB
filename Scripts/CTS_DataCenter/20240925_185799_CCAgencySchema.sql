@@ -198,14 +198,14 @@ CREATE TABLE CTSCustomerClassificationAgency_Log(
  PARTITION pm999999 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */;
 
 #======================================================================
-DROP TABLE IF EXISTS CustomerCategory_AffectDownlineMapping;
-CREATE TABLE CustomerCategory_AffectDownlineMapping(
+DROP TABLE IF EXISTS CustomerCategoryDownlineMapping;
+CREATE TABLE CustomerCategoryDownlineMapping(
 		FromCategoryID	INT NOT NULL
     ,	FromRoleID		INT 
 	,	ToCategoryID	INT NOT NULL
     ,	ToRoleID		INT
 
-    ,	PRIMARY KEY PK_CustomerCategory_AffectDownlineMapping(FromCategoryID,FromRoleID,ToCategoryID,ToRoleID)
+    ,	PRIMARY KEY PK_CustomerCategoryDownlineMapping(FromCategoryID,FromRoleID,ToCategoryID,ToRoleID)
 ) ENGINE=InnoDB;
 
 #************************************************************************************************************

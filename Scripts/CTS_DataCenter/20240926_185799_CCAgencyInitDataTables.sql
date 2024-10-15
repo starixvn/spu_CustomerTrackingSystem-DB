@@ -173,8 +173,13 @@ FROM CustomerCategoryAgency AS ag
 	LEFT JOIN CustomerCategory AS mb ON ag.CategoryID = mb.CategoryID + 100000
 WHERE ag.ParentID = 120000;
 */
+
 INSERT INTO CustomerCategoryDownlineMapping(FromCategoryID,FromRoleID,ToCategoryID,ToRoleID)
-VALUES (101011,3,101010,2)
+VALUES (101011,4,101010,3)
+	,(101011,4,101010,2)
+    ,(101010,4,1010,1)
+	,(101011,3,101010,2)
+    ,(101011,3,101010,1)
 	,(101010,2,1010,1)
 	,(120100,2,20100,1)
 	,(120101,2,20101,1)
