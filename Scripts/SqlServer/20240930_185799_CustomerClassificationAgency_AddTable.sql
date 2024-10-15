@@ -200,7 +200,7 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_Rule](
 	[RuleId] [int] IDENTITY(1,1) NOT NULL,
 	[RuleGroupId] [int] NOT NULL,
 	[RoleId] [tinyint] NOT NULL,
-	[CategoryId] [int] NULL,
+	[CategoryId] [int] NOT NULL,
 	[CategoryName] [varchar](50) NOT NULL,
 	[Prioity] [smallint] NOT NULL,
 	[CurrentCategory] [int] NULL,
