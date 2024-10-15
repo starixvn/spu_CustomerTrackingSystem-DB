@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
+ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
 		@MatchIds			VARCHAR(MAX) = ''
 	,	@FromDateTime		DATETIME
 	,	@ToDateTime			DATETIME
@@ -228,10 +228,10 @@ BEGIN
 		BEGIN
 			INSERT INTO #tmpMatchesInfo (MatchId,HomeId,AwayId,LeagueId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 			SELECT	m.MatchId
-				,	m.EventDate
 				,	m.HomeId
 				,	m.AwayId
-				,	m.LeagueId
+				,	m.LeagueId				
+				,	m.EventDate
 				,	m.GlobalShowTime
 				,	CASE
 						WHEN m.eventstatus <> 'completed' THEN (CASE 
