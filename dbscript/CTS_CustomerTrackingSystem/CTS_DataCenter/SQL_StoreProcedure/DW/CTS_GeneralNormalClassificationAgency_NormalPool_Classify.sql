@@ -70,7 +70,7 @@ BEGIN
 		DROP TABLE	#tmpRawData;
 
 	CREATE TABLE #tmpRawData(
-		CustId				 INT				PRIMARY KEY,
+		CustId				 INT				NOT NULL,
 		SportGroup			 INT				NOT NULL,
 		TurnoverRM			 DECIMAL(19, 4)		NOT NULL,
 		WinlossRM			 DECIMAL(19, 4)		NOT NULL,
@@ -85,6 +85,11 @@ BEGIN
         LastYDaysWinlossRM	 DECIMAL(19, 4)		NOT NULL,
         LastYDaysBetCount	 INT				NOT NULL,
 		ProcessedTime        DATETIME			NOT NULL
+	);
+
+	CREATE CLUSTERED INDEX CIX_tmpRawData_CustIdSportGroup ON #tmpRawData(
+		CustId,
+		SportGroup
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpCustomerAccummulatedInfo') IS NOT NULL
@@ -264,7 +269,7 @@ BEGIN
 					FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK) 
 						INNER JOIN dbo.CustomerClassificationAgency_Rule AS r WITH(NOLOCK) ON a.RoleId = r.RoleId
 					WHERE 	   (r.RuleGroupId = 1 AND a.BetCount < r.BetCount)
-						OR (r.RuleGroupId = 100 AND a.FirstBetDateDiff < r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin < r.Margin2)
+						OR (r.RuleGroupId = 100 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin < r.Margin2)
 						OR (r.RuleGroupId = 200 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount > r.BetCount AND a.LastXDaysMargin >= r.Margin AND  a.LastYDaysMargin < r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
 						OR (r.RuleGroupId = 300 AND a.FirstBetDateDiff <= r.FirstBetDate  AND a.BetCount >= r.BetCount)
 						OR (r.RuleGroupId = 400 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin >= r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
