@@ -83,7 +83,7 @@ BEGIN
     #3. Return data set
 	SELECT	DISTINCT tmpCust.CustID
 		,	tmpCust.RoleID
-		,	tmpCc.CategoryGroupID AS CategoryID -- NULLABLE
+		,	CASE WHEN tmpCc.CategoryGroupID IS NULL THEN 0 ELSE tmpCc.CategoryGroupID END AS CategoryID
 		,   CASE WHEN tmpCust.CreatedDate >= DATE_SUB(lv_CurrentTime, INTERVAL 29 DAY) THEN 1 ELSE 0 END AS IsNewCreated
 	FROM Temp_Cust AS tmpCust
 		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID;
