@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 
 SET ANSI_NULLS ON
 GO
@@ -11,7 +11,7 @@ CREATE PROCEDURE [dbo].[CTS_TicketDetails_Info]
 	,	@ListSportBettype			VARCHAR(MAX)
 	,	@IsLive						BIT = 0
 	,	@ListSuspiciousTransId		VARCHAR(MAX) = ''
-	,	@TicketType					TINYINT = 0
+	,	@ViewMode					TINYINT = 0
 	,	@IsExclTestCurr				BIT = 0
 	,	@FromTransDate				DATETIME = NULL
 	,	@ToTransDate				DATETIME = NULL
@@ -40,14 +40,15 @@ AS
 		- 20240129@Thomas.Nguyen:	Return more column IsCashout [Redmine ID: #199634]
 		- 20240322@Vitoria.Le: 		Exclude Internal Account for Danger Monitor [Redmine ID: #201380]
 		- 20240521@Thomas.Nguyen:	Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
+		- 20240904@Casey.Huynh:		Rename @TicketType To @ViewMode [Redmine ID: #207397]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
 			@ListSuspiciousTransId = '[{"TransId":1, "Reason":'HED', "GroupId":1},{"TransId":1, "Reason":'GB', "GroupId":1},{"TransId":2, "Reason":'GB', "GroupId":1},{"TransId":3, "Reason":'HED', "Group":1}]'
-		@TicketType	: TINYINT
-			@TicketType=0: Ticket Type = 'All-MatchMonitor'			
-			@TicketType=1: Ticket Type = 'Suspicious'
-			@TicketType=2: Ticket Type = 'All-Danger Monitor'
+		@ViewMode	: TINYINT
+			@ViewMode=0: Ticket Type = 'All-MatchMonitor'			
+			@ViewMode=1: Ticket Type = 'Suspicious'
+			@ViewMode=2: Ticket Type = 'All-Danger Monitor'
 		@ListSportBettype: JSON
 			,@ListSportBettype='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
 								,	{"SportTypeID":2, "BetTypeID":3, "BetChoiceType":2}
@@ -64,7 +65,7 @@ AS
 		--,	1 -- @BetType
 		,	1 -- @IsLive
 		,	'' -- @ListSuspiciousTransId
-		,	0  --@TicketType (0:All, 1: Suspicious)
+		,	0  --@ViewMode (0:All, 1: Suspicious)
 		,	0 -- @IsExclTestCurr
 		--,	0 -- @BetID
 		,	@MaxSequenceId OUTPUT
@@ -228,7 +229,7 @@ BEGIN
 		
 	END;
 	
-	IF @TicketType = 1 --GET Suspicious Ticket Only
+	IF @ViewMode = 1 --GET Suspicious Ticket Only
 	BEGIN
 		IF @IsGetDataFromOrigin = 1
 		BEGIN
@@ -343,7 +344,7 @@ BEGIN
 				INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON tmpTs.TransId = b.TransId
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
-				INNER JOIN dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
+				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 			WHERE b.matchid = @MatchID
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
@@ -352,7 +353,7 @@ BEGIN
 
 	END;
 	
-	IF @TicketType = 0 --GET All Ticket - MM
+	IF @ViewMode = 0 --GET All Ticket - MM
 	BEGIN
 		INSERT INTO #tmpTrans (
 				TransId
@@ -393,7 +394,7 @@ BEGIN
 			AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 	END;
 	
-	IF @TicketType = 2 --GET All Ticket - Danger Monitor
+	IF @ViewMode = 2 --GET All Ticket - Danger Monitor
 	BEGIN
 		IF @IsGetDataFromOrigin = 1
 		BEGIN
@@ -497,8 +498,8 @@ BEGIN
 		,	t.Danger5 = ISNULL(c.Danger5,0)
 		,	t.CustomerClass = ISNULL(c.CustomerClass,0)
 	FROM #tmpTrans AS t
-		INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-		INNER JOIN dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend;
+		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
+		INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH (NOLOCK) ON cs.custid = c.srecommend;
 
 	UPDATE t WITH(ROWLOCK, UPDLOCK)
 	SET 	t.IsLicensee = 0
@@ -509,8 +510,8 @@ BEGIN
 		,	t.Danger5 = ISNULL(c.Danger5,0)
 		,	t.CustomerClass = ISNULL(c.CustomerClass,0)
 	FROM #tmpTrans AS t
-		INNER JOIN dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
-		INNER JOIN dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
+		INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON t.CustId = c.custid
+		INNER JOIN bodb02.dbo.CustProductStatus AS s WITH (NOLOCK) ON s.custid = c.custid
 	WHERE t.IsLicensee IS NULL;
 	
 	-- CREATE INDEX IX_tmpTickets_IsLicensee ON #tmpTrans (IsLicensee, LiveHomeScore, LiveAwayScore, TicketStatus, CurrencyId, CurrencyName, Hdp, BetTeam, Danger1, Danger2, Danger3, Danger4, Danger5);

@@ -1,15 +1,16 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
+CREATE PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
 		@MatchIds			VARCHAR(MAX) = ''
 	,	@FromDateTime		DATETIME
 	,	@ToDateTime			DATETIME
 	,	@MatchSection		VARCHAR(20)
+	,	@Event				VARCHAR(200) = ''
 AS
 /*
 	Created: 20230214@Victoria.Le
@@ -20,6 +21,7 @@ AS
 		- 20230214@Victoria.Le:		Initial Writing [Redmine ID: #183280]
 		- 20230601@Victoria.Le:		Return IsGetDataFromOrigin [Redmine ID: #185793]
 		- 20231116@Long.Luu: 		Return match's datasource [Redmine ID: 195042]
+		- 20240826@Casey.Huynh: 	Add Fitler Event and return LeagueName, HomeName, ScoreName	[Redmine ID: 152883]
 
 	Params Explaination:
 		- @MatchIds:
@@ -27,14 +29,31 @@ AS
 			+ @MatchIds <> ''	==> Get Match Info by List MatchId
 	
 	Filter by ScanDate:
-		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo] @MatchIds = '40391219,40391223,1207560', @FromDateTime = '', @ToDateTime = '', @MatchSection = '1,2,3,4'
+		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
+				@MatchIds = '83677751,83677753,83677755'
+			,	@FromDateTime = ''
+			,	@ToDateTime = ''
+			,	@MatchSection = '1,2,3,4'
+			,	@Event='TA'
 	Filter by EventDate:
-		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo] @MatchIds = '', @FromDateTime = '2023-02-21', @ToDateTime = '2023-02-25', @MatchSection = '1,2,3,4'
+		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo] 
+				@MatchIds = ''
+			,	@FromDateTime = '2024-08-30'
+			,	@ToDateTime = '2024-08-30'
+			,	@MatchSection = '1,2,3,4'
+			--,	@Event= NULL
+			--,	@Event= ''
+			,	@Event= 'TA'
 */
 BEGIN
 	SET NOCOUNT ON
 
 	DECLARE @Today			DATE = GETDATE()
+
+	IF @Event IS NULL
+	BEGIN
+		SET @Event = ''
+	END
 
 	IF	OBJECT_ID('tempdb..#tmpMatchSection') IS NOT NULL
 	BEGIN
@@ -52,6 +71,9 @@ BEGIN
 
 	CREATE TABLE #tmpMatchesInfo (
 			MatchId				INT NOT NULL PRIMARY KEY
+		,	HomeId				INT
+		,	AwayId				INT
+		,	LeagueId			INT
 		,	EventDate			DATETIME
 		,	KickOffTime			DATETIME
 		,	MatchSection		TINYINT
@@ -179,8 +201,11 @@ BEGIN
 
 		IF	@IsGetDataFromBK = 1
 		BEGIN
-			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
+			INSERT INTO #tmpMatchesInfo (MatchId,HomeId,AwayId,LeagueId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 			SELECT	m.MatchId
+				,	m.HomeId
+				,	m.AwayId
+				,	m.LeagueId
 				,	m.EventDate
 				,	m.GlobalShowTime
 				,	CASE
@@ -201,9 +226,12 @@ BEGIN
 
 		IF	@IsGetDataFrom14 = 1
 		BEGIN
-			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
+			INSERT INTO #tmpMatchesInfo (MatchId,HomeId,AwayId,LeagueId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 			SELECT	m.MatchId
 				,	m.EventDate
+				,	m.HomeId
+				,	m.AwayId
+				,	m.LeagueId
 				,	m.GlobalShowTime
 				,	CASE
 						WHEN m.eventstatus <> 'completed' THEN (CASE 
@@ -222,8 +250,11 @@ BEGIN
 
 		IF	@IsGetDataFromOrigin = 1
 		BEGIN
-			INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
+			INSERT INTO #tmpMatchesInfo (MatchId,HomeId,AwayId,LeagueId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 			SELECT	m.MatchId
+				,	m.HomeId
+				,	m.AwayId
+				,	m.leagueid
 				,	m.EventDate
 				,	m.GlobalShowTime
 				,	CASE
@@ -260,8 +291,11 @@ BEGIN
 		SELECT ssk.value FROM STRING_SPLIT (@MatchIds, ',') ssk
 
 		--FromBK
-		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
+		INSERT INTO #tmpMatchesInfo (MatchId,HomeId,AwayId,LeagueId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 		SELECT	m.MatchId
+			,	m.HomeId
+			,	m.AwayId
+			,	m.leagueid
 			,	m.EventDate
 			,	m.GlobalShowTime
 			,	CASE
@@ -282,8 +316,11 @@ BEGIN
 		INNER JOIN #tmpMatchesInfo AS m ON tm.MatchId = m.matchid
 
 		--From14
-		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
+		INSERT INTO #tmpMatchesInfo (MatchId,HomeId,AwayId,LeagueId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 		SELECT	m.MatchId
+			,	m.HomeId
+			,	m.AwayId
+			,	m.leagueid
 			,	m.EventDate
 			,	m.GlobalShowTime
 			,	CASE
@@ -304,8 +341,11 @@ BEGIN
 		INNER JOIN #tmpMatchesInfo AS m ON tm.MatchId = m.matchid
 
 		-- FromOrigin
-		INSERT INTO #tmpMatchesInfo (MatchId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
+		INSERT INTO #tmpMatchesInfo (MatchId,HomeId,AwayId,LeagueId,EventDate,KickOffTime,MatchSection,IsGetDataFromOrigin,DataSource)
 		SELECT	m.MatchId
+			,	m.HomeId
+			,	m.AwayId
+			,	m.leagueid
 			,	m.EventDate
 			,	m.GlobalShowTime
 			,	CASE
@@ -329,10 +369,19 @@ BEGIN
 		,	tmi.KickOffTime
 		,	tmi.MatchSection
 		,	tmi.IsGetDataFromOrigin
+		,	h.teamname AS HomeName
+		,	a.teamname AS AwayName
+		,	l.leaguename AS LeagueName
 		,	tmi.DataSource
 	FROM #tmpMatchesInfo AS tmi
 		INNER JOIN #tmpMatchSection AS tms ON tmi.MatchSection = tms.MatchSection
-
+		INNER JOIN bodb02.dbo.Team AS h WITH(NOLOCK) ON h.teamid = tmi.homeid
+		INNER JOIN bodb02.dbo.Team AS a WITH(NOLOCK) ON a.teamid = tmi.AwayId
+		INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = tmi.leagueid
+	WHERE	h.TeamName LIKE '%'+@Event+'%'
+		OR	a.TeamName LIKE '%'+@Event+'%'
+		OR	l.LeagueName LIKE '%'+@Event+'%'
+		
 	DROP TABLE #tmpMatchesInfo
 	DROP TABLE #tmpMatchSection
 

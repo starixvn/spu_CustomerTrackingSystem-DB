@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 
 SET ANSI_NULLS ON
 GO
@@ -14,8 +14,8 @@ CREATE PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
 	,	@ListTransId				VARCHAR(MAX) = ''
 	,	@EventDate					DATETIME = '1900-09-22'
 	,	@MatchID					INT = 0
-	,	@ListSportBettype			VARCHAR(MAX)
-	,	@TicketType					TINYINT = 1	
+	,	@ListSportBetType			VARCHAR(MAX)
+	,	@ViewMode				TINYINT = 1	
 	,	@IsLicensee					BIT = NULL
 	,	@IsExclTestCurr				BIT = 0
 	,	@ListCurrency				VARCHAR(MAX) = NULL
@@ -78,6 +78,7 @@ AS
 									And Separate between QueryType = 1 and QueryType in (2,3) [Redmine ID: #201380]
 		- 20240521@Thomas.Nguyen: Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
 		- 20240802@Casey.Huynh:	Enhance Filter Amount Sum by all Selected BetChoice  [Redmine ID: #207528]
+		- 20240904@Casey.Huynh: Rename @ViewMode To @ViewMode [Redmine ID: #207397]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize) >> refer to new SP CTS_Rpt_MatchMonitor_GetTicketInfo
@@ -89,8 +90,8 @@ AS
 
 		- @ListStatus: List StatusID
 			SET @ListStatus = '111,113,103,101,0,102,112,1,131' --Draw: 111;Lose: 113;Refund: 103;Reject: 101;Running: 0;Void: 102;Won:112;Waiting: 1;Completed: 131
-		- @ListSportBettype: JSON
-			,@ListSportBettype='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
+		- @ListSportBetType: JSON
+			,@ListSportBetType='[	{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
 								,	{"SportTypeID":2, "BetTypeID":3, "BetChoiceType":2}
 								,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":2}]'	
 		- @ListHDPBetTeam: 
@@ -111,9 +112,9 @@ AS
 		,	@BatchSize=-1
 		,	@ListTransId=''
 		,	@EventDate='2024-08-17 00:00:00'
-		,	@ListSportBettype='[{"SportTypeID":1,"BetTypeID":6,"BetChoiceType":1,"BetChoiceHome":null,"BetChoiceAway":null,"BetIDPattern":null,"BetID":0}]'
+		,	@ListSportBetType='[{"SportTypeID":1,"BetTypeID":6,"BetChoiceType":1,"BetChoiceHome":null,"BetChoiceAway":null,"BetIDPattern":null,"BetID":0}]'
 		,	@MatchID=83674467
-		,	@TicketType=0
+		,	@ViewMode=0
 		,	@ListCurrency='2,13,9'
 		,	@ListHDPBetTeam='7&over'
 		,	@ListScore='0 - 0'
@@ -215,12 +216,12 @@ BEGIN
 		,	MGroup		INT
 	);
 
-	IF	OBJECT_ID('tempdb..#tmpSportBettype') IS NOT NULL
+	IF	OBJECT_ID('tempdb..#tmpSportBetType') IS NOT NULL
 	BEGIN
-		DROP TABLE	#tmpSportBettype;
+		DROP TABLE	#tmpSportBetType;
 	END;
 
-	CREATE TABLE	#tmpSportBettype(
+	CREATE TABLE	#tmpSportBetType(
 			SportTypeID				SMALLINT
 		,	BetTypeID				INT
 		,	BetChoiceType			TINYINT
@@ -252,9 +253,9 @@ BEGIN
 	END;
 
 	--==================================================================
-	IF @ListSportBettype <> ''
+	IF @ListSportBetType <> ''
 		BEGIN
-			INSERT INTO #tmpSportBettype(SportTypeID,BetTypeID,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIDPattern,BetID)
+			INSERT INTO #tmpSportBetType(SportTypeID,BetTypeID,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIDPattern,BetID)
 			SELECT	j.SportTypeID
 				,	j.BetTypeID
 				,	j.BetChoiceType
@@ -262,7 +263,7 @@ BEGIN
 				,	j.BetChoiceAway
 				,	j.BetIDPattern
 				,	j.BetID
-			FROM OPENJSON (@ListSportBettype) WITH (
+			FROM OPENJSON (@ListSportBetType) WITH (
 					SportTypeID			SMALLINT		'$.SportTypeID'
 				,	BetTypeID			INT				'$.BetTypeID'
 				,	BetChoiceType		TINYINT			'$.BetChoiceType'
@@ -272,7 +273,7 @@ BEGIN
 				,	BetID				BIGINT			'$.BetID'
 				) AS j;
 				
-			CREATE NONCLUSTERED INDEX IX_tmpSportBettype_Group ON #tmpSportBettype(SportTypeID, BetTypeID);
+			CREATE NONCLUSTERED INDEX IX_tmpSportBetType_Group ON #tmpSportBetType(SportTypeID, BetTypeID);
 			
 		END;
 	
@@ -298,7 +299,7 @@ BEGIN
 			----==================GET Trans==================
 			IF @IsGetDataFromBK = 1
 			BEGIN
-				IF (@ListTransId <> '' AND @TicketType = 1) 
+				IF (@ListTransId <> '' AND @ViewMode = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
@@ -312,8 +313,8 @@ BEGIN
 						,	m.homeid
 						,	m.awayid
 						,	m.leagueid
-						,	m.sporttype
-						,	b.bettype
+						,	m.SportType
+						,	b.BetType
 						,	b.custid
 						,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 						,	b.betteam
@@ -341,7 +342,7 @@ BEGIN
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
 						INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
-						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
+						INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID 
 						INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 					;
@@ -350,7 +351,7 @@ BEGIN
 
 			IF	@IsGetDataFrom14 = 1
 			BEGIN
-				IF (@ListTransId <> '' AND @TicketType = 1) 
+				IF (@ListTransId <> '' AND @ViewMode = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
@@ -364,8 +365,8 @@ BEGIN
 						,	m.homeid
 						,	m.awayid
 						,	m.leagueid
-						,	m.sporttype
-						,	b.bettype
+						,	m.SportType
+						,	b.BetType
 						,	b.custid
 						,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 						,	b.betteam
@@ -393,7 +394,7 @@ BEGIN
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
 						INNER JOIN bodb02.dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
-						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
+						INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID 
 						INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 					;
@@ -402,7 +403,7 @@ BEGIN
 
 			IF	@IsGetDataFromOrigin = 1
 			BEGIN
-				IF (@ListTransId <> '' AND @TicketType = 1) 
+				IF (@ListTransId <> '' AND @ViewMode = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup, OddsType, IsCashout)
@@ -416,8 +417,8 @@ BEGIN
 						,	m.homeid
 						,	m.awayid
 						,	m.leagueid
-						,	m.sporttype
-						,	b.bettype
+						,	m.SportType
+						,	b.BetType
 						,	b.custid
 						,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 						,	b.betteam
@@ -445,11 +446,11 @@ BEGIN
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
 						INNER JOIN bodb02.dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
+						INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID 
 						INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 				END
-				ELSE IF (@TicketType = 0)
+				ELSE IF (@ViewMode = 0)
 				BEGIN	
 					IF (@CustAmountRM > 0) 
 					BEGIN	
@@ -466,8 +467,8 @@ BEGIN
 								,	m.homeid
 								,	m.awayid
 								,	m.leagueid
-								,	m.sporttype
-								,	b.bettype
+								,	m.SportType
+								,	b.BetType
 								,	b.custid
 								,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 								,	b.betteam
@@ -494,7 +495,7 @@ BEGIN
 								,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
+								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.sequenceid < @LastScannedSequenceID								
@@ -520,8 +521,8 @@ BEGIN
 								,	m.homeid
 								,	m.awayid
 								,	m.leagueid
-								,	m.sporttype
-								,	b.bettype
+								,	m.SportType
+								,	b.BetType
 								,	b.custid
 								,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 								,	b.betteam
@@ -548,7 +549,7 @@ BEGIN
 								,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
+								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.sequenceid < @LastScannedSequenceID							
@@ -571,8 +572,8 @@ BEGIN
 								,	m.homeid
 								,	m.awayid
 								,	m.leagueid
-								,	m.sporttype
-								,	b.bettype
+								,	m.SportType
+								,	b.BetType
 								,	b.custid
 								,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 								,	b.betteam
@@ -600,7 +601,7 @@ BEGIN
 							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
-								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID 
+								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID 
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.sequenceid < @LastScannedSequenceID
@@ -640,7 +641,7 @@ BEGIN
 								WHEN t.oddstype = 5 THEN -(1/NULLIF(t.odds,0))
 							END
 			FROM #tmpTickets AS t
-				LEFT JOIN bodb02.dbo.f_Set_OddsTypeBettypes() AS ot ON ot.BetType = t.BetType;
+				LEFT JOIN bodb02.dbo.f_Set_OddsTypeBetTypes() AS ot ON ot.BetType = t.BetType;
 		END;	
 	
 	IF (@QueryType = 3) --Get Date for Danger Monitor
@@ -648,7 +649,7 @@ BEGIN
 			----==================GET Trans==================
 			IF	@IsGetDataFrom14 = 1
 			BEGIN
-				IF (@ListTransId <> '' AND @TicketType = 1) 
+				IF (@ListTransId <> '' AND @ViewMode = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
@@ -662,8 +663,8 @@ BEGIN
 						,	m.homeid
 						,	m.awayid
 						,	m.leagueid
-						,	m.sporttype
-						,	b.bettype
+						,	m.SportType
+						,	b.BetType
 						,	b.custid
 						,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 						,	b.betteam
@@ -689,12 +690,12 @@ BEGIN
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
 						INNER JOIN bodb02.dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
-						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
+						INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID 
 						INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
 
 				END;
-				ELSE IF (@TicketType = 0)
+				ELSE IF (@ViewMode = 0)
 				BEGIN	
 					IF (@CustAmountRM > 0) 
 					BEGIN	
@@ -710,8 +711,8 @@ BEGIN
 								,	m.homeid
 								,	m.awayid
 								,	m.leagueid
-								,	m.sporttype
-								,	b.bettype
+								,	m.SportType
+								,	b.BetType
 								,	b.custid
 								,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 								,	b.betteam
@@ -737,7 +738,7 @@ BEGIN
 							FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
-								INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
+								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.matchid = @MatchID								
@@ -766,8 +767,8 @@ BEGIN
 							,	m.homeid
 							,	m.awayid
 							,	m.leagueid
-							,	m.sporttype
-							,	b.bettype
+							,	m.SportType
+							,	b.BetType
 							,	b.custid
 							,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 							,	b.betteam							
@@ -794,7 +795,7 @@ BEGIN
 							INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 							INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
-							INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID 
+							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID 
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						WHERE	b.matchid = @MatchID
@@ -822,8 +823,8 @@ BEGIN
 							,	m.homeid
 							,	m.awayid
 							,	m.leagueid
-							,	m.sporttype
-							,	b.bettype
+							,	m.SportType
+							,	b.BetType
 							,	b.custid
 							,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 							,	b.betteam
@@ -847,9 +848,9 @@ BEGIN
 						,	ISNULL(tmpTs.AGroup,0)
 						,	ISNULL(tmpTs.MGroup,0)
 						FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
-							INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
+							INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
-							INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID 
+							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID 
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							LEFT JOIN #tmpTickets AS tmpTk WITH(NOLOCK) ON tmpTk.TransID = b.TransID
@@ -870,7 +871,7 @@ BEGIN
 
 			IF	@IsGetDataFromOrigin = 1
 			BEGIN
-				IF (@ListTransId <> '' AND @TicketType = 1) 
+				IF (@ListTransId <> '' AND @ViewMode = 1) 
 				BEGIN
 					INSERT INTO #tmpTickets(SequenceId,TransId,TransDate,MatchId,EventDate,EventStatus,KickOffTime,HomeId,AwayId,LeagueId,SportType,BetType,CustId,BetteamGroup,BetTeam,BetChoiceHome,BetChoiceAway
 						,BetId,Stake,OrgStake,Odds,Hdp1,Hdp2,LiveHomeScore,LiveAwayScore,TicketStatus, LiveIndicator, CurrencyName,CurrencyId,Hdp,BetFrom, Reason, AGroup, MGroup)
@@ -884,8 +885,8 @@ BEGIN
 						,	m.homeid
 						,	m.awayid
 						,	m.leagueid
-						,	m.sporttype
-						,	b.bettype
+						,	m.SportType
+						,	b.BetType
 						,	b.custid
 						,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 						,	b.betteam
@@ -911,12 +912,12 @@ BEGIN
 					FROM #tmpTransIds AS tmpTs WITH(NOLOCK)
 						INNER JOIN bodb02.dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-						INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID 
+						INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID 
 						INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 					;
 				END
-				ELSE IF (@TicketType = 0)
+				ELSE IF (@ViewMode = 0)
 				BEGIN	
 					IF (@CustAmountRM > 0) 
 					BEGIN
@@ -932,8 +933,8 @@ BEGIN
 							,	m.homeid
 							,	m.awayid
 							,	m.leagueid
-							,	m.sporttype
-							,	b.bettype
+							,	m.SportType
+							,	b.BetType
 							,	b.custid
 							,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 							,	b.betteam
@@ -959,7 +960,7 @@ BEGIN
 						FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 							INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
-							INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
+							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						WHERE	b.sequenceid < @LastScannedSequenceID							
@@ -989,8 +990,8 @@ BEGIN
 							,	m.homeid
 							,	m.awayid
 							,	m.leagueid
-							,	m.sporttype
-							,	b.bettype
+							,	m.SportType
+							,	b.BetType
 							,	b.custid
 							,	(CASE WHEN st.BetChoiceType = 2 THEN b.Betteam ELSE '1' END) AS BetteamGroup
 							,	b.betteam
@@ -1017,7 +1018,7 @@ BEGIN
 							INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
 							INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
-							INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID 
+							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID 
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						WHERE	b.sequenceid < @LastScannedSequenceID
@@ -1249,7 +1250,7 @@ BEGIN
 			IF (@ListHDPBetTeam IS NOT NULL)
 			BEGIN
 				IF EXISTS (	SELECT 1 
-							FROM #tmpSportBettype AS st WITH(NOLOCK) 
+							FROM #tmpSportBetType AS st WITH(NOLOCK) 
 							WHERE st.BetChoiceType = 1) --Filter Betteam
 				BEGIN
 					WITH CTE_BetTeam AS (
@@ -1262,7 +1263,7 @@ BEGIN
 				
 				END
 				ELSE IF EXISTS (SELECT 1 
-								FROM #tmpSportBettype AS st WITH(NOLOCK) 
+								FROM #tmpSportBetType AS st WITH(NOLOCK) 
 								WHERE st.BetChoiceType = 2) --Filter Hdp
 				BEGIN
 					WITH CTE_Hdp AS (
@@ -1379,7 +1380,7 @@ BEGIN
 			FROM #tmpTickets AS tmpTk WITH(NOLOCK);
 		END;
 	
-	DROP TABLE IF EXISTS #tmpSportBettype;
+	DROP TABLE IF EXISTS #tmpSportBetType;
 	DROP TABLE IF EXISTS #tmpTickets;
 	DROP TABLE IF EXISTS #tmpTransIds;
 	DROP TABLE IF EXISTS #tmpTransIdReason;
