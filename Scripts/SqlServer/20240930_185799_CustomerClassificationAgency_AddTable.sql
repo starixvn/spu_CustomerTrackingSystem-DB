@@ -241,7 +241,7 @@ VALUES (200, 2, 140300, 'Normal', 4, 40, 60, 0, 0, 50);
 
 -- EARLY STAGE PROBATION
 INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount, FirstBetDate)
-VALUES (300, 2, 140400, 'Early Stage Probation', 3, 40, 60);
+VALUES (300, 2, 140800, 'Early Stage Probation', 3, 40, 60);
 
 -- SMART
 INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount, FirstBetDate, Margin, Margin2, WinlossRM)
