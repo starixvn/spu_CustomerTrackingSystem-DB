@@ -194,9 +194,10 @@ sp: BEGIN
 
 	UPDATE Temp_CustCategory AS tmp
 		INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS ccd ON ccd.FromRoleID <= tmp.FromRoleID AND ccd.FromCategoryID = tmp.FromCategoryID AND ccd.ToRoleID = tmp.RoleID
-		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = ccd.ToCategoryID
-	SET tmp.CategoryID = ccd.ToCategoryID
-		, tmp.CategoryGroupID = cate.CategoryGroupID;
+		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate1 ON cate1.CategoryID = ccd.ToCategoryID AND tmp.RoleID = 1
+        LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cate2 ON cate2.CategoryID = ccd.ToCategoryID AND tmp.RoleID IN (2,3,4)
+	SET tmp.CategoryID = IFNULL(cate1.CategoryID,cate2.CategoryID)
+		, tmp.CategoryGroupID = IFNULL(cate1.CategoryGroupID,cate2.CategoryGroupID);
 	
 	UPDATE Temp_CustCategory AS tmp
 		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = tmp.FromCategoryID
