@@ -128,28 +128,6 @@ BEGIN
 		CurrentCategoryId
 	);
 
-	IF	OBJECT_ID('tempdb..#tmpBetCount') IS NOT NULL
-		DROP TABLE	#tmpBetCount;
-
-	CREATE TABLE #tmpBetCount(
-		CustId		INT,
-		RoleId		INT NOT NULL,
-		CategoryId	INT	NOT NULL,
-		BetCount	INT NULL
-	);
-
-	CREATE CLUSTERED INDEX CIX_tmpBetCount_CustIdRoleId ON #tmpBetCount(
-		CustId,
-		RoleId
-	);
-
-	IF	OBJECT_ID('tempdb..#tmpRemoveCust') IS NOT NULL
-	DROP TABLE	#tmpRemoveCust;
-
-	CREATE TABLE #tmpRemoveCust(
-		CustId INT PRIMARY KEY
-	);
-
 	-- #1: Get list customers
 	INSERT INTO #tmpCustomers(CustId, RoleId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly)
 	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
@@ -216,27 +194,8 @@ BEGIN
 		FROM #tmpCustomerAccummulatedInfo AS a
 			INNER JOIN #tmpCustomers AS c ON a.CustId = c.custid;
 
-		-- #7: Remove accounts with settle bet count has not reach the schedule (FOR REALTIME ONLY)
-		---- less than 10 settle tickets compared to last scan for New Member
-		INSERT INTO #tmpRemoveCust(CustId)
-		SELECT a.CustId
-		FROM #tmpCustomerAccummulatedInfo AS a
-			INNER JOIN dbo.CustomerClassificationAgency_BetCount AS b WITH(NOLOCK) ON a.CustId = b.CustId
-		WHERE a.IsRealtimeOnly = 1 
-				AND (a.CurrentCategoryId = @CATEGORY_NEW AND a.BetCount - b.BetCount < 10);
-
-		-- #8: Remove invalid realtime conditions data
-		DELETE a WITH (ROWLOCK)
-		FROM #tmpCustomerAccummulatedInfo AS a
-			INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId;
-
-		DELETE a WITH (ROWLOCK)
-		FROM #tmpCustomers AS a
-			INNER JOIN #tmpRemoveCust AS b ON a.CustId = b.CustId;
-
-		-- #9: Classify customer without performance 
+		-- #7: Classify customer without performance 
 		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
-		OUTPUT INSERTED.CustId, INSERTED.RoleId, INSERTED.CategoryId, 0 INTO #tmpBetCount
 		SELECT t.CustId
 			,  t.RoleId
 			,  CASE WHEN t.IsActiveWithin30Days = 1 THEN @CATEGORY_NEW ELSE @CATEGORY_INACTIVE END
@@ -259,7 +218,7 @@ BEGIN
 			LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId
 		WHERE c.CustId IS NULL;	
 
-		-- #10: Classify classification by general rule
+		-- #8: Classify classification by general rule
 		UPDATE t WITH(ROWLOCK, UPDLOCK)
 		SET t.NewCategoryId = b.CategoryId
 		FROM (
@@ -270,23 +229,22 @@ BEGIN
 						INNER JOIN dbo.CustomerClassificationAgency_Rule AS r WITH(NOLOCK) ON a.RoleId = r.RoleId
 					WHERE 	   (r.RuleGroupId = 1 AND a.BetCount < r.BetCount)
 						OR (r.RuleGroupId = 100 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin < r.Margin2)
-						OR (r.RuleGroupId = 200 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount > r.BetCount AND a.LastXDaysMargin >= r.Margin AND  a.LastYDaysMargin < r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
+						OR (r.RuleGroupId = 200 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount > r.BetCount AND a.LastXDaysMargin >= r.Margin AND  a.LastYDaysMargin < r.Margin2 AND a.LastXYDaysWinlossRatio >= r.WinlossRM)
 						OR (r.RuleGroupId = 300 AND a.FirstBetDateDiff <= r.FirstBetDate  AND a.BetCount >= r.BetCount)
-						OR (r.RuleGroupId = 400 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin >= r.Margin2 AND a.LastXYDaysWinlossRatio > r.WinlossRM)
+						OR (r.RuleGroupId = 400 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin >= r.Margin2 AND a.LastXYDaysWinlossRatio >= r.WinlossRM)
 						OR (r.RuleGroupId = 500 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin >= r.Margin AND a.LastYDaysMargin >= r.Margin2)
 			) AS b
 			INNER JOIN #tmpCustomerAccummulatedInfo AS t ON t.CustId = b.CustId
 		WHERE b.RowNum = 1;
 
-		--#11: Insert to CustomerClassification
+		--#9: Insert to CustomerClassification
 		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
-		OUTPUT INSERTED.CustId, INSERTED.RoleId, INSERTED.CategoryId, INSERTED.BetCount INTO #tmpBetCount
 		SELECT a.CustId
 			,	a.RoleId
 			,	CASE 
 					WHEN a.IsActiveWithin30Days = 0 THEN @CATEGORY_INACTIVE
 					WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId 
-					ELSE a.NewCategoryId 
+					ELSE a.NewCategoryId
 				END
 			,	a.CurrentCategoryId
 			,	@ToDate AS CreatedDate
@@ -304,15 +262,10 @@ BEGIN
 			,	a.LastXYDaysWinlossRatio
 			,	ISNULL(a.PerformanceTime, @CurrentDateTime)
 		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK);
-	
-		-- #12: Update last settle betcounts
-		EXEC dbo.CTS_NormalClassificationAgency_BetCount_Update @CurrentDateTime = @CurrentDateTime;
 
 		DROP TABLE #tmpCustomerAccummulatedInfo;
 		DROP TABLE #tmpCustomers;
 		DROP TABLE #tmpRawData;		
-		DROP TABLE #tmpBetCount;
-		DROP TABLE #tmpRemoveCust;
 	END;
 END;
 GO

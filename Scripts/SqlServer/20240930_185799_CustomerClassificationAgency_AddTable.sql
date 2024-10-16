@@ -177,22 +177,6 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_LatestActiveDay](
 ) ON [PRIMARY]
 GO
 
--- #8. ADD TABLE CustomerClassificationAgency_BetCount
-IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_BetCount]') AND type in (N'U'))
-DROP TABLE [dbo].[CustomerClassificationAgency_BetCount]
-CREATE TABLE [dbo].[CustomerClassificationAgency_BetCount](
-	[CustId] [int] NOT NULL,
-	[RoleId] [tinyint] NOT NULL,
-	[BetCount] [int] NULL,
-	[LastScannedDate] [datetime] NULL,
-	PRIMARY KEY CLUSTERED 
-	(
-		[CustId] ASC,
-		[RoleId] ASC
-	)
-) ON [PRIMARY]
-GO
-
 -- #9. ADD TABLE CustomerClassificationAgency_Rule
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_Rule]') AND type in (N'U'))
 DROP TABLE [dbo].[CustomerClassificationAgency_Rule]
@@ -273,7 +257,4 @@ GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_LatestActiveDay] TO
 GO
 
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_RealtimeChanges] TO [wsv_cts]
-GO
-
-GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_BetCount] TO [wsv_cts]
 GO
