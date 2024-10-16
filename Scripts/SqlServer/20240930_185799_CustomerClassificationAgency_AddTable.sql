@@ -213,7 +213,7 @@ CREATE CLUSTERED INDEX [IX_CustomerClassificationAgency_Rule_RoleID_RuleGroupId_
 GO
 -- NEW
 INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount)
-VALUES (1, 2, 140100, 'New', 6, 10);
+VALUES (1, 2, 140100, 'New', 6, 40);
 
 -- GOOD
 INSERT INTO [dbo].[CustomerClassificationAgency_Rule] (RuleGroupId, RoleId, CategoryId, CategoryName, Prioity, BetCount, FirstBetDate, Margin, Margin2)

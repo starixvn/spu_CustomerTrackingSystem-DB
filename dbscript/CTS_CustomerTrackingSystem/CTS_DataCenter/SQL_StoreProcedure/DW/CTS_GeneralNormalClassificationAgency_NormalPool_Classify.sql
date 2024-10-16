@@ -195,11 +195,11 @@ BEGIN
 			INNER JOIN #tmpCustomers AS c ON a.CustId = c.custid;
 
 		-- #7: Classify customer without performance 
-		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
+		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CurrentCategoryId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
 		SELECT t.CustId
 			,  t.RoleId
-			,  CASE WHEN t.IsActiveWithin30Days = 1 THEN @CATEGORY_NEW ELSE @CATEGORY_INACTIVE END
 			,  @CATEGORY_NULL
+			,  CASE WHEN t.IsActiveWithin30Days = 1 THEN @CATEGORY_NEW ELSE @CATEGORY_INACTIVE END
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime
 			,  NULL
@@ -238,15 +238,15 @@ BEGIN
 		WHERE b.RowNum = 1;
 
 		--#9: Insert to CustomerClassification
-		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
+		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CurrentCategoryId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
 		SELECT a.CustId
 			,	a.RoleId
+			,	a.CurrentCategoryId
 			,	CASE 
 					WHEN a.IsActiveWithin30Days = 0 THEN @CATEGORY_INACTIVE
 					WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId 
 					ELSE a.NewCategoryId
-				END
-			,	a.CurrentCategoryId
+				END AS CategoryId
 			,	@ToDate AS CreatedDate
 			,	@CurrentDateTime AS CreatedTime
 			,	a.TurnoverRM
