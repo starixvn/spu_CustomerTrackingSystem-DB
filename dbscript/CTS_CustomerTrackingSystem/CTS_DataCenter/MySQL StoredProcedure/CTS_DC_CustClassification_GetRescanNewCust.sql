@@ -20,7 +20,7 @@ sp: BEGIN
 			- 202208018@Long.Luu: Use IsDangerProbation in stead of IsPAProbation [Redmine ID: #174219]
             - 20230515@Casey.Huynh:	New Category for Robot OCRD [Redmine ID: #186991]
             - 20240626@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryGroup, ParentID [Redmine ID: #205317]
-            - 20241014@Casey.Huynh: Update get classification for Agent New [Redmine ID: #185799]
+            - 20241014@Casey.Huynh: get rescan new cust [Redmine ID: #185799]
 
         Param's Explanation:
 
@@ -193,11 +193,17 @@ sp: BEGIN
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroupID NOT IN (CONST_AGENCY_CATEGROUPID_ROBOT);
 
 	UPDATE Temp_CustCategory AS tmp
-	INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS ccd ON ccd.FromRoleID <= tmp.FromRoleID AND ccd.FromCategoryID = tmp.FromCategoryID AND ccd.ToRoleID = tmp.RoleID
-	INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = ccd.ToCategoryID
+		INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS ccd ON ccd.FromRoleID <= tmp.FromRoleID AND ccd.FromCategoryID = tmp.FromCategoryID AND ccd.ToRoleID = tmp.RoleID
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = ccd.ToCategoryID
 	SET tmp.CategoryID = ccd.ToCategoryID
-		AND tmp.CategoryGroupID = cate.CategoryGroupID;
-
+		, tmp.CategoryGroupID = cate.CategoryGroupID;
+	
+	UPDATE Temp_CustCategory AS tmp
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = tmp.FromCategoryID
+	SET tmp.CategoryID = cate.CategoryID
+		, tmp.CategoryGroupID = cate.CategoryGroupID
+	WHERE tmp.CategoryID IS NULL;
+        
     SELECT	tmp.CTSCustID
 		,	tmp.CustID          
         ,	tmp.CustSubID  
@@ -236,4 +242,3 @@ sp: BEGIN
 	
 END$$
 DELIMITER ;
-CALL CTS_DataCenter.CTS_DC_CustClassification_GetRescanNewCust(@op_LastCTSCustID);SELECT @op_LastCTSCustID;
