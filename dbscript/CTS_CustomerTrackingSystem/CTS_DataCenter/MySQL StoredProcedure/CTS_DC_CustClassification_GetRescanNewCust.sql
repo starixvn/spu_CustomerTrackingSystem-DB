@@ -94,6 +94,8 @@ sp: BEGIN
 		,	IsFromCTS		    	BIT
 		,	CreatedBy		    	INT
 		,	LastModifiedDate		DATETIME
+        ,	FromRoleID				TINYINT
+		,	FromCategoryID			INT
         
 		,	PRIMARY KEY(CustID)
     );
@@ -131,7 +133,7 @@ sp: BEGIN
 		AND cus.IsInternal = 0
 		AND cus.CTSCustID > lv_LastCTSCustID
 	LIMIT lv_BatchSize;
-    
+
     SELECT MAX(CTSCustID)
     INTO op_LastCTSCustID
     FROM Temp_CustInfo;
@@ -148,10 +150,10 @@ sp: BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS vip ON vip.CustID = tmp.DirectUpLineCustID 
 											AND vip.IsAffectToDownline = 1 AND vip.ParentID = CONST_AGENCY_PARENTID_VVIP;
     
-    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,CreatedBy)
+    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,RoleID,CreatedBy)
     SELECT 	tmp.CTSCustID
 		,   tmp.CustID
-		,	que.RoleID
+		,	tmp.RoleID
 		,   que.CreatedBy
     FROM Temp_CustInfo AS tmp		
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS que ON que.CustID IN (tmp.SRecommend, tmp.MRecommend, tmp.Recommend) 
@@ -164,33 +166,32 @@ sp: BEGIN
 		,   vv.CreatedBy
     FROM Temp_CustInfo AS tmp		
 		INNER JOIN Temp_VVIPCust AS vv ON vv.CustID IN (tmp.SRecommend, tmp.MRecommend, tmp.Recommend);
-        
+
 	INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,RoleID,CreatedBy)
     SELECT 	tmp.CTSCustID
 		,   tmp.CustID
         ,	tmp.RoleID
 		,   tmp.CreatedBy
     FROM Temp_VVIPCust_Depth AS tmp;
-    
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, RoleID, Remark, CreatedBy,IsFromTVS,IsFromTW,IsFromCTS,LastModifiedDate, FromRoleID, FromCategoryID)
+
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, RoleID, Remark, CreatedBy,IsFromTW,IsFromCTS,LastModifiedDate, FromRoleID, FromCategoryID)
     SELECT 	tmp.CTSCustID
 		,   tmp.CustID
         ,	tmp.RoleID
         ,	class.Remark 
         ,	class.CreatedBy
-        ,	class.IsFromTVS
         ,	class.IsFromTW
         ,	class.IsFromCTS
         ,	class.LastModifiedDate
-        ,	(CASE WHEN class.CustID = tmp.Recommend THEN FromRoleID = 2
-				 WHEN class.CustID = tmp.MRecommend THEN FromRoleID = 3
-                 WHEN class.CustID = tmp.SRecommend THEN FromRoleID = 4
+        ,	(CASE WHEN class.CustID = tmp.Recommend THEN 2
+				 WHEN class.CustID = tmp.MRecommend THEN 3
+                 WHEN class.CustID = tmp.SRecommend THEN 4
                  END) AS FromRoleID
-        ,	tmp.CategoryID AS FromCategoryID        
+        ,	class.CategoryID AS FromCategoryID        
     FROM Temp_CustInfo AS tmp    
 		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.ParentID = CONST_AGENCY_PARENTID_PA 
         STRAIGHT_JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroupID NOT IN (CONST_AGENCY_CATEGROUPID_ROBOT);
-        
+
 	UPDATE Temp_CustCategory AS tmp
 	INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS ccd ON ccd.FromRoleID <= tmp.FromRoleID AND ccd.FromCategoryID = tmp.FromCategoryID AND ccd.ToRoleID = tmp.RoleID
 	INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = ccd.ToCategoryID
@@ -235,3 +236,4 @@ sp: BEGIN
 	
 END$$
 DELIMITER ;
+CALL CTS_DataCenter.CTS_DC_CustClassification_GetRescanNewCust(@op_LastCTSCustID);SELECT @op_LastCTSCustID;
