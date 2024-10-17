@@ -109,7 +109,7 @@ sp : BEGIN
         , 	CategoryName	VARCHAR(300)
 	);
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustLatestCateNameName;
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustLatestCateName;
 	CREATE TEMPORARY TABLE 		Temp_CustLatestCateName (
 			CustID				BIGINT UNSIGNED
 		,	CategoryName		VARCHAR(300)
@@ -427,7 +427,8 @@ sp : BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls 
 				ON cls.CustID = clss.CustID AND cls.ParentID = clss.ParentID 
 				AND cls.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL)
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = cls.CategoryID;
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = cls.CategoryID
+	GROUP BY clss.CustID;
 
 	INSERT IGNORE INTO Temp_CustLatestCateName (CustID, CategoryName)
 	SELECT clss.CustID, GROUP_CONCAT(cate.CategoryName)
@@ -443,7 +444,8 @@ sp : BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cls 
 				ON cls.CustID = clss.CustID AND cls.ParentID = clss.ParentID 
 				AND cls.ParentID IN (CONST_AGENCY_PARENTID_PA,CONST_AGENCY_PARENTID_NORMAL)
-		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = cls.CategoryID;
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = cls.CategoryID
+	GROUP BY clss.CustID;
 
     INSERT IGNORE INTO Temp_Result (CTSCustID, UserName, SubscriberID, SubscriberName, AccountStatus, EvidenceCode, CategoryName)
 	SELECT ev.CTSCustID
@@ -452,7 +454,7 @@ sp : BEGIN
         ,	sub.SubscriberName
         ,	stl.ItemNameDisplay AS 'AccountStatus'
         ,	ev.EvidenceCode
-        ,	cls.CategoryName AS CategoryName
+        ,	cls.CategoryName
 	FROM Temp_CustEvidence AS ev
 		INNER JOIN CTS_DataCenter.StaticList AS stl ON ev.CustStatusID = stl.ItemID AND stl.ListID = 1
 		LEFT JOIN Temp_CustLatestCateName AS cls ON cls.CustID = ev.CustID
