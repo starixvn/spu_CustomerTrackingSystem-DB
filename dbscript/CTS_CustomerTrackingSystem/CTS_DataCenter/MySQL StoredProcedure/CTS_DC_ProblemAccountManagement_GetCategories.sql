@@ -85,7 +85,7 @@ BEGIN
 									, CONST_CATEID_FORMULABET, CONST_CATEID_ROBOTUSER)
 				AND cat.IsActive = 1		
 		UNION
-		SELECT 	SELECT CASE WHEN catA.CategoryID = CONST_AGENCY_CATEID_ROBOT THEN CONST_CATENAME_ROBOT ELSE catA.CategoryName END AS CategoryName
+		SELECT CASE WHEN catA.CategoryID = CONST_AGENCY_CATEID_ROBOT THEN CONST_CATENAME_ROBOT ELSE catA.CategoryName END AS CategoryName
 			, 	catA.CategoryGroupID
 			, 	catA.RelevantCategoryID AS RelevantCategoryGroup
 			, 	catA.CategoryGroupID AS CategoryID
