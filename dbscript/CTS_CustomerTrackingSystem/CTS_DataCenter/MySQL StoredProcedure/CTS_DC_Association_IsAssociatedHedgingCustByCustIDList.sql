@@ -22,9 +22,10 @@ sp: BEGIN
             - 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
 			- 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
 			- 20240703@Victoria.Le		Renovate CC Phase2 [Redmine ID: #205317]
+            - 20241016@Casey.Huynh: 	Agency CC, AssociationByDevice Seperate Member and Agency [Redmine ID: #185799]
 		Param's Explanation (filtered by):			
         Example:
-			CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList('169686,169689,894977,65391526', @op_IsHedging); SELECT @op_IsHedging;
+			CALL CTS_DC_Association_IsAssociatedHedgingCustByCustIDList('169686,169689,894977,65391526', @op_IsHedging); SELECT @op_IsHedging;           
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
 	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;    
@@ -35,9 +36,15 @@ sp: BEGIN
 	DECLARE CONST_PARENTID_VVIP				INT;
 	DECLARE CONST_PARENTID_WRAPPER			INT;
     
+    DECLARE CONST_AGENCY_PARENTID_PA 				INT;
+	DECLARE CONST_AGENCY_PARENTID_VVIP				INT;
+    
 	SET CONST_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_PARENTID_VVIP					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
 	SET CONST_PARENTID_WRAPPER				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+    
+    SET CONST_AGENCY_PARENTID_PA 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
+	SET CONST_AGENCY_PARENTID_VVIP			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
 	#=============================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCust;
 	CREATE TEMPORARY TABLE 		Temp_InputCust (
@@ -97,7 +104,8 @@ sp: BEGIN
 	SELECT atd.AssTypeItemValue
 	FROM CTS_DataCenter.AssociationTypeSetting AS atd
 	WHERE atd.AssTypeID = CONST_ASSTYPE_IP 
-		AND atd.AssTypeItemStatus = CONST_ASSBYIP_ACTIVESTATUS;    
+		AND atd.AssTypeItemStatus = CONST_ASSBYIP_ACTIVESTATUS;
+        
 	#===========GET AssociationByAI status is Applied==============================================    
 	INSERT INTO Temp_AssociationByAI_AssType(AssTypeItemValue)
 	SELECT atd.AssTypeItemValue
@@ -304,6 +312,7 @@ sp: BEGIN
 		LEFT JOIN Temp_Device AS tmpDv ON tmpAdv.DeviceID = tmpDv.DeviceID
 	WHERE tmpDv.DeviceID IS NULL;
     
+    #===================================CHECK Is Hedging===================================================
     IF EXISTS(	SELECT 1 
 				FROM Temp_AssociationByDevice AS tmpAdv
 				WHERE	EXISTS(	SELECT 1 FROM CTS_DataCenter.AssociationRemove AS ar1 WHERE tmpAdv.CTSCustID = ar1.FromCTSCustID)
@@ -318,6 +327,7 @@ sp: BEGIN
 		FROM Temp_Association AS tmpAss
 			INNER JOIN AssociationRemove AS tmpAr ON tmpAss.FromCTSCustID = tmpAr.FromCTSCustID AND tmpAss.ToCTSCustID = tmpAr.ToCTSCustID;
 		
+        #==============CHECK FOR MEMBER============================
 		WITH CTE_Latest AS
 		(
 			SELECT DISTINCT tmpAss.FromCTSCustID AS CTSCustID, ltc.ParentID
@@ -367,8 +377,62 @@ sp: BEGIN
 		WHERE temp.ParentID <> CONST_PARENTID_VVIP
 			AND cc.ParentID = CONST_PARENTID_PA AND cc.IsHedgingReasonMM = 1
 		LIMIT 1;
-       
+        
+        IF op_IsHedging IS NOT NULL THEN 
+			LEAVE sp;
+		END IF;
+        
+        #==============CHECK FOR AGENCY============================
+        WITH CTE_Latest AS
+		(
+			SELECT DISTINCT tmpAss.FromCTSCustID AS CTSCustID, ltc.ParentID
+			FROM Temp_Association AS tmpAss
+				,	LATERAL (
+								SELECT cc.CategoryID, cc.ParentID
+								FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cla 
+									INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+								WHERE cla.CTSCustID = tmpAss.FromCTSCustID 
+								ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+								LIMIT 1
+							) AS ltc
+		)
+		SELECT 1
+		INTO op_IsHedging
+		FROM CTE_Latest AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cla ON cla.CTSCustID = temp.CTSCustID
+			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+		WHERE temp.ParentID <> CONST_AGENCY_PARENTID_VVIP
+			AND cc.ParentID = CONST_AGENCY_PARENTID_PA AND cc.IsHedgingReasonMM = 1
+		LIMIT 1;
+		
+		IF op_IsHedging IS NOT NULL THEN 
+			LEAVE sp;
+		END IF;
+		
+		WITH CTE_Latest AS
+		(
+			SELECT DISTINCT tmpAss.ToCTSCustID AS CTSCustID, ltc.ParentID
+			FROM Temp_Association AS tmpAss
+				,	LATERAL (
+								SELECT cc.CategoryID, cc.ParentID
+								FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cla 
+									INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+								WHERE cla.CTSCustID = tmpAss.ToCTSCustID 
+								ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+								LIMIT 1
+							) AS ltc
+		)
+		SELECT 1
+		INTO op_IsHedging
+		FROM CTE_Latest AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cla ON cla.CTSCustID = temp.CTSCustID
+			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+		WHERE temp.ParentID <> CONST_AGENCY_PARENTID_VVIP
+			AND cc.ParentID = CONST_AGENCY_PARENTID_PA AND cc.IsHedgingReasonMM = 1
+		LIMIT 1;
+        
     ELSE
+		#======================CHECK FOR MEMBER=============================
 		WITH CTE_Latest AS
 		(
 			SELECT DISTINCT adv.CTSCustID AS CTSCustID, ltc.ParentID
@@ -392,7 +456,35 @@ sp: BEGIN
 		WHERE temp.ParentID <> CONST_PARENTID_VVIP
 			AND cc.ParentID = CONST_PARENTID_PA AND cc.IsHedgingReasonMM = 1
 		LIMIT 1;
-	
+		
+        IF op_IsHedging IS NOT NULL THEN 
+		LEAVE sp;
+		END IF;
+        
+        #======================CHECK FOR AGENCY=============================
+        WITH CTE_Latest AS
+		(
+			SELECT DISTINCT adv.CTSCustID AS CTSCustID, ltc.ParentID
+			FROM Temp_Device AS tmpAdv
+				INNER JOIN CTS_DataCenter.AssociationByDevice AS adv ON adv.DCSDeviceID = tmpAdv.DeviceID
+				,	LATERAL (
+								SELECT cc.CategoryID, cc.ParentID
+								FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cla 
+									INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+								WHERE cla.CTSCustID = adv.CTSCustID
+								ORDER BY cc.CustomerClassPriority ASC, cla.LastModifiedDate DESC
+								LIMIT 1
+							) AS ltc
+		)
+		SELECT 1
+		INTO op_IsHedging
+		FROM CTE_Latest AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cla ON cla.CTSCustID = temp.CTSCustID
+			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = cla.CategoryID AND cc.IsActive = 1
+		WHERE temp.ParentID <> CONST_AGENCY_PARENTID_VVIP
+			AND cc.ParentID = CONST_AGENCY_PARENTID_PA AND cc.IsHedgingReasonMM = 1
+		LIMIT 1;
+        
 	END IF;
 END$$
 DELIMITER ;

@@ -17,36 +17,17 @@ BEGIN
 			-	20210115@Casey.Huynh: Created [Redmine ID: 148849]
             -	20211029@Casey.Huynh: Update CTSClassification, CTSClassification_History [Redmine ID: 163899]
 			-	20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove unused table ProbationAccountMonitor
+            -	20241016@Casey.Huynh: Agency CC, Seperate Member and Agency [Redmine ID: #185799]
+            
 		Param's Explanation (filtered by):
 		
 		Exampele: CALL CTS_DC_CTSCustomer_UpdateSubscriberIDBySiteID ('[{"SubscriberID":898294,"SiteID":43534235,"RoleMapping":1}]');
 	*/
 	
-    DECLARE lv_size BIGINT DEFAULT 200;
+    DECLARE lv_size			BIGINT DEFAULT 200;
     DECLARE lv_PreCTSCustID BIGINT DEFAULT 0;
-	DECLARE lv_No    INT    DEFAULT 1;
-    DECLARE lv_ErrorMessage2 VARCHAR(200) DEFAULT '';
-    DECLARE	lv_ErrorMessage	VARCHAR(200) DEFAULT '';
- 
-	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
-    BEGIN   
-		GET DIAGNOSTICS lv_No = NUMBER;
-		GET DIAGNOSTICS CONDITION lv_No 
-            lv_ErrorMessage = MESSAGE_TEXT;	
-		
-		IF(lv_No > 1) THEN
-			SET lv_No = lv_No - 1;
-			GET STACKED  DIAGNOSTICS CONDITION lv_No
-				lv_ErrorMessage2 = MESSAGE_TEXT;	
-        END IF;
-			
-		SET lv_ErrorMessage = CONCAT(lv_ErrorMessage,'; ',lv_ErrorMessage2);
-
-		CALL CTS_Log.CTS_Log_ErrorLog_Insert('CTS_DC_CTSCustomer_Insert',lv_ErrorMessage, JSON_OBJECT('parameter', ip_CustomerList));
-    
-		SIGNAL SQLSTATE '99999' SET MESSAGE_TEXT = lv_ErrorMessage;
-    END;
-    
+	DECLARE lv_No    		INT DEFAULT 1;
+     
     DROP TEMPORARY TABLE IF EXISTS TempSubSite;
     
     CREATE TEMPORARY TABLE TempSubSite
@@ -60,9 +41,10 @@ BEGIN
     
     CREATE TEMPORARY TABLE TempCTSCustomer
     (
-			CTSCustID	BIGINT UNSIGNED
+			CTSCustID		BIGINT UNSIGNED
         ,	CustID			INT UNSIGNED
         ,	CustSubID		INT UNSIGNED
+        ,	RoleID			INT UNSIGNED
         ,	UserName		VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	RegisterName	VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,	SubscriberID	INT        
@@ -87,10 +69,11 @@ BEGIN
 		
         TRUNCATE TABLE TempCTSCustomer;
         
-		INSERT INTO TempCTSCustomer(CTSCustID, CustID, CustSubID, RegisterName, SubscriberID, UserName)
+		INSERT INTO TempCTSCustomer(CTSCustID, CustID, CustSubID, RoleID, RegisterName, SubscriberID, UserName)
         SELECT 	cus.CTSCustID
 			,	cus.CustID
             ,	cus.CustSubID
+            ,	cus.RoleID
 			,	SUBSTRING(cus.UserName2, LOCATE('$',cus.UserName2) + 1) AS RegisterName
             ,	mss.SubscriberID
             ,	cus.UserName
@@ -116,19 +99,35 @@ BEGIN
 		SET acc.IsCTSTransformed = 0
 		WHERE acc.IsCTSTransformed = -1;    
 		
-        #=====UPDATE CTSCustomerClassification====================
+        #=====UPDATE CTSCustomerClassification FOR MEMBER=========================================================
         UPDATE CTS_DataCenter.CTSCustomerClassification AS cc
-        INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID
+			INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID AND tmpCus.RoleID = 1
         SET		cc.CTSCustID = tmpCus.CTSCustID
-			,	cc.SubscriberID = tmpCus.SubscriberID;
+			,	cc.SubscriberID = tmpCus.SubscriberID
+            ,	cc.RoleID = tmpCus.RoleID;
             
-		#=====UPDATE CTSCustomerClassification_History====================
+		#=====UPDATE CTSCustomerClassification_History FOR MEMBER=================================================
         UPDATE CTS_DataCenter.CTSCustomerClassification_History AS ch
-        INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
-        SET	ch.CTSCustID = tmpCus.CTSCustID;
+			INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID AND tmpCus.RoleID = 1
+        SET	ch.CTSCustID = tmpCus.CTSCustID;        
         
-        #================================================================        
+        #=====UPDATE CTSCustomerClassificationAgency FOR AGENCY===================================================
+        UPDATE CTS_DataCenter.CTSCustomerClassificationAgency AS cc
+			INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID AND tmpCus.RoleID IN (2,3,4)
+        SET		cc.CTSCustID = tmpCus.CTSCustID
+			,	cc.SubscriberID = tmpCus.SubscriberID
+            ,	cc.RoleID = tmpCus.RoleID;
+            
+		#=====UPDATE CTSCustomerClassificationAgency_History FOR AGENCY============================================
+        UPDATE CTS_DataCenter.CTSCustomerClassificationAgency_History AS ch
+			INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID AND tmpCus.RoleID IN (2,3,4)
+        SET		ch.CTSCustID = tmpCus.CTSCustID
+            ,	ch.RoleID = tmpCus.RoleID;
+        
+        #=========================================================================================================
+        
         SET lv_PreCTSCustID = (SELECT 1 FROM TempCTSCustomer AS tmpCus LIMIT 1);
+        
     END WHILE;
 END$$
 DELIMITER ;

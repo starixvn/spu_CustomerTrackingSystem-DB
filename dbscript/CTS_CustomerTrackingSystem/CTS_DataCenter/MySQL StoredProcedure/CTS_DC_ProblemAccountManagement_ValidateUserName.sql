@@ -24,9 +24,11 @@ BEGIN
 	*/
 
 	DECLARE CONST_CATEID_VVIP 				INT;	
+    DECLARE CONST_AGENCY_CATEID_VVIP 				INT;	
 
 	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
-    
+    SET CONST_AGENCY_CATEID_VVIP 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_VVIP');
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_UserName;
 	CREATE TEMPORARY TABLE Temp_UserName( 	 			
 			UserName				VARCHAR(50)        
@@ -76,7 +78,9 @@ BEGIN
 				  WHEN c.CustSubID <> 0 THEN 'Sub Account'
                   WHEN (c.IsLicensee = 1 AND c.RoleID > 1) THEN 'Upline Licensee Account'
                   WHEN (c.IsInternal = 1) THEN 'Internal Account'
-                  WHEN (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls WHERE cls.CTSCustID = c.CTSCustID AND cls.CategoryID = CONST_CATEID_VVIP) IS NOT NULL THEN 'VVIP'
+                  WHEN (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls WHERE cls.CTSCustID = c.CTSCustID AND cls.CategoryID = CONST_CATEID_VVIP) IS NOT NULL 
+						OR (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls WHERE cls.CTSCustID = c.CTSCustID AND cls.CategoryID = CONST_AGENCY_CATEID_VVIP) IS NOT NULL
+                        THEN 'VVIP'
                   ELSE NULL
 			END) AS ErrorMsg
 	FROM Temp_UserName AS u
