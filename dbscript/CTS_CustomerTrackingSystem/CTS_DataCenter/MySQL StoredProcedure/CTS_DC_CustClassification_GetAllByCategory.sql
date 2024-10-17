@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetAllByCategory_xpre`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetAllByCategory`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetAllByCategory_xpre`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetAllByCategory`(
 		IN ip_CategoryIDList 	VARCHAR(200)
 )
 	SQL SECURITY INVOKER
@@ -22,7 +22,7 @@ BEGIN
 		Param's Explanation:
 
 		Example:
-			- CALL CTS_DC_CustClassification_GetAllByCategory_xpre('101010,1010');
+			- CALL CTS_DC_CustClassification_GetAllByCategory('101010,1010');
 	*/ 
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CategoryID;
