@@ -47,12 +47,13 @@ BEGIN
     INSERT INTO Temp_MemberCategory(CategoryID)
     SELECT tmp.CategoryID 
     FROM Temp_CategoryID AS tmp
-		INNER JOIN CustomerCategory AS cca ON cca.CategoryID = tmp.CategoryID;
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cca ON cca.CategoryID = tmp.CategoryID;
         
 	INSERT INTO Temp_AgencyCategory(CategoryID)
     SELECT tmp.CategoryID 
     FROM Temp_CategoryID AS tmp
-		INNER JOIN CustomerCategoryAgency AS cca ON cca.CategoryID = tmp.CategoryID;
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cca ON cca.CategoryID = tmp.CategoryID;    
+    
     
     SELECT DISTINCT tmp.CustID, tmp.CategoryID, tmp.CategoryName
     FROM (
