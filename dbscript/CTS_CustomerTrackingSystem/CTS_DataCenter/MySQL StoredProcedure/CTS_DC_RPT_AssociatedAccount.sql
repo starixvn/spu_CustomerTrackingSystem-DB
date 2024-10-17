@@ -28,6 +28,7 @@ sp : BEGIN
 			- 20210915@Aries.Nguyen: Remove DeviceAssociationDay table [Redmine ID: #160470]
             - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
 			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
+			- 20241017@Thomas.Nguyen: CC Agent [Redmine ID: #185799]
 
 		Param's Explanation (filtered by):
             - ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
@@ -42,11 +43,15 @@ sp : BEGIN
 	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
 	DECLARE	CONST_PARENTID_NORMAL 				INT;
 	DECLARE	CONST_PARENTID_WRAPPER				INT;
+	DECLARE	CONST_AGENCY_PARENTID_PA 			INT;
+	DECLARE	CONST_AGENCY_PARENTID_NORMAL 		INT;
 
 	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
 	SET CONST_PARENTID_NORMAL 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+	SET CONST_AGENCY_PARENTID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
+	SET CONST_AGENCY_PARENTID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
 
 	IF (ip_SubscriberIDs IS NULL OR ip_SubscriberIDs = '' OR ip_SubscriberIDs = -1) 
 		OR (ip_AssociationStatus IS NULL OR ip_AssociationStatus = -1)
@@ -104,10 +109,10 @@ sp : BEGIN
         , 	CategoryName	VARCHAR(300)
 	);
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustLatestCate;
-	CREATE TEMPORARY TABLE 		Temp_CustLatestCate (
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustLatestCateNameName;
+	CREATE TEMPORARY TABLE 		Temp_CustLatestCateName (
 			CustID				BIGINT UNSIGNED
-		,	ParentID			INT UNSIGNED
+		,	CategoryName		VARCHAR(300)
 		,	PRIMARY KEY(CustID)
 	);  
 
@@ -408,8 +413,8 @@ sp : BEGIN
 			OR ev.CustStatusID NOT IN (SELECT CustStatusID FROM Temp_CustStatusID);
     END IF;
     
-	INSERT IGNORE INTO Temp_CustLatestCate (CustID, ParentID)
-	SELECT clss.CustID, clss.ParentID
+	INSERT IGNORE INTO Temp_CustLatestCateName (CustID, CategoryName)
+	SELECT clss.CustID, GROUP_CONCAT(cate.CategoryName)
 	FROM Temp_CustEvidence AS ev
 	,	LATERAL (
 			SELECT ev.CustID, cls.ParentID
@@ -418,7 +423,27 @@ sp : BEGIN
 			WHERE cls.CustID = ev.CustID AND cate.IsActive = 1 AND cls.ParentID <> CONST_PARENTID_WRAPPER
 			ORDER BY cate.CustomerClassPriority ASC, cls.LastModifiedDate DESC
 			LIMIT 1
-		) AS clss;
+		) AS clss
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls 
+				ON cls.CustID = clss.CustID AND cls.ParentID = clss.ParentID 
+				AND cls.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL)
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = cls.CategoryID;
+
+	INSERT IGNORE INTO Temp_CustLatestCateName (CustID, CategoryName)
+	SELECT clss.CustID, GROUP_CONCAT(cate.CategoryName)
+	FROM Temp_CustEvidence AS ev
+	,	LATERAL (
+			SELECT ev.CustID, cls.ParentID
+			FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
+				INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = cls.CategoryID
+			WHERE cls.CustID = ev.CustID AND cate.IsActive = 1
+			ORDER BY cate.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+			LIMIT 1
+		) AS clss
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cls 
+				ON cls.CustID = clss.CustID AND cls.ParentID = clss.ParentID 
+				AND cls.ParentID IN (CONST_AGENCY_PARENTID_PA,CONST_AGENCY_PARENTID_NORMAL)
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = cls.CategoryID;
 
     INSERT IGNORE INTO Temp_Result (CTSCustID, UserName, SubscriberID, SubscriberName, AccountStatus, EvidenceCode, CategoryName)
 	SELECT ev.CTSCustID
@@ -427,16 +452,11 @@ sp : BEGIN
         ,	sub.SubscriberName
         ,	stl.ItemNameDisplay AS 'AccountStatus'
         ,	ev.EvidenceCode
-        ,	cc.CategoryName
+        ,	cls.CategoryName AS CategoryName
 	FROM Temp_CustEvidence AS ev
 		INNER JOIN CTS_DataCenter.StaticList AS stl ON ev.CustStatusID = stl.ItemID AND stl.ListID = 1
-		LEFT JOIN Temp_CustLatestCate AS cls ON cls.CustID = ev.CustID AND cls.ParentID IN (CONST_PARENTID_PA,CONST_PARENTID_POTENTIALPA,CONST_PARENTID_NORMAL)
-        LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS custClass ON custClass.CustID = cls.CustID AND custClass.ParentID = cls.ParentID
-        LEFT JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = custClass.CategoryID
-        LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = ev.SubscriberID
-	 ON DUPLICATE KEY UPDATE Temp_Result.CategoryName = CASE WHEN Temp_Result.CategoryName LIKE CONCAT('%',cc.CategoryName,'%') THEN Temp_Result.CategoryName
-															 ELSE CONCAT(Temp_Result.CategoryName, ', ', cc.CategoryName)
-														END;
+		LEFT JOIN Temp_CustLatestCateName AS cls ON cls.CustID = ev.CustID
+        LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = ev.SubscriberID;
     
     SELECT CTSCustID
 		,	UserName
