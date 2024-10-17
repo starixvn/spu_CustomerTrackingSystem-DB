@@ -1,14 +1,10 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="1"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Insert_GetInfo`;
-
-DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert_GetInfo`(
 		IN	ip_InputFlowID			INT 
 	,	IN	ip_FromAction			TINYINT
     ,	IN	ip_UplineRoleID			INT
 	,	IN	ip_CustInfo				JSON
 )
-SQL SECURITY INVOKER
+    SQL SECURITY INVOKER
 BEGIN
 /*
 		Created:	20240618@Victoria.Le
@@ -144,7 +140,7 @@ BEGIN
 		,	GBTicketCount				INT
 
 		,	IsFromTW					TINYINT(1)  DEFAULT 0
-		,	TWRobotCounter				INT 
+		,	TWRobotCounter				INT UNSIGNED
 		
 		,	TWBetCount					BIGINT
 		,	TWGroupBettingRate			DECIMAL(10,4)
@@ -216,7 +212,7 @@ BEGIN
 		,	SportType					SMALLINT DEFAULT NULL 
 		,	TVSIssueTypeID				TINYINT DEFAULT NULL 
 		,	IsMarkedDirectly			TINYINT(1)
-		,	TWRobotCounter				INT
+		,	TWRobotCounter				INT UNSIGNED
 		,	SpecialCC	       			SMALLINT 
 		,	CustomerClass				INT 
 		,	CategoryPriority			SMALLINT
@@ -407,7 +403,7 @@ BEGIN
 											,	TVSIssueTypeID				TINYINT				PATH "$.IssueTypeID"
 											,	SportType					SMALLINT			PATH "$.SportType"
 											,	IsFromTW					TINYINT(1)			PATH "$.IsFromTW"
-											,	TWRobotCounter				INT					PATH "$.RobotCounter"
+											,	TWRobotCounter				INT UNSIGNED		PATH "$.RobotCounter"
 											,	IsFromAI					TINYINT(1)			PATH "$.IsFromAI"
 											,	IsFromImperva				TINYINT(1)			PATH "$.IsFromImperva"
 											)) AS tmpJs
@@ -658,7 +654,7 @@ BEGIN
 
 			/*Insert into source table for Initial Group Betting*/
 			IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL AND EXISTS (SELECT 1 FROM Temp_NewClassification WHERE IsFromTW = 1) THEN
-				INSERT INTO CTS_DataCenter.Customer_InitialGroupBetting (CustID,GBTicketCount,SportType,SourceCreatedDate,CreatedDate)
+				INSERT IGNORE INTO CTS_DataCenter.Customer_InitialGroupBetting (CustID,GBTicketCount,SportType,SourceCreatedDate,CreatedDate)
 				SELECT temp.CustID,temp.GBTicketCount,temp.SportType,temp.SourceCreatedDate,lv_CurrentDateTime AS CreatedDate
 				FROM Temp_NewClassification AS temp
 				WHERE temp.DWCategoryID IN (CONST_CATEID_INITIALGB,CONST_CATEID_INITIALGBLOSING)
@@ -751,5 +747,7 @@ BEGIN
 
     END IF;
     
-END$$
-DELIMITER ;
+    UPDATE Temp_NewClassification
+    SET TWRobotCounter = 22984
+    WHERE TWRobotCounter > 32000;
+END
