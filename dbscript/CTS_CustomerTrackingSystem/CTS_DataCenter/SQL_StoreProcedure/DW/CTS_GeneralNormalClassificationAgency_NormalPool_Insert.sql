@@ -38,7 +38,7 @@ BEGIN
 	WHILE @Offset < @TotalRecords
 	BEGIN
 		INSERT INTO dbo.CustomerClassificationAgency_NormalPool(CustId, [Priority], FunctionId, CreatedTime)
-		OUTPUT INSERTED.CustId, @FunctionId, @CURRENTTIME INTO dbo.CustomerClassification_Log(CustId, FunctionId, CreatedTime)  
+		OUTPUT INSERTED.CustId, @FunctionId, @CURRENTTIME INTO dbo.CustomerClassificationAgency_Log(CustId, FunctionId, CreatedTime)  
 		SELECT	a.CustId
 			,	@Priority
 			,	@FunctionId

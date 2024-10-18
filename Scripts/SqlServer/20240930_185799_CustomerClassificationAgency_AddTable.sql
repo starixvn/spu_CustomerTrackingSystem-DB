@@ -73,40 +73,7 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_NormalPool](
 ) ON [PRIMARY]
 GO
 
--- #3. ADD TABLE CustomerClassificationAgency_InputLog
-IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_InputLog]') AND type in (N'U'))
-DROP TABLE [dbo].[CustomerClassificationAgency_InputLog]
-CREATE TABLE [dbo].[CustomerClassificationAgency_InputLog](
-	[CustId] [int] NOT NULL,
-	[RoleId] [tinyint] NOT NULL,
-	[CreatedDate] [date] NOT NULL,
-	[CreatedTime] [datetime] NULL,
-	[FunctionId] [smallint] NULL,
-	[IsActive] [bit] NULL,
-	[CurrentCategoryId] [smallint] NULL,
-	PRIMARY KEY CLUSTERED
-	(
-		[CustId],
-		[RoleId] ASC
-	)
-) ON [PRIMARY]
-GO
-
-
-CREATE NONCLUSTERED INDEX [IX_CustomerClassificationAgency_InputLog_CustIdFunctionIdRoleId] ON [dbo].[CustomerClassificationAgency_InputLog]
-(
-	[CustId],
-	[FunctionId],
-	[RoleId]
-)
-
-CREATE NONCLUSTERED INDEX [IX_CustomerClassificationAgency_InputLog_CreatedDate] ON [dbo].[CustomerClassificationAgency_InputLog]
-(
-	[CreatedDate]
-)
-GO
-
--- #4. ADD TABLE CustomerClassificationAgency_InputLog
+-- #4. ADD TABLE CustomerClassificationAgency_Priority
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_Priority]') AND type in (N'U'))
 DROP TABLE [dbo].[CustomerClassificationAgency_Priority]
 CREATE TABLE [dbo].[CustomerClassificationAgency_Priority](
@@ -150,7 +117,6 @@ DROP TABLE [dbo].[CustomerClassificationAgency_Log]
 CREATE TABLE [dbo].[CustomerClassificationAgency_Log](
 	[ID] [bigint] IDENTITY(1,1) NOT NULL,
 	[CustId] [int] NOT NULL,
-	[RoleId] [tinyint] NOT NULL,
 	[FunctionId] [smallint] NOT NULL,
 	[CreatedTime] [datetime] NOT NULL,
 	PRIMARY KEY CLUSTERED 
@@ -245,9 +211,6 @@ GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_Rule] TO [wsv_cts]
 GO
 
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency] TO [wsv_cts]
-GO
-
-GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_InputLog] TO [wsv_cts]
 GO
 
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_Log] TO [wsv_cts]
