@@ -90,8 +90,77 @@ USE CTS_DataCenter;
 , 	DROP CategoryID_bk;
 	
 /************************* 7. Tables CTSCustomerClassification_Log ******************************/
-	ALTER TABLE CTSCustomerClassification_Log
-	MODIFY COLUMN RobotCounter INT UNSIGNED;
+	SELECT `AUTO_INCREMENT`
+	INTO @lv_MAXID_CCLog_General
+	FROM  INFORMATION_SCHEMA.TABLES
+	WHERE TABLE_SCHEMA = 'CTS_DataCenter'
+	AND   TABLE_NAME   = 'CTSCustomerClassification_Log';
+
+	RENAME TABLE CTSCustomerClassification_Log TO CTSCustomerClassification_Log_Arc;
+
+	CREATE TABLE CTSCustomerClassification_Log (
+			ID 							bigint unsigned NOT NULL AUTO_INCREMENT
+		,	CustID 						bigint unsigned DEFAULT NULL
+		,	CTSCustID 					bigint unsigned DEFAULT NULL
+		,	ParentID 					int unsigned DEFAULT NULL
+		,	CategoryID 					int DEFAULT NULL
+		,	TurnoverRM 					decimal(20,4) DEFAULT NULL
+		,	WinlossRM 					decimal(20,4) DEFAULT NULL
+		,	BetCount 					bigint DEFAULT NULL
+		,	ActiveDays 					int DEFAULT NULL
+		,	RobotCounter 				int DEFAULT NULL
+		,	TargetCC 					int DEFAULT NULL
+		,	SourceTypeID 				smallint unsigned DEFAULT NULL
+		,	OldCategoryID 				int unsigned DEFAULT NULL
+		,	DWCategoryID 				int unsigned DEFAULT NULL
+		,	IsDataChanged 				bit(1) DEFAULT b'0'
+		,	ActionType 					tinyint DEFAULT NULL
+		,	IsAuto 						bit(1) DEFAULT NULL
+		,	LastModifiedDate 			datetime DEFAULT NULL
+		,	LastModifiedBy 				int unsigned DEFAULT NULL
+		,	InsertDate 					datetime NOT NULL
+		,	TaggingType 				smallint DEFAULT '1'
+		,	TargetDangerLevel1 			smallint DEFAULT NULL
+		,	TWGroupBettingRate 			decimal(10,4) DEFAULT NULL
+		,	TWTicketRejectRate 			decimal(10,4) DEFAULT NULL
+		,	TWBetCount 					bigint DEFAULT NULL
+		,	TWDesktopUsageRate 			decimal(10,4) DEFAULT NULL
+		,	Remark 						varchar(500) COLLATE utf8_unicode_ci DEFAULT NULL
+		,	IsMarkedDirectly			bit(1) DEFAULT NULL
+		,	TVSRequestID 				bigint unsigned DEFAULT NULL
+		,	IsFromTVS 					bit(1) DEFAULT b'0'
+		,	IsFromTW 					bit(1) DEFAULT b'0'
+		,	IsFromCTS 					bit(1) DEFAULT b'0'
+		,	IsFromAI 					bit(1) DEFAULT b'0'
+		,	IsFromImperva 				bit(1) DEFAULT b'0'
+		,	IsParlay 					bit(1) DEFAULT NULL
+		,	SportType 					smallint DEFAULT NULL
+		,	IssueTypeID 				tinyint DEFAULT NULL
+		,	PerformanceTime 			datetime DEFAULT NULL
+		,	PRIMARY KEY (ID,InsertDate)
+		,	KEY IX_CTSCustomerClassification_Log_CustID (CustID)
+	) ROW_FORMAT=COMPRESSED
+	/*!50100 PARTITION BY RANGE (extract(year_month from InsertDate))
+	(	 PARTITION pm202410 VALUES LESS THAN (202411) ENGINE = InnoDB
+	,	 PARTITION pm202411 VALUES LESS THAN (202412) ENGINE = InnoDB
+	,	 PARTITION pm202412 VALUES LESS THAN (202501) ENGINE = InnoDB
+	,	 PARTITION pm202501 VALUES LESS THAN (202502) ENGINE = InnoDB
+	,	 PARTITION pm202502 VALUES LESS THAN (202503) ENGINE = InnoDB
+	,	 PARTITION pm202503 VALUES LESS THAN (202504) ENGINE = InnoDB
+	,	 PARTITION pm202504 VALUES LESS THAN (202505) ENGINE = InnoDB
+	,	 PARTITION pm202505 VALUES LESS THAN (202506) ENGINE = InnoDB
+	,	 PARTITION pm202506 VALUES LESS THAN (202507) ENGINE = InnoDB
+	,	 PARTITION pm202507 VALUES LESS THAN (202508) ENGINE = InnoDB
+	,	 PARTITION pm202508 VALUES LESS THAN (202509) ENGINE = InnoDB
+	,	 PARTITION pm202509 VALUES LESS THAN (202510) ENGINE = InnoDB
+	,	 PARTITION pm202510 VALUES LESS THAN (202511) ENGINE = InnoDB
+	,	 PARTITION pm202511 VALUES LESS THAN (202512) ENGINE = InnoDB
+	,	 PARTITION pm999999 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */
+	;
+
+	SET @SQL = CONCAT('ALTER TABLE `CTSCustomerClassification_Log` AUTO_INCREMENT = ', @lv_MAXID_CCLog_General);
+	PREPARE st FROM @SQL;
+	EXECUTE st;
 	
 /************************* 8. Tables TWRobotUser ******************************/
 	ALTER TABLE TWRobotUser
