@@ -79,12 +79,12 @@ sp: BEGIN
     SELECT ParameterValue 
     INTO lv_Agency_LastHistoryID 
     FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 186;
+    WHERE ParameterID = 181;
     
     SELECT ParameterValue 
     INTO lv_Agency_BatchSize 
     FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 187;
+    WHERE ParameterID = 182;
 	
     SELECT MAX(tbl.ID)
     INTO lv_NextHistoryID
