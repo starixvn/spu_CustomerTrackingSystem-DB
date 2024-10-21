@@ -102,20 +102,12 @@ sp: BEGIN
 		  ORDER BY his.ID ASC
 		  LIMIT lv_Agency_BatchSize) AS tbl;
 
-    IF lv_NextHistoryID IS NULL THEN
-        SET op_LastHistoryID = lv_LastHistoryID;
-    END IF;
-
-    IF lv_Agency_NextHistoryID IS NULL THEN
-        SET op_Agency_LastHistoryID = lv_Agency_LastHistoryID;
-    END IF;
+    SET op_LastHistoryID = IFNULL(lv_NextHistoryID, lv_LastHistoryID);
+    SET op_Agency_LastHistoryID = IFNULL(lv_Agency_NextHistoryID, lv_Agency_LastHistoryID);
 
     IF lv_NextHistoryID IS NULL AND lv_Agency_NextHistoryID IS NULL THEN
         LEAVE sp;
     END IF;
-    
-    SET op_LastHistoryID = lv_NextHistoryID;
-    SET op_Agency_LastHistoryID = lv_Agency_NextHistoryID;
     
 	INSERT IGNORE INTO Temp_Cust(CustID)
     SELECT 	his.CustID

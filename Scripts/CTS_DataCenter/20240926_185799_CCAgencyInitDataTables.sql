@@ -249,6 +249,8 @@ INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDat
 INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(183,'DailyScan_InactiveNewAgency_LastCustID','Daily Scan Inactive New Agency Last CustID','BIGINT UNSIGNED','0');
 INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(184,'ReScanNewAgent_LastCTSCustID','ReScanNewMember_LastCTSCustID','BIGINT UNSIGNED','0');
 INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(185,'ReScanNewAgent_BatchSize','ReScanNewMember_BatchSize','INT','5000');
+INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(186,'SabaDangerLevel_Agency_LastHistoryID','SabaDangerLevel_Agency_LastHistoryID','BIGINT','0');
+INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(187,'SabaDangerLevel_Agency_ScanBatchSize','SabaDangerLevel_Agency_ScanBatchSize','INT','1000');
 
 UPDATE SystemParameter
 SET ParameterValue = (SELECT ParameterValue FROM SystemParamer WHERE ParameterID = 92)
