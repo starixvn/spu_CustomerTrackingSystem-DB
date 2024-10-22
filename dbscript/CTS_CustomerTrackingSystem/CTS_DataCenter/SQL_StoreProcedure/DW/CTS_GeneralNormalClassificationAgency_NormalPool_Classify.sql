@@ -198,7 +198,7 @@ BEGIN
 		INSERT INTO dbo.CustomerClassificationAgency(CustId, RoleId, CurrentCategoryId, CategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, FirstBetDate, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount, LastXYDaysWinlossRatio, PerformanceTime)
 		SELECT t.CustId
 			,  t.RoleId
-			,  @CATEGORY_NULL
+			,  t.CurrentCategoryId
 			,  CASE WHEN t.IsActiveWithin30Days = 1 THEN @CATEGORY_NEW ELSE @CATEGORY_INACTIVE END
 			,  @ToDate AS CreatedDate
 			,  @CurrentDateTime AS CreatedTime
