@@ -136,6 +136,22 @@ BEGIN
 																					AND ccR.IsActive = 1
 						WHERE clsR.CustID = temp.CustID);
 
+		UPDATE Temp_CustomerClassification AS temp
+		SET temp.IsFromTW = 1
+		WHERE EXISTS (	SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clsR 
+							INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS ccR ON clsR.CategoryID = ccR.CategoryID
+																					AND ccR.IsActive = 1
+						WHERE clsR.CustID = temp.CustID AND clsR.IsFromTW = 1);	
+
+		UPDATE Temp_CustomerClassification AS temp
+		SET temp.IsFromCTS = 1
+		WHERE EXISTS (	SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clsR 
+							INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS ccR ON clsR.CategoryID = ccR.CategoryID
+																					AND ccR.IsActive = 1
+						WHERE clsR.CustID = temp.CustID AND clsR.IsFromCTS = 1);
+
 		INSERT INTO Temp_KeepDirect
 		SELECT DISTINCT temp.CustID
 		FROM Temp_CustomerClassification AS temp 
