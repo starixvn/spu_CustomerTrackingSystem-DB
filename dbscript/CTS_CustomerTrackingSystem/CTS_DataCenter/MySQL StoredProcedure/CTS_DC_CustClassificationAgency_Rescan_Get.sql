@@ -66,6 +66,7 @@ sp: BEGIN
         ,	IsFromAI 				BIT DEFAULT 0
         ,   CreatedDate        		DATETIME(3)
         ,   LastModifiedDate        DATETIME(3)
+        ,   RobotCounter          	INT
 		,	InputFlowID	 			INT
 		,	PRIMARY KEY(CustID,CategoryID)
 	);
@@ -207,6 +208,7 @@ sp: BEGIN
 		, 	cc.IsFromCTS
 		, 	cc.IsFromAI
         ,	cc.CreatedDate
+        ,   cc.RobotCounter
 		, 	CASE WHEN cc.CategoryID IS NULL THEN CONST_INPUTFLOWID_INSERT_NORMAL ELSE cc.InputFlowID END AS InputFlowID
 	FROM Temp_CustInfo AS cust
 		LEFT JOIN Temp_CustCategory AS cc ON cc.CustID = cust.CustID
