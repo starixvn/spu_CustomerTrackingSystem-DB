@@ -31,6 +31,8 @@ BEGIN
 	DECLARE CONST_AGENCY_CATEID_VVIP 								INT;
 	DECLARE CONST_MASTER_CATEID_VVIP 								INT;
 	DECLARE CONST_SUPER_CATEID_VVIP 								INT;
+	DECLARE CONST_AGENCY_CATEID_ROBOT								INT;
+	DECLARE CONST_AGENCY_CATEID_ROBOTLOSING							INT;
 	DECLARE CONST_AGENCY_PARENTID_VVIP 								INT;
 	DECLARE CONST_AGENCY_PARENTID_PA 								INT;
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP			INT;
@@ -52,6 +54,8 @@ BEGIN
 	SET CONST_AGENCY_CATEID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_VVIP');
 	SET CONST_MASTER_CATEID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_MASTER_CATEID_VVIP');
 	SET CONST_SUPER_CATEID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_SUPER_CATEID_VVIP');
+	SET CONST_AGENCY_CATEID_ROBOT 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
+	SET CONST_AGENCY_CATEID_ROBOTLOSING 							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
 	SET CONST_AGENCY_PARENTID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
 	SET CONST_AGENCY_PARENTID_PA 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
 	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP');
@@ -121,6 +125,7 @@ BEGIN
 		,	IsMarkedDirectly			TINYINT(1) DEFAULT 0
 		,	IsReturnData				TINYINT(1) DEFAULT 1
 		,	Remark						VARCHAR(500)
+		,	IsRobot						TINYINT(1) DEFAULT 0
 		, 	PRIMARY KEY (CustID, DWCategoryID)
 		,	KEY IX_Temp_NewCC_CustID_NewCateID (CustID, NewCategoryGroupID)
 		,	KEY IX_Temp_NewCC_CustID_Priority (CustID,CustomerClassPriority)
@@ -219,7 +224,7 @@ BEGIN
 			INSERT INTO Temp_NewClassification(
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount/*, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount*/
-				,	IsFromCTS, IsPAProbation, RelevantCategoryID, CreatedDate, IsFromTW, IsFromAI, CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime)
+				,	IsFromCTS, IsPAProbation, RelevantCategoryID, CreatedDate, IsFromTW, IsFromAI, CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, IsRobot)
 			SELECT 	tmpJs.CustID
 				,	CASE WHEN tmpJs.CTSCustID = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
 				,	CASE WHEN tmpJs.RoleID = 0 THEN cus.RoleID ELSE tmpJs.RoleID END
@@ -251,6 +256,7 @@ BEGIN
 				,	cat.ParentID
 				,	0 AS IsDataChanged
 				,	tmpJs.PerformanceTime
+				,	CASE WHEN cat.CategoryID IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING) THEN 1 ELSE 0 END AS IsRobot
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"

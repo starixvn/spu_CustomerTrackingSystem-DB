@@ -46,6 +46,9 @@ BEGIN
 		,	CustomerClassPriority				SMALLINT
 		,	CustomerClass						INT UNSIGNED
 		,	IsReturnData						TINYINT(1) DEFAULT 0
+		,	IsExistRobot						TINYINT(1) DEFAULT 0
+		,	IsFromTW							TINYINT(1) DEFAULT 0
+		,	IsFromCTS							TINYINT(1) DEFAULT 0
 		,	KEY IX_Temp_CC_CustID_CategoryID (CustID, CategoryID)
 		,	KEY IX_Temp_CC_CTSCustID (CTSCustID)
 	);

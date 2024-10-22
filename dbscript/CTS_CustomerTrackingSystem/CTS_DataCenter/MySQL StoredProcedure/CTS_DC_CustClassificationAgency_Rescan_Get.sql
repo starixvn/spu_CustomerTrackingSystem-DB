@@ -88,7 +88,59 @@ sp: BEGIN
 			AND cus.CustSubID = 0 
 			AND cus.IsInternal = 0
             AND cus.IsLicensee = 0;
+
+     /***********************Check CTS RobotUser****************************/
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, LastModifiedDate, InputFlowID)
+    SELECT tmp.CTSCustID					AS CTSCustID
+		,	tmp.CustID						AS CustID
+        ,	CASE WHEN cate.IsPAProbation THEN cate.RelevantCategoryID ELSE s.CategoryID END AS CategoryID
+        ,	tmp.RoleID 						AS RoleID
+        ,	tmp.SubscriberID				AS SubscriberID
+		,	tmp.IsLicensee					AS IsLicensee
+        ,	s.Remark						AS Remark
+        ,	NULL		 					AS CreatedBy
+        ,	1 								AS IsMarkedDirectly
+        ,	0 								AS IsFromTW
+        ,   1 								AS IsFromCTS
+        ,	0 								AS IsFromAI
+        ,	s.CreatedDate 					AS CreatedDate
+        ,	s.CreatedDate 					AS LastModifiedDate
+        ,   CONST_INPUTFLOWID_RESCAN_PA	    AS InputFlowID
+    FROM  Temp_CustInfo AS tmp
+		INNER JOIN CTS_DataCenter.CTSRobotUser AS s ON s.CustID = tmp.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = s.CategoryID
+	WHERE s.IsDisabled = 0
+	ON DUPLICATE KEY UPDATE IsFromCTS = 1
+						,	LastModifiedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.LastModifiedDate THEN s.CreatedDate ELSE Temp_CustCategory.LastModifiedDate END
+                        ,	CreatedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.CreatedDate THEN s.CreatedDate ELSE Temp_CustCategory.CreatedDate END
+                        ,	Remark = CASE WHEN s.CreatedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END;
         
+	/***********************Check TWRobotUser****************************/
+    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, LastModifiedDate, RobotCounter, InputFlowID)
+    SELECT tmp.CTSCustID					AS CTSCustID
+		,	tmp.CustID						AS CustID
+        ,	CASE WHEN cate.IsPAProbation THEN cate.RelevantCategoryID ELSE s.CategoryID END AS CategoryID
+        ,	tmp.RoleID 						AS RoleID
+        ,	tmp.SubscriberID				AS SubscriberID
+		,	tmp.IsLicensee					AS IsLicensee
+        ,	NULL 							AS Remark
+        ,	NULL		 					AS CreatedBy
+        ,	1 								AS IsMarkedDirectly
+        ,	1 								AS IsFromTW
+        ,   0 								AS IsFromCTS
+        ,	0 								AS IsFromAI
+		,	s.CreatedDate 					AS CreatedDate
+        ,	s.CreatedDate 					AS LastModifiedDate
+        ,   s.RobotCounter              	AS RobotCounter
+        ,   CONST_INPUTFLOWID_RESCAN_PA	    AS InputFlowID
+    FROM  Temp_CustInfo AS tmp
+		INNER JOIN CTS_DataCenter.TWRobotUser AS s ON s.CustID = tmp.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = s.CategoryID
+	WHERE s.IsDisabled = 0
+   	ON DUPLICATE KEY UPDATE IsFromTW = 1
+						,	LastModifiedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.LastModifiedDate THEN s.CreatedDate ELSE Temp_CustCategory.LastModifiedDate END
+                        ,	CreatedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.CreatedDate THEN s.CreatedDate ELSE Temp_CustCategory.CreatedDate END;                                               
+
     /***********************Check affected PA from Upline****************************/   
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID

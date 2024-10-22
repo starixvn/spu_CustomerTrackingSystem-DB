@@ -182,7 +182,7 @@ BEGIN
 		,  	temp.CustID
 		,	CASE WHEN NewCategoryID = CONST_AGENCY_CATEID_VVIP THEN CONST_AGENCY_CC_VVIP ELSE temp.TargetCC END AS CustomerClass
 		,  	CASE WHEN NewCategoryID = CONST_AGENCY_CATEID_VVIP THEN lv_Ext_CateGroupID_VVIP ELSE temp.NewCategoryID END AS CategoryID
-		,	CASE WHEN ParentID = CONST_AGENCY_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN ParentID = CONST_AGENCY_PARENTID_PA AND temp.IsRobot = 0 THEN 1 ELSE 0 END AS IsPA
 		,	lv_CurrentDateTime AS ScannedTime 
 	FROM Temp_NewClassification AS temp
 	WHERE temp.IsReturnData = 1;

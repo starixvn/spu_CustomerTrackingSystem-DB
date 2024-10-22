@@ -37,6 +37,8 @@ BEGIN
 
     DECLARE lv_CreatedBy                                            INT DEFAULT 10278938;
 	DECLARE	lv_CurrentDateTime								        DATETIME DEFAULT CURRENT_TIMESTAMP();
+	DECLARE	lv_InsertedCount										INT DEFAULT 0;
+	DECLARE	lv_UpdatedCount											INT DEFAULT 0;
 	DECLARE lv_IsParallelParentID							        TINYINT(1);  
 	DECLARE lv_ParentID										        INT UNSIGNED;  
 	DECLARE lv_CustomerClassPriority						        SMALLINT;  
@@ -244,6 +246,8 @@ BEGIN
 		FROM 	Temp_NewClassification AS temp;
 
 	ELSE
+		SET lv_InsertedCount = 0;
+		SET lv_UpdatedCount = 0;
 		SET lv_IsAuto = 1;
 
 		IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY THEN
@@ -270,7 +274,9 @@ BEGIN
 			,	cls.IsFromAI 			=   CASE WHEN temp.IsFromAI 		= 1 THEN temp.IsFromAI 			ELSE cls.IsFromAI 			END
 			,	cls.IsMarkedDirectly	=   CASE WHEN temp.IsMarkedDirectly	= 1 THEN temp.IsMarkedDirectly 	ELSE cls.IsMarkedDirectly 	END
 			; 
-					
+
+		SET lv_UpdatedCount = FOUND_ROWS();
+
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency(
 				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, ParentID, CreatedDate, CreatedBy, LastModifiedDate
 			, 	LastModifiedBy, LastScannedDate, IsMarkedDirectly, Remark, IsFromCTS, IsFromAI, IsFromTW)
@@ -293,6 +299,8 @@ BEGIN
 		FROM Temp_NewClassification AS temp 
 		WHERE 	(temp.DataChangeType = 0 AND temp.IsDataChanged = 1) 
 			OR 	(temp.IsFromOldPA 	= 1 AND lv_IsRescan = 0);
+
+		SET lv_InsertedCount = FOUND_ROWS();
 
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency_History(
 				CustID, CTSCustID, RoleID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1
@@ -360,6 +368,50 @@ BEGIN
 			,	temp.PerformanceTime
 		FROM Temp_NewClassification AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategorySettingsAgency AS ccs ON ccs.CategoryID = temp.NewCategoryID ;
+
+	IF (IFNULL(lv_InsertedCount,0) > 0 OR IFNULL(lv_UpdatedCount,0) > 0) THEN
+	
+		IF EXISTS (SELECT 1 
+						FROM Temp_NewClassification 
+						WHERE IsFromTW = 1 AND IsRobot = 1
+							AND ( lv_InsertedCount > 0 OR lv_UpdatedCount > 0)) THEN
+				
+				INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate,InsertedTime)
+				SELECT 	temp.CustID
+					,	temp.NewCategoryID
+					,	temp.TWRobotCounter
+					,	lv_CurrentDateTime AS CreatedDate
+					,	CURRENT_TIMESTAMP(3) AS InsertedTime
+				FROM Temp_NewClassification AS temp
+					LEFT JOIN CTS_DataCenter.TWRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
+				WHERE temp.IsFromTW = 1 AND temp.IsRobot = 1
+					AND h.CustID IS NULL
+					AND 1 = (CASE WHEN lv_InsertedCount > 0 THEN (CASE WHEN (temp.IsFromOldPA = 1 AND lv_IsRescan = 0) OR temp.IsDataChanged = 1 THEN 1 ELSE 0 END)
+								  WHEN lv_UpdatedCount > 0 AND temp.IsDataChanged = 1 THEN (CASE WHEN lv_IsRescan = 1 OR DataChangeType = 1 THEN 1 ELSE 0 END)
+								  ELSE 0 END);
+			END IF;
+			
+			IF EXISTS (SELECT 1 
+						FROM Temp_NewClassification 
+						WHERE IsFromCTS = 1 AND IsRobot = 1
+							AND ( lv_InsertedCount > 0 OR lv_UpdatedCount > 0)) THEN
+					
+				INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate,InsertedTime)
+				SELECT 	temp.CustID
+					,	temp.NewCategoryID
+					,	temp.Remark
+					,	lv_CurrentDateTime AS CreatedDate
+					,	CURRENT_TIMESTAMP(3) AS InsertedTime
+				FROM Temp_NewClassification AS temp
+					LEFT JOIN CTS_DataCenter.CTSRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
+				WHERE temp.IsFromCTS = 1 AND temp.IsRobot = 1
+					AND h.CustID IS NULL
+					AND 1 = (CASE WHEN lv_InsertedCount > 0 THEN (CASE WHEN (temp.IsFromOldPA = 1 AND lv_IsRescan = 0) OR temp.IsDataChanged = 1 THEN 1 ELSE 0 END)
+								  WHEN lv_UpdatedCount > 0 AND temp.IsDataChanged = 1 THEN (CASE WHEN lv_IsRescan = 1 OR DataChangeType = 1 THEN 1 ELSE 0 END)
+								  ELSE 0 END);
+					
+			END IF;	
+	END IF;	
 
 END IF;
 	

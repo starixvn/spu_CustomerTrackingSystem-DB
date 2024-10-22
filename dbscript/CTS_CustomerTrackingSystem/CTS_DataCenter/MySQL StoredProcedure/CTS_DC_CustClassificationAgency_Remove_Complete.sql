@@ -22,7 +22,8 @@ BEGIN
 		Param's Expanation:
 			- CALL CTS_DC_CustClassificationAgency_Remove_Complete(1225, 1, 0, false, '[{"CustID":24150964,"RoleID":2,"SubscriberID":168,"CTSCustID":11059,"CreatedBy":8,"Remark":"Thomas unmark PA","IsExceptDirectDownline":false,"IsMarkedDirectly":true}]');
 */
-
+	DECLARE CONST_AGENCY_CATEID_ROBOT								INT;
+	DECLARE CONST_AGENCY_CATEID_ROBOTLOSING							INT;
 	DECLARE CONST_AGENCY_PARENTID_VVIP 							    INT;
 	DECLARE CONST_AGENCY_PARENTID_PA	 							INT;
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP 			INT;
@@ -43,6 +44,8 @@ BEGIN
 	DECLARE lv_TargetCC										        INT;
 	DECLARE lv_CCPriority									        SMALLINT UNSIGNED;  
 
+	SET CONST_AGENCY_CATEID_ROBOT 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
+	SET CONST_AGENCY_CATEID_ROBOTLOSING 							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
 	SET CONST_AGENCY_PARENTID_VVIP 								    = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
 	SET CONST_AGENCY_PARENTID_PA	 								= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
 	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP');
@@ -124,6 +127,15 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cls.CategoryID = cc.CategoryID AND cc.IsActive = 1
 			; 
 		
+		UPDATE Temp_CustomerClassification AS temp
+		SET temp.IsExistRobot = 1
+		WHERE EXISTS (	SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clsR 
+							INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS ccR ON clsR.CategoryID = ccR.CategoryID 
+																					AND ccR.CategoryID IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING)
+																					AND ccR.IsActive = 1
+						WHERE clsR.CustID = temp.CustID);
+
 		INSERT INTO Temp_KeepDirect
 		SELECT DISTINCT temp.CustID
 		FROM Temp_CustomerClassification AS temp 
@@ -141,6 +153,7 @@ BEGIN
 			INNER JOIN Temp_CustomerClassification AS temp ON ce.CTSCustID = temp.CTSCustID AND ce.Level = 0 
 																AND ce.EvidenceID = temp.Ext_EvidenceID_Credit
 		WHERE temp.IsRemovedPA = 1; 
+		
 		
 		DELETE ce
 		FROM CTS_DataCenter.CustEvidence AS ce
@@ -168,6 +181,20 @@ BEGIN
 
 		END IF;
 		
+		-- ROBOT TW
+		UPDATE CTS_DataCenter.TWRobotUser AS rd
+			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID 
+																AND temp.IsExistRobot = 1 AND temp.IsFromTW = 1 AND rd.IsDisabled = 0
+		SET rd.IsDisabled = 1
+		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
+		
+		-- ROBOT CTS
+		UPDATE CTS_DataCenter.CTSRobotUser AS rd
+			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID 
+																AND temp.IsExistRobot = 1 AND temp.IsFromCTS = 1 AND rd.IsDisabled = 0
+		SET rd.IsDisabled = 1
+		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
+
 		DELETE cls
 		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
 			INNER JOIN Temp_CustomerClassification AS temp ON cls.CustID = temp.CustID
