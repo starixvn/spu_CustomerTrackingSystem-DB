@@ -237,11 +237,4 @@ CREATE TABLE CTSCustomerAssociationArchiveAgency_Process(
   PRIMARY KEY(CTSCustID),
   INDEX IX_CTSCustomerAssociationArchiveAgency_CustID(CustID)
 ) ENGINE=InnoDB;
-#==========================================================================================
-DROP TABLE IF EXISTS CTSCustomerAssociationRollBackAgency_Process;
-CREATE TABLE CTSCustomerAssociationRollBackAgency_Process(
-  CTSCustID BIGINT UNSIGNED NOT NULL,
-  CustID INT UNSIGNED NOT NULL,
-  PRIMARY KEY(CTSCustID),
-  INDEX IX_CTSCustomerAssociationRollBackAgency_CustID(CustID)
-) ENGINE=InnoDB;
+
