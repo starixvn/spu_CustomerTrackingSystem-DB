@@ -21,15 +21,16 @@ CREATE EVENT EV_CTS_DC_DataConsistency_CustomerCategory
 		 EVERY '1 03' DAY_HOUR
     DO
       BEGIN
-        DECLARE CONST_RuleID		INT DEFAULT 1;
+        DECLARE CONST_GENERAL_RuleID		INT DEFAULT 1;
+        DECLARE CONST_BYSPORT_RuleID		INT DEFAULT 2;
 		
-        DECLARE lv_MinCustID		BIGINT DEFAULT 0;
-        DECLARE lv_BatchSize		BIGINT DEFAULT 0;
-        DECLARE lv_NextCustID		BIGINT DEFAULT 0;
-		DECLARE lv_IsNew			TINYINT(1) DEFAULT 0;
-		DECLARE lv_TrackingDate		DATE DEFAULT NOW();
-		DECLARE lv_LogID			BIGINT DEFAULT 0;
-		DECLARE lv_LogInfo			TEXT;
+        DECLARE lv_MinCustID				BIGINT DEFAULT 0;
+        DECLARE lv_BatchSize				BIGINT DEFAULT 0;
+        DECLARE lv_NextCustID				BIGINT DEFAULT 0;
+		DECLARE lv_IsNew					TINYINT(1) DEFAULT 0;
+		DECLARE lv_TrackingDate				DATE DEFAULT NOW();
+		DECLARE lv_LogID					BIGINT DEFAULT 0;
+		DECLARE lv_LogInfo					TEXT;
 		
 		DECLARE EXIT HANDLER FOR SQLEXCEPTION
 		BEGIN
@@ -63,7 +64,7 @@ CREATE EVENT EV_CTS_DC_DataConsistency_CustomerCategory
 					,	LastExecTime = NOW()
 				WHERE EventName = 'EV_CTS_DC_DataConsistency_CustomerCategory';
                 
-				CAll CTS_DataCenter.CTS_DC_DataConsistency_CustomerCategory_Check(lv_BatchSize,lv_MinCustID,lv_NextCustID); 
+				CAll CTS_DataCenter.CTS_DC_DataConsistency_CustomerCategory_General_Check(lv_BatchSize,lv_MinCustID,lv_NextCustID); 
 				
 				IF ((lv_MinCustID < lv_NextCustID) OR (lv_MinCustID > 0 AND lv_NextCustID = 0)) THEN
 					
@@ -73,13 +74,13 @@ CREATE EVENT EV_CTS_DC_DataConsistency_CustomerCategory
 					
 					IF (lv_IsNew = 1 AND lv_LogID = 0) THEN
 						INSERT INTO CTS_DataCenter.DataConsistencyMonitoring_Log(RuleID,LogInfo,MinCustID,MaxCustID,CreatedDate,InsertedTime)
-						SELECT CONST_RuleID,GROUP_CONCAT(temp.CustID),lv_MinCustID
+						SELECT CONST_GENERAL_RuleID,GROUP_CONCAT(temp.CustID),lv_MinCustID
 							,CASE 	WHEN lv_MinCustID < lv_NextCustID THEN lv_NextCustID
 									WHEN lv_MinCustID > 0 AND lv_NextCustID = 0 THEN lv_MinCustID 
 									ELSE NULL END AS MaxCustID
 							,lv_TrackingDate,NOW()
 						FROM Temp_CustIssue AS temp
-						WHERE EXISTS (SELECT 1 FROM DataConsistencyMonitoring WHERE RuleID = CONST_RuleID AND IsActive = 1);
+						WHERE EXISTS (SELECT 1 FROM DataConsistencyMonitoring WHERE RuleID = CONST_GENERAL_RuleID AND IsActive = 1);
 						
 						SET lv_LogID = LAST_INSERT_ID();
 					
@@ -87,7 +88,7 @@ CREATE EVENT EV_CTS_DC_DataConsistency_CustomerCategory
 						SELECT GROUP_CONCAT(temp.CustID)
 						INTO lv_LogInfo
 						FROM Temp_CustIssue AS temp
-						WHERE EXISTS (SELECT 1 FROM DataConsistencyMonitoring WHERE RuleID = CONST_RuleID AND IsActive = 1);
+						WHERE EXISTS (SELECT 1 FROM DataConsistencyMonitoring WHERE RuleID = CONST_GENERAL_RuleID AND IsActive = 1);
 						
 						UPDATE CTS_DataCenter.DataConsistencyMonitoring_Log AS temp
 						SET 	temp.LogInfo = lv_LogInfo

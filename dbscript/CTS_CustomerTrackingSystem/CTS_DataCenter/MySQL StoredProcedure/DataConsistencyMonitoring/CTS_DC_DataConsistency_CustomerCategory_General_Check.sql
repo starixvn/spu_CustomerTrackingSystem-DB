@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_DataConsistency_CustomerCategory_Check`;
+DROP PROCEDURE IF EXISTS `CTS_DC_DataConsistency_CustomerCategory_General_Check`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_DataConsistency_CustomerCategory_Check`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_DataConsistency_CustomerCategory_General_Check`(
 	IN 	ip_Batchsize		INT
 ,	IN 	ip_MinCustID		BIGINT
 ,	OUT	op_NextCustID		BIGINT
@@ -19,7 +19,7 @@ spc:BEGIN
                 
         Param's Explanation:
         Example:
-			- CALL CTS_DataCenter.CTS_DC_DataConsistency_CustomerCategory_Check(5000,0,@op_NextCustID);
+			- CALL CTS_DataCenter.CTS_DC_DataConsistency_CustomerCategory_General_Check(5000,0,@op_NextCustID);
 	*/ 
 	
 	/*Get value*/
@@ -90,7 +90,6 @@ spc:BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = cc.CustID AND cust.CustSubID  = 0
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = cc.CategoryID 
 		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cate.CategoryID 
-		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = cc.CustID
 	WHERE cc.CustID > ip_MinCustID
 		AND cc.CustID <= lv_MaxCustID;
 		
