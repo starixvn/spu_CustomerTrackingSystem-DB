@@ -136,6 +136,7 @@ CREATE TABLE CTSCustomerClassificationAgency_History(
   LastYDaysWinlossRM decimal(20,4) DEFAULT NULL,
   LastYDaysBetCount bigint DEFAULT NULL,
   PerformanceTime DATETIME DEFAULT NULL,
+  RobotCounter SMALLINT,
   PRIMARY KEY(ID),
   INDEX IX_CTSCCAgency_History_InsertDate(InsertDate),
   INDEX IX_CTSCCAgency_History_CTSCustID(CTSCustID),
@@ -176,6 +177,7 @@ CREATE TABLE CTSCustomerClassificationAgency_Log(
   IsFromCTS TINYINT(1) DEFAULT 0,
   IsFromAI TINYINT(1) DEFAULT 0,
   PerformanceTime DATETIME DEFAULT NULL,
+  RobotCounter SMALLINT,
   PRIMARY KEY(ID,InsertDate),
   INDEX IX_CTSCCAgency_Log_CustID(CustID)
 ) ENGINE=InnoDB

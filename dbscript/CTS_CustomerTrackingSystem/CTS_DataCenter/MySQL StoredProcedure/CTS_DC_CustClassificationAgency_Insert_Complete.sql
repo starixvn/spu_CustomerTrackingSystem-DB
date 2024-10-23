@@ -304,7 +304,7 @@ BEGIN
 
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency_History(
 				CustID, CTSCustID, RoleID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1
-			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, IsFromTW, IsFromCTS, IsFromAI, OldCategoryID, DWCategoryID, PerformanceTime)
+			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, IsFromTW, IsFromCTS, IsFromAI, OldCategoryID, DWCategoryID, RobotCounter, PerformanceTime)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			,	temp.RoleID
@@ -330,6 +330,7 @@ BEGIN
 			,	temp.IsFromAI
 			,	temp.OldCategoryID
 			,	temp.DWCategoryID
+			,	temp.TWRobotCounter AS RobotCounter
 			,	temp.PerformanceTime
 		FROM Temp_NewClassification AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategorySettingsAgency AS ccs ON ccs.CategoryID = temp.NewCategoryID 
@@ -338,7 +339,7 @@ BEGIN
 		
 		INSERT INTO CTS_DataCenter.CTSCustomerClassificationAgency_Log(
 				CustID, CTSCustID, RoleID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1
-			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, IsFromTW, IsFromCTS, IsFromAI, OldCategoryID, DWCategoryID, PerformanceTime)
+			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, IsFromTW, IsFromCTS, IsFromAI, OldCategoryID, DWCategoryID, RobotCounter, PerformanceTime)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			,	temp.RoleID
@@ -365,6 +366,7 @@ BEGIN
 			,	temp.IsFromAI
 			,	temp.OldCategoryID
 			,	temp.DWCategoryID
+			,	temp.TWRobotCounter AS RobotCounter
 			,	temp.PerformanceTime
 		FROM Temp_NewClassification AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategorySettingsAgency AS ccs ON ccs.CategoryID = temp.NewCategoryID ;

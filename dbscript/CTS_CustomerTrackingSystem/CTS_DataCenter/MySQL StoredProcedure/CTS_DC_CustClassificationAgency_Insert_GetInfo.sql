@@ -118,7 +118,7 @@ BEGIN
 		,	IsFromTW					TINYINT(1)  DEFAULT 0
 		,	IsFromCTS					TINYINT(1)  DEFAULT 0
 		,	IsFromAI					TINYINT(1)  DEFAULT 0
-			
+		,	TWRobotCounter				INT UNSIGNED	
 		,	CreatedDate					DATETIME
 		,	LastModifiedDate			DATETIME
 		,	CreatedBy					INT UNSIGNED
@@ -162,6 +162,7 @@ BEGIN
 		,	IsFromAI					TINYINT(1)
 		,	InsertTime					DATETIME
 		,	IsMarkedDirectly			TINYINT(1)
+		,	TWRobotCounter				INT UNSIGNED
 		,	CustomerClass				INT 
 		,	CategoryPriority			SMALLINT
 		,	CustomerClassPriority		SMALLINT
@@ -224,7 +225,7 @@ BEGIN
 			INSERT INTO Temp_NewClassification(
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount/*, LastXDaysTurnoverRM, LastXDaysWinlossRM, LastXDaysBetCount, LastYDaysTurnoverRM, LastYDaysWinlossRM, LastYDaysBetCount*/
-				,	IsFromCTS, IsPAProbation, RelevantCategoryID, CreatedDate, IsFromTW, IsFromAI, CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, IsRobot)
+				,	IsFromCTS, IsPAProbation, RelevantCategoryID, CreatedDate, IsFromTW, TWRobotCounter, IsFromAI, CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, IsRobot)
 			SELECT 	tmpJs.CustID
 				,	CASE WHEN tmpJs.CTSCustID = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
 				,	CASE WHEN tmpJs.RoleID = 0 THEN cus.RoleID ELSE tmpJs.RoleID END
@@ -250,6 +251,7 @@ BEGIN
 				,	cat.RelevantCategoryID
 				,	tmpJs.CreatedDate
 				,	tmpJs.IsFromTW
+				,	tmpJs.TWRobotCounter	
 				,	tmpJs.IsFromAI
 				,	cat.CategoryPriority
 				,	cat.CustomerClassPriority
@@ -282,6 +284,7 @@ BEGIN
 											, 	CreatedDate					DATETIME			PATH "$.CreatedDate"
 											, 	PerformanceTime				DATETIME			PATH "$.PerformanceTime"
 											,	IsFromTW					TINYINT(1)			PATH "$.IsFromTW"
+											,	TWRobotCounter				INT UNSIGNED		PATH "$.RobotCounter"
 											,	IsFromAI					TINYINT(1)			PATH "$.IsFromAI"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0 AND cus.RoleID > 1
@@ -298,6 +301,7 @@ BEGIN
 								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_NewClassification.IsFromCTS END
 								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_NewClassification.IsMarkedDirectly END
 								,	IsFromTW = CASE WHEN tmpJs.IsFromTW = 1 THEN 1 ELSE Temp_NewClassification.IsFromTW END
+								,	TWRobotCounter = IFNULL(Temp_NewClassification.TWRobotCounter, tmpJs.TWRobotCounter)
 								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_NewClassification.IsFromAI END
 								;
 
