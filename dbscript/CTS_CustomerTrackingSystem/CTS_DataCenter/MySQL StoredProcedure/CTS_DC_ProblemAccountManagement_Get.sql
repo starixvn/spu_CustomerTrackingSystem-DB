@@ -212,7 +212,7 @@ sp :BEGIN
 	END IF;
     
     IF lv_IsIncludeAgency = 1 THEN
-		INSERT IGNORE INTO Temp_Customer(CTSCustID, CustID, UserName, RoleID, Site, SiteID, Currency, CurrencyID, CategoryID, CategoryName, CreatedDate, CreatedBy, Remark, IsFromTVS, TVSRequestID, IsParlay, SportType, IssueTypeID)
+		INSERT IGNORE INTO Temp_Customer(CTSCustID, CustID, UserName, RoleID, Site, SiteID, Currency, CurrencyID, CategoryID, CategoryName, CreatedDate, CreatedBy, Remark)
 		SELECT 	cus.CTSCustID
 		, 	cus.CustID
 		, 	cus.UserName
@@ -226,11 +226,6 @@ sp :BEGIN
 		,	MIN(class.CreatedDate) AS CreatedDate
 		,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(us.UserName, class.CreatedBy) ORDER BY class.CreatedDate ASC,class.LastModifiedDate ASC,class.CategoryID ASC SEPARATOR ', '),',',1) AS CreatedBy
 		,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(class.Remark,'') ORDER BY class.CreatedDate ASC,class.LastModifiedDate ASC,class.CategoryID ASC SEPARATOR ', '),',',1) AS Remark
-		,	0 AS IsFromTVS
-		,	null AS TVSRequestID
-		,	null AS IsParlay
-		,	0 AS SportType
-		,	null AS IssueTypeID
 		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS class
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
 			INNER JOIN CTS_DataCenter.Temp_RoleID AS r ON cus.RoleID = r.RoleID
