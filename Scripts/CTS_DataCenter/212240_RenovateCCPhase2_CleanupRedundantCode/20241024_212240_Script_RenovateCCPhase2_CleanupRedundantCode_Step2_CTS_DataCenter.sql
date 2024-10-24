@@ -56,3 +56,7 @@ USE CTS_DataCenter;
 	
 	DROP EVENT IF EXISTS EV_CTS_DC_MatchMonitor_Wrapper;
 	DROP EVENT IF EXISTS Event_Long_Adhoc_UnleashHaifa4xPACC;
+	
+/************************* 4. SPs - 20241024******************************/
+	DROP PROCEDURE IF EXISTS CTS_DC_AssociationDetection_DetectGroup_Monitor;
+	DROP PROCEDURE IF EXISTS CTS_DC_CustClassification_SabaDangerLevel_Init_xtest;
