@@ -41,7 +41,8 @@ sp : BEGIN
             - 20240319@Casey.Huynh: 	Classify Danger Score [Redmine ID: #201358]
             - 20240425@Thomas.Nguyen:	Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
 			- 20240628@Thomas.Nguyen: 	Renovate CC phase 2 - Remove hardcode and return more IsPA, IsPotentialPA [Redmine ID: #205317]
-			- 20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
+			- 20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
+			- 20241024@Jonas.Huynh: 	HF Wrong category color order   [RedmineID: #209792]	
 			- 20241002@Casey.Huynh: 	Return Agency Category [Redmine ID: #185799]
             
 		Param's Explanation (filtered by):
