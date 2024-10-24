@@ -165,7 +165,7 @@ VALUES (1,'Account has less than 40 bets for first time scan','New: New Customer
 (33,'Problem Account is unmarked directly | [Remark]','Problem Account is unmarked directly'),
 (34,'Unmarking Problem Account is affected by Uplines | [Remark]','Unmarking Problem Account is affected by Uplines'),
 (40,'Bet Count: [BetCount]','New Agent'),
-(41,'1-year Win loss: [1yWinloss] | Margin: [1yMargin] | Bet Count: [1yBetCount]<br/>2-months Win loss: [2mWinloss] | Margin: [2mMargin] | Bet Count: [2mBetCount]','Good/Normal/Smart/Risky Agent'),
+(41,'1-year Win loss: [1yWinloss] | Margin: [1yMargin] | Bet Count: [1yBetCount]<br/>2-month Win loss: [2mWinloss] | Margin: [2mMargin] | Bet Count: [2mBetCount]','Good/Normal/Smart/Risky Agent'),
 (42,'Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]','Early Stage Probation Agent');
 
 /*SELECT ag.CategoryName, mb.CategoryName, CONCAT(',(',ag.CategoryID,',', 2,',', mb.CategoryID ,',', 1 ,')')
@@ -241,16 +241,11 @@ VALUES (101011,4,101010,3)
 INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(175,'DailyScan_Agency_Normal_BatchSize','DailyScan_Agency_Normal_BatchSize','INT','500');
 INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(176,'DailyScan_Agency_Normal_LastCategoryID','DailyScan_Agency_Normal_LastCategoryID','INT','0');
 INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(177,'DailyScan_Agency_Normal_LastCustID','DailyScan_Agency_Normal_LastCustID','BIGINT','0');
-INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(178,'InactiveNewAgency_LastCategoryID','InactiveNewAgency_LastCategoryID','INT','0');
-INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(179,'InactiveNewAgency_LastCustID','InactiveNewAgency_LastCustID','INT','0');
-INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(180,'ReScanNewMemberAgency_LastCTSCustID','ReScanNewMemberAgency_LastCTSCustID','INT','0');
-INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(181,'InactiveNewAgency_BatchSize','BatchSize Config for Inactive New Agency Scan','INT','500');
-INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(182,'DailyScan_InactiveNewAgency_LastCategoryID','Daily Scan Inactive New Agency Last CategoryID','INT','140100');
-INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(183,'DailyScan_InactiveNewAgency_LastCustID','Daily Scan Inactive New Agency Last CustID','BIGINT UNSIGNED','0');
-INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(184,'ReScanNewAgent_LastCTSCustID','ReScanNewMember_LastCTSCustID','BIGINT UNSIGNED','0');
-INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(185,'ReScanNewAgent_BatchSize','ReScanNewMember_BatchSize','INT','5000');
-INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(186,'SabaDangerLevel_Agency_LastHistoryID','SabaDangerLevel_Agency_LastHistoryID','BIGINT','0');
-INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(187,'SabaDangerLevel_Agency_ScanBatchSize','SabaDangerLevel_Agency_ScanBatchSize','INT','1000');
+INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(178,'InactiveNewAgency_BatchSize','BatchSize Config for Inactive New Agency Scan','INT','500');
+INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(179,'DailyScan_InactiveNewAgency_LastCategoryID','Daily Scan Inactive New Agency Last CategoryID','INT','140100');
+INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(180,'DailyScan_InactiveNewAgency_LastCustID','Daily Scan Inactive New Agency Last CustID','BIGINT UNSIGNED','0');
+INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(181,'SabaDangerLevel_Agency_LastHistoryID','SabaDangerLevel_Agency_LastHistoryID','BIGINT','0');
+INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(182,'SabaDangerLevel_Agency_ScanBatchSize','SabaDangerLevel_Agency_ScanBatchSize','INT','1000');
 
 UPDATE SystemParameter
 SET ParameterValue = (SELECT ParameterValue FROM SystemParamer WHERE ParameterID = 92)
