@@ -18,7 +18,14 @@ BEGIN
 		Param's Explanation (filtered by):		
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_ViewHistory(11198);
-	*/          
+	*/
+    DECLARE CONST_AGENCY_CATEID_ROBOT								INT;
+	DECLARE CONST_AGENCY_CATEID_ROBOTLOSING							INT;
+    DECLARE CONST_AGENCY_REMARKID_ROBOTFROMTW				        INT DEFAULT 50;
+
+    SET CONST_AGENCY_CATEID_ROBOT 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
+	SET CONST_AGENCY_CATEID_ROBOTLOSING 							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
+
     DROP TEMPORARY TABLE IF EXISTS Temp_CustRemark;
     CREATE TEMPORARY TABLE 	Temp_CustRemark (
                 HistoryID			BIGINT UNSIGNED NOT NULL PRIMARY KEY
@@ -34,7 +41,8 @@ BEGIN
     SELECT  clss.ID
         ,	clss.CustID
         ,   clss.CategoryID
-        ,	clss.SourceTypeID
+        ,	CASE WHEN clss.CategoryID IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING) AND clss.IsFromTW = 1 
+                    THEN CONST_AGENCY_REMARKID_ROBOTFROMTW ELSE clss.SourceTypeID END
     FROM CTS_DataCenter.CTSCustomerClassificationAgency_History AS clss
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON clss.CustID = cus.CustID
     WHERE 	clss.CTSCustID = ip_CTSCustID AND clss.IsDataChanged = 1;
@@ -50,10 +58,10 @@ BEGIN
     WHERE tmp.Remark IS NULL AND tmp.SourceTypeID IS NOT NULL;
 
     SELECT 	temp.LastModifiedDate AS CreatedTime
-        ,   (CASE WHEN temp.CategoryID IS NULL THEN '-' ELSE cc1.CategoryName END) AS CategoryName
+        ,   (CASE WHEN temp.CategoryID IS NULL THEN '-' ELSE cate.CategoryName END) AS CategoryName
         ,   (CASE WHEN temp.TargetCC IN (-1, -99) THEN '-' /* -1: Remove, -99: No mapping CC */ ELSE temp.TargetCC END) AS CustomerClass
         ,   IFNULL(u.UserName, temp.LastModifiedBy) AS CreatedBy
-        ,	TRIM(TRAILING '|' FROM TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
+        ,	TRIM(TRAILING '|' FROM TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
                             '[Winloss]', IFNULL(FORMAT(temp.WinlossRM, 2),0))
                         ,   '[2mWinloss]', IFNULL(FORMAT(temp.LastXDaysWinlossRM, 2),0))
                         ,   '[1yWinloss]', IFNULL(FORMAT(temp.LastYDaysWinlossRM, 2),0))                         
@@ -63,11 +71,12 @@ BEGIN
                         ,   '[BetCount]', IFNULL(temp.BetCount,0))
                         ,   '[2mBetCount]', IFNULL(temp.LastXDaysBetCount,0))
                         ,   '[1yBetCount]', IFNULL(temp.LastYDaysBetCount,0))
+                        ,   '[TWRobotCounter]', IFNULL(temp.RobotCounter,0))
                         ,   '[Remark]', IFNULL(temp.Remark,''))
                         )) AS Remark
     FROM 	CTS_DataCenter.CTSCustomerClassificationAgency_History AS temp
         INNER JOIN Temp_CustRemark AS tmpcr ON tmpcr.HistoryID = temp.ID
-        LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cc1 ON temp.CategoryID = cc1.CategoryID
+        LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON temp.CategoryID = cate.CategoryID
         LEFT JOIN CTS_Admin.CTSUser AS u ON temp.LastModifiedBy = u.UserID
     WHERE 	temp.CTSCustID = ip_CTSCustID AND temp.IsDataChanged = 1
     ORDER BY temp.ID DESC; 
