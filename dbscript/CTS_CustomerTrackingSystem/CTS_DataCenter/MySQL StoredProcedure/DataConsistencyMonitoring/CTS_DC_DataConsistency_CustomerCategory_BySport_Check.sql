@@ -29,7 +29,7 @@ spc:BEGIN
 	SET CONST_PARENTID_NORMAL 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo_BySport;
-    CREATE TEMPORARY TABLE Temp_CustCateInfo_BySport_BySport (
+    CREATE TEMPORARY TABLE Temp_CustCateInfo_BySport (
         	CustID						BIGINT UNSIGNED 
 		,	SportID						SMALLINT
 		,	ParentID					INT
@@ -38,7 +38,7 @@ spc:BEGIN
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustIssue_BySport;
-    CREATE TEMPORARY TABLE Temp_CustIssue (
+    CREATE TEMPORARY TABLE Temp_CustIssue_BySport (
         	CustID						BIGINT UNSIGNED PRIMARY KEY
 	);
     
@@ -66,7 +66,7 @@ spc:BEGIN
 	
 	INSERT IGNORE INTO Temp_CustCateInfo_BySport (CustID,SportID,ParentID,CategoryID)
 	SELECT 	cc.CustID,cc.SportID,cc.ParentID,cc.CategoryID
-	FROM CTS_DataCenter.CTSCustomerClassification AS cc
+	FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cc
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = cc.CustID AND cust.CustSubID  = 0
 	WHERE cc.CustID > ip_MinCustID
 		AND cc.CustID <= lv_MaxCustID

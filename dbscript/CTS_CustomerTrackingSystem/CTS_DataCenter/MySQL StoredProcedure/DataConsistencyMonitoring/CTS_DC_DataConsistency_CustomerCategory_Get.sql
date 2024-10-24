@@ -3,8 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_DataConsistency_CustomerCategory_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_DataConsistency_CustomerCategory_Get`(
-	IN 	ip_DateCheck		DATE
-,	OUT	op_Status			VARCHAR(20)
+	OUT	op_Status			VARCHAR(20)
 )
     SQL SECURITY INVOKER
 spc:BEGIN 
@@ -18,7 +17,7 @@ spc:BEGIN
                 
         Param's Explanation:
         Example:
-			- CALL CTS_DataCenter.CTS_DC_DataConsistency_CustomerCategory_Get('2024-10-22',@op_Status);
+			- CALL CTS_DataCenter.CTS_DC_DataConsistency_CustomerCategory_Get(@op_Status);
 	*/ 
 	
 	DECLARE lv_TrackingDate		DATE;

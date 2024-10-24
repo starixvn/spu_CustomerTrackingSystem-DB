@@ -42,11 +42,14 @@ CREATE TABLE DataConsistencyMonitoring_Log(
 
 SET @INSERTEDTIME = NOW();
 INSERT INTO DataConsistencyMonitoring (RuleID,RuleMessage,Description,IsActive,InsertedTime,LastModifiedDate)
-SELECT 1,'Incorrect customer category settings', 'Identify customers who have incorrect category settings',1,@INSERTEDTIME,@INSERTEDTIME;
+VALUES (1,'Incorrect customer category settings - General', 'Identify customers who have incorrect category settings - General',1,@INSERTEDTIME,@INSERTEDTIME)
+,	(2,'Incorrect customer category settings - BySport', 'Identify customers who have incorrect category settings - BySport',1,@INSERTEDTIME,@INSERTEDTIME);
 
 INSERT IGNORE INTO SystemEventStatus (EventName,Status,LastExecTime)
 SELECT 'EV_CTS_DC_DataConsistency_CustomerCategory','Stop',@INSERTEDTIME;
 
 INSERT INTO SystemParameter (ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES (999,'IncorrectCustomerCategorySettings_Batchsize','Incorrect_Customer_Category_Settings_Batchsize','BIGINT','5000')
-, (998,'IncorrectCustomerCategorySettings_CustID','Incorrect_Customer_Category_Settings_Batchsize','INT','0');
+VALUES (999,'IncorrectCustCateSettings_General_Batchsize','IncorrectCustomerCategorySettings_General_Batchsize','BIGINT','5000')
+, (998,'IncorrectCustCateSettings_General_CustID','IncorrectCustomerCategorySettings_General_CustID','INT','0')
+, (997,'IncorrectCustCateSettings_BySport_Batchsize','IncorrectCustomerCategorySettings_BySport_Batchsize','BIGINT','2000')
+, (996,'IncorrectCustCateSettings_BySport_CustID','IncorrectCustomerCategorySettings_BySport_CustID','INT','0');
