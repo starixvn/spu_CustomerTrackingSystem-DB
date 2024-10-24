@@ -19,6 +19,7 @@ CREATE TABLE `MB_RawTransaction` (
 	`IPID` decimal(50,0) DEFAULT NULL,
 	`Action` varchar(100) DEFAULT NULL,
 	`ActionResult` varchar(100) DEFAULT NULL,
+	`TransStatus` bit(16) DEFAULT NULL COMMENT 'Refer Table TransStatus',
 	`Flagged` smallint DEFAULT NULL,
 	`IsProcessed` tinyint NOT NULL DEFAULT '0',
 	`TransID` bigint unsigned NOT NULL AUTO_INCREMENT,
@@ -37,10 +38,6 @@ CREATE TABLE `MB_RawTransaction` (
 	`MB_Language` varchar(32) DEFAULT NULL,
 	`MB_Country` varchar(32) DEFAULT NULL,
 	PRIMARY KEY (`TransID`),
-	KEY `IX_RawTransaction_IsProcessed` (`IsProcessed`),
-	KEY `IX_RawTransaction_SubscriberName` (`SubscriberName`,`CreatedDate`),
-	KEY `IX_RawTransaction_CreatedDate` (`CreatedDate`)
+	KEY `IX_RawTransaction_SubscriberName` (`SubscriberName`,`CreatedDate`)
 ) ENGINE=InnoDB;
-
-
 

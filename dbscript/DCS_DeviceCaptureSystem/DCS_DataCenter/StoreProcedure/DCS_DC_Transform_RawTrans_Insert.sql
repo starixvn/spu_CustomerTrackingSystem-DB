@@ -209,6 +209,11 @@ BEGIN
 				)
 		   ) AS rt; 
            
+   /******* Add index ********************/
+	ALTER TABLE Temp_Transaction
+	ADD INDEX IX_Temp_Transaction_MBIsMobileApp (MB_IsMobileApp),
+	ADD INDEX IX_Temp_Transaction_BotComponentCode (BotComponentCode);
+           
 	/******* Insert Temp Mobile RawTransaction ********************/
     INSERT INTO Temp_MB_Transaction(LoginName, SubscriberName, TransTime, UserAgent, IP, IPID, Action, ActionResult,  TransStatus, FlaggedCode, FP_UserAgentCode, MB_AndroidCode, MB_CustomCode, MB_MediaDRMCode, MB_IsMobileApp, MB_IsEmulator, MB_ModelName, MB_Manufacturer, MB_Brand, MB_SDKVersion, MB_OS, MB_Timezone, MB_Language, MB_Country)
 	SELECT	rt.LoginName
@@ -240,10 +245,6 @@ BEGIN
     
     DELETE FROM Temp_Transaction AS rt
 	WHERE rt.MB_IsMobileApp = 1;
-     
-    /******* Add index ********************/
-	ALTER TABLE Temp_Transaction
-	ADD INDEX IX_Temp_Transaction_BotComponentCode (BotComponentCode);
     
     /******* BotDetection ********************/
 	INSERT INTO Temp_BotDetection(ID, BotDetectionValue)
