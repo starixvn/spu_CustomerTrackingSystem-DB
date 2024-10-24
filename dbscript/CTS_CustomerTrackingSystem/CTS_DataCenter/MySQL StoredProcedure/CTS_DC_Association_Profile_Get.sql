@@ -41,6 +41,7 @@ sp : BEGIN
             - 20240425@Thomas.Nguyen:	Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
 			- 20240628@Thomas.Nguyen: 	Renovate CC phase 2 - Remove hardcode and return more IsPA, IsPotentialPA [Redmine ID: #205317]
 			- 20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
+            - 20241024@Jonas.Huynh: 	HF Wrong category color order   [RedmineID: #209792]
             
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
@@ -404,7 +405,7 @@ sp : BEGIN
 		,	cate.ParentID -- Each Customer has only 1 ParentID
 		,	GROUP_CONCAT(DISTINCT cate.CategoryID SEPARATOR ',') 
         ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ',')
-        ,	GROUP_CONCAT((SELECT cate.ColorTypeID FROM CTS_DataCenter.CustomerCategory AS cate2 WHERE cate2.CategoryID = cate.CategoryID ORDER BY cate.CategoryPriority ASC))
+        ,	GROUP_CONCAT((SELECT cate.ColorTypeID FROM CTS_DataCenter.CustomerCategory AS cate2 WHERE cate2.CategoryID = cate.CategoryID) ORDER BY cate.CategoryPriority ASC)
 		,	MAX(cate.IsPAProbation)
 	FROM	Temp_AssociatedAccount AS tmpAcc
 		,	LATERAL (	SELECT cat.CategoryID, cat.ColorTypeID, cat.CategoryName, cat.ParentID, cat.IsPAProbation, cat.CategoryPriority
