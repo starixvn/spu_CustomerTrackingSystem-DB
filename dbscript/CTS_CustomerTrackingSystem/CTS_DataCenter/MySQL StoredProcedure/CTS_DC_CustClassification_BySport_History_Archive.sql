@@ -18,6 +18,7 @@ sp:BEGIN
 			- 20230210@Long.Luu: 		Fix Customer Classification Log [Redmine ID: #183279] 
             - 20230707@Jonas.Huynh:		Renovate normal classification [Redmine ID: #189875]
             - 20240628@Thomas.Nguyen: 	Renovate CC phase 2 [Redmine ID: #205317]
+            - 20241017@Victoria.Le:		Keeping the last record incorrectly  [Redmine ID: #212240]
 
 		Param's Explanation (filtered by):
 
@@ -149,7 +150,7 @@ sp:BEGIN
 			SELECT 	t.CustID
 				,	t.SportID
 				, 	t.ID
-                , 	ROW_NUMBER() OVER(PARTITION BY t.CustID, t.SportID ORDER BY t.InsertDate DESC) AS row_num  
+                , 	ROW_NUMBER() OVER(PARTITION BY t.CustID, t.SportID ORDER BY t.InsertDate DESC, t.LastModifiedDate DESC) AS row_num  
 			FROM Temp_History AS t
 				LEFT JOIN Temp_CustDataShouldBeRemoved AS r ON t.CustID = r.CustID AND t.SportID = r.SportID
 			WHERE r.CustID IS NULL

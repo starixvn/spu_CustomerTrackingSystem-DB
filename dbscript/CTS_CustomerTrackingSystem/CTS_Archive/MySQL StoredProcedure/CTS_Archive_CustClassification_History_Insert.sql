@@ -20,6 +20,7 @@ BEGIN
 		- 20230428@Jonas.Huynh: 	Realtime Renovation [Redmine ID: #186678]
 		- 20231108@Victoria.Le: 	Add First5TWGBTicketCount [Redmine ID: #195060]
 		- 20240812@Victoria.Le: 	Renovate CC - Phase 2 [Redmine ID: #205317]
+		- 20240618@Victoria.Le:     RobotCounter - Change datatype [Redmine ID: #212240]
         
 	Param's Explanation (filtered by):
 
@@ -115,7 +116,7 @@ BEGIN
 							,	WinlossRM				DECIMAL(20 , 4 ) 	PATH "$.WinlossRM"
 							,	BetCount				BIGINT 				PATH "$.BetCount"
                             ,	ActiveDays				INT					PATH "$.ActiveDays"
-                            ,	RobotCounter			SMALLINT			PATH "$.RobotCounter"
+                            ,	RobotCounter			INT					PATH "$.RobotCounter"
 							,	TargetCC				INT      			PATH "$.TargetCC"
                             ,	SourceTypeID			SMALLINT UNSIGNED	PATH "$.SourceTypeID"
 							,	OldCategoryID 			INT UNSIGNED 	    PATH "$.OldCategoryID"

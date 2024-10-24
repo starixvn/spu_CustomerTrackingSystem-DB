@@ -18,7 +18,7 @@ BEGIN
                 - 20231024@Jonas.Huynh: HF wrong reactivated category [Redmine ID: #193050]
                 - 20240502@Jonas.Huynh: Handle duplicate categories [Redmine ID: #203323]
                 - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryID, ParentID [Redmine ID: #205317]
-
+				- 20241023@Jonas.Huynh:	Remove columns: SportGroupID_arc,CategoryID_arc [Redmine ID: #212240]
 		Param's Explanation (filtered by):
         
         Example:
@@ -110,7 +110,7 @@ BEGIN
      WHERE tmp.CategoryID IS NULL;
 
     /* 1: INSERT CTSCustomerClassification */
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, SportGroupID_arc, CategoryID_arc)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification(CustID, ParentID, CategoryID, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 	SELECT	tmp.CustID					AS CustID
 		,	CONST_PARENTID_NORMAL		AS ParentID
 		,	tmp.CategoryID				AS CategoryID
@@ -119,8 +119,6 @@ BEGIN
 		,	lv_CurrentDateTime			AS LastModifiedDate
 		,	CONST_CREATEDBY				AS LastModifiedBy
 		,	DATE(lv_CurrentDateTime)	AS LastScannedDate
-		,	0
-		,	0
 	FROM Temp_Customer AS tmp;
     
     /* 2: INSERT CTSCustomerClassification_History*/    

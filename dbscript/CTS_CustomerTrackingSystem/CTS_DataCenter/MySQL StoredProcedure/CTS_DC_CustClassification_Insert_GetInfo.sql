@@ -1,3 +1,7 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="1"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_Insert_GetInfo`;
+
+DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Insert_GetInfo`(
 		IN	ip_InputFlowID			INT 
 	,	IN	ip_FromAction			TINYINT
@@ -22,6 +26,7 @@ BEGIN
 			
 		Revisions: 
 			- 20240618@Victoria.Le:			Initial Writing [Redmine ID: #205317]
+			- 20241017@Victoria.Le:			Remove the statement which being used as a temporary solution for datatypes that are out of range  [Redmine ID: #212240]
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -746,8 +751,6 @@ BEGIN
 					 );
 
     END IF;
-    
-    UPDATE Temp_NewClassification
-    SET TWRobotCounter = 22984
-    WHERE TWRobotCounter > 32000;
-END
+
+END$$
+DELIMITER ;
