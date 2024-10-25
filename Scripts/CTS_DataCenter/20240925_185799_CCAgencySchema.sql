@@ -213,7 +213,7 @@ CREATE TABLE CustomerCategoryDownlineMapping(
 
 #************************************************************************************************************
 #************************************************************************************************************
-USE CTS_Archive;
+/*USE CTS_Archive;
 DROP TABLE IF EXISTS CTSCustomerAssociationStatusAgency;
 CREATE TABLE CTSCustomerAssociationStatusAgency(
   CTSCustID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -229,9 +229,9 @@ CREATE TABLE CTSCustomerAssociationStatusAgency(
   INDEX IX_CTSCustomerAssociationStatusAgency_IsRollBack_RollBackDate(IsRollBack,RollBackDate),
   INDEX IX_CTSCustomerAssociationStatusAgency_Archive(IsArchived,CTSCustID,LastTicketDate),
   INDEX IX_CTSCustomerAssociationStatusAgency_LastTicketDate(LastTicketDate)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB;*/
 #==========================================================================================
-DROP TABLE IF EXISTS CTSCustomerAssociationArchiveAgency_Process;
+/*DROP TABLE IF EXISTS CTSCustomerAssociationArchiveAgency_Process;
 CREATE TABLE CTSCustomerAssociationArchiveAgency_Process(
   CTSCustID BIGINT UNSIGNED NOT NULL,
   CustID INT UNSIGNED NOT NULL,
@@ -239,4 +239,4 @@ CREATE TABLE CTSCustomerAssociationArchiveAgency_Process(
   PRIMARY KEY(CTSCustID),
   INDEX IX_CTSCustomerAssociationArchiveAgency_CustID(CustID)
 ) ENGINE=InnoDB;
-
+*/

@@ -46,21 +46,21 @@ BEGIN
     INSERT INTO Temp_CustArchived(CTSCustID, CustID)
     SELECT 	cus.CTSCustID
 		,	cus.CustID
-    FROM CTS_Archive.CTSCustomerAssociationStatusAgency AS cus
+    FROM CTS_Archive.CTSCustomerAssociationStatus AS cus
     WHERE cus.IsArchived = 1 
 		AND EXISTS (SELECT 1 FROM Temp_Cust AS tmp WHERE tmp.CustID = cus.CustID);
         
     DELETE 
-    FROM CTS_Archive.CTSCustomerAssociationArchiveAgency_Process AS pro
+    FROM CTS_Archive.CTSCustomerAssociationArchive_Process AS pro
     WHERE EXISTS (SELECT 1 FROM Temp_CustArchived AS tmp WHERE tmp.CTSCustID = pro.CTSCustID);
     
-    UPDATE CTS_Archive.CTSCustomerAssociationStatusAgency AS cus
+    UPDATE CTS_Archive.CTSCustomerAssociationStatus AS cus
     SET 	cus.IsRollBack = 1
         ,	cus.RollBackDate = NOW()
         ,	cus.IsArchived = 0
     WHERE EXISTS (SELECT 1 FROM Temp_CustArchived AS arc WHERE arc.CTSCustID = cus.CTSCustID);
 
-    UPDATE CTS_Archive.CTSCustomerAssociationStatusAgency AS cus
+    UPDATE CTS_Archive.CTSCustomerAssociationStatus AS cus
 		INNER JOIN Temp_Cust AS tmp ON tmp.CustID = cus.CustID
     SET cus.LastTicketDate = tmp.LastTicketDate
     WHERE cus.LastTicketDate < tmp.LastTicketDate

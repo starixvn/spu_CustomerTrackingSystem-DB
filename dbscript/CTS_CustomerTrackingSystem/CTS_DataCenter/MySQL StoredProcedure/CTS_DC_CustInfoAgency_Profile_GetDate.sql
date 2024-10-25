@@ -47,7 +47,7 @@ BEGIN
     
     SELECT LastTicketDate 
     INTO lv_LastTicket
-	FROM CTS_Archive.CTSCustomerAssociationStatusAgency
+	FROM CTS_Archive.CTSCustomerAssociationStatus
 	WHERE CTSCustID = ip_CTSCustID;
     
     /* PA Category */
