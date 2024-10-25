@@ -44,7 +44,6 @@ BEGIN
 		Revisions: 
 			- 20240927@Thomas.Nguyen:			Created [Redmine ID: #185799]
 */
-	DECLARE CONST_AGENCY_CATEID_VVIP 									INT;
 	DECLARE CONST_AGENCY_PARENTID_VVIP 									INT;
 	DECLARE CONST_AGENCY_PARENTID_PA									INT;
 	DECLARE CONST_AGENCY_CC_VVIP										INT;
@@ -59,9 +58,7 @@ BEGIN
 	DECLARE lv_LogInfo 													VARCHAR(500);
 	DECLARE lv_CreatedBy												INT;
 	DECLARE	lv_CurrentDateTime											DATETIME DEFAULT CURRENT_TIMESTAMP();
-	DECLARE lv_Ext_CateGroupID_VVIP										INT;
 
-	SET CONST_AGENCY_CATEID_VVIP										= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_VVIP');
 	SET CONST_AGENCY_PARENTID_VVIP 										= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
 	SET CONST_AGENCY_PARENTID_PA										= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
 	SET CONST_AGENCY_CC_VVIP											= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CC_VVIP');
@@ -92,11 +89,6 @@ BEGIN
 	
 	/*STEP 5: User Log and More*/
 	IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP THEN
-		
-		SELECT 	cc.Ext_CategoryGroupID
-		INTO 	lv_Ext_CateGroupID_VVIP
-		FROM 	CTS_DataCenter.CustomerCategoryAgency AS cc 
-		WHERE 	cc.CategoryID = CONST_AGENCY_CATEID_VVIP;
 		
 		IF ip_FromAction = 1 THEN
 			SET lv_LogTypeID = 10;
@@ -183,7 +175,7 @@ BEGIN
 			temp.CTSCustID
 		,  	temp.CustID
 		,	CASE WHEN ParentID = CONST_AGENCY_PARENTID_VVIP THEN CONST_AGENCY_CC_VVIP ELSE temp.TargetCC END AS CustomerClass
-		,  	CASE WHEN ParentID = CONST_AGENCY_PARENTID_VVIP THEN lv_Ext_CateGroupID_VVIP ELSE temp.NewCategoryID END AS CategoryID
+		,  	CASE WHEN ParentID = CONST_AGENCY_PARENTID_VVIP THEN 0 ELSE temp.NewCategoryID END AS CategoryID
 		,	CASE WHEN ParentID = CONST_AGENCY_PARENTID_PA AND temp.IsRobot = 0 THEN 1 ELSE 0 END AS IsPA
 		,	lv_CurrentDateTime AS ScannedTime 
 	FROM Temp_NewClassification AS temp
