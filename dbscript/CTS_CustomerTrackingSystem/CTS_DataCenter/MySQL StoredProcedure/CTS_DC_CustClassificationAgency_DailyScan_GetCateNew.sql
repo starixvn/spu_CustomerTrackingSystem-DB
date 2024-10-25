@@ -89,7 +89,7 @@ sp:BEGIN
 		AND clss.CreatedDate <= lv_ScanDateValid
 		AND tmplc.CategoryID = lv_LastCategoryID
 		AND NOT EXISTS (SELECT 1 
-						FROM  CTS_Archive.CTSCustomerAssociationStatusAgency AS ticket 
+						FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 						WHERE ticket.CTSCustID = clss.CTSCustID
 							AND IFNULL(ticket.LastTicketDate, ticket.CreatedDate) > lv_ScanDateValid)
 	ORDER BY clss.CategoryID ASC
@@ -114,7 +114,7 @@ sp:BEGIN
 			AND tmplc.CategoryID = cate.CategoryID
 			AND tmplc.CreatedDate <= lv_ScanDateValid
             AND NOT EXISTS (SELECT 1 
-							FROM  CTS_Archive.CTSCustomerAssociationStatusAgency AS ticket 
+							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = tmplc.CTSCustID
 								AND IFNULL(ticket.LastTicketDate, ticket.CreatedDate) > lv_ScanDateValid)
 		ORDER BY cate.CategoryID ASC
@@ -139,7 +139,7 @@ sp:BEGIN
 			AND clss.CreatedDate <= lv_ScanDateValid
             AND tmplc.CategoryID = lv_NextCategoryID
 			AND NOT EXISTS (SELECT 1 
-							FROM  CTS_Archive.CTSCustomerAssociationStatusAgency AS ticket 
+							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID
 								AND IFNULL(ticket.LastTicketDate, ticket.CreatedDate) > lv_ScanDateValid)
 		ORDER BY clss.CategoryID ASC
