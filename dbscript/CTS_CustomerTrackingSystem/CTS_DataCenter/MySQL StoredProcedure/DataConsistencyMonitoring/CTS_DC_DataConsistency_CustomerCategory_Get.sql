@@ -28,10 +28,10 @@ spc:BEGIN
 	FROM CTS_DataCenter.SystemEventStatus
 	WHERE EventName = 'EV_CTS_DC_DataConsistency_CustomerCategory';
 	
-	IF lv_TrackingDate = CURDATE() THEN
+	IF lv_TrackingDate = CURDATE() AND lv_Status = 'Stop' THEN
 		SET op_Status = lv_Status;
 		
-		SELECT dr.RuleMessage,GROUP_CONCAT(drl.LogInfo)
+		SELECT dr.RuleMessage,GROUP_CONCAT(drl.LogInfo) AS LogInfo
 		FROM CTS_DataCenter.DataConsistencyMonitoring_Log AS drl
 			INNER JOIN CTS_DataCenter.DataConsistencyMonitoring AS dr ON dr.RuleID = drl.RuleID
 		WHERE drl.CreatedDate = lv_TrackingDate
