@@ -156,7 +156,7 @@ BEGIN
 		,	tmp.CategoryName
 		,	tmp.CategoryIDs        
 	FROM Temp_CategoryFilter AS tmp
-	ORDER BY tmp.RoleGroup ASC, tmp.ID ASC, tmp.CategoryName ASC; 
+	ORDER BY tmp.ID ASC, tmp.CategoryName ASC; 
     
 END$$
 DELIMITER ;
