@@ -445,6 +445,7 @@ sp : BEGIN
 						WHERE clss.CTSCustID = tmpAcc.CTSCustID
 						ORDER BY cat.CategoryPriority ASC, clss.LastModifiedDate DESC) AS cate
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID
+	WHERE tmpAcc.RoleID = 1
 	GROUP BY tmpAcc.CTSCustID, cate.ParentID;
     
     #===========================AGENT===================================================
@@ -462,7 +463,8 @@ sp : BEGIN
 						WHERE clss.CTSCustID = tmpAcc.CTSCustID
 						ORDER BY cat.CategoryPriority ASC, clss.LastModifiedDate DESC) AS cate
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID
-		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = tmpCate.CategoryID 
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = tmpCate.CategoryID
+	WHERE tmpAcc.RoleID IN (2,3,4) 
 	GROUP BY tmpAcc.CTSCustID, cc.ParentID;
     
     /* Update IsFiltered */
