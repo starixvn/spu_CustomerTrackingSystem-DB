@@ -14,8 +14,8 @@ USE CTS_DataCenter;
 
 INSERT INTO CustomerCategoryAgency(CategoryID,CategoryName,CategorySpec,ParentID,RoleID,CustomerClass,CustomerClassName,CategoryGroupID,CategoryPriority,CustomerClassPriority,BusinessCategoryGroupID,IsActive,ScanIntervalInSecond,RelevantCategoryID,IsHedgingReasonMM,IsPAProbation,AFCFraudID,DataSource,CreatedDate,CategoryNameCN,CategoryNameCN3,CategoryNameTHB,CategoryNameIND,CustomerClassNameCN,SabaSportType,OldCategoryID,ColorTypeID,Ext_ABIDangerLevel_Credit,Ext_DangerLevelType,Ext_CategoryGroupID,Ext_EvidenceID_Credit)
 VALUES (101010,'VVIP Agent','VVIP Agent',101000,2,999,'Healthy',101010,10,10,30,1,Null,Null,Null,0,Null,Null,NOW(),'超级贵宾',Null,Null,Null,'健康',Null,210,1,Null,1,101010,Null),
-(101011,'VVIP (internal)','VVIP',101000,3,999,'Healthy',101011,10,10,30,1,Null,Null,Null,0,Null,Null,NOW(),'超级贵宾',Null,Null,Null,'健康',Null,210,1,Null,1,101011,Null),
-(101012,'VVIP (internal)','VVIP',101000,4,999,'Healthy',101012,10,10,30,1,Null,Null,Null,0,Null,Null,NOW(),'超级贵宾',Null,Null,Null,'健康',Null,210,1,Null,1,101012,Null),
+(101011,'VVIP (internal)','VVIP',101000,3,999,'Healthy +',101011,10,10,30,1,Null,Null,Null,0,Null,Null,NOW(),'超级贵宾',Null,Null,Null,'健康+',Null,210,1,Null,1,101011,Null),
+(101012,'VVIP (internal)','VVIP',101000,4,999,'Healthy +',101012,10,10,30,1,Null,Null,Null,0,Null,Null,NOW(),'超级贵宾',Null,Null,Null,'健康+',Null,210,1,Null,1,101012,Null),
 (120100,'Group Betting','Group Betting',120000,Null,30000,'Problem',120100,400,400,10,1,Null,125100,Null,0,1,'CTS',NOW(),'群组投注',Null,Null,Null,'问题','1,2',52,6,1,2,120100,41),
 (120101,'Group Betting','Group Betting (Evidence)',120000,Null,30000,'Problem',120100,400,400,10,1,Null,125101,Null,0,1,'Evidence',NOW(),'群组投注',Null,Null,Null,'问题','1,2',72,6,1,2,120100,41),
 (120102,'Group Betting','Group Betting(M)',120000,Null,30000,'Problem',120100,400,400,10,1,Null,125102,Null,0,1,'NAP',NOW(),'群组投注',Null,Null,Null,'问题','1,2',152,6,1,2,120100,41),

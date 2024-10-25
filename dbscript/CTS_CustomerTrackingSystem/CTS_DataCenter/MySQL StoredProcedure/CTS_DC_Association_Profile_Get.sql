@@ -433,37 +433,42 @@ sp : BEGIN
     
    INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames, ColorTypeIDs, IsPAProbation)  
    SELECT	tmpAcc.CTSCustID
-		,	cate.ParentID -- Each Customer has only 1 ParentID
-		,	GROUP_CONCAT(DISTINCT cate.CategoryID SEPARATOR ',') 
-        ,	GROUP_CONCAT(DISTINCT cate.CategoryName SEPARATOR ',')
-        ,	GROUP_CONCAT((SELECT cate.ColorTypeID FROM CTS_DataCenter.CustomerCategory AS cate2 WHERE cate2.CategoryID = cate.CategoryID) ORDER BY cate.CategoryPriority ASC)
-		,	MAX(cate.IsPAProbation)
+		,	cat.ParentID -- Each Customer has only 1 ParentID
+		,	GROUP_CONCAT(DISTINCT cat.CategoryID SEPARATOR ',') 
+        ,	GROUP_CONCAT(DISTINCT cat.CategoryName SEPARATOR ',')
+        ,	GROUP_CONCAT((SELECT cat.ColorTypeID FROM CTS_DataCenter.CustomerCategory AS cate2 WHERE cate2.CategoryID = cat.CategoryID) ORDER BY cat.CategoryPriority ASC)
+		,	MAX(cat.IsPAProbation)
 	FROM	Temp_AssociatedAccount AS tmpAcc
-		,	LATERAL (	SELECT cat.CategoryID, cat.ColorTypeID, cat.CategoryName, cat.ParentID, cat.IsPAProbation, cat.CategoryPriority
+		,	LATERAL (	SELECT cat.ParentID
 						FROM CTS_DataCenter.CTSCustomerClassification AS clss
 							INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
 						WHERE clss.CTSCustID = tmpAcc.CTSCustID
-						ORDER BY cat.CategoryPriority ASC, clss.LastModifiedDate DESC) AS cate
-        INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID
+						ORDER BY cat.CategoryPriority ASC
+						LIMIT 1) AS cate
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CTSCustID = tmpAcc.CTSCustID AND clss.ParentID = cate.ParentID
+		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
+        INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cat.CategoryID
 	WHERE tmpAcc.RoleID = 1
-	GROUP BY tmpAcc.CTSCustID, cate.ParentID;
+	GROUP BY tmpAcc.CTSCustID, cat.ParentID;
     
     #===========================AGENT===================================================
 	INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID, CategoryIDs, CategoryNames, ColorTypeIDs, IsPAProbation)
 	SELECT	tmpAcc.CTSCustID
 		,	cc.ParentID -- Each Customer has only 1 ParentID
-		,	GROUP_CONCAT(DISTINCT cate.CategoryID SEPARATOR ',') 
+		,	GROUP_CONCAT(DISTINCT cat.CategoryID SEPARATOR ',') 
         ,	GROUP_CONCAT(DISTINCT cc.CategoryName SEPARATOR ',')
 		,	GROUP_CONCAT(DISTINCT cc.ColorTypeID SEPARATOR ',')
 		,	MAX(cc.IsPAProbation)
 	FROM	Temp_AssociatedAccount AS tmpAcc
-		,	LATERAL (	SELECT cat.CategoryID
+		,	LATERAL (	SELECT cat.ParentID
 						FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
 							INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
 						WHERE clss.CTSCustID = tmpAcc.CTSCustID
-						ORDER BY cat.CategoryPriority ASC, clss.LastModifiedDate DESC) AS cate
-        INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cate.CategoryID
-		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = tmpCate.CategoryID
+						ORDER BY cat.CategoryPriority ASC
+						LIMIT 1) AS cate
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS clss ON clss.CTSCustID = tmpAcc.CTSCustID AND clss.ParentID = cate.ParentID
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
+        INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cat.CategoryID
 	WHERE tmpAcc.RoleID IN (2,3,4) 
 	GROUP BY tmpAcc.CTSCustID, cc.ParentID;
     
