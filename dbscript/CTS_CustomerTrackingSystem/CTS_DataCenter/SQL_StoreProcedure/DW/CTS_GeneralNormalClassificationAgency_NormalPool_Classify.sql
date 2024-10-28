@@ -19,7 +19,7 @@ AS
 
 	Param's Explanation:
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
-		@IsScanOnlyTagging  : 0-Performance Classification, 1-Behaviour Classification (Tagging)
+
     Script:
         EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassificationAgency_NormalPool_Classify
 			@CustomersXML = N'<Root>
@@ -172,7 +172,7 @@ BEGIN
 				SUM(a.LastYDaysWinlossRM),
 				CASE WHEN SUM(a.LastYDaysTurnoverRM) = 0 THEN 0 ELSE SUM(a.LastYDaysWinlossRM) / SUM(a.LastYDaysTurnoverRM) * 100 END,
 				SUM(a.LastYDaysBetCount),
-				CASE WHEN SUM(a.LastXDaysWinlossRM) = 0 OR SUM(a.LastYDaysWinlossRM) = 0 THEN 0 ELSE SUM(a.LastXDaysWinlossRM) / SUM(a.LastYDaysWinlossRM) * 100 END,
+				ABS(CASE WHEN SUM(a.LastXDaysWinlossRM) = 0 OR SUM(a.LastYDaysWinlossRM) = 0 THEN 0 ELSE SUM(a.LastXDaysWinlossRM) / SUM(a.LastYDaysWinlossRM) * 100 END),
 				MAX(a.ProcessedTime)
 		FROM #tmpRawData AS a
 		GROUP BY a.CustId;
@@ -244,7 +244,8 @@ BEGIN
 			,	a.CurrentCategoryId
 			,	CASE 
 					WHEN a.IsActiveWithin30Days = 0 THEN @CATEGORY_INACTIVE
-					WHEN a.NewCategoryId IS NULL THEN a.CurrentCategoryId 
+					WHEN a.NewCategoryId IS NULL AND a.CurrentCategoryId != @CATEGORY_NULL THEN a.CurrentCategoryId 
+					WHEN a.NewCategoryId IS NULL AND a.CurrentCategoryId = @CATEGORY_NULL THEN @CATEGORY_PROBATION
 					ELSE a.NewCategoryId
 				END AS CategoryId
 			,	@ToDate AS CreatedDate
