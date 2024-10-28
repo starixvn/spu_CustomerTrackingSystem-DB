@@ -18,7 +18,7 @@ BEGIN
 	    Param's Explanation (filtered by):
         
         Example:
-			DROP TABLE Temp_NewDevice;
+			DROP TABLE IF EXISTS Temp_NewDevice;
 			CREATE TEMPORARY TABLE Temp_NewDevice(
 					RawTransID									BIGINT UNSIGNED NOT NULL PRIMARY KEY
 				,	SameDeviceWithRawTransID					BIGINT UNSIGNED DEFAULT 0
@@ -68,6 +68,10 @@ BEGIN
     EXECUTE stmt;
     DEALLOCATE PREPARE stmt;
     
+    ALTER TABLE Temp_SameDevice
+    ADD KEY IX_Temp_SameDevice_FirstDeviceID(FirstDeviceID),
+    ADD KEY IX_Temp_SameDevice_SecondDeviceID(SecondDeviceID);
+    
     SELECT MAX(ID) INTO lv_MaxID FROM Temp_SameDevice;
 
     WHILE lv_CurrentID < lv_MaxID DO
@@ -86,16 +90,18 @@ BEGIN
 			,	MAX(CASE WHEN ID IS NOT NULL THEN CONST_RECOVERTYPE_FIRSTRULE ELSE 0 END) AS RecoverType
         INTO lv_SameDeviceWithID, lv_RecoverType
         FROM Temp_SameDevice
-        WHERE FirstDeviceID = lv_CurrentFirstDeviceID
-          AND ID < lv_CurrentID;
+        WHERE FirstDeviceID <> 0
+			AND FirstDeviceID = lv_CurrentFirstDeviceID
+			AND ID < lv_CurrentID;
 		
         IF lv_SameDeviceWithID IS NULL THEN
 			SELECT 	MIN(SameDeviceWithID)
 				,	MAX(CASE WHEN ID IS NOT NULL THEN CONST_RECOVERTYPE_SECONDRULE ELSE 0 END) AS RecoverType
 			INTO lv_SameDeviceWithID, lv_RecoverType
 			FROM Temp_SameDevice
-			WHERE SecondDeviceID = lv_CurrentSecondDeviceID
-			  AND ID < lv_CurrentID;
+			WHERE SecondDeviceID <> 0
+				AND SecondDeviceID = lv_CurrentSecondDeviceID
+				AND ID < lv_CurrentID;
 			
 			IF lv_SameDeviceWithID IS NULL THEN
 				SET lv_SameDeviceWithID = lv_CurrentID;
