@@ -261,7 +261,7 @@ SET his.Migrate_ToParentID = (CASE WHEN his.ParentID > 0 THEN  his.ParentID + 10
 	, his.Migrate_ToCategoryID =(CASE WHEN his.CategoryID > 0 THEN  his.CategoryID + 100000 ELSE his.CategoryID END)
     , his.Migrate_ToDWCategoryID = (CASE WHEN his.DWCategoryID > 0 THEN  his.DWCategoryID + 100000 ELSE his.DWCategoryID END)
     , his.Migrate_ToOldCategoryID = (CASE WHEN his.OldCategoryID > 0 THEN  his.OldCategoryID + 100000 ELSE his.OldCategoryID END)
-    , his.Migrate_ToTargetCC = 30000
+    , his.Migrate_ToTargetCC = (CASE WHEN TargetCC > 0 THEN 30000 ELSE NULL END)
 WHERE Migrate_IsMove = 1 AND ParentID = 20000 ; #0.421 sec #8979 row(s) affected Rows matched: 8979  Changed: 8979  Warnings: 0
 
 ********STEP 2.6 UPDATE VVIP Agent*********************
@@ -270,8 +270,8 @@ SET his.Migrate_ToParentID = 101000
 	, his.Migrate_ToCategoryID = 101010 
     , his.Migrate_ToDWCategoryID = NULL 
     , his.Migrate_ToOldCategoryID = (CASE WHEN his.OldCategoryID > 0 THEN  his.OldCategoryID + 100000 ELSE his.OldCategoryID END)  
-    , his.Migrate_ToTargetCC = 999
-WHERE Migrate_IsMove = 1 AND ParentID = 1000 AND TargetCC > 0
+    , his.Migrate_ToTargetCC = (CASE WHEN TargetCC > 0 THEN 999 ELSE -1 END)
+WHERE Migrate_IsMove = 1 AND ParentID = 1000
 	AND Migrate_ToRoleID = 2; #0.047 sec #19 row(s) affected Rows matched: 19  Changed: 19  Warnings: 0
 
 ********STEP 2.7 UPDATE VVIP Master********************* 
@@ -280,8 +280,8 @@ SET his.Migrate_ToParentID = (CASE WHEN his.ParentID > 0 THEN  his.ParentID + 10
 	, his.Migrate_ToCategoryID = 101011 
     , his.Migrate_ToDWCategoryID = NULL 
     , his.Migrate_ToOldCategoryID = (CASE WHEN his.OldCategoryID > 0 THEN  his.OldCategoryID + 100000 ELSE his.OldCategoryID END)    
-    , his.Migrate_ToTargetCC = 999
-WHERE Migrate_IsMove = 1 AND ParentID = 1000 AND TargetCC >0
+    , his.Migrate_ToTargetCC = (CASE WHEN TargetCC > 0 THEN 999 ELSE -1 END)
+WHERE Migrate_IsMove = 1 AND ParentID = 1000
 	AND Migrate_ToRoleID = 3;   #0.047 sec  #5 row(s) affected Rows matched: 5  Changed: 5  Warnings: 0
 
 ********STEP 2.8 UPDATE VVIP Super*********************
@@ -290,8 +290,8 @@ SET his.Migrate_ToParentID = (CASE WHEN his.ParentID > 0 THEN  his.ParentID + 10
 	, his.Migrate_ToCategoryID = 101012 
     , his.Migrate_ToDWCategoryID = NULL 
     , his.Migrate_ToOldCategoryID = (CASE WHEN his.OldCategoryID > 0 THEN  his.OldCategoryID + 100000 ELSE his.OldCategoryID END)   
-    , his.Migrate_ToTargetCC = 999
-WHERE Migrate_IsMove = 1 AND ParentID = 1000 AND TargetCC > 0
+    , his.Migrate_ToTargetCC = (CASE WHEN TargetCC > 0 THEN 999 ELSE -1 END)
+WHERE Migrate_IsMove = 1 AND ParentID = 1000
 	AND Migrate_ToRoleID = 4; #0.031 sec #1 row(s) affected Rows matched: 1  Changed: 1  Warnings: 0
 
 END;    
