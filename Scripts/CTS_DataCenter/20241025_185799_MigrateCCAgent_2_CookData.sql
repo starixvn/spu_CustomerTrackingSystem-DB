@@ -21,7 +21,7 @@ SELECT 	1 AS Migrate_Source
     ,	cus.Currency AS Migrate_Currency
     ,	cus.IsInternal AS Migrate_IsInternal
     
-    , 	cus.RoleID AS Migrate_ToRole
+    , 	cus.RoleID AS Migrate_ToRoleID
     ,	cus.SubscriberID AS Migrate_ToSubscriberID
     
 	,	cls.CustID
@@ -103,7 +103,7 @@ WHERE Migrate_Source = 1
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification
 SET Migrate_ToCategoryID = 101010
 	, Migrate_ToParentID = 101000
-WHERE RoleID = 2 
+WHERE Migrate_ToRoleID = 2 
 	AND ParentID = 1000 
     AND Migrate_IsMove = 1; #0.047 sec #20 row(s) affected Rows matched: 20  Changed: 20  Warnings: 0
 
@@ -111,7 +111,7 @@ WHERE RoleID = 2
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification
 SET Migrate_ToCategoryID = 101011
 	, Migrate_ToParentID = 101000
-WHERE RoleID = 3 
+WHERE Migrate_ToRoleID = 3 
 	AND ParentID = 1000 
     AND Migrate_IsMove = 1; #0.031 sec #5 row(s) affected Rows matched: 5  Changed: 5  Warnings: 0
 
@@ -119,7 +119,7 @@ WHERE RoleID = 3
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification
 SET Migrate_ToCategoryID = 101012
 	, Migrate_ToParentID = 101000
-WHERE RoleID = 4 
+WHERE Migrate_ToRoleID = 4 
 	AND ParentID = 1000 
     AND Migrate_IsMove = 1; # 0.031 sec #1 row(s) affected Rows matched: 1  Changed: 1  Warnings: 0
 
