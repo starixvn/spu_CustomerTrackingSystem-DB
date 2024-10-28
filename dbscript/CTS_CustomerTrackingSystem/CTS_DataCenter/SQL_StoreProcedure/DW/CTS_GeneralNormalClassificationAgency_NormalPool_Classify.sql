@@ -229,7 +229,7 @@ BEGIN
 						INNER JOIN dbo.CustomerClassificationAgency_Rule AS r WITH(NOLOCK) ON a.RoleId = r.RoleId
 					WHERE 	   (r.RuleGroupId = 1 AND a.BetCount < r.BetCount)
 						OR (r.RuleGroupId = 100 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin < r.Margin2)
-						OR (r.RuleGroupId = 200 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount > r.BetCount AND a.LastXDaysMargin >= r.Margin AND  a.LastYDaysMargin < r.Margin2 AND a.LastXYDaysWinlossRatio >= r.WinlossRM)
+						OR (r.RuleGroupId = 200 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin >= r.Margin AND  a.LastYDaysMargin < r.Margin2 AND a.LastXYDaysWinlossRatio >= r.WinlossRM)
 						OR (r.RuleGroupId = 300 AND a.FirstBetDateDiff <= r.FirstBetDate  AND a.BetCount >= r.BetCount)
 						OR (r.RuleGroupId = 400 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin < r.Margin AND a.LastYDaysMargin >= r.Margin2 AND a.LastXYDaysWinlossRatio >= r.WinlossRM)
 						OR (r.RuleGroupId = 500 AND a.FirstBetDateDiff > r.FirstBetDate AND a.BetCount >= r.BetCount AND a.LastXDaysMargin >= r.Margin AND a.LastYDaysMargin >= r.Margin2)
