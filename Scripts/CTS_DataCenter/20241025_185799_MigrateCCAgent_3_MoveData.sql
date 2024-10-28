@@ -45,7 +45,7 @@ WHERE Migrate_IsMove = 1; #0.203 sec #9002 row(s) affected Records: 9002  Duplic
 
 DELETE del
 FROM CTS_DataCenter.CTSCustomerClassification_History AS del
-	INNER JOIN CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification AS mig ON del.ID = mig.ID;
+	INNER JOIN CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History AS mig ON del.ID = mig.ID;
 END;
 
 BEGIN;#============STEP 3: UPDATE  ArchiveCustomer_CTSCustomer ==========EST: Duration() RowCount(~)=======================

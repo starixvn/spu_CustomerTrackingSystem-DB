@@ -135,7 +135,7 @@ SELECT DISTINCT Site, SiteID FROM CTS_DataCenter.CTSCustomer WHERE SubscriberID 
 
 SELECT Migrate_ToSubscriberID, Migrate_IsLicensee, RoleID, cls.LastModifiedDate, cls.CategoryID, cls.* 
 FROM Adhoc_F185799Mig_CTSCustomerClassification cls 
-WHERE Migrate_ToSubscriberID  Is NULL AND Migrate_IsJoinCTSCustomer = 1;
+WHERE Migrate_ToSubscriberID  Is NULL AND Migrate_IsMove = 1;
 
 SELECT site, siteID, cus.* FROM CTS_DataCenter.CTSCustomer cus WHERE CustID IN (27454001,27454055);
 SELECT site, siteID, cus.* FROM CTS_DataCenter.CTSCustomer cus WHERE SiteID = 257;
@@ -375,26 +375,27 @@ WHERE RoleID IN (2,3,4);
 
 ********STEP 4.2 UPDATE Adhoc_F185799Mig_CTSCustomerClassificationQueue PA *********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
-SET que.Migrate_ToParentID = que.ParentID + 100000
+SET que.Migrate_ToCategoryGroupID = que.Migrate_ToCategoryGroupID + 100000
 	, que.Migrate_ToCategoryID =(CASE WHEN que.CategoryID > 0 THEN  que.CategoryID + 100000 ELSE que.CategoryID END)
-WHERE ParentID = 20000 ;
+WHERE Migrate_ToCategoryGroupID <> 1000 ;
 
 ********STEP 4.2 UPDATE Adhoc_F185799Mig_CTSCustomerClassificationQueue VVIP Agent *********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
-SET que.Migrate_ToParentID = 101000
+SET que.Migrate_ToCategoryGroupID = 101010
 	, que.Migrate_ToCategoryID =(CASE WHEN que.CategoryID > 0 THEN 101010 ELSE que.CategoryID END)
-WHERE ParentID = 1000 AND RoleID = 2 ;
+WHERE Migrate_ToCategoryGroupID = 1000 AND RoleID = 2 ;
 
 ********STEP 4.2 UPDATE Adhoc_F185799Mig_CTSCustomerClassificationQueue VVIP Master *********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
-SET que.Migrate_ToParentID = 101000
+SET que.Migrate_ToCategoryGroupID = 101011
 	, que.Migrate_ToCategoryID =(CASE WHEN que.CategoryID > 0 THEN 101011 ELSE que.CategoryID END)
-WHERE ParentID = 1000 AND RoleID = 3 ;
+WHERE Migrate_ToCategoryGroupID = 1000  AND RoleID = 3 ;
 
 ********STEP 4.2 UPDATE Adhoc_F185799Mig_CTSCustomerClassificationQueue VVIP Super *********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
-SET que.Migrate_ToParentID = 101000
+SET que.Migrate_ToCategoryGroupID = 101012
 	, que.Migrate_ToCategoryID =(CASE WHEN que.CategoryID > 0 THEN 101012 ELSE que.CategoryID END)
-WHERE ParentID = 1000 AND RoleID = 4;
+WHERE Migrate_ToCategoryGroupID = 1000  AND RoleID = 4;
 #===========================================================================================================
+
 
