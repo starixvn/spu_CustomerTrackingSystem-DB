@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" viewers="" isFunction="0" isNested="0"></info>*/
 
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
@@ -21,6 +21,7 @@ AS
 		- 20220122@Long.Luu:	Support for case already known list of CustID [Redmine ID: 165607]
 		- 20220616@Long.Luu:	Get Licensee Info [Redmine ID: 174136]
 		- 20220707@Long.Luu:	Get Lic VIP & BA Info [Redmine ID: 174219]
+		- 20241024@Victoria.Le: Missing new customer due to replication inhouse ([Redmine ID: #212655]
 
 	Param Explaination:
 		- @QueryType: 1 (default) get by range, 2 get by list CustId
@@ -31,6 +32,8 @@ AS
 */
 BEGIN;
 	SET NOCOUNT ON;
+	
+	DECLARE @MaxRepUpdateTime	DATETIME2 =  DATEADD(SECOND, -2, GETDATE());
 
 	IF OBJECT_ID('tempdb..#tmpCustomer') IS NOT NULL
 	BEGIN
@@ -63,12 +66,13 @@ BEGIN;
 		,	IsLicensee		BIT		
 		,	IsLicenseeVIP	BIT DEFAULT 0		
 		,	IsLicenseeBA	BIT DEFAULT 0	
+		,	RepUpdateTime	DATETIME2
 		,	PRIMARY KEY		(CustID,CustSubID)		
 	);
 
 	IF (@QueryType = 1)
 		BEGIN
-			INSERT INTO #tmpCustomers(CustID,CustSubID,UserName,UserName2,SiteID,[Site],RoleID,CurrencyID,Currency,SRecommend,MRecommend,Recommend,CreatedDate,IsLicensee)
+			INSERT INTO #tmpCustomers(CustID,CustSubID,UserName,UserName2,SiteID,[Site],RoleID,CurrencyID,Currency,SRecommend,MRecommend,Recommend,CreatedDate,IsLicensee,RepUpdateTime)
 			SELECT TOP (@rowSize) 
 					sub.custid		AS CustID
 				,	sub.subaccid	AS CustSubID
@@ -84,6 +88,7 @@ BEGIN;
 				,	cust.recommend	AS Recommend
 				,	sub.createdate	AS CreatedDate				
 				,	CASE WHEN cs.custid IS NULL THEN 0 ELSE 1 END AS IsLicensee
+				,	sub.RepUpdateTime AS RepUpdateTime
 			FROM dbo.custSub sub WITH (NOLOCK)
 				INNER JOIN dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
 				INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
@@ -91,6 +96,10 @@ BEGIN;
 				LEFT JOIN dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON cust.Srecommend = cs.custid
 			WHERE sub.subaccid > @LastCustSubId
 			ORDER BY sub.subaccid;
+			
+			DELETE t WITH (ROWLOCK)
+			FROM #tmpCustomers AS t
+			WHERE t.RepUpdateTime > @MaxRepUpdateTime;
 		END
 	ELSE
 		BEGIN

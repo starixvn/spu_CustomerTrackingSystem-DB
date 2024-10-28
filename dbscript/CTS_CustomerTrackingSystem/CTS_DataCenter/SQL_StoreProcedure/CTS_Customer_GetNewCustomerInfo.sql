@@ -20,6 +20,7 @@ AS
 		-20232209@Casey.Huynh: Remove Logic Keep Cust With NULL UserName2 [Redmine 193050]
 		-20231222@Casey.Huynh: Enhance Get new Cust If Existing in CustInfo [Redmine 198667]
 		-20240318@Casey.Huynh: Move logic check existing CustInfo to sp get CustInfo by CustList([Redmine ID: 198000]
+		-20241024@Victoria.Le: Missing new customer due to replication inhouse ([Redmine ID: #212655]
 
 	Developer's Notes:
 		
@@ -31,27 +32,34 @@ BEGIN;
 	SET NOCOUNT ON;
 
 	DECLARE @custIDList	VARCHAR(MAX);
+	DECLARE @MaxRepUpdateTime	DATETIME2 =  DATEADD(SECOND, -2, GETDATE());
 
 	IF	OBJECT_ID('tempdb..#tmpNewCust') IS NOT NULL
 		DROP TABLE	#tmpNewCust;
 
 	CREATE TABLE #tmpNewCust(
-		CustId		INT NOT NULL
-	,	CreatedDate	SMALLDATETIME
-	,	RoleID		TINYINT
-	,	UserName2	VARCHAR(50)
+		CustId			INT NOT NULL
+	,	CreatedDate		SMALLDATETIME
+	,	RoleID			TINYINT
+	,	UserName2		VARCHAR(50)
+	,	RepUpdateTime	DATETIME2
 	,	PRIMARY KEY (CustId)
 	);
 
-	INSERT INTO #tmpNewCust(CustId, CreatedDate, RoleId, UserName2)
+	INSERT INTO #tmpNewCust(CustId, CreatedDate, RoleId, UserName2, RepUpdateTime)
 	SELECT	TOP (@rowSize) 
 			c.CustId
 		,	c.CreatDate
 		,	c.RoleId
 		,	c.UserName2
+		,	c.RepUpdateTime
 	FROM	dbo.Customer AS c WITH(NOLOCK)
 	WHERE	c.CustId > @LastCustId
-	ORDER BY c.CustId ASC;			
+	ORDER BY c.CustId ASC;	
+	
+	DELETE t WITH (ROWLOCK)
+	FROM #tmpNewCust AS t
+	WHERE t.RepUpdateTime > @MaxRepUpdateTime;
 
 	SELECT  @custIDList = COALESCE(@custIDList + ',', '') +  CONVERT(VARCHAR(10),tmpCus.CustID)
 	FROM	#tmpNewCust AS tmpCus WITH(NOLOCK)
