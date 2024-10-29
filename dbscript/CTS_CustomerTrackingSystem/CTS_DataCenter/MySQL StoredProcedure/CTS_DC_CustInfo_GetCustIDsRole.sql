@@ -15,6 +15,8 @@ BEGIN
 		Revisions:
 			- 20210408@Irena.Vo [Redmine ID: #132623]: Created 
 			- 20210622@Aries.Nguyen: Update coding convention and improve locking [Redmine ID: #157203]
+			- 20241029@Jonas.Huynh: Retrieve IsLicensee [Redmine ID: #185799]
+            
 		Param's Explanation:
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_GetCustomerRoles('5,1284');
@@ -32,6 +34,7 @@ BEGIN
        
 	SELECT	temp.CustId
 		,	cust.RoleId
+        ,	cust.IsLicensee
 	FROM Temp_CustomerRoles AS temp
 		LEFT JOIN 	CTS_DataCenter.CTSCustomer AS cust ON cust.CustID = temp.CustID AND cust.CustSubID = 0;
 END$$
