@@ -396,6 +396,7 @@ WHERE cat.ParentID = 1000  AND RoleID = 3 ;
 
 ********STEP 4.2 UPDATE Adhoc_F185799Mig_CTSCustomerClassificationQueue VVIP Super *********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
+	INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = que.CategoryID
 SET que.Migrate_ToCategoryGroupID = 101012
 	, que.Migrate_ToCategoryID =(CASE WHEN que.CategoryID > 0 THEN 101012 ELSE que.CategoryID END)
 WHERE cat.ParentID = 1000  AND RoleID = 4;
