@@ -65,6 +65,7 @@ sp : BEGIN
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 		INT DEFAULT 2;
     DECLARE CONST_ASSBYAI_ACTIVESTATUS 			INT DEFAULT 1;
+	DECLARE CONST_PARENTID_WRAPPER				INT;
 	DECLARE CONST_PARENTID_PA               	INT;
 	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
 	DECLARE	CONST_BIZCATEGROUPID_NORMAL 		INT;
@@ -89,9 +90,10 @@ sp : BEGIN
 		SELECT lv_SPName, CURRENT_TIMESTAMP(), @LogInfo; 
 	END IF;  
 	
+	SET CONST_PARENTID_WRAPPER 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
-     SET CONST_BIZCATEGROUPID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
+    SET CONST_BIZCATEGROUPID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
     SET CONST_AGENCY_PARENTID_PA 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
     
 	#========================================================================
@@ -442,7 +444,7 @@ sp : BEGIN
 		,	LATERAL (	SELECT clss.CTSCustID, cat.ParentID
 						FROM CTS_DataCenter.CTSCustomerClassification AS clss
 							INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
-						WHERE clss.CTSCustID = tmpAcc.CTSCustID
+						WHERE clss.CTSCustID = tmpAcc.CTSCustID AND clss.ParentID <> CONST_PARENTID_WRAPPER
 						ORDER BY cat.CategoryPriority ASC
 						LIMIT 1) AS cate
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CTSCustID = cate.CTSCustID AND clss.ParentID = cate.ParentID
