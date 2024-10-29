@@ -91,7 +91,7 @@ sp:BEGIN
 		AND NOT EXISTS (SELECT 1 
 						FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 						WHERE ticket.CTSCustID = clss.CTSCustID
-							AND IFNULL(ticket.LastTicketDate, ticket.CreatedDate) > lv_ScanDateValid)
+							AND IFNULL(ticket.LastTicketDate, ticket.Created) > lv_ScanDateValid)
 	ORDER BY clss.CategoryID ASC
 		,	 clss.CustID ASC
 	LIMIT lv_BatchSize;
@@ -116,7 +116,7 @@ sp:BEGIN
             AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = tmplc.CTSCustID
-								AND IFNULL(ticket.LastTicketDate, ticket.CreatedDate) > lv_ScanDateValid)
+								AND IFNULL(ticket.LastTicketDate, ticket.Created) > lv_ScanDateValid)
 		ORDER BY cate.CategoryID ASC
 		LIMIT 1; 
     END IF;
@@ -141,7 +141,7 @@ sp:BEGIN
 			AND NOT EXISTS (SELECT 1 
 							FROM  CTS_Archive.CTSCustomerAssociationStatus AS ticket 
 							WHERE ticket.CTSCustID = clss.CTSCustID
-								AND IFNULL(ticket.LastTicketDate, ticket.CreatedDate) > lv_ScanDateValid)
+								AND IFNULL(ticket.LastTicketDate, ticket.Created) > lv_ScanDateValid)
 		ORDER BY clss.CategoryID ASC
 			,	 clss.CustID ASC
 		LIMIT lv_BatchSize;
