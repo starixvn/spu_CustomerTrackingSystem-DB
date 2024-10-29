@@ -457,7 +457,7 @@ sp : BEGIN
 		,	cat.ParentID -- Each Customer has only 1 ParentID
 		,	GROUP_CONCAT(DISTINCT cat.CategoryID SEPARATOR ',') 
         ,	GROUP_CONCAT(DISTINCT cat.CategoryName SEPARATOR ',')
-		,	GROUP_CONCAT(DISTINCT cat.ColorTypeID SEPARATOR ',')
+		,	GROUP_CONCAT((SELECT cat.ColorTypeID FROM CTS_DataCenter.CustomerCategoryAgency AS cate2 WHERE cate2.CategoryID = cat.CategoryID) ORDER BY cat.CategoryPriority ASC)
 		,	MAX(cat.IsPAProbation)
 	FROM	Temp_AssociatedAccount AS tmpAcc
 		,	LATERAL (	SELECT clss.CTSCustID, cat.ParentID
