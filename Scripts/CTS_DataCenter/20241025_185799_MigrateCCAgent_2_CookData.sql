@@ -375,27 +375,28 @@ WHERE RoleID IN (2,3,4);
 
 ********STEP 4.2 UPDATE Adhoc_F185799Mig_CTSCustomerClassificationQueue PA *********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
-SET que.Migrate_ToCategoryGroupID = que.Migrate_ToCategoryGroupID + 100000
+	INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = que.CategoryID
+SET que.Migrate_ToCategoryGroupID = cat.CategoryGroupID + 100000
 	, que.Migrate_ToCategoryID =(CASE WHEN que.CategoryID > 0 THEN  que.CategoryID + 100000 ELSE que.CategoryID END)
-WHERE Migrate_ToCategoryGroupID <> 1000 ;
+WHERE cat.ParentID = 20000  ;
 
 ********STEP 4.2 UPDATE Adhoc_F185799Mig_CTSCustomerClassificationQueue VVIP Agent *********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
+	INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = que.CategoryID
 SET que.Migrate_ToCategoryGroupID = 101010
 	, que.Migrate_ToCategoryID =(CASE WHEN que.CategoryID > 0 THEN 101010 ELSE que.CategoryID END)
-WHERE Migrate_ToCategoryGroupID = 1000 AND RoleID = 2 ;
+WHERE cat.ParentID = 1000 AND RoleID = 2 ;
 
 ********STEP 4.2 UPDATE Adhoc_F185799Mig_CTSCustomerClassificationQueue VVIP Master *********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
+	INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = que.CategoryID
 SET que.Migrate_ToCategoryGroupID = 101011
 	, que.Migrate_ToCategoryID =(CASE WHEN que.CategoryID > 0 THEN 101011 ELSE que.CategoryID END)
-WHERE Migrate_ToCategoryGroupID = 1000  AND RoleID = 3 ;
+WHERE cat.ParentID = 1000  AND RoleID = 3 ;
 
 ********STEP 4.2 UPDATE Adhoc_F185799Mig_CTSCustomerClassificationQueue VVIP Super *********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
 SET que.Migrate_ToCategoryGroupID = 101012
 	, que.Migrate_ToCategoryID =(CASE WHEN que.CategoryID > 0 THEN 101012 ELSE que.CategoryID END)
-WHERE Migrate_ToCategoryGroupID = 1000  AND RoleID = 4;
+WHERE CategoryGroupID = 1000  AND RoleID = 4;
 #===========================================================================================================
-
-
