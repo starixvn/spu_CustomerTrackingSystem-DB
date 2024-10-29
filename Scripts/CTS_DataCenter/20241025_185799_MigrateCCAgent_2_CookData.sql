@@ -398,5 +398,5 @@ WHERE cat.ParentID = 1000  AND RoleID = 3 ;
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
 SET que.Migrate_ToCategoryGroupID = 101012
 	, que.Migrate_ToCategoryID =(CASE WHEN que.CategoryID > 0 THEN 101012 ELSE que.CategoryID END)
-WHERE CategoryGroupID = 1000  AND RoleID = 4;
+WHERE cat.ParentID = 1000  AND RoleID = 4;
 #===========================================================================================================
