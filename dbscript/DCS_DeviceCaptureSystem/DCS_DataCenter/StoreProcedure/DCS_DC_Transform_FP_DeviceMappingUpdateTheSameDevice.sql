@@ -15,6 +15,7 @@ BEGIN
 
 	    Revisions:
 		    - 20240729@Jonathan.Doan: Created [RedmineID: #206403]
+		    - 20241028@Jonathan.Doan: Fix SP SameDevice = 0 [RedmineID: #212641]
 	    Param's Explanation (filtered by):
         
         Example:
