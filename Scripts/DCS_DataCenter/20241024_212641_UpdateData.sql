@@ -7,7 +7,10 @@
 
 USE DCS_DataCenter;
 
-INSERT INTO `DCS_DataCenter`.`SystemSetting`(`ID`, `VGroup`, `VName`, `VValue`, `UpdatedTime`)
-VALUES 	(1000, 'AdhocCorrectDataTransaction07', 'StartTransID', 6668822031, NOW());
+SET @maxTransID = (SELECT MAX(TransID) FROM Transaction07);
+
+INSERT IGNORE INTO `DCS_DataCenter`.`SystemSetting`(`ID`, `VGroup`, `VName`, `VValue`, `UpdatedTime`)
+VALUES 	(1000, 'AdhocCorrectDataTransaction07', 'StartTransID', 6668822031, NOW()),
+	(1001, 'AdhocCorrectDataTransaction07', 'LimitTransID', @maxTransID, NOW());
 
 CALL DCS_DataCenter.adhoc_DCS_DC_CorrectData_Transaction07_FPDeviceID(1000);
