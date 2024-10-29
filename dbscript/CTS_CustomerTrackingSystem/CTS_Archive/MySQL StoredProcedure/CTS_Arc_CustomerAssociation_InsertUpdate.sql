@@ -35,7 +35,6 @@ BEGIN
         ,	RoleID		TINYINT
         
         ,	PRIMARY	KEY (CTSCustID)
-        ,	INDEX IX_Temp_Cust_RoleID(RoleID)
 	);
     
 	INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID, RoleID)
