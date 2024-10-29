@@ -58,7 +58,7 @@ END;
 BEGIN;#============STEP 3: UPDATE CTSCustomerClassificationQueue ==========EST: Duration() RowCount(~)=======================
 UPDATE CTS_DataCenter.CTSCustomerClassificationQueue AS que
 	INNER JOIN CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue AS src ON src.ID = que.ID
-SET que.CategoryID = src.Migrate_CategoryID
+SET que.CategoryID = src.Migrate_ToCategoryID
 	, que.CategoryGroupID = src.Migrate_ToCategoryGroupID
 END;
 
