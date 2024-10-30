@@ -24,22 +24,23 @@ sp: BEGIN
             - 20240103@Thomas.Nguyen:   New Category for System Detect Unauthorized Login [RedmineID: #197710]
 			- 20240620@Jonas.Huynh: 	Renovate CC [RedmineID: #205317]
             - 20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
-            
+            - 20241030@Thomas.Nguyen: 	CC Agent - Change source tables when checking affected PA from Upline [RedmineID: #185799]
+
         Param's Explanation:
 
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Rescan_Get_UAT4("1,2,3,4");
 	*/ 
     DECLARE	CONST_CATEID_UNAUTHORIZEDLOGIN			INT;
-    DECLARE	CONST_CATEID_UNAUTHORIZEDLOGINLOSING	INT;
     DECLARE	CONST_CATEID_ROBOTUSER					INT;
-    DECLARE	CONST_CATEID_ROBOTUSERLOSING			INT;
     DECLARE	CONST_CATEID_ROBOTOCRD					INT;
-    DECLARE	CONST_CATEID_ROBOTOCRDLOSING			INT;
     DECLARE	CONST_CATEID_EARLYWARNING				INT;
     DECLARE	CONST_CATEID_INITIALGB					INT;
     DECLARE CONST_CATEID_INITIALSMART				INT;
     DECLARE	CONST_PARENTID_PA						INT;
+    DECLARE	CONST_AGENCY_CATEID_ROBOT				INT;
+    DECLARE	CONST_AGENCY_CATEID_ROBOTLOSING			INT;
+    DECLARE	CONST_AGENCY_PARENTID_PA				INT;
 
     DECLARE CONST_INPUTFLOWID_NORMAL				INT DEFAULT 9;
     DECLARE	CONST_INPUTFLOWID_POTENTIALPA			INT DEFAULT 118;
@@ -49,15 +50,15 @@ sp: BEGIN
 	DECLARE CONST_CREATEDBY_STARIXITID				INT DEFAULT 10278938;
     
     SET CONST_CATEID_UNAUTHORIZEDLOGIN	 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_UNAUTHORIZEDLOGIN');
-	SET CONST_CATEID_UNAUTHORIZEDLOGINLOSING		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_UNAUTHORIZEDLOGINLOSING');
     SET CONST_CATEID_ROBOTUSER	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
-    SET CONST_CATEID_ROBOTUSERLOSING				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSERLOSING');
     SET CONST_CATEID_ROBOTOCRD	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
-    SET CONST_CATEID_ROBOTOCRDLOSING				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRDLOSING');
     SET CONST_CATEID_EARLYWARNING	 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_EARLYWARNING');
     SET CONST_CATEID_INITIALGB	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALGB');
     SET CONST_CATEID_INITIALSMART	 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMART');
     SET CONST_PARENTID_PA 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_AGENCY_CATEID_ROBOT	 				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
+    SET CONST_AGENCY_CATEID_ROBOTLOSING	 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
+    SET CONST_AGENCY_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
         
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;    
 	CREATE TEMPORARY TABLE Temp_CustID (	  
@@ -367,20 +368,20 @@ sp: BEGIN
         ,	s.Remark						AS Remark
         ,	NULL		 					AS CreatedBy
         ,	0 								AS IsMarkedDirectly
-		,	s.IsFromTVS 					AS IsFromTVS
+		,	NULL 					        AS IsFromTVS
         ,	s.IsFromTW 						AS IsFromTW
         ,   s.IsFromCTS 					AS IsFromCTS
         ,	s.IsFromAI 						AS IsFromAI
-        ,	s.IsFromImperva					AS IsFromImperva
+        ,	NULL				            AS IsFromImperva
         ,	s.CreatedDate 					AS CreatedDate
         ,	s.LastModifiedDate 				AS LastModifiedDate
         ,   CONST_INPUTFLOWID_CATEGORY_PA	AS InputFlowID
     FROM Temp_CustInfo AS tmp    
-		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassification AS s USE INDEX (PRIMARY) ON s.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) 
+		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS s USE INDEX (PRIMARY) ON s.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) 
 					AND s.CustID <> tmp.CustID
-					AND s.ParentID = CONST_PARENTID_PA 
+					AND s.ParentID = CONST_AGENCY_PARENTID_PA 
                     AND s.IsMarkedDirectly = 1
-		STRAIGHT_JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = s.CategoryID AND cate.CategoryGroupID NOT IN (CONST_CATEID_ROBOTUSER, CONST_CATEID_ROBOTUSERLOSING, CONST_CATEID_ROBOTOCRD, CONST_CATEID_ROBOTOCRDLOSING, CONST_CATEID_UNAUTHORIZEDLOGIN, CONST_CATEID_UNAUTHORIZEDLOGINLOSING)
+		STRAIGHT_JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = s.CategoryID AND cate.CategoryID NOT IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING)
 	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
 						,	LastModifiedDate = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END
 						,	CreatedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.CreatedDate THEN s.CreatedDate ELSE Temp_CustCategory.CreatedDate END
