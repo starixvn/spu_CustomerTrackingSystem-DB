@@ -89,14 +89,12 @@ BEGIN
 		,	LoginName					VARCHAR(100) 				NOT NULL	
 		,	SubscriberName				VARCHAR(50) 				NOT NULL
 		,	TransTime					TIMESTAMP(4)	 			NOT NULL
-		,	UserAgent					VARCHAR(1000)				NULL
 		,	IP							VARCHAR(50) 				NULL
         ,	IPID						DECIMAL(50,0)				NULL
         ,	`Action`					VARCHAR(100) 				NULL
 		,	ActionResult				VARCHAR(100) 				NULL
 		,	TransStatus					BIT(16)						NULL
         ,	FlaggedCode					VARCHAR(100)				NULL
-        ,	FP_UserAgentCode			VARCHAR(32)					NULL
         ,	MB_AndroidCode				VARCHAR(32)					NULL	
 		,	MB_CustomCode				VARCHAR(32)					NULL	
 		,	MB_MediaDRMCode				VARCHAR(32)					NULL	
@@ -215,18 +213,16 @@ BEGIN
 	ADD INDEX IX_Temp_Transaction_BotComponentCode (BotComponentCode);
            
 	/******* Insert Temp Mobile RawTransaction ********************/
-    INSERT INTO Temp_MB_Transaction(LoginName, SubscriberName, TransTime, UserAgent, IP, IPID, Action, ActionResult,  TransStatus, FlaggedCode, FP_UserAgentCode, MB_AndroidCode, MB_CustomCode, MB_MediaDRMCode, MB_IsMobileApp, MB_IsEmulator, MB_ModelName, MB_Manufacturer, MB_Brand, MB_SDKVersion, MB_OS, MB_Timezone, MB_Language, MB_Country)
+    INSERT INTO Temp_MB_Transaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult,  TransStatus, FlaggedCode, MB_AndroidCode, MB_CustomCode, MB_MediaDRMCode, MB_IsMobileApp, MB_IsEmulator, MB_ModelName, MB_Manufacturer, MB_Brand, MB_SDKVersion, MB_OS, MB_Timezone, MB_Language, MB_Country)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
-		,	LEFT((CASE WHEN rt.UserAgent IS NULL THEN NULL ELSE rt.UserAgent END),1000) AS UserAgent
 		,	(CASE WHEN rt.IP IS NULL THEN NULL ELSE rt.IP END) AS IP
 		,	(CASE WHEN rt.IPID = 0 THEN NULL ELSE rt.IPID END) AS IPID
 		,	(CASE WHEN rt.Action IS NULL THEN NULL ELSE rt.Action END) AS Action
 		,	(CASE WHEN rt.ActionResult IS NULL THEN NULL ELSE rt.ActionResult END) AS ActionResult
 		,	rt.TransStatus
 		,	rt.FlaggedCode
-		,	rt.FP_UserAgentCode
         ,	rt.MB_AndroidCode
 		,	rt.MB_CustomCode
 		,	rt.MB_MediaDRMCode
@@ -318,19 +314,17 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     
     /*******Mobile RawTransaction********************/
-    INSERT INTO DCS_DataCenter.MB_RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, UserAgent, IP, IPID, Action, ActionResult, TransStatus, Flagged, FP_UserAgentCode, MB_AndroidCode, MB_CustomCode, MB_MediaDRMCode, MB_IsMobileApp, MB_IsEmulator, MB_ModelName, MB_Manufacturer, MB_Brand, MB_SDKVersion, MB_OS, MB_Timezone, MB_Language, MB_Country)
+    INSERT INTO DCS_DataCenter.MB_RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, IP, IPID, Action, ActionResult, TransStatus, Flagged, MB_AndroidCode, MB_CustomCode, MB_MediaDRMCode, MB_IsMobileApp, MB_IsEmulator, MB_ModelName, MB_Manufacturer, MB_Brand, MB_SDKVersion, MB_OS, MB_Timezone, MB_Language, MB_Country)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
 		,	DATE(rt.TransTime) AS CreatedDate
-		,	rt.UserAgent
 		,	rt.IP
         ,	rt.IPID
         ,	rt.Action
 		,	rt.ActionResult
         ,	rt.TransStatus
         ,	sl.ItemID AS Flagged
-        ,   rt.FP_UserAgentCode
         ,	rt.MB_AndroidCode
 		,	rt.MB_CustomCode
 		,	rt.MB_MediaDRMCode
