@@ -216,8 +216,6 @@ BEGIN
 		LEFT JOIN Temp_CustExist AS tmpEx ON tmpCus.CustID = tmpEx.CustID AND tmpCus.CustSubID = tmpEx.CustSubID
 		INNER JOIN	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.UserName = cus.UserName
 	WHERE tmpEx.CustID IS NULL;
-    
-#Error Code: 1054. Unknown column 'tmpCust.RoleID' in 'field list'
 
     UPDATE Temp_CTSCustomer AS tmpCus
 		INNER JOIN Temp_CustExist AS tmpEx ON tmpCus.CustID = tmpEx.CustID AND tmpCus.CustSubID = tmpEx.CustSubID
