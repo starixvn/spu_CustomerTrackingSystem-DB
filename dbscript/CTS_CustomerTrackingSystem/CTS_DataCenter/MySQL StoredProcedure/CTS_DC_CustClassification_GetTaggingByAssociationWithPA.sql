@@ -24,6 +24,7 @@ BEGIN
 		   - 20220323@Aries.Nguyen: No detect Association with 3 Problem Accounts (Both have Group Betting and Hedging) [Redmine ID: #170363]
            - 20220422@Irena.Vo: Mapping Root Tagging from table CustomerCategory [Redmine ID: #170468]
            - 20240620@Jonas.Huynh: 	Renovate CC [RedmineID: #205317]
+		   - 20241018@Thomas.Nguyen: CC Agent - Get more data for Agency [Redmine ID: #185799]
            
 		Param's Explanation (filtered by):
         Example:
@@ -32,6 +33,7 @@ BEGIN
     
     DECLARE	CONST_PARENTID_PA			INT;
     DECLARE CONST_PARENTID_WRAPPER		INT;
+	DECLARE	CONST_AGENCY_PARENTID_PA	INT;
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;
     CREATE TEMPORARY TABLE 	Temp_InputCustomers (
@@ -95,6 +97,7 @@ BEGIN
    
 	SET CONST_PARENTID_PA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_WRAPPER 		= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+	SET CONST_AGENCY_PARENTID_PA 	= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
     
     SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_InputCustomers (CustID) VALUES ('", REPLACE(ip_ListCustID, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
@@ -110,7 +113,7 @@ BEGIN
 	SET tbl.TaggingType = 0;
     
 	INSERT IGNORE INTO Temp_CustAssociation(CustID, CTSCustID, CTSCustID_Aff)
-	SELECT 	cus.CustID, cus.CTSCustID, asCus.CTSCustID  
+	SELECT 	cus.CustID, cus.CTSCustID, asCus.CTSCustID
 	FROM 	Temp_Customer AS cus 
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS asDv ON asDv.CTSCustID = cus.CTSCustID
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS asCus ON asCus.DCSDeviceID = asDv.DCSDeviceID AND asCus.CTSCustID <> asDv.CTSCustID
@@ -170,14 +173,37 @@ BEGIN
 				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 				LIMIT 1
 		   ) AS tmplc;
-        
-    INSERT INTO Temp_PA(CTSCustID, RootTaggingID)
+
+	INSERT INTO Temp_PA(CTSCustID, RootTaggingID)
     SELECT 	lc.CTSCustID, ca.RootTaggingID
 	FROM Temp_LatestCategory AS lc
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = lc.CTSCustID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
 	WHERE lc.ParentID = CONST_PARENTID_PA
         AND ca.RootTaggingID IS NOT NULL
+    ON DUPLICATE KEY UPDATE RootTaggingID = CASE WHEN ca.RootTaggingID = 10 THEN 10
+												 WHEN ca.RootTaggingID = 8 AND Temp_PA.RootTaggingID = 10 THEN 10
+												 WHEN ca.RootTaggingID = 13 AND Temp_PA.RootTaggingID = 10 THEN 10
+                                                 WHEN ca.RootTaggingID = 13 AND Temp_PA.RootTaggingID = 8 THEN 8
+                                                 ELSE ca.RootTaggingID
+											END;
+
+	/*For Agency*/      
+    INSERT IGNORE INTO Temp_PA(CTSCustID, RootTaggingID)
+    SELECT	cus.CTSCustID, ca.RootTaggingID
+	FROM Temp_CustLevel1 AS cus
+		,	LATERAL	
+			(		SELECT cc.CTSCustID, ca.ParentID
+					FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CTSCustID = cus.CTSCustID
+						AND ca.IsActive = 1
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
+					LIMIT 1
+			) AS cls
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cc ON cc.CTSCustID = cls.CTSCustID AND cc.ParentID = CONST_AGENCY_PARENTID_PA
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS ca ON ca.CategoryID = cc.CategoryID
+	WHERE ca.RootTaggingID IS NOT NULL
     ON DUPLICATE KEY UPDATE RootTaggingID = CASE WHEN ca.RootTaggingID = 10 THEN 10
 												 WHEN ca.RootTaggingID = 8 AND Temp_PA.RootTaggingID = 10 THEN 10
 												 WHEN ca.RootTaggingID = 13 AND Temp_PA.RootTaggingID = 10 THEN 10
