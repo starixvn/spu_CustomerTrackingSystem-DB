@@ -27,156 +27,153 @@ sp: BEGIN
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetRescanNewCust(@op_LastCTSCustID);SELECT @op_LastCTSCustID;
 	*/
-    DECLARE CONST_AGENCY_PARENTID_VVIP				INT;
-    DECLARE	CONST_AGENCY_PARENTID_PA				INT;
-    DECLARE CONST_AGENCY_CATEGROUPID_ROBOT       	INT;
+  DECLARE CONST_AGENCY_PARENTID_VVIP				    INT;
+  DECLARE	CONST_AGENCY_PARENTID_PA				      INT;
+  DECLARE CONST_AGENCY_CATEGROUPID_ROBOT       	INT;
 
-    DECLARE lv_LastCTSCustID 	BIGINT UNSIGNED;
-    DECLARE lv_BatchSize 		INT UNSIGNED;
-    DECLARE lv_MaxCTSCustID 	BIGINT UNSIGNED;
-     
-    SET CONST_AGENCY_PARENTID_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
-    SET CONST_AGENCY_PARENTID_PA				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
-    SET CONST_AGENCY_CATEGROUPID_ROBOT			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_ROBOT');
+  DECLARE lv_LastCTSCustID 	                    BIGINT UNSIGNED;
+  DECLARE lv_BatchSize 		                      INT UNSIGNED;
+  DECLARE lv_MaxCTSCustID 	                    BIGINT UNSIGNED;
+    
+  SET CONST_AGENCY_PARENTID_VVIP				        = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
+  SET CONST_AGENCY_PARENTID_PA				          = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
+  SET CONST_AGENCY_CATEGROUPID_ROBOT			      = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_ROBOT');
 
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
-    CREATE TEMPORARY TABLE Temp_CustInfo(
-			CTSCustID			BIGINT UNSIGNED PRIMARY KEY
-		,	CustID				BIGINT UNSIGNED
-		,	CustSubID			INT	UNSIGNED
-		,	UserName			VARCHAR(50) 
-		,	RegisterName		VARCHAR(50) 
-		,	SubscriberID		INT UNSIGNED
-		,	RoleID				INT        
-		,	SRecommend			BIGINT UNSIGNED
-		,	MRecommend			BIGINT UNSIGNED
-		,	Recommend			BIGINT UNSIGNED
-		,	DirectUpLineCustID	BIGINT UNSIGNED
-		,	DirectUpLineRoleID	BIGINT UNSIGNED
-		,	IsLicensee			BIT       
-		,	CreatedBy			INT
-      
-		,	INDEX PK_Temp_CustInfo_CustID(CustID)
-		,	INDEX IX_Temp_CustInfo_DirectUpLineCustID(DirectUpLineCustID)
-    );
-	
-    DROP TEMPORARY TABLE IF EXISTS Temp_VVIPCust;
-    CREATE TEMPORARY TABLE Temp_VVIPCust(
-			CTSCustID		BIGINT UNSIGNED PRIMARY KEY 
-		,	CustID			BIGINT UNSIGNED
-        ,	RoleID			TINYINT
-		,	CreatedBy		INT
-        
-		,	INDEX PK_Temp_VVIPCust_CustID(CustID)
-    ); 
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_VVIPCust_Depth;
-    CREATE TEMPORARY TABLE Temp_VVIPCust_Depth(
-			CTSCustID 	BIGINT UNSIGNED PRIMARY KEY 
-		,	CustID		BIGINT UNSIGNED
-        ,	RoleID		TINYINT
-		,	CreatedBy	INT
-    ); 
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;    
-    CREATE TEMPORARY TABLE Temp_CustCategory(	  
-			CTSCustID				BIGINT UNSIGNED 
-		,	CustID					BIGINT UNSIGNED 
-        ,	RoleID					TINYINT
-		,	CategoryID				INT
-		,	CategoryGroupID			INT
-        ,	UplineRoleID			INT
-		,	UplineCategoryID		INT
-		,	UplineCategoryGroupID	INT
-		,	Remark			    	VARCHAR(500)
-		,	IsFromTVS		    	BIT
-		,	IsFromTW		    	BIT
-		,	IsFromCTS		    	BIT
-		,	CreatedBy		    	INT
-		,	LastModifiedDate		DATETIME
-        ,	FromRoleID				TINYINT
-		,	FromCategoryID			INT
-        
-		,	PRIMARY KEY(CustID)
-    );
-    
-    SELECT ParameterValue 
-    INTO lv_LastCTSCustID 
-    FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 92;
-    
-    SELECT ParameterValue 
-    INTO lv_BatchSize 
-    FROM CTS_DataCenter.SystemParameter 
-    WHERE ParameterID = 93; 
+DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
+CREATE TEMPORARY TABLE Temp_CustInfo(
+    CTSCustID			      BIGINT UNSIGNED PRIMARY KEY
+  ,	CustID				      BIGINT UNSIGNED
+  ,	CustSubID			      INT	UNSIGNED
+  ,	UserName			      VARCHAR(50) 
+  ,	RegisterName		    VARCHAR(50) 
+  ,	SubscriberID		    INT UNSIGNED
+  ,	RoleID				      INT        
+  ,	SRecommend			    BIGINT UNSIGNED
+  ,	MRecommend			    BIGINT UNSIGNED
+  ,	Recommend			      BIGINT UNSIGNED
+  ,	DirectUpLineCustID	BIGINT UNSIGNED
+  ,	DirectUpLineRoleID	BIGINT UNSIGNED
+  ,	IsLicensee			    BIT       
+  ,	CreatedBy			      INT
+  ,	INDEX PK_Temp_CustInfo_CustID(CustID)
+  ,	INDEX IX_Temp_CustInfo_DirectUpLineCustID(DirectUpLineCustID)
+);
 
-    INSERT INTO Temp_CustInfo(CTSCustID, CustID, CustSubID, UserName, RegisterName, SubscriberID, RoleID, SRecommend, MRecommend, Recommend, DirectUpLineCustID,DirectUpLineRoleID,IsLicensee)
-    SELECT  cus.CTSCustID
-		,   cus.CustID
-        ,   cus.CustSubID
-        ,   cus.UserName
-        ,   cus.RegisterName
-        ,   cus.SubscriberID
-        ,   cus.RoleID
-        ,   cus.SRecommend
-        ,   cus.MRecommend
-        ,   cus.Recommend
-        ,   (CASE	WHEN cus.RoleID = 1 THEN cus.Recommend 
-					WHEN cus.RoleID = 2 THEN cus.MRecommend
-					WHEN cus.RoleID = 3 THEN cus.SRecommend END) AS DirectUpLineCustID  
-		,   (CASE	WHEN cus.RoleID = 1 THEN 2 
-					WHEN cus.RoleID = 2 THEN 3
-					WHEN cus.RoleID = 3 THEN 4 END) AS DirectUpLineCustIDRoleID  
-		,   cus.IsLicensee
-    FROM CTS_DataCenter.CTSCustomer AS cus 
-    WHERE cus.CustSubID = 0
-		AND cus.IsInternal = 0
-		AND cus.CTSCustID > lv_LastCTSCustID
-	LIMIT lv_BatchSize;
+  DROP TEMPORARY TABLE IF EXISTS Temp_VVIPCust;
+  CREATE TEMPORARY TABLE Temp_VVIPCust(
+    CTSCustID		BIGINT UNSIGNED PRIMARY KEY 
+  ,	CustID			BIGINT UNSIGNED
+  ,	RoleID			TINYINT
+  ,	CreatedBy		INT   
+  ,	INDEX PK_Temp_VVIPCust_CustID(CustID)
+  ); 
+  
+  DROP TEMPORARY TABLE IF EXISTS Temp_VVIPCust_Depth;
+  CREATE TEMPORARY TABLE Temp_VVIPCust_Depth(
+    CTSCustID 	BIGINT UNSIGNED PRIMARY KEY 
+  ,	CustID		  BIGINT UNSIGNED
+  ,	RoleID		  TINYINT
+  ,	CreatedBy	  INT
+  ); 
+  
+  DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;    
+  CREATE TEMPORARY TABLE Temp_CustCategory(	  
+    CTSCustID				      BIGINT UNSIGNED 
+  ,	CustID					      BIGINT UNSIGNED 
+  ,	RoleID					      TINYINT
+  ,	CategoryID				    INT
+  ,	CategoryGroupID			  INT
+  ,	UplineRoleID			    INT
+  ,	UplineCategoryID		  INT
+  ,	UplineCategoryGroupID	INT
+  ,	Remark			    	    VARCHAR(500)
+  ,	IsFromTVS		    	    BIT
+  ,	IsFromTW		    	    BIT
+  ,	IsFromCTS		    	    BIT
+  ,	CreatedBy		    	    INT
+  ,	LastModifiedDate		  DATETIME
+  ,	FromRoleID				    TINYINT
+  ,	FromCategoryID			  INT   
+  ,	PRIMARY KEY(CustID, FromCategoryID)
+  );
+  
+  SELECT ParameterValue 
+  INTO lv_LastCTSCustID 
+  FROM CTS_DataCenter.SystemParameter 
+  WHERE ParameterID = 92;
+  
+  SELECT ParameterValue 
+  INTO lv_BatchSize 
+  FROM CTS_DataCenter.SystemParameter 
+  WHERE ParameterID = 93; 
 
-    SELECT MAX(CTSCustID)
-    INTO op_LastCTSCustID
-    FROM Temp_CustInfo;
-    
-    IF op_LastCTSCustID IS NULL THEN
-		SET op_LastCTSCustID = lv_LastCTSCustID;
-    END IF;
-    
-    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,CreatedBy)
-    SELECT  tmp.CTSCustID
-		,   tmp.CustID
-		,   vip.CreatedBy
-    FROM Temp_CustInfo AS tmp		
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS vip ON vip.CustID = tmp.DirectUpLineCustID 
-											AND vip.IsAffectToDownline = 1 AND vip.ParentID = CONST_AGENCY_PARENTID_VVIP;
-    
-    INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,RoleID,CreatedBy)
-    SELECT 	tmp.CTSCustID
-		,   tmp.CustID
-		,	tmp.RoleID
-		,   que.CreatedBy
-    FROM Temp_CustInfo AS tmp		
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS que ON que.CustID IN (tmp.SRecommend, tmp.MRecommend, tmp.Recommend) 
-								AND que.ActionType = 1;  # ActiontType 1:Mark VVIP, 2:Unmark VVIP, 3: mark PA, 4:unmark PA
-    
-    INSERT IGNORE INTO Temp_VVIPCust_Depth(CTSCustID, CustID, RoleID, CreatedBy)
-	SELECT 	tmp.CTSCustID
-		,	tmp.CustID
-		,	tmp.RoleID 
-		,   vv.CreatedBy
-    FROM Temp_CustInfo AS tmp		
-		INNER JOIN Temp_VVIPCust AS vv ON vv.CustID IN (tmp.SRecommend, tmp.MRecommend, tmp.Recommend);
+  INSERT INTO Temp_CustInfo(CTSCustID, CustID, CustSubID, UserName, RegisterName, SubscriberID, RoleID, SRecommend, MRecommend, Recommend, DirectUpLineCustID,DirectUpLineRoleID,IsLicensee)
+  SELECT  cus.CTSCustID
+      ,   cus.CustID
+      ,   cus.CustSubID
+      ,   cus.UserName
+      ,   cus.RegisterName
+      ,   cus.SubscriberID
+      ,   cus.RoleID
+      ,   cus.SRecommend
+      ,   cus.MRecommend
+      ,   cus.Recommend
+      ,   (CASE	WHEN cus.RoleID = 1 THEN cus.Recommend 
+                WHEN cus.RoleID = 2 THEN cus.MRecommend
+                WHEN cus.RoleID = 3 THEN cus.SRecommend END) AS DirectUpLineCustID  
+      ,   (CASE	WHEN cus.RoleID = 1 THEN 2 
+                WHEN cus.RoleID = 2 THEN 3
+                WHEN cus.RoleID = 3 THEN 4 END) AS DirectUpLineCustIDRoleID  
+      ,   cus.IsLicensee
+  FROM CTS_DataCenter.CTSCustomer AS cus 
+  WHERE cus.CustSubID = 0
+        AND cus.IsInternal = 0
+        AND cus.CTSCustID > lv_LastCTSCustID
+  LIMIT lv_BatchSize;
 
-	INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,RoleID,CreatedBy)
-    SELECT 	tmp.CTSCustID
-		,   tmp.CustID
+  SELECT MAX(CTSCustID)
+  INTO op_LastCTSCustID
+  FROM Temp_CustInfo;
+  
+  IF op_LastCTSCustID IS NULL THEN
+  SET op_LastCTSCustID = lv_LastCTSCustID;
+  END IF;
+  
+  INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,CreatedBy)
+  SELECT  tmp.CTSCustID
+      ,   tmp.CustID
+      ,   vip.CreatedBy
+  FROM Temp_CustInfo AS tmp		
+  INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS vip ON vip.CustID = tmp.DirectUpLineCustID 
+                    AND vip.IsAffectToDownline = 1 AND vip.ParentID = CONST_AGENCY_PARENTID_VVIP;
+  
+  INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,RoleID,CreatedBy)
+  SELECT 	tmp.CTSCustID
+        , tmp.CustID
         ,	tmp.RoleID
-		,   tmp.CreatedBy
-    FROM Temp_VVIPCust_Depth AS tmp;
+        , que.CreatedBy
+  FROM Temp_CustInfo AS tmp		
+  INNER JOIN CTS_DataCenter.CTSCustomerClassificationQueue AS que ON que.CustID IN (tmp.SRecommend, tmp.MRecommend, tmp.Recommend) 
+              AND que.ActionType = 1;  # ActiontType 1:Mark VVIP, 2:Unmark VVIP, 3: mark PA, 4:unmark PA
+  
+  INSERT IGNORE INTO Temp_VVIPCust_Depth(CTSCustID, CustID, RoleID, CreatedBy)
+  SELECT 	tmp.CTSCustID
+        ,	tmp.CustID
+        ,	tmp.RoleID 
+        , vv.CreatedBy
+  FROM Temp_CustInfo AS tmp		
+  INNER JOIN Temp_VVIPCust AS vv ON vv.CustID IN (tmp.SRecommend, tmp.MRecommend, tmp.Recommend);
 
-    INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, RoleID, Remark, CreatedBy,IsFromTW,IsFromCTS,LastModifiedDate, FromRoleID, FromCategoryID)
-    SELECT 	tmp.CTSCustID
-		,   tmp.CustID
+  INSERT IGNORE INTO Temp_VVIPCust(CTSCustID,CustID,RoleID,CreatedBy)
+  SELECT 	tmp.CTSCustID
+        , tmp.CustID
+        ,	tmp.RoleID
+        , tmp.CreatedBy
+  FROM Temp_VVIPCust_Depth AS tmp;
+
+  INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, RoleID, Remark, CreatedBy,IsFromTW,IsFromCTS,LastModifiedDate, FromRoleID, FromCategoryID)
+  SELECT 	tmp.CTSCustID
+        , tmp.CustID
         ,	tmp.RoleID
         ,	class.Remark 
         ,	class.CreatedBy
@@ -184,62 +181,62 @@ sp: BEGIN
         ,	class.IsFromCTS
         ,	class.LastModifiedDate
         ,	(CASE WHEN class.CustID = tmp.Recommend THEN 2
-				 WHEN class.CustID = tmp.MRecommend THEN 3
-                 WHEN class.CustID = tmp.SRecommend THEN 4
-                 END) AS FromRoleID
+          WHEN class.CustID = tmp.MRecommend THEN 3
+                  WHEN class.CustID = tmp.SRecommend THEN 4
+                  END) AS FromRoleID
         ,	class.CategoryID AS FromCategoryID        
-    FROM Temp_CustInfo AS tmp    
-		STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.ParentID = CONST_AGENCY_PARENTID_PA 
-        STRAIGHT_JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroupID NOT IN (CONST_AGENCY_CATEGROUPID_ROBOT);
+  FROM Temp_CustInfo AS tmp    
+  STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.ParentID = CONST_AGENCY_PARENTID_PA 
+      STRAIGHT_JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroupID NOT IN (CONST_AGENCY_CATEGROUPID_ROBOT);
 
-	UPDATE Temp_CustCategory AS tmp
-		INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS ccd ON ccd.FromRoleID <= tmp.FromRoleID AND ccd.FromCategoryID = tmp.FromCategoryID AND ccd.ToRoleID = tmp.RoleID
-		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate1 ON cate1.CategoryID = ccd.ToCategoryID AND tmp.RoleID = 1
-        LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cate2 ON cate2.CategoryID = ccd.ToCategoryID AND tmp.RoleID IN (2,3,4)
-	SET tmp.CategoryID = IFNULL(cate1.CategoryID,cate2.CategoryID)
-		, tmp.CategoryGroupID = IFNULL(cate1.CategoryGroupID,cate2.CategoryGroupID);
-	
-	UPDATE Temp_CustCategory AS tmp
-		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = tmp.FromCategoryID
-	SET tmp.CategoryID = cate.CategoryID
-		, tmp.CategoryGroupID = cate.CategoryGroupID
-	WHERE tmp.CategoryID IS NULL;
-        
-    SELECT	tmp.CTSCustID
-		,	tmp.CustID          
-        ,	tmp.CustSubID  
-        ,	tmp.UserName  
-        ,	tmp.RegisterName  
-        ,	tmp.RoleID  
-        ,	tmp.SubscriberID  
-        ,	vip.CreatedBy          
-	FROM Temp_CustInfo AS tmp
-		INNER JOIN Temp_VVIPCust AS vip ON tmp.CTSCustID = vip.CTSCustID;
-     
-    SELECT 	cate.CTSCustID		
-        ,   cate.CustID	
-		,  	tmp.RoleID
-        ,  	tmp.SubscriberID
-        ,  	tmp.IsLicensee 
-        ,   cate.CategoryID		
-		,	cate.CategoryGroupID
-		,   cate.Remark		
-        ,	cate.CreatedBy
-        ,	cate.IsFromTVS
-        ,	cate.IsFromTW
-        ,	cate.IsFromCTS
-        ,   cate.LastModifiedDate
-        ,   0 AS IsMarkedDirectly
-    FROM Temp_CustCategory AS cate
-		LEFT JOIN Temp_CustInfo AS tmp ON tmp.CustID = cate.CustID
-	WHERE NOT EXISTS (SELECT 1 FROM Temp_VVIPCust AS vv WHERE cate.CTSCustID = vv.CTSCustID); 
+UPDATE Temp_CustCategory AS tmp
+  INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS ccd ON ccd.FromRoleID <= tmp.FromRoleID AND ccd.FromCategoryID = tmp.FromCategoryID AND ccd.ToRoleID = tmp.RoleID
+  LEFT JOIN CTS_DataCenter.CustomerCategory AS cate1 ON cate1.CategoryID = ccd.ToCategoryID AND tmp.RoleID = 1
+  LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cate2 ON cate2.CategoryID = ccd.ToCategoryID AND tmp.RoleID IN (2,3,4)
+SET tmp.CategoryID = IFNULL(cate1.CategoryID,cate2.CategoryID)
+  , tmp.CategoryGroupID = IFNULL(cate1.CategoryGroupID,cate2.CategoryGroupID);
+
+UPDATE Temp_CustCategory AS tmp
+  INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = tmp.FromCategoryID
+SET tmp.CategoryID = cate.CategoryID
+  , tmp.CategoryGroupID = cate.CategoryGroupID
+WHERE tmp.CategoryID IS NULL;
+      
+  SELECT	tmp.CTSCustID
+      ,	tmp.CustID          
+      ,	tmp.CustSubID  
+      ,	tmp.UserName  
+      ,	tmp.RegisterName  
+      ,	tmp.RoleID  
+      ,	tmp.SubscriberID  
+      ,	vip.CreatedBy          
+FROM Temp_CustInfo AS tmp
+  INNER JOIN Temp_VVIPCust AS vip ON tmp.CTSCustID = vip.CTSCustID;
     
-    SELECT 	tmp.CTSCustID		
-        ,   tmp.CustID
+  SELECT 	cate.CTSCustID		
+      , cate.CustID	
+      , tmp.RoleID
+      , tmp.SubscriberID
+      , tmp.IsLicensee 
+      , cate.CategoryID		
+      ,	cate.CategoryGroupID
+      , cate.Remark		
+      ,	cate.CreatedBy
+      ,	cate.IsFromTVS
+      ,	cate.IsFromTW
+      ,	cate.IsFromCTS
+      , cate.LastModifiedDate
+      , 0 AS IsMarkedDirectly
+  FROM Temp_CustCategory AS cate
+      LEFT JOIN Temp_CustInfo AS tmp ON tmp.CustID = cate.CustID
+  WHERE NOT EXISTS (SELECT 1 FROM Temp_VVIPCust AS vv WHERE cate.CTSCustID = vv.CTSCustID); 
+  
+  SELECT 	tmp.CTSCustID		
+        , tmp.CustID
         ,	tmp.RoleID
-    FROM Temp_CustInfo AS tmp
-    WHERE NOT EXISTS (SELECT 1 FROM Temp_VVIPCust AS vv WHERE tmp.CTSCustID = vv.CTSCustID)
-		AND NOT EXISTS (SELECT 1 FROM Temp_CustCategory AS cate WHERE cate.CustID = tmp.CustID);
-	
+  FROM Temp_CustInfo AS tmp
+  WHERE NOT EXISTS (SELECT 1 FROM Temp_VVIPCust AS vv WHERE tmp.CTSCustID = vv.CTSCustID)
+  AND NOT EXISTS (SELECT 1 FROM Temp_CustCategory AS cate WHERE cate.CustID = tmp.CustID);
+
 END$$
 DELIMITER ;
