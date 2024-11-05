@@ -35,7 +35,7 @@ sp: BEGIN
             -	20240509@Casey.Huynh: 	HF Hedging StepTime [Redmine ID: #204338]
             -	20240617@Casey.Huynh:	Update Data Type [Redmine ID: #206564]
             -	20240724@Casey.Huynh:	Enhance Rule [Redmine ID: #207523]
-	    - 	20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
+	    	- 	20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
 			
 		Param's Explanation (filtered by):	
 		Example:
