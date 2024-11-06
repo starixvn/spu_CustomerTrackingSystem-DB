@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_ProblemAccountManagement_GetCa
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_ProblemAccountManagement_GetCategories`(
-	IN ip_PageSource TINYINT
+	IN ip_QueryType TINYINT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -24,10 +24,13 @@ BEGIN
 			- 20240930@Adam.Tran: Return Agency Categories [Redmine ID: #185799]
 
 		Param's Explanation (filtered by):
-			- ip_PageSource: 1: Problem Account Management, 2: Associated Group Monitor, others: Profiler Page
+			- ip_QueryType: 
+				1: Get PA for Problem Account Management, 2: Get PA for Associated Group Monitor, 3: Get PA for Profile Page, 4: Get VVIP for Profile Page
         Example:
 			- CALL CTS_DC_ProblemAccountManagement_GetCategories(1);
 	*/
+	DECLARE CONST_PARENTID_VVIP               	INT;
+	DECLARE CONST_AGENCY_PARENTID_VVIP          INT;
 	DECLARE CONST_CATEID_INFOBET				INT;
 	DECLARE CONST_CATEID_GROUPBETTING			INT;
 	DECLARE CONST_CATEID_HEDGING				INT;
@@ -51,6 +54,8 @@ BEGIN
 	DECLARE CONST_ROLE_AGENCY					INT;
 	DECLARE CONST_CATENAME_ROBOT                VARCHAR(50);
 
+	SET CONST_PARENTID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+	SET CONST_AGENCY_PARENTID_VVIP 				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
 	SET CONST_CATEID_INFOBET 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INFOBET');
 	SET CONST_CATEID_GROUPBETTING 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_GROUPBETTING');
 	SET CONST_CATEID_HEDGING 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_HEDGING');
@@ -74,7 +79,7 @@ BEGIN
 	SET CONST_ROLE_AGENCY		= 2;
     SET CONST_CATENAME_ROBOT    = 'Robot User';
 
-	IF ip_PageSource = 1 THEN
+	IF ip_QueryType = 1 THEN
 		SELECT 	cat.CategoryName
 			, 	cat.CategoryGroupID
 			, 	cat.RelevantCategoryID AS RelevantCategoryGroup
@@ -99,7 +104,7 @@ BEGIN
 								, CONST_AGENCY_CATEID_IRRIGATIONBET, CONST_AGENCY_CATEID_ARBITRAGE, CONST_AGENCY_CATEID_GROUPBETTING, CONST_AGENCY_CATEID_ROBOT)
 				AND catA.IsActive = 1
 		ORDER BY Priority;
-	ELSEIF ip_PageSource = 2 THEN
+	ELSEIF ip_QueryType = 2 THEN
 		SELECT 	cat.CategoryName
 			, 	cat.CategoryGroupID
 			, 	cat.RelevantCategoryID AS RelevantCategoryGroup
@@ -110,7 +115,7 @@ BEGIN
 		WHERE	cat.CategoryID IN (CONST_CATEID_INFOBET, CONST_CATEID_GROUPBETTING, CONST_CATEID_HEDGING, CONST_CATEID_ARBITRAGE, CONST_CATEID_FIXEDGAME, CONST_CATEID_FORMULABET)
 				AND cat.IsActive = 1
 		ORDER BY CategoryID;
-	ELSE
+	ELSEIF ip_QueryType = 2 THEN
 		SELECT 	cat.CategoryName
 			, 	cat.CategoryGroupID
 			, 	cat.RelevantCategoryID AS RelevantCategoryGroup
@@ -137,6 +142,18 @@ BEGIN
 								, CONST_AGENCY_CATEID_IRRIGATIONBET, CONST_AGENCY_CATEID_ARBITRAGE, CONST_AGENCY_CATEID_GROUPBETTING, CONST_AGENCY_CATEID_ROBOT)
 				AND catA.IsActive = 1
 		ORDER BY RoleGroup, Priority, CategoryID;
+	ELSEIF ip_QueryType = 4 THEN
+		SELECT	cat.CategoryID
+			,	cat.CategoryName
+			, 	CONST_ROLE_MEMBER AS RoleID
+		FROM CTS_DataCenter.CustomerCategory AS cat
+		WHERE cat.ParentID = CONST_PARENTID_VVIP
+		UNION
+		SELECT	catA.CategoryID
+			,	catA.CategoryName
+			, 	catA.RoleID
+		FROM CTS_DataCenter.CustomerCategoryAgency AS catA
+		WHERE catA.ParentID = CONST_AGENCY_PARENTID_VVIP;
 	END IF;
 
 END$$

@@ -27,6 +27,7 @@ sp: BEGIN
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetRescanNewCust(@op_LastCTSCustID);SELECT @op_LastCTSCustID;
 	*/
+  DECLARE CONST_CATEID_VVIP				              INT;
   DECLARE CONST_AGENCY_PARENTID_VVIP				    INT;
   DECLARE	CONST_AGENCY_PARENTID_PA				      INT;
   DECLARE CONST_AGENCY_CATEGROUPID_ROBOT       	INT;
@@ -35,6 +36,7 @@ sp: BEGIN
   DECLARE lv_BatchSize 		                      INT UNSIGNED;
   DECLARE lv_MaxCTSCustID 	                    BIGINT UNSIGNED;
     
+  SET CONST_CATEID_VVIP				                  = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');  
   SET CONST_AGENCY_PARENTID_VVIP				        = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
   SET CONST_AGENCY_PARENTID_PA				          = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
   SET CONST_AGENCY_CATEGROUPID_ROBOT			      = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_ROBOT');
@@ -202,41 +204,44 @@ SET tmp.CategoryID = cate.CategoryID
   , tmp.CategoryGroupID = cate.CategoryGroupID
 WHERE tmp.CategoryID IS NULL;
       
-  SELECT	tmp.CTSCustID
-      ,	tmp.CustID          
-      ,	tmp.CustSubID  
-      ,	tmp.UserName  
-      ,	tmp.RegisterName  
-      ,	tmp.RoleID  
-      ,	tmp.SubscriberID  
-      ,	vip.CreatedBy          
+SELECT	tmp.CTSCustID
+    ,	tmp.CustID          
+    ,	tmp.CustSubID  
+    ,	tmp.UserName  
+    ,	tmp.RegisterName  
+    ,	tmp.RoleID  
+    ,	tmp.SubscriberID
+    , CASE WHEN tmp.RoleID = 1 THEN CONST_CATEID_VVIP ELSE catA.ToCategoryID AS CategoryID  
+    ,	vip.CreatedBy          
 FROM Temp_CustInfo AS tmp
-  INNER JOIN Temp_VVIPCust AS vip ON tmp.CTSCustID = vip.CTSCustID;
-    
-  SELECT 	cate.CTSCustID		
-      , cate.CustID	
-      , tmp.RoleID
-      , tmp.SubscriberID
-      , tmp.IsLicensee 
-      , cate.CategoryID		
-      ,	cate.CategoryGroupID
-      , cate.Remark		
-      ,	cate.CreatedBy
-      ,	cate.IsFromTVS
-      ,	cate.IsFromTW
-      ,	cate.IsFromCTS
-      , cate.LastModifiedDate
-      , 0 AS IsMarkedDirectly
-  FROM Temp_CustCategory AS cate
-      LEFT JOIN Temp_CustInfo AS tmp ON tmp.CustID = cate.CustID
-  WHERE NOT EXISTS (SELECT 1 FROM Temp_VVIPCust AS vv WHERE cate.CTSCustID = vv.CTSCustID); 
+  INNER JOIN Temp_VVIPCust AS vip ON tmp.CTSCustID = vip.CTSCustID
+  LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS catA ON catA.ParentID = CONST_AGENCY_PARENTID_VVIP AND catA.RoleID = tmp.RoleID
+;
   
-  SELECT 	tmp.CTSCustID		
-        , tmp.CustID
-        ,	tmp.RoleID
-  FROM Temp_CustInfo AS tmp
-  WHERE NOT EXISTS (SELECT 1 FROM Temp_VVIPCust AS vv WHERE tmp.CTSCustID = vv.CTSCustID)
-  AND NOT EXISTS (SELECT 1 FROM Temp_CustCategory AS cate WHERE cate.CustID = tmp.CustID);
+SELECT 	cate.CTSCustID		
+    , cate.CustID	
+    , tmp.RoleID
+    , tmp.SubscriberID
+    , tmp.IsLicensee 
+    , cate.CategoryID		
+    ,	cate.CategoryGroupID
+    , cate.Remark		
+    ,	cate.CreatedBy
+    ,	cate.IsFromTVS
+    ,	cate.IsFromTW
+    ,	cate.IsFromCTS
+    , cate.LastModifiedDate
+    , 0 AS IsMarkedDirectly
+FROM Temp_CustCategory AS cate
+    LEFT JOIN Temp_CustInfo AS tmp ON tmp.CustID = cate.CustID
+WHERE NOT EXISTS (SELECT 1 FROM Temp_VVIPCust AS vv WHERE cate.CTSCustID = vv.CTSCustID); 
+
+SELECT 	tmp.CTSCustID		
+      , tmp.CustID
+      ,	tmp.RoleID
+FROM Temp_CustInfo AS tmp
+WHERE NOT EXISTS (SELECT 1 FROM Temp_VVIPCust AS vv WHERE tmp.CTSCustID = vv.CTSCustID)
+AND NOT EXISTS (SELECT 1 FROM Temp_CustCategory AS cate WHERE cate.CustID = tmp.CustID);
 
 END$$
 DELIMITER ;
