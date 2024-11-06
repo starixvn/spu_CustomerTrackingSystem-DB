@@ -28,6 +28,7 @@ BEGIN
             - 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
             - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
 			- 20240619@Jonas.Huynh: Renovate CC [Redmine ID: #205317] 
+			- 20241106@Jonas.Huynh: CC Agency [Redmine ID: #185799] 
             
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_CustClassification_Realtime_GetCategory('761925')
@@ -89,8 +90,7 @@ BEGIN
                     AND ca.ParentID <> CONST_PARENTID_WRAPPER
 				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
                 LIMIT 1
-		   ) tmplc 
-	WHERE tmplc.ParentID IN (CONST_PARENTID_NORMAL, CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
+		   ) tmplc;
 	
     -- #2: Return customer category for realtime classification
     SELECT DISTINCT temp.CustID AS CustID
