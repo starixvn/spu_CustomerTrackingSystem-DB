@@ -211,7 +211,7 @@ SELECT	tmp.CTSCustID
     ,	tmp.RegisterName  
     ,	tmp.RoleID  
     ,	tmp.SubscriberID
-    , CASE WHEN tmp.RoleID = 1 THEN CONST_CATEID_VVIP ELSE catA.ToCategoryID END AS CategoryID  
+    , CASE WHEN tmp.RoleID = 1 THEN CONST_CATEID_VVIP ELSE catA.CategoryID END AS CategoryID  
     ,	vip.CreatedBy          
 FROM Temp_CustInfo AS tmp
   INNER JOIN Temp_VVIPCust AS vip ON tmp.CTSCustID = vip.CTSCustID
