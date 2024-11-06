@@ -138,7 +138,7 @@ BEGIN
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
-	-- #2: Remove realtime classification with category not in (null, new, good, normal)
+	-- #2: Remove realtime classification with category not in (null, new, inactive)
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpCustomers AS a
 	WHERE   a.IsRealtimeOnly = 1 
