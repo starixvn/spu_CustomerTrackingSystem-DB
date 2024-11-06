@@ -115,7 +115,7 @@ BEGIN
 		WHERE	cat.CategoryID IN (CONST_CATEID_INFOBET, CONST_CATEID_GROUPBETTING, CONST_CATEID_HEDGING, CONST_CATEID_ARBITRAGE, CONST_CATEID_FIXEDGAME, CONST_CATEID_FORMULABET)
 				AND cat.IsActive = 1
 		ORDER BY CategoryID;
-	ELSEIF ip_QueryType = 2 THEN
+	ELSEIF ip_QueryType = 3 THEN
 		SELECT 	cat.CategoryName
 			, 	cat.CategoryGroupID
 			, 	cat.RelevantCategoryID AS RelevantCategoryGroup
