@@ -18,14 +18,11 @@ CREATE TABLE `MB_RawTransaction` (
 	`IPID` decimal(50,0) DEFAULT NULL,
 	`Action` varchar(100) DEFAULT NULL,
 	`ActionResult` varchar(100) DEFAULT NULL,
-	`TransStatus` bit(16) DEFAULT NULL COMMENT 'Refer Table TransStatus',
 	`Flagged` smallint DEFAULT NULL,
-	`IsProcessed` tinyint NOT NULL DEFAULT '0',
 	`TransID` bigint unsigned NOT NULL AUTO_INCREMENT,
 	`MB_AndroidCode` varchar(32) DEFAULT NULL,
 	`MB_CustomCode` varchar(32) DEFAULT NULL,
 	`MB_MediaDRMCode` varchar(32) DEFAULT NULL,
-	`MB_IsMobileApp` tinyint DEFAULT NULL,
 	`MB_IsEmulator`tinyint DEFAULT NULL,
 	`MB_ModelName` varchar(32) DEFAULT NULL,
 	`MB_Manufacturer` varchar(32) DEFAULT NULL,
@@ -36,6 +33,6 @@ CREATE TABLE `MB_RawTransaction` (
 	`MB_Language` varchar(32) DEFAULT NULL,
 	`MB_Country` varchar(32) DEFAULT NULL,
 	PRIMARY KEY (`TransID`),
-	KEY `IX_RawTransaction_SubscriberName` (`SubscriberName`,`CreatedDate`)
+	KEY `IX_MB_RawTransaction_SubscriberName` (`SubscriberName`,`CreatedDate`)
 ) ENGINE=InnoDB;
 

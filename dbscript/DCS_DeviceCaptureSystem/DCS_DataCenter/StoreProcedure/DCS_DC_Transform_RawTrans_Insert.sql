@@ -93,12 +93,10 @@ BEGIN
         ,	IPID						DECIMAL(50,0)				NULL
         ,	`Action`					VARCHAR(100) 				NULL
 		,	ActionResult				VARCHAR(100) 				NULL
-		,	TransStatus					BIT(16)						NULL
         ,	FlaggedCode					VARCHAR(100)				NULL
         ,	MB_AndroidCode				VARCHAR(32)					NULL	
 		,	MB_CustomCode				VARCHAR(32)					NULL	
 		,	MB_MediaDRMCode				VARCHAR(32)					NULL	
-		,	MB_IsMobileApp				BOOLEAN						NULL		DEFAULT '0'
 		,	MB_IsEmulator				BOOLEAN						NULL		DEFAULT '0'
 		,	MB_ModelName				VARCHAR(32)					NULL	
 		,	MB_Manufacturer				VARCHAR(32)					NULL	
@@ -213,7 +211,7 @@ BEGIN
 	ADD INDEX IX_Temp_Transaction_BotComponentCode (BotComponentCode);
            
 	/******* Insert Temp Mobile RawTransaction ********************/
-    INSERT INTO Temp_MB_Transaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult,  TransStatus, FlaggedCode, MB_AndroidCode, MB_CustomCode, MB_MediaDRMCode, MB_IsMobileApp, MB_IsEmulator, MB_ModelName, MB_Manufacturer, MB_Brand, MB_SDKVersion, MB_OS, MB_Timezone, MB_Language, MB_Country)
+    INSERT INTO Temp_MB_Transaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, FlaggedCode, MB_AndroidCode, MB_CustomCode, MB_MediaDRMCode, MB_IsEmulator, MB_ModelName, MB_Manufacturer, MB_Brand, MB_SDKVersion, MB_OS, MB_Timezone, MB_Language, MB_Country)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -221,12 +219,10 @@ BEGIN
 		,	(CASE WHEN rt.IPID = 0 THEN NULL ELSE rt.IPID END) AS IPID
 		,	(CASE WHEN rt.Action IS NULL THEN NULL ELSE rt.Action END) AS Action
 		,	(CASE WHEN rt.ActionResult IS NULL THEN NULL ELSE rt.ActionResult END) AS ActionResult
-		,	rt.TransStatus
 		,	rt.FlaggedCode
         ,	rt.MB_AndroidCode
 		,	rt.MB_CustomCode
 		,	rt.MB_MediaDRMCode
-		,	rt.MB_IsMobileApp
 		,	rt.MB_IsEmulator
 		,	rt.MB_ModelName
 		,	rt.MB_Manufacturer
@@ -314,7 +310,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     
     /*******Mobile RawTransaction********************/
-    INSERT INTO DCS_DataCenter.MB_RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, IP, IPID, Action, ActionResult, TransStatus, Flagged, MB_AndroidCode, MB_CustomCode, MB_MediaDRMCode, MB_IsMobileApp, MB_IsEmulator, MB_ModelName, MB_Manufacturer, MB_Brand, MB_SDKVersion, MB_OS, MB_Timezone, MB_Language, MB_Country)
+    INSERT INTO DCS_DataCenter.MB_RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, IP, IPID, Action, ActionResult, Flagged, MB_AndroidCode, MB_CustomCode, MB_MediaDRMCode, MB_IsEmulator, MB_ModelName, MB_Manufacturer, MB_Brand, MB_SDKVersion, MB_OS, MB_Timezone, MB_Language, MB_Country)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -323,12 +319,10 @@ BEGIN
         ,	rt.IPID
         ,	rt.Action
 		,	rt.ActionResult
-        ,	rt.TransStatus
         ,	sl.ItemID AS Flagged
         ,	rt.MB_AndroidCode
 		,	rt.MB_CustomCode
 		,	rt.MB_MediaDRMCode
-		,	rt.MB_IsMobileApp
 		,	rt.MB_IsEmulator
 		,	rt.MB_ModelName
 		,	rt.MB_Manufacturer
