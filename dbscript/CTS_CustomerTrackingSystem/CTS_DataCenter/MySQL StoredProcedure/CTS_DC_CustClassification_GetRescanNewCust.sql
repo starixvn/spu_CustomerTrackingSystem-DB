@@ -211,12 +211,11 @@ SELECT	tmp.CTSCustID
     ,	tmp.RegisterName  
     ,	tmp.RoleID  
     ,	tmp.SubscriberID
-    , CASE WHEN tmp.RoleID = 1 THEN CONST_CATEID_VVIP ELSE catA.ToCategoryID AS CategoryID  
+    , CASE WHEN tmp.RoleID = 1 THEN CONST_CATEID_VVIP ELSE catA.ToCategoryID END AS CategoryID  
     ,	vip.CreatedBy          
 FROM Temp_CustInfo AS tmp
   INNER JOIN Temp_VVIPCust AS vip ON tmp.CTSCustID = vip.CTSCustID
-  LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS catA ON catA.ParentID = CONST_AGENCY_PARENTID_VVIP AND catA.RoleID = tmp.RoleID
-;
+  LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS catA ON catA.ParentID = CONST_AGENCY_PARENTID_VVIP AND catA.RoleID = tmp.RoleID;
   
 SELECT 	cate.CTSCustID		
     , cate.CustID	
