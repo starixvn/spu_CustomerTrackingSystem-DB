@@ -16,6 +16,7 @@ BEGIN
 		Revisions: 
 			- 20231226@Thomas.Nguyen: Created [Redmine ID: #197710] 
             - 20240626@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryID and unused column [Redmine ID: #205317]
+            - 20241105@Thomas.Nguyen: Hotfit - Can't reclassified CC305/3005 after unmarking PA [Redmine ID: #213302]
 
         Param's Explanation: 
 
@@ -107,7 +108,7 @@ BEGIN
                                     ,   FirstBetDate    DATETIME(3)            PATH "$.FirstBetDate"                                           
                                 )) AS tmp
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND IsInternal = 0
-        LEFT JOIN CTS_DataCenter.CustomerLoginInfoDetection AS cld ON cld.CustID = tmp.CustID
+        LEFT JOIN CTS_DataCenter.CustomerLoginInfoDetection AS cld ON cld.CustID = tmp.CustID AND cld.IsDisabled = 0
     WHERE cld.CustID IS NULL;
 
     INSERT IGNORE INTO Temp_CustAccountID(CTSCustID, AccountID)
