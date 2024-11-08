@@ -96,6 +96,16 @@ VALUES (1, 'ByFlow', 1, 'Realtime', 100);
 INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, FunctionId, FunctionName, Priority)
 VALUES (1, 'ByFlow', 2, 'Daily', 200);
 
+INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, FunctionId, FunctionName, Priority)
+VALUES (1, 'ByFlow', 5, 'Rescan New Customers', 20);
+
+INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, FunctionId, FunctionName, Priority)
+VALUES (1, 'ByFlow', 6, 'Rescan Affected Downline', 30);
+
+INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, FunctionId, FunctionName, Priority)
+VALUES (1, 'ByFlow', 8, 'Rescan Inactive Customer', 1000);
+
+
 -- #5. ADD TABLE CustomerClassificationAgency_RealtimeChanges
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CustomerClassificationAgency_RealtimeChanges]') AND type in (N'U'))
 DROP TABLE [dbo].[CustomerClassificationAgency_RealtimeChanges]
