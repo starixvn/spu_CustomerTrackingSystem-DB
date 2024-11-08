@@ -191,7 +191,6 @@ CREATE TEMPORARY TABLE Temp_CustInfo(
       STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) 
           AND class.CustID <> tmp.CustID 
           AND class.ParentID = CONST_AGENCY_PARENTID_PA 
-          AND class.IsMarkedDirectly = 1 
       STRAIGHT_JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroupID NOT IN (CONST_AGENCY_CATEGROUPID_ROBOT)
   WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls WHERE cls.CustID = class.CustID AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP);
 
