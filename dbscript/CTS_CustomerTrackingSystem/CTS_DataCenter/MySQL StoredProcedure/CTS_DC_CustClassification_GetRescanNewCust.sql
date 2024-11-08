@@ -192,8 +192,7 @@ CREATE TEMPORARY TABLE Temp_CustInfo(
           AND class.CustID <> tmp.CustID 
           AND class.ParentID = CONST_AGENCY_PARENTID_PA 
           AND class.IsMarkedDirectly = 1 
-          AND class.CategoryGroupID NOT IN (CONST_AGENCY_CATEGROUPID_ROBOT)
-      STRAIGHT_JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = class.CategoryID
+      STRAIGHT_JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroupID NOT IN (CONST_AGENCY_CATEGROUPID_ROBOT)
   WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls WHERE cls.CustID = class.CustID AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP);
 
 UPDATE Temp_CustCategory AS tmp
