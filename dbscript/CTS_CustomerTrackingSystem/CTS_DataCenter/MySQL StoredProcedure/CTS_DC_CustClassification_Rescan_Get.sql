@@ -41,6 +41,7 @@ sp: BEGIN
     DECLARE	CONST_AGENCY_CATEID_ROBOT				INT;
     DECLARE	CONST_AGENCY_CATEID_ROBOTLOSING			INT;
     DECLARE	CONST_AGENCY_PARENTID_PA				INT;
+    DECLARE CONST_AGENCY_PARENTID_VVIP				INT;
 
     DECLARE CONST_INPUTFLOWID_NORMAL				INT DEFAULT 9;
     DECLARE	CONST_INPUTFLOWID_POTENTIALPA			INT DEFAULT 118;
@@ -59,6 +60,7 @@ sp: BEGIN
     SET CONST_AGENCY_CATEID_ROBOT	 				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
     SET CONST_AGENCY_CATEID_ROBOTLOSING	 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
     SET CONST_AGENCY_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
+    SET CONST_AGENCY_PARENTID_VVIP				    = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
         
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;    
 	CREATE TEMPORARY TABLE Temp_CustID (	  
@@ -360,7 +362,7 @@ sp: BEGIN
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
-        ,	catmap.ToCategoryID             AS CategoryID
+        ,	CASE WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID ELSE cate.CategoryID END AS CategoryID
         , 	NULL 							AS TVSReasonID
         ,	tmp.RoleID 						AS RoleID
         ,	tmp.SubscriberID				AS SubscriberID
@@ -382,8 +384,9 @@ sp: BEGIN
 					AND s.ParentID = CONST_AGENCY_PARENTID_PA 
                     AND s.IsMarkedDirectly = 1
                     AND s.CategoryID NOT IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING)
-        INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = s.CategoryID
-        INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS catmap ON catmap.FromCategoryID = cate.CategoryID AND catmap.FromRoleID IN (2,3,4) AND catmap.ToRoleID = 1  
+        INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS catmap ON catmap.FromCategoryID = s.CategoryID AND catmap.FromRoleID IN (2,3,4) AND catmap.ToRoleID = 1
+        INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = catmap.ToCategoryID 
+    WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls WHERE cls.CustID = s.CustID AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP);  
 	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
 						,	LastModifiedDate = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END
 						,	CreatedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.CreatedDate THEN s.CreatedDate ELSE Temp_CustCategory.CreatedDate END

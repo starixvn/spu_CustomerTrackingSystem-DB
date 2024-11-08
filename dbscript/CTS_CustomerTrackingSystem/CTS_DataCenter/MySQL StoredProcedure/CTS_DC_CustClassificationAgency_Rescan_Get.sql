@@ -23,6 +23,8 @@ sp: BEGIN
     DECLARE	CONST_AGENCY_CATEID_ROBOT				INT;
     DECLARE	CONST_AGENCY_CATEID_ROBOTLOSING			INT;
     DECLARE	CONST_AGENCY_PARENTID_PA				INT;
+    DECLARE CONST_AGENCY_PARENTID_VVIP				INT;
+
 
     DECLARE CONST_INPUTFLOWID_INSERT_NORMAL			INT DEFAULT 1009;
 	DECLARE	CONST_INPUTFLOWID_RESCAN_PA				INT DEFAULT 1115;
@@ -32,7 +34,8 @@ sp: BEGIN
     SET CONST_AGENCY_CATEID_ROBOT	 				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
     SET CONST_AGENCY_CATEID_ROBOTLOSING	 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
     SET CONST_AGENCY_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
-    
+    SET CONST_AGENCY_PARENTID_VVIP				    = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
+
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;    
 	CREATE TEMPORARY TABLE Temp_CustID (	  
 			CustID          BIGINT UNSIGNED PRIMARY KEY 	
@@ -146,7 +149,7 @@ sp: BEGIN
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
-        ,	CASE WHEN cate.IsPAProbation THEN cate.RelevantCategoryID ELSE s.CategoryID END AS CategoryID
+        ,	CASE WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID ELSE s.CategoryID END AS CategoryID
         ,	tmp.RoleID 						AS RoleID
         ,	tmp.SubscriberID				AS SubscriberID
 		,	tmp.IsLicensee					AS IsLicensee
@@ -164,8 +167,9 @@ sp: BEGIN
 					AND s.CustID <> tmp.CustID
 					AND s.ParentID = CONST_AGENCY_PARENTID_PA 
                     AND s.IsMarkedDirectly = 1
+                    AND s.CategoryID NOT IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING)
 		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = s.CategoryID 
-			AND s.CategoryID NOT IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING);
+    WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls WHERE cls.CustID = s.CustID AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP);
 	
     /***********************Check PA from main table ****************************/   
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, LastModifiedDate, InputFlowID)

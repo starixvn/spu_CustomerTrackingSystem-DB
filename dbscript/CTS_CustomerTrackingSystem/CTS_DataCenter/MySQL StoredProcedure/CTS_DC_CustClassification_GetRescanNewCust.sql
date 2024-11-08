@@ -188,8 +188,13 @@ CREATE TEMPORARY TABLE Temp_CustInfo(
                   END) AS FromRoleID
         ,	class.CategoryID AS FromCategoryID        
   FROM Temp_CustInfo AS tmp    
-  STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) AND class.ParentID = CONST_AGENCY_PARENTID_PA 
-      STRAIGHT_JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = class.CategoryID AND cate.CategoryGroupID NOT IN (CONST_AGENCY_CATEGROUPID_ROBOT);
+      STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) 
+          AND class.CustID <> tmp.CustID 
+          AND class.ParentID = CONST_AGENCY_PARENTID_PA 
+          AND class.IsMarkedDirectly = 1 
+          AND class.CategoryGroupID NOT IN (CONST_AGENCY_CATEGROUPID_ROBOT)
+      STRAIGHT_JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = class.CategoryID
+  WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls WHERE cls.CustID = class.CustID AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP);
 
 UPDATE Temp_CustCategory AS tmp
   INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS ccd ON ccd.FromRoleID <= tmp.FromRoleID AND ccd.FromCategoryID = tmp.FromCategoryID AND ccd.ToRoleID = tmp.RoleID
