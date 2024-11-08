@@ -39,6 +39,17 @@ CREATE TABLE DataConsistencyMonitoring_Log(
 	,	INDEX IX_DataConsistencyMonitoring_Log_CreatedDate (CreatedDate)
 );
 
+DROP TABLE IF EXISTS DataConsistencyMonitoring_ExecError;
+CREATE TABLE DataConsistencyMonitoring_ExecError(
+		ID					BIGINT AUTO_INCREMENT PRIMARY KEY
+	,	StoredProcedureName VARCHAR(200)
+	,	EventName			VARCHAR(200)
+	,	ErrCode 			VARCHAR(10)
+	,	ErrMsg 				VARCHAR(500)
+	,	ErrDate 			DATE
+	,	ErrDateTime			DATETIME
+	,	INDEX DataConsistencyMonitoring_ExecError_ErrDate (ErrDate)
+);
 
 SET @INSERTEDTIME = NOW();
 INSERT INTO DataConsistencyMonitoring (RuleID,RuleMessage,Description,IsActive,InsertedTime,LastModifiedDate)

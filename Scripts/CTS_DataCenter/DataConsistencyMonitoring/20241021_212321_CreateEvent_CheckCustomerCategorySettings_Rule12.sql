@@ -38,14 +38,42 @@ CREATE EVENT EV_CTS_DC_DataConsistency_CustomerCategory
 		
 		DECLARE lv_IsNew							TINYINT(1) DEFAULT 0;
 		DECLARE lv_TrackingDate						DATE DEFAULT NOW();
+		DECLARE lv_LastExecTime						DATETIME;
+		DECLARE lv_LastStatus						VARCHAR(20);
 		
 		DECLARE EXIT HANDLER FOR SQLEXCEPTION
 		BEGIN
+			GET DIAGNOSTICS CONDITION 1 @errCode = RETURNED_SQLSTATE, @errMsg = MESSAGE_TEXT;
+			INSERT INTO DataConsistencyMonitoring_ExecError (StoredProcedureName,EventName,ErrCode,ErrMsg,ErrDate,ErrDateTime)
+			SELECT 'CTS_DC_DataConsistency_CustomerCategory_General_Check','EV_CTS_DC_DataConsistency_CustomerCategory',@errCode,@errMsg,NOW(),NOW();
+			
 			UPDATE CTS_DataCenter.SystemEventStatus 
 			SET 	Status = 'Stop' 
 				,	LastExecTime = NOW()
 			WHERE EventName = 'EV_CTS_DC_DataConsistency_CustomerCategory';
+			
 		END;
+        
+		SELECT LastExecTime, Status
+		INTO lv_LastExecTime, lv_LastStatus
+		FROM CTS_DataCenter.SystemEventStatus
+		WHERE EventName = 'EV_CTS_DC_DataConsistency_CustomerCategory';
+		
+		IF (lv_LastStatus = 'Start') THEN
+			IF NOT EXISTS (SELECT 1 
+							FROM CTS_DataCenter.DataConsistencyMonitoring_ExecError 
+							WHERE EventName = 'EV_CTS_DC_DataConsistency_CustomerCategory' 
+								AND ErrDate = DATE(lv_LastExecTime)) THEN
+				INSERT INTO DataConsistencyMonitoring_ExecError (StoredProcedureName,EventName,ErrCode,ErrMsg,ErrDate,ErrDateTime)
+				SELECT 'CTS_DC_DataConsistency_CustomerCategory_General_Check','EV_CTS_DC_DataConsistency_CustomerCategory',NULL,'LastStatus:Start',lv_LastExecTime,NOW();
+			END IF;
+			
+			UPDATE CTS_DataCenter.SystemEventStatus 
+			SET 	Status = 'Stop' 
+				,	LastExecTime = NOW()
+			WHERE EventName = 'EV_CTS_DC_DataConsistency_CustomerCategory';
+			
+		END IF;
 
 		IF EXISTS (SELECT 1 FROM CTS_DataCenter.SystemEventStatus WHERE EventName = 'EV_CTS_DC_DataConsistency_CustomerCategory' AND Status = 'Stop') THEN
 			
