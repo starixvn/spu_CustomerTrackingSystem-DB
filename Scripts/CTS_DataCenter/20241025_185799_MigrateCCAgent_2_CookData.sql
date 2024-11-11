@@ -95,6 +95,7 @@ UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification
 SET 	Migrate_Set = 1
 	,	Migrate_IsMove = 1
 WHERE Migrate_Source = 1 
+	AND Migrate_ToSubscriberID IS NOT NULL
 	AND Migrate_IsLicensee = 0 
     AND CategoryID <> 40100 
     AND ParentID IN (20000, 1000); #0.500 sec #12870 row(s) affected Rows matched: 12870  Changed: 12870  Warnings: 0
@@ -129,20 +130,6 @@ SET Migrate_ToCategoryID = CategoryID + 100000
 	, Migrate_ToParentID = ParentID + 100000
 WHERE ParentID = 20000 
     AND Migrate_IsMove = 1; #0.437 sec #12844 row(s) affected Rows matched: 12844  Changed: 12844  Warnings: 0
-
-*******???????INVALID CTSCustomer Minssing Site CO MOVE??? ==========================================
-SELECT DISTINCT Site, SiteID FROM CTS_DataCenter.CTSCustomer WHERE SubscriberID IS  NULL;
-
-SELECT Migrate_ToSubscriberID, Migrate_IsLicensee, RoleID, cls.LastModifiedDate, cls.CategoryID, cls.* 
-FROM Adhoc_F185799Mig_CTSCustomerClassification cls 
-WHERE Migrate_ToSubscriberID  Is NULL AND Migrate_IsMove = 1;
-
-SELECT site, siteID, cus.* FROM CTS_DataCenter.CTSCustomer cus WHERE CustID IN (27454001,27454055);
-SELECT site, siteID, cus.* FROM CTS_DataCenter.CTSCustomer cus WHERE SiteID = 257;
-
-SELECT * FROM CTS_DataCenter.MappingSubscriberSite WHERE SiteID = 257;
-
-END;
 
 BEGIN;#============STEP 2: COOK Adhoc_F185799Mig_CTSCustomerClassification_History ==EST: Duration() RowCount(~)=======================
 ********STEP 2.1 GET BY JOIN CTSCustomer*********

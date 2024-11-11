@@ -28,12 +28,6 @@ BEGIN
 			6. ip_IsFromQueue: Remove from queue PA
 			7. ip_CustInfo
 			8. op_ErrorMessage
-			- Param's Input:
-				+ InputFlow = VVIP: 2 + 3 + 4 + 5 + 7
-				+ InputFlow = SpecialCC: 7
-				+ InputFlow = LicVIP: 7
-				+ InputFlow = LicBA: 7
-				+ InputFlow = PA: 6 + 7
 			
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Remove(1225, 1, 0, 0, false, false, '[{"CustID":24150964,"RoleID":2,"SubscriberID":168,"CTSCustID":11059,"CreatedBy":8,"Remark":"Thomas unmark PA","IsExceptDirectDownline":false,"IsMarkedDirectly":true}]', @outParam7);
@@ -43,13 +37,13 @@ BEGIN
 */
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP 			INT;
 	
-	DECLARE lv_CurrentDateTime 								DATETIME DEFAULT CURRENT_TIMESTAMP();
-	DECLARE lv_LogTypeID									INT;
-	DECLARE lv_CreatedBy									INT;
-	DECLARE lv_IsExceptDirectDownline						TINYINT(1);
-	DECLARE lv_SPName 										VARCHAR(200) DEFAULT 'CTS_DC_CustClassificationAgency_Remove';
-	DECLARE lv_LogInfo 										VARCHAR(500);
-	DECLARE lv_MaxCTSCustID									BIGINT;
+	DECLARE lv_CurrentDateTime 										DATETIME DEFAULT CURRENT_TIMESTAMP();
+	DECLARE lv_LogTypeID											INT;
+	DECLARE lv_CreatedBy											INT;
+	DECLARE lv_IsExceptDirectDownline								TINYINT(1);
+	DECLARE lv_SPName 												VARCHAR(200) DEFAULT 'CTS_DC_CustClassificationAgency_Remove';
+	DECLARE lv_LogInfo 												VARCHAR(500);
+	DECLARE lv_MaxCTSCustID											BIGINT;
 	
 	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP');
 

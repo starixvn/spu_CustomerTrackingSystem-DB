@@ -28,15 +28,6 @@ BEGIN
 			6. ip_IsToQueue: Insert SMA PA to queue PA
 			7. ip_CustInfo: 
 			8. op_ErrorMessage:
-			- Param's Input:
-				+ InputFlow = VVIP: 2 + 3 + 4 + 5 + 7
-				+ InputFlow = SpecialCC: 7
-				+ InputFlow = LicVIP: 7
-				+ InputFlow = LicBA: 7
-				+ InputFlow = PA: 6 + 7
-				+ InputFlow = Robot: 7
-				+ InputFlow = PotentialPA: 7
-				+ InputFlow = Normal: 7
 				
 		Example:
 			- CALL CTS_DC_CustClassificationAgency_Insert(1001, 1, null, null, false, false, '[{"CustID":24180504,"CTSCustID":11194,"SubscriberID":168,"RoleID":2,"CreatedBy":8,"Remark":"Thomas test"}]', @outParam7);

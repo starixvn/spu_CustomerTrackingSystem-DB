@@ -49,7 +49,11 @@ sp: BEGIN
       
 	DECLARE	CONST_TVSREQUESTTYPE_PA					TINYINT DEFAULT 1; 
 	DECLARE CONST_CREATEDBY_STARIXITID				INT DEFAULT 10278938;
-    
+    DECLARE CONST_ROLEID_MEMBER					    SMALLINT DEFAULT 1;
+	DECLARE CONST_ROLEID_AGENT					    SMALLINT DEFAULT 2;
+    DECLARE CONST_ROLEID_MASTER					    SMALLINT DEFAULT 3;
+    DECLARE CONST_ROLEID_SUPER					    SMALLINT DEFAULT 4;
+
     SET CONST_CATEID_UNAUTHORIZEDLOGIN	 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_UNAUTHORIZEDLOGIN');
     SET CONST_CATEID_ROBOTUSER	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
     SET CONST_CATEID_ROBOTOCRD	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
@@ -384,7 +388,7 @@ sp: BEGIN
 					AND s.ParentID = CONST_AGENCY_PARENTID_PA 
                     AND s.IsMarkedDirectly = 1
                     AND s.CategoryID NOT IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING)
-        INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS catmap ON catmap.FromCategoryID = s.CategoryID AND catmap.FromRoleID IN (2,3,4) AND catmap.ToRoleID = 1
+        INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS catmap ON catmap.FromCategoryID = s.CategoryID AND catmap.FromRoleID IN (CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER) AND catmap.ToRoleID = CONST_ROLEID_MEMBER
         INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = catmap.ToCategoryID 
     WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls WHERE cls.CustID = s.CustID AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP)  
 	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
