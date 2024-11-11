@@ -22,6 +22,7 @@ AS
 		- 20220616@Long.Luu:	Get Licensee Info [Redmine ID: 174136]
 		- 20220707@Long.Luu:	Get Lic VIP & BA Info [Redmine ID: 174219]
 		- 20241024@Victoria.Le: Missing new customer due to replication inhouse ([Redmine ID: #212655]
+		- 20241111@John.Ngo: 	Missing new customer due to replication inhouse ([Redmine ID: #212655]
 
 	Param Explaination:
 		- @QueryType: 1 (default) get by range, 2 get by list CustId
@@ -33,7 +34,7 @@ AS
 BEGIN;
 	SET NOCOUNT ON;
 	
-	DECLARE @MaxRepUpdateTime	DATETIME2 =  DATEADD(SECOND, -2, GETDATE());
+	DECLARE @MaxRepUpdateTime	DATETIME2 =  DATEADD(SECOND, -5, GETDATE());
 
 	IF OBJECT_ID('tempdb..#tmpCustomer') IS NOT NULL
 	BEGIN
