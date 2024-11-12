@@ -21,6 +21,7 @@ AS
 		-20231222@Casey.Huynh: Enhance Get new Cust If Existing in CustInfo [Redmine 198667]
 		-20240318@Casey.Huynh: Move logic check existing CustInfo to sp get CustInfo by CustList([Redmine ID: 198000]
 		-20241024@Victoria.Le: Missing new customer due to replication inhouse ([Redmine ID: #212655]
+		-20241111@John.Ngo:    Missing new customer due to replication inhouse ([Redmine ID: #212655]
 
 	Developer's Notes:
 		
@@ -32,7 +33,7 @@ BEGIN;
 	SET NOCOUNT ON;
 
 	DECLARE @custIDList	VARCHAR(MAX);
-	DECLARE @MaxRepUpdateTime	DATETIME2 =  DATEADD(SECOND, -2, GETDATE());
+	DECLARE @MaxRepUpdateTime	DATETIME2 =  DATEADD(SECOND, -5, GETDATE());
 
 	IF	OBJECT_ID('tempdb..#tmpNewCust') IS NOT NULL
 		DROP TABLE	#tmpNewCust;
