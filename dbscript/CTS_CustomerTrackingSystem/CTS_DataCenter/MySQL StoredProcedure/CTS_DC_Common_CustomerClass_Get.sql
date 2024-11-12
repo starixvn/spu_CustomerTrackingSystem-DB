@@ -74,27 +74,21 @@ BEGIN
         AND cat.CustomerClass IS NOT NULL
         AND cat.ParentID NOT IN (CONST_PARENTID_VVIP, CONST_PARENTID_WRAPPER)
 	GROUP BY cat.CustomerClass, cat.CategoryGroupID, cat.BusinessCategoryGroupID;
-    
-	INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
-	SELECT CONST_GROUPNAME_PA AS CustomerClassGroup
-		,	catA.CustomerClass
-		,	GROUP_CONCAT(catA.CategoryID SEPARATOR ',')  AS CategoryIDs 
-	FROM 	CTS_DataCenter.CustomerCategoryAgency AS catA
-	WHERE	catA.ParentID = CONST_AGENCY_PARENTID_PA
-		AND catA.IsActive = 1
-        AND catA.CustomerClass IS NOT NULL
-	GROUP BY catA.CustomerClass, catA.CategoryGroupID;
 
 	INSERT IGNORE INTO Temp_CustomerClass (CustomerClassGroup, CustomerClass, CategoryIDs)
-	SELECT CONST_GROUPNAME_NORMAL AS CustomerClassGroup
+    SELECT 	CASE 
+				WHEN catA.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_PA THEN CONST_GROUPNAME_PA 
+                WHEN catA.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_NORMAL THEN CONST_GROUPNAME_NORMAL 
+                WHEN catA.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_PAASSOCIATED THEN CONST_GROUPNAME_ASSOCIATEDPA 
+                WHEN catA.BusinessCategoryGroupID = CONST_BIZCATEGROUPID_OTHERS THEN CONST_GROUPNAME_OTHERS 
+			END AS CustomerClassGroup		    
 		,	catA.CustomerClass
-		,	GROUP_CONCAT(catA.CategoryID SEPARATOR ',')  AS CategoryIDs 
-	FROM 	CTS_DataCenter.CustomerCategoryAgency AS catA
-	WHERE	catA.ParentID = CONST_AGENCY_PARENTID_NORMAL
-		AND catA.IsActive = 1
-        AND catA.CustomerClass IS NOT NULL
-	GROUP BY catA.CustomerClass, catA.CategoryGroupID;
-
+		,	GROUP_CONCAT(catA.CategoryID SEPARATOR ',')  AS CategoryIDs  
+	FROM	CTS_DataCenter.CustomerCategoryAgency AS catA
+	WHERE 	catA.IsActive = 1
+        AND catA.CustomerClass IS NOT NULL      
+	GROUP BY catA.CustomerClass, catA.CategoryGroupID, catA.BusinessCategoryGroupID;
+    	
    UPDATE Temp_CustomerClass
    SET OrderID = CASE WHEN CustomerClassGroup = CONST_GROUPNAME_PA THEN 1
                  WHEN CustomerClassGroup = CONST_GROUPNAME_ASSOCIATEDPA THEN 2
