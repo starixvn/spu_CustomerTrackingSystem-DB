@@ -369,19 +369,16 @@ WHERE cat.ParentID = 20000  ;
 
 ********STEP 4.2 UPDATE Adhoc_F185799Mig_CTSCustomerClassificationQueue VVIP Agent *********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
-SET que.Migrate_ToCategoryGroupID = 101010
-	, que.Migrate_ToCategoryID = 101010
+SET que.Migrate_ToCategoryID = 101010
 WHERE ActionType = 1 AND RoleID = 2 ;
 
 ********STEP 4.2 UPDATE Adhoc_F185799Mig_CTSCustomerClassificationQueue VVIP Master *********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
-SET que.Migrate_ToCategoryGroupID = 101011
-	, que.Migrate_ToCategoryID = 101011
+SET que.Migrate_ToCategoryID = 101011
 WHERE ActionType = 1  AND RoleID = 3 ;
 
 ********STEP 4.2 UPDATE Adhoc_F185799Mig_CTSCustomerClassificationQueue VVIP Super *********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
-SET que.Migrate_ToCategoryGroupID = 101012
-	, que.Migrate_ToCategoryID = 101012
+SET que.Migrate_ToCategoryID = 101012
 WHERE ActionType = 1  AND RoleID = 4;
 #===========================================================================================================

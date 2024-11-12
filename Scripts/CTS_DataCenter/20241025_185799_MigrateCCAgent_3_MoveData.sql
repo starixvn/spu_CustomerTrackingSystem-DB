@@ -38,7 +38,8 @@ SELECT  ROW_NUMBER()  OVER (ORDER BY ID ASC) AS  ID,CustID,CTSCustID
     ,	Migrate_ToOldCategoryID AS OldCategoryID
     ,	Migrate_ToDWCategoryID AS DWCategoryID 
     ,	Migrate_ToTargetCC AS TargetCC
-    ,	SourceTypeID,IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TargetDangerLevel1,Remark,IsMarkedDirectly,IsFromTW,IsFromCTS,IsFromAI,TurnoverRM,WinlossRM,BetCount
+    ,	SourceTypeID,IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TargetDangerLevel1,Remark,IsMarkedDirectly,IsFromTW,IsFromCTS,IsFromAI
+	,	IFNULL(TurnoverRM,0.0), IFNULL(WinlossRM,0.0), IFNULL(BetCount,0)
     ,	PerformanceTime,RobotCounter
 FROM CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History
 WHERE Migrate_IsMove = 1; #0.203 sec #9002 row(s) affected Records: 9002  Duplicates: 0  Warnings: 0
