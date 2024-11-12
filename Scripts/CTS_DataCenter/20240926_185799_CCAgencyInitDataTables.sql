@@ -13,7 +13,7 @@ Reviewer:
 USE CTS_DataCenter;
 
 INSERT INTO CustomerCategoryAgency(CategoryID,CategoryName,CategorySpec,ParentID,RoleID,CustomerClass,CustomerClassName,CategoryGroupID,CategoryPriority,CustomerClassPriority,BusinessCategoryGroupID,IsActive,ScanIntervalInSecond,RelevantCategoryID,IsHedgingReasonMM,IsPAProbation,AFCFraudID,DataSource,CreatedDate,CategoryNameCN,CategoryNameCN3,CategoryNameTHB,CategoryNameIND,CustomerClassNameCN,SabaSportType,RootTaggingID,OldCategoryID,ColorTypeID,Ext_ABIDangerLevel_Credit,Ext_DangerLevelType,Ext_CategoryGroupID,Ext_EvidenceID_Credit)
-VALUES (101010,'VVIP Agent','VVIP Agent',101000,2,999,'Healthy',101010,10,10,30,1,Null,Null,Null,0,Null,Null,NOW(),'超级贵宾',Null,Null,Null,'健康',Null,Null,210,1,Null,1,101010,Null),
+VALUES (101010,'VVIP Agent','VVIP Agent',101000,2,999,'Healthy +',101010,10,10,30,1,Null,Null,Null,0,Null,Null,NOW(),'超级贵宾',Null,Null,Null,'健康 +',Null,Null,210,1,Null,1,101010,Null),
 (101011,'VVIP (internal)','VVIP',101000,3,999,'Healthy +',101011,10,10,30,1,Null,Null,Null,0,Null,Null,NOW(),'超级贵宾',Null,Null,Null,'健康+',Null,Null,210,1,Null,1,101011,Null),
 (101012,'VVIP (internal)','VVIP',101000,4,999,'Healthy +',101012,10,10,30,1,Null,Null,Null,0,Null,Null,NOW(),'超级贵宾',Null,Null,Null,'健康+',Null,Null,210,1,Null,1,101012,Null),
 (120100,'Group Betting','Group Betting',120000,Null,30000,'Problem',120100,400,400,10,1,Null,125100,Null,0,1,'CTS',NOW(),'群组投注',Null,Null,Null,'问题','1,2',8,52,6,1,2,120100,41),
@@ -74,11 +74,11 @@ VALUES (101010,'VVIP Agent','VVIP Agent',101000,2,999,'Healthy',101010,10,10,30,
 (126100,'Robot (Losing)','Robot (Losing)',120000,2,30001,'Problem -',126100,400,400,10,1,Null,121100,Null,1,Null,Null,NOW(),'机械（输钱）',Null,Null,Null,'问题 -','2',13,164,7,Null,2,126100,Null),
 (140100,'New Agent','New Agent',140000,2,20000,'New',140100,1000,1000,30,1,Null,Null,Null,0,Null,Null,NOW(),'新代理',Null,Null,Null,'新代理',Null,Null,Null,1,Null,1,140100,Null),
 (140200,'Good Agent','Good Agent',140000,2,20001,'High-value',140200,1000,1000,30,1,604800,Null,Null,0,Null,Null,NOW(),'优质代理',Null,Null,Null,'高价值',Null,Null,Null,1,Null,1,140200,Null),
-(140300,'Normal Agent','Normal Agent',140000,2,20002,'Suspicious',140300,1000,1000,30,1,604800,Null,Null,0,Null,Null,NOW(),'普通代理',Null,Null,Null,'可疑',Null,Null,Null,1,Null,1,140300,Null),
-(140500,'Smart Agent','Smart Agent',140000,2,20004,'Suspicious',140500,1000,1000,30,1,604800,Null,Null,0,Null,Null,NOW(),'精明代理',Null,Null,Null,'可疑',Null,Null,Null,2,Null,1,140500,Null),
+(140300,'Normal Agent','Normal Agent',140000,2,20002,'Moderate',140300,1000,1000,30,1,604800,Null,Null,0,Null,Null,NOW(),'普通代理',Null,Null,Null,'中等',Null,Null,Null,1,Null,1,140300,Null),
+(140500,'Smart Agent','Smart Agent',140000,2,20004,'Dangerous',140500,1000,1000,30,1,604800,Null,Null,0,Null,Null,NOW(),'精明代理',Null,Null,Null,'危险',Null,Null,Null,2,Null,1,140500,Null),
 (140600,'Risky Agent','Risky Agent',140000,2,20005,'Low-value',140600,1000,1000,30,1,604800,Null,Null,0,Null,Null,NOW(),'高危代理',Null,Null,Null,'低价值',Null,Null,Null,2,Null,1,140600,Null),
 (140700,'Inactive Agent','Inactive Agent',140000,2,90000,'Dormant',140700,1000,1000,40,1,Null,Null,Null,0,Null,Null,NOW(),'不活跃代理',Null,Null,Null,'不活跃',Null,Null,Null,8,Null,1,140700,Null),
-(140800,'Early Stage Probation Agent','Early Stage Probation Agent',140000,2,20003,'Moderate',140800,1000,1000,30,1,604800,Null,Null,0,Null,Null,NOW(),'前期阶段观察中代理',Null,Null,Null,'中等',Null,Null,Null,2,Null,1,140800,Null);
+(140800,'Early Stage Probation Agent','Early Stage Probation Agent',140000,2,20003,'Suspicious',140800,1000,1000,30,1,604800,Null,Null,0,Null,Null,NOW(),'前期阶段观察中代理',Null,Null,Null,'可疑',Null,Null,Null,2,Null,1,140800,Null);
 
 INSERT INTO CustomerCategorySettingsAgency(CategoryID,CategoryGroupID,ParentID,IsParallelParentID,IsMultiCateIDSameParentID,IsKeepOldCateID,RemarkTemplateID)
 VALUES (101010,101010,101000,0,0,0,Null),
