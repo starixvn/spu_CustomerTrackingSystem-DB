@@ -254,8 +254,9 @@ BEGIN
 		WHERE FP_Tagging IS NOT NULL;
     
     SET lv_ListFPTagging = IFNULL(lv_ListFPTagging,'');
-	CALL DCS_DC_Transform_FP_TaggingInsert(lv_ListFPTagging);
-    
+    IF lv_ListFPTagging <> '' THEN
+		CALL DCS_DC_Transform_FP_TaggingInsert(lv_ListFPTagging);
+	END IF;
     
 	/* ======= UPDATE ID ========= */
 	UPDATE Temp_RawTransaction AS tmp
