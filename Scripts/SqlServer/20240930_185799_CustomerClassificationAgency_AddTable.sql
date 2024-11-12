@@ -91,19 +91,22 @@ CREATE TABLE [dbo].[CustomerClassificationAgency_Priority](
 GO
 
 INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, FunctionId, FunctionName, Priority)
-VALUES (1, 'ByFlow', 1, 'Realtime', 100);
+VALUES (1, 'General', 1, 'Realtime', 100);
 
 INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, FunctionId, FunctionName, Priority)
-VALUES (1, 'ByFlow', 2, 'Daily', 200);
+VALUES (1, 'General', 2, 'Daily', 200);
 
 INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, FunctionId, FunctionName, Priority)
-VALUES (1, 'ByFlow', 5, 'Rescan New Customers', 20);
+VALUES (1, 'General', 4, 'Rescan From Manual Action', 10);
 
 INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, FunctionId, FunctionName, Priority)
-VALUES (1, 'ByFlow', 6, 'Rescan Affected Downline', 30);
+VALUES (1, 'General', 5, 'Rescan New Customers', 20);
 
 INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, FunctionId, FunctionName, Priority)
-VALUES (1, 'ByFlow', 8, 'Rescan Inactive Customer', 1000);
+VALUES (1, 'General', 6, 'Rescan Affected Downline', 30);
+
+INSERT INTO [dbo].[CustomerClassificationAgency_Priority] (GroupId, GroupName, FunctionId, FunctionName, Priority)
+VALUES (1, 'General', 8, 'Rescan Inactive Customer', 1000);
 
 
 -- #5. ADD TABLE CustomerClassificationAgency_RealtimeChanges
