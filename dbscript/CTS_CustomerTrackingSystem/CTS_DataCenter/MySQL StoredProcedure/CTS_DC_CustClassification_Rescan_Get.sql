@@ -389,7 +389,7 @@ sp: BEGIN
                     AND s.IsMarkedDirectly = 1
                     AND s.CategoryID NOT IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING)
         INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS catmap ON catmap.FromCategoryID = s.CategoryID AND catmap.FromRoleID IN (CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER) AND catmap.ToRoleID = CONST_ROLEID_MEMBER
-        INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = catmap.ToCategoryID 
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = catmap.ToCategoryID 
     WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls WHERE cls.CustID = s.CustID AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP)  
 	ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
 						,	LastModifiedDate = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END
