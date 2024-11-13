@@ -191,7 +191,7 @@ sp :BEGIN
 		,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(class.IssueTypeID,0) ORDER BY class.CreatedDate ASC,class.LastModifiedDate ASC,class.CategoryID ASC SEPARATOR ', '),',',1) AS IssueTypeID
 		FROM CTS_DataCenter.CTSCustomerClassification AS class
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
-			STRAIGHT_JOIN CTS_DataCenter.Temp_CustomerCategory AS tmpCat ON class.CategoryID = tmpCat.CategoryID
+			STRAIGHT_JOIN Temp_CustomerCategory AS tmpCat ON class.CategoryID = tmpCat.CategoryID
 			LEFT JOIN CTS_Admin.CTSUser AS us ON class.CreatedBy = us.UserID
 		WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 			AND  class.ParentID = CONST_PARENTID_PA
@@ -205,6 +205,7 @@ sp :BEGIN
 		GROUP BY cus.CTSCustID
 			, 	cus.CustID
 			, 	cus.UserName
+			,	cus.RoleID
 			, 	cus.Site
 			, 	cus.SiteID
 			,	cus.Currency
@@ -228,8 +229,8 @@ sp :BEGIN
 		,	SUBSTRING_INDEX(GROUP_CONCAT(IFNULL(class.Remark,'') ORDER BY class.CreatedDate ASC,class.LastModifiedDate ASC,class.CategoryID ASC SEPARATOR ', '),',',1) AS Remark
 		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS class
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON class.CTSCustID = cus.CTSCustID
-			INNER JOIN CTS_DataCenter.Temp_RoleID AS r ON cus.RoleID = r.RoleID
-			STRAIGHT_JOIN CTS_DataCenter.Temp_CustomerCategory AS tmpCat ON class.CategoryID = tmpCat.CategoryID
+			INNER JOIN Temp_RoleID AS r ON cus.RoleID = r.RoleID
+			STRAIGHT_JOIN Temp_CustomerCategory AS tmpCat ON class.CategoryID = tmpCat.CategoryID
 			LEFT JOIN CTS_Admin.CTSUser AS us ON class.CreatedBy = us.UserID
 		WHERE    class.CreatedDate BETWEEN ip_FromDate AND ip_ToDate
 			AND  class.ParentID = CONST_AGENCY_PARENTID_PA
@@ -243,6 +244,7 @@ sp :BEGIN
 		GROUP BY cus.CTSCustID
 			, 	cus.CustID
 			, 	cus.UserName
+			,	cus.RoleID
 			, 	cus.Site
 			, 	cus.SiteID
 			,	cus.Currency
