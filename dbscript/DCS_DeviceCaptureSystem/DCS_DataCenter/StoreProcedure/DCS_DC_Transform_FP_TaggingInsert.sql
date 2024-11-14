@@ -15,6 +15,7 @@ BEGIN
 
 		Revisions:
 			- 20240730@Jonathan.Doan: Created [Redmine ID: #206403]
+			- 20241111@Jonathan.Doan: Check when Tagging empty [Redmine ID: #212696]
 
 		Param's Explanation (filtered by):
 			
