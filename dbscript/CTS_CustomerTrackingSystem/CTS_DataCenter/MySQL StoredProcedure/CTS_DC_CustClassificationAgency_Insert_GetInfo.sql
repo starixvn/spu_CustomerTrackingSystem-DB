@@ -16,9 +16,9 @@ BEGIN
 		DB:			CTS_DataCenter
 		
 		Param's Expanation:
-			- ip_InputFlowID
-            - ip_FromAction
-            - ip_UplineRoleID
+			- ip_InputFlowID: Used to identify flows: Insert/Rescan/Remove. Details of this can be found from StaticList (ListID = 24)
+            - ip_FromAction: CTSWeb (1), From CTS API (2), From CTS Service (3), From Manual Trigger (4)
+            - ip_UplineRoleID: From Web (NULL), From Service (<UplineRoleID>)
 			- ip_CustInfo
 			
 		Example:

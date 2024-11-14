@@ -369,48 +369,51 @@ BEGIN
 		FROM Temp_NewClassification AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategorySettingsAgency AS ccs ON ccs.CategoryID = temp.NewCategoryID ;
 
+	/* Insert into source tables */
 	IF (IFNULL(lv_InsertedCount,0) > 0 OR IFNULL(lv_UpdatedCount,0) > 0) THEN
 	
 		IF EXISTS (SELECT 1 
 						FROM Temp_NewClassification 
 						WHERE IsFromTW = 1 AND IsRobot = 1
 							AND ( lv_InsertedCount > 0 OR lv_UpdatedCount > 0)) THEN
-				
-				INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate,InsertedTime)
-				SELECT 	temp.CustID
-					,	temp.NewCategoryID
-					,	temp.TWRobotCounter
-					,	lv_CurrentDateTime AS CreatedDate
-					,	CURRENT_TIMESTAMP(3) AS InsertedTime
-				FROM Temp_NewClassification AS temp
-					LEFT JOIN CTS_DataCenter.TWRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
-				WHERE temp.IsFromTW = 1 AND temp.IsRobot = 1
-					AND h.CustID IS NULL
-					AND 1 = (CASE WHEN lv_InsertedCount > 0 THEN (CASE WHEN (temp.IsFromOldPA = 1 AND lv_IsRescan = 0) OR temp.IsDataChanged = 1 THEN 1 ELSE 0 END)
-								  WHEN lv_UpdatedCount > 0 AND temp.IsDataChanged = 1 THEN (CASE WHEN lv_IsRescan = 1 OR DataChangeType = 1 THEN 1 ELSE 0 END)
-								  ELSE 0 END);
-			END IF;
+
+			/*Add to source table TWRobotUser*/	
+			INSERT INTO CTS_DataCenter.TWRobotUser (CustID,CategoryID,RobotCounter,CreatedDate,InsertedTime)
+			SELECT 	temp.CustID
+				,	temp.NewCategoryID
+				,	temp.TWRobotCounter
+				,	lv_CurrentDateTime AS CreatedDate
+				,	CURRENT_TIMESTAMP(3) AS InsertedTime
+			FROM Temp_NewClassification AS temp
+				LEFT JOIN CTS_DataCenter.TWRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
+			WHERE temp.IsFromTW = 1 AND temp.IsRobot = 1
+				AND h.CustID IS NULL
+				AND 1 = (CASE WHEN lv_InsertedCount > 0 THEN (CASE WHEN (temp.IsFromOldPA = 1 AND lv_IsRescan = 0) OR temp.IsDataChanged = 1 THEN 1 ELSE 0 END)
+								WHEN lv_UpdatedCount > 0 AND temp.IsDataChanged = 1 THEN (CASE WHEN lv_IsRescan = 1 OR DataChangeType = 1 THEN 1 ELSE 0 END)
+								ELSE 0 END);
+		END IF;
 			
-			IF EXISTS (SELECT 1 
-						FROM Temp_NewClassification 
-						WHERE IsFromCTS = 1 AND IsRobot = 1
-							AND ( lv_InsertedCount > 0 OR lv_UpdatedCount > 0)) THEN
-					
-				INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate,InsertedTime)
-				SELECT 	temp.CustID
-					,	temp.NewCategoryID
-					,	temp.Remark
-					,	lv_CurrentDateTime AS CreatedDate
-					,	CURRENT_TIMESTAMP(3) AS InsertedTime
-				FROM Temp_NewClassification AS temp
-					LEFT JOIN CTS_DataCenter.CTSRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
-				WHERE temp.IsFromCTS = 1 AND temp.IsRobot = 1
-					AND h.CustID IS NULL
-					AND 1 = (CASE WHEN lv_InsertedCount > 0 THEN (CASE WHEN (temp.IsFromOldPA = 1 AND lv_IsRescan = 0) OR temp.IsDataChanged = 1 THEN 1 ELSE 0 END)
-								  WHEN lv_UpdatedCount > 0 AND temp.IsDataChanged = 1 THEN (CASE WHEN lv_IsRescan = 1 OR DataChangeType = 1 THEN 1 ELSE 0 END)
-								  ELSE 0 END);
-					
-			END IF;	
+		IF EXISTS (SELECT 1 
+					FROM Temp_NewClassification 
+					WHERE IsFromCTS = 1 AND IsRobot = 1
+						AND ( lv_InsertedCount > 0 OR lv_UpdatedCount > 0)) THEN
+
+			/*Add to source table CTSRobotUser*/		
+			INSERT INTO CTS_DataCenter.CTSRobotUser (CustID,CategoryID,Remark,CreatedDate,InsertedTime)
+			SELECT 	temp.CustID
+				,	temp.NewCategoryID
+				,	temp.Remark
+				,	lv_CurrentDateTime AS CreatedDate
+				,	CURRENT_TIMESTAMP(3) AS InsertedTime
+			FROM Temp_NewClassification AS temp
+				LEFT JOIN CTS_DataCenter.CTSRobotUser AS h ON h.CustID = temp.CustID AND h.CategoryID = temp.NewCategoryID AND h.IsDisabled = 0
+			WHERE temp.IsFromCTS = 1 AND temp.IsRobot = 1
+				AND h.CustID IS NULL
+				AND 1 = (CASE WHEN lv_InsertedCount > 0 THEN (CASE WHEN (temp.IsFromOldPA = 1 AND lv_IsRescan = 0) OR temp.IsDataChanged = 1 THEN 1 ELSE 0 END)
+								WHEN lv_UpdatedCount > 0 AND temp.IsDataChanged = 1 THEN (CASE WHEN lv_IsRescan = 1 OR DataChangeType = 1 THEN 1 ELSE 0 END)
+								ELSE 0 END);
+				
+		END IF;	
 	END IF;	
 
 END IF;

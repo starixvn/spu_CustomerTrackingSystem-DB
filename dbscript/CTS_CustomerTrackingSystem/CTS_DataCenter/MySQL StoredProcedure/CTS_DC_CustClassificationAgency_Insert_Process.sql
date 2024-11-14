@@ -34,9 +34,7 @@ BEGIN
 
 	DECLARE CONST_AGENCY_PARENTID_PA 							INT;
     DECLARE CONST_AGENCY_PARENTID_NORMAL		    			INT;
-	
-	DECLARE CONST_AGENCY_CC_VVIP			 					INT;
-	
+		
     DECLARE CONST_ACTIONTYPE_INSERT 							INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 							INT DEFAULT 1;
     DECLARE CONST_ACTIONTYPE_EXISTEDPA 							INT DEFAULT 3;
@@ -65,8 +63,6 @@ BEGIN
 	SET CONST_AGENCY_PARENTID_PA 								= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
 	SET CONST_AGENCY_PARENTID_NORMAL	 						= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
 	
-	SET CONST_AGENCY_CC_VVIP			 						= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CC_VVIP');
-
 	DROP TEMPORARY TABLE IF EXISTS Temp_UpdateCustomerClass;    
 	CREATE TEMPORARY TABLE Temp_UpdateCustomerClass(	  
 			CustID					BIGINT UNSIGNED	PRIMARY KEY
@@ -101,11 +97,8 @@ BEGIN
 		WHERE h.TargetCC = -1 OR h.CategoryID IS NULL;
 
 		UPDATE Temp_NewClassification AS temp 
-		SET temp.NewCategoryGroupID = temp.DWCategoryGroupID 
-		WHERE temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA,CONST_ACTIONTYPE_EXISTEDVVIP);
-			
-		UPDATE 	Temp_NewClassification AS temp 
-		SET temp.NewCategoryID = CASE WHEN temp.DWCategoryGroupID <> CONST_AGENCY_CATEGROUPID_INACTIVE THEN temp.NewCategoryGroupID ELSE DWCategoryID END
+		SET	temp.NewCategoryGroupID = temp.DWCategoryGroupID
+			, temp.NewCategoryID = CASE WHEN temp.DWCategoryGroupID <> CONST_AGENCY_CATEGROUPID_INACTIVE THEN temp.DWCategoryGroupID ELSE DWCategoryID END
 		WHERE temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA,CONST_ACTIONTYPE_EXISTEDVVIP);
 
 		INSERT IGNORE INTO Temp_CTSCustomerClassificationAgency_Old (
@@ -163,10 +156,7 @@ BEGIN
 		
 		UPDATE Temp_NewClassification AS temp 
 			LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = temp.NewCategoryID
-		SET temp.TargetCC = CASE
-								WHEN cate.CustomerClass = CONST_AGENCY_CC_VVIP THEN CONST_AGENCY_CC_VVIP                                                
-								ELSE cate.CustomerClass
-							END
+		SET temp.TargetCC = cate.CustomerClass
 		WHERE 	temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA, CONST_ACTIONTYPE_EXISTEDVVIP);
 		
 		INSERT IGNORE INTO Temp_UpdateCustomerClass(CustID, CustomerClass)
@@ -341,14 +331,14 @@ BEGIN
 											ELSE NULL END)
 									 END;
 
-		/*delete: priority existing < new */
+		/*delete when priority existing < new and not the same parentID*/
 		DELETE temp
 		FROM Temp_NewClassification AS temp 
 			INNER JOIN Temp_CTSCustomerClassificationAgency_Old AS temp_old ON temp.CustID = temp_old.CustID		
 		WHERE temp_old.IsNew = 0 AND temp_old.IsRemove IS NULL;
 		
-		/*delete: priority existing < new */
-		/*delete: normal - smart/risky*/
+		/*delete when priority existing < new and not the same parentID*/
+		/*delete when normal has IsKeepOldCateID = 1*/
 		DELETE temp_old
 		FROM Temp_CTSCustomerClassificationAgency_Old AS temp_old 
 		WHERE (temp_old.IsNew = 0 AND temp_old.IsRemove IS NULL)
@@ -364,7 +354,8 @@ BEGIN
 					LIMIT 1) AS tmpHis
 		WHERE temp.IsExistVVIP 	= 0;
         
-		/*existing PA - existing and new: not the same CateGroup*/
+		/*case: existing PA*/ 
+		/*existing and new: not the same CateGroup*/
 		UPDATE Temp_NewClassification AS temp 
 			LEFT JOIN Temp_CTSCustomerClassificationAgency_Old AS temp_old ON temp.CustID = temp_old.CustID	
 																			AND temp_old.ParentID IS NOT NULL
@@ -375,7 +366,8 @@ BEGIN
 			AND temp.IsExistVVIP 		= 0
 			AND temp_old.CustID IS NULL;
 			
-		/*existing PA - existing and new: the same CateGroup*/
+		/*case: existing PA*/
+		/*existing and new: the same CateGroup*/
 		UPDATE Temp_NewClassification AS temp 
 			INNER JOIN Temp_LastHistory AS h ON h.CustID = temp.CustID
 			INNER JOIN Temp_CTSCustomerClassificationAgency_Old AS temp_old ON temp.CustID = temp_old.CustID	
@@ -389,7 +381,6 @@ BEGIN
 			,	temp.CreatedBy 			= CASE WHEN lv_IsRescan = 1 THEN temp.CreatedBy ELSE temp_old.CreatedBy END
 		WHERE 	temp.IsDataChanged 		= 0;
 		
-		/*existing PA - existing and new: the same CateGroup*/
 		UPDATE Temp_NewClassification AS temp 
 			INNER JOIN Temp_CTSCustomerClassificationAgency_Old AS temp_old ON temp.CustID = temp_old.CustID	
 																			AND temp_old.ParentID IS NOT NULL
@@ -401,7 +392,8 @@ BEGIN
 			,	temp.ActionType 		= CONST_ACTIONTYPE_UPDATE
 			,	temp.CreatedBy 			= CASE WHEN lv_IsRescan = 1 THEN temp.CreatedBy ELSE temp_old.CreatedBy END;
 		
-		/*existing PA - existing and new: the same CateGroup - not change WinlossStatus (KEEP)*/
+		/*case: existing PA */
+		/*existing and new: the same CateGroup - not change WinlossStatus (KEEP)*/
 		DELETE temp_old
 		FROM Temp_CTSCustomerClassificationAgency_Old AS temp_old
 			INNER JOIN Temp_NewClassification AS temp ON temp_old.ParentID IS NOT NULL 
@@ -421,7 +413,8 @@ BEGIN
 			,	temp.IsLicensee
 		FROM Temp_NewClassification AS temp;
 		
-		/*existing PA - existing and new: the same CateGroup - WinlossStatus <> KEEP*/
+		/*case: existing PA*/
+		/*existing and new: the same CateGroup and WinlossStatus <> KEEP*/
 		INSERT INTO Temp_NewClassification(
 				CustID, CTSCustID, SubscriberID, RoleID, ParentID, DWCategoryID, DWCategoryGroupID, OldCategoryID, NewCategoryID, NewCategoryGroupID
 			, 	TargetCC,  TargetDangerLevel, ToEvidenceID, Remark, WinlossStatus, TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly
