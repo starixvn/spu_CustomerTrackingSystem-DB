@@ -70,6 +70,10 @@ sp : BEGIN
 	DECLARE	CONST_PARENTID_POTENTIALPA 			INT;
 	DECLARE	CONST_BIZCATEGROUPID_NORMAL 		INT;
     DECLARE CONST_AGENCY_PARENTID_PA            INT;
+    DECLARE CONST_ROLEID_MEMBER					TINYINT;
+    DECLARE CONST_ROLEID_AGENT            		TINYINT;
+    DECLARE CONST_ROLEID_MASTER            		TINYINT;
+    DECLARE CONST_ROLEID_SUPER            		TINYINT;
     #==================================================
 	DECLARE lv_CustID INT;
     
@@ -421,7 +425,7 @@ sp : BEGIN
 			,	0
 		FROM Temp_AssociatedAccount AS tmpAcc
 			LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cate ON cate.CTSCustID = tmpAcc.CTSCustID 
-		WHERE tmpAcc.RoleID = 1
+		WHERE tmpAcc.RoleID = CONST_ROLEID_MEMBER
 			AND cate.CTSCustID IS NULL;
         
         INSERT IGNORE INTO Temp_Classification(CTSCustID, ParentID)
@@ -429,7 +433,7 @@ sp : BEGIN
 			,	0
 		FROM Temp_AssociatedAccount AS tmpAcc
 			LEFT JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cate ON cate.CTSCustID = tmpAcc.CTSCustID 
-		WHERE tmpAcc.RoleID IN (2,3,4)
+		WHERE tmpAcc.RoleID IN (CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER)
 			AND cate.CTSCustID IS NULL;        
     END IF;
     
@@ -450,7 +454,7 @@ sp : BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CTSCustID = cate.CTSCustID AND clss.ParentID = cate.ParentID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cat.CategoryID
-	WHERE tmpAcc.RoleID = 1
+	WHERE tmpAcc.RoleID = CONST_ROLEID_MEMBER
 	GROUP BY tmpAcc.CTSCustID, cat.ParentID;
     
     #===========================AGENT===================================================
@@ -471,7 +475,7 @@ sp : BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS clss ON clss.CTSCustID = cate.CTSCustID AND clss.ParentID = cate.ParentID
 		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
         INNER JOIN Temp_CategoryID AS tmpCate ON tmpCate.CategoryID = cat.CategoryID
-	WHERE tmpAcc.RoleID IN (2,3,4) 
+	WHERE tmpAcc.RoleID IN (CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER) 
 	GROUP BY tmpAcc.CTSCustID, cat.ParentID;
     
     /* Update IsFiltered */

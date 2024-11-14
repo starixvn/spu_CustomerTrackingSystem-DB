@@ -30,6 +30,12 @@ BEGIN
 
 	
     */ 
+
+    DECLARE CONST_ROLEID_MEMBER				    TINYINT DEFAULT 1;
+    DECLARE CONST_ROLEID_AGENT            		TINYINT DEFAULT 2;
+    DECLARE CONST_ROLEID_MASTER            		TINYINT DEFAULT 3;
+    DECLARE CONST_ROLEID_SUPER            		TINYINT DEFAULT 4;
+
 	DECLARE lv_BatchSize				INT;
     DECLARE lv_QueueID					BIGINT UNSIGNED;
     DECLARE lv_LastDownlineCTSCustID 	BIGINT UNSIGNED;
@@ -90,8 +96,8 @@ BEGIN
     ORDER BY ID ASC
     LIMIT 1; 
 
-    #====== Super RoleID = 4 Get By SRecommend===============
-    IF lv_FromRoleID = 4 THEN    
+    #====== Super  Get By SRecommend===============
+    IF lv_FromRoleID = CONST_ROLEID_SUPER THEN    
 		INSERT INTO Temp_DownlineCustomer(CTSCustID, CustID, RoleID, SubscriberID, IsLicensee)
         SELECT	cus.CTSCustID
 			,	cus.CustID
@@ -125,7 +131,7 @@ BEGIN
 
     END IF;
     
-    IF lv_FromRoleID = 3 THEN    
+    IF lv_FromRoleID = CONST_ROLEID_MASTER THEN    
     
 		INSERT INTO Temp_DownlineCustomer(CTSCustID, CustID, RoleID, SubscriberID, IsLicensee)
         SELECT	cus.CTSCustID
@@ -159,7 +165,7 @@ BEGIN
 
     END IF;
     
-    IF lv_FromRoleID = 2 THEN    
+    IF lv_FromRoleID = CONST_ROLEID_AGENT THEN    
 
 		INSERT INTO Temp_DownlineCustomer(CTSCustID, CustID, RoleID, SubscriberID, IsLicensee)
         SELECT	cus.CTSCustID
@@ -215,7 +221,7 @@ BEGIN
 		,	lv_LastDownlineCTSCustID AS LastDownlineCTSCustID
         
 	FROM Temp_DownlineCustomer AS tmpDl
-    WHERE RoleID = 1 ;
+    WHERE RoleID = CONST_ROLEID_MEMBER ;
     
     #===========Return SMA=======================
     SELECT tmpDl.CTSCustID AS CTSCustID
@@ -239,7 +245,7 @@ BEGIN
 		,	lv_LastDownlineCTSCustID AS LastDownlineCTSCustID
         
 	FROM Temp_DownlineCustomer AS tmpDl
-    WHERE RoleID IN (2,3,4) ;
+    WHERE RoleID IN (CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER) ;
     
     
     SET lv_MaxCTSCustID = (SELECT MAX(CTSCustID) FROM Temp_DownlineCustomer);

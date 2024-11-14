@@ -53,6 +53,11 @@ BEGIN
 				,{"BatchId":1,"CustID":18349232,"CustStatusID":1,"UserName":"HAIFARMB01897790","UserName2":"haifa$83884255","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2015-06-28 07:22:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}]', true);
 	
     */
+    DECLARE CONST_ROLEID_MEMBER					TINYINT DEFAULT 1;
+    DECLARE CONST_ROLEID_AGENT            		TINYINT DEFAULT 2;
+    DECLARE CONST_ROLEID_MASTER            		TINYINT DEFAULT 3;
+    DECLARE CONST_ROLEID_SUPER            		TINYINT DEFAULT 4;
+
 	DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
@@ -299,25 +304,25 @@ BEGIN
 	SET   tmpCus.SubscriberID = cus.SubscriberID
 		, tmpCus.RegisterName = cus.RegisterName;      
 	
-    #====CREATE CATEGORY FOR NEW OR REACTIVATED MEMBER (RoleID = 1)=====================================
+    #====CREATE CATEGORY FOR NEW OR REACTIVATED MEMBER=====================================
     INSERT INTO Temp_CustNewCategory(CustID, IsInternal, SiteID)
     SELECT	tmpCus.CustID
 		,	tmpCus.IsInternal
         ,	tmpCus.SiteID
     FROM Temp_CTSCustomer AS tmpCus
-    WHERE tmpCus.RoleID = 1
+    WHERE tmpCus.RoleID = CONST_ROLEID_MEMBER
         AND tmpCus.CustSubID = 0;    
 
 	CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);
 
-    #====CREATE CATEGORY FOR NEW OR REACTIVATED AGENT (RoleID = 2)=====================================
+    #====CREATE CATEGORY FOR NEW OR REACTIVATED AGENT=====================================
 	TRUNCATE TABLE Temp_CustNewCategory;
     INSERT INTO Temp_CustNewCategory(CustID, IsInternal, SiteID)
     SELECT	tmpCus.CustID
 		,	tmpCus.IsInternal
         ,	tmpCus.SiteID
     FROM Temp_CTSCustomer AS tmpCus
-    WHERE tmpCus.RoleID = 2 AND tmpCus.IsLicensee = 0
+    WHERE tmpCus.RoleID = CONST_ROLEID_AGENT AND tmpCus.IsLicensee = 0
         AND tmpCus.CustSubID = 0;    
 
 	CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);    

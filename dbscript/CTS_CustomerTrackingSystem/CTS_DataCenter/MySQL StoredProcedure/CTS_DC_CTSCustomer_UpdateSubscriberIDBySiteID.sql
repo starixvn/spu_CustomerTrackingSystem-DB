@@ -78,7 +78,7 @@ BEGIN
             ,	mss.SubscriberID
             ,	cus.UserName
 		FROM CTS_DataCenter.CTSCustomer AS cus 
-			INNER JOIN TempSubSite AS mss ON cus.SiteID = mss.SiteID AND ((mss.RoleMapping = 1 AND cus.RoleID = 1) OR (mss.RoleMapping = 2 AND cus.RoleID > 1) OR (mss.RoleMapping = 0))
+			INNER JOIN TempSubSite AS mss ON cus.SiteID = mss.SiteID AND ((mss.RoleMapping = 1 AND cus.RoleID = CONST_ROLEID_MEMBER) OR (mss.RoleMapping = 2 AND cus.RoleID > CONST_ROLEID_MEMBER) OR (mss.RoleMapping = 0))
 		WHERE cus.SubscriberID IS NULL AND cus.SiteID = mss.SiteID
 		LIMIT lv_size;
         
@@ -101,26 +101,26 @@ BEGIN
 		
         #=====UPDATE CTSCustomerClassification FOR MEMBER=========================================================
         UPDATE CTS_DataCenter.CTSCustomerClassification AS cc
-			INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID AND tmpCus.RoleID = 1
+			INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID AND tmpCus.RoleID = CONST_ROLEID_MEMBER
         SET		cc.CTSCustID = tmpCus.CTSCustID
 			,	cc.SubscriberID = tmpCus.SubscriberID
             ,	cc.RoleID = tmpCus.RoleID;
             
 		#=====UPDATE CTSCustomerClassification_History FOR MEMBER=================================================
         UPDATE CTS_DataCenter.CTSCustomerClassification_History AS ch
-			INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID AND tmpCus.RoleID = 1
+			INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID AND tmpCus.RoleID = CONST_ROLEID_MEMBER
         SET	ch.CTSCustID = tmpCus.CTSCustID;        
         
         #=====UPDATE CTSCustomerClassificationAgency FOR AGENCY===================================================
         UPDATE CTS_DataCenter.CTSCustomerClassificationAgency AS cc
-			INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID AND tmpCus.RoleID IN (2,3,4)
+			INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID AND tmpCus.RoleID IN (CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER)
         SET		cc.CTSCustID = tmpCus.CTSCustID
 			,	cc.SubscriberID = tmpCus.SubscriberID
             ,	cc.RoleID = tmpCus.RoleID;
             
 		#=====UPDATE CTSCustomerClassificationAgency_History FOR AGENCY============================================
         UPDATE CTS_DataCenter.CTSCustomerClassificationAgency_History AS ch
-			INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID AND tmpCus.RoleID IN (2,3,4)
+			INNER JOIN TempCTSCustomer AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID AND tmpCus.RoleID IN (CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER)
         SET		ch.CTSCustID = tmpCus.CTSCustID
             ,	ch.RoleID = tmpCus.RoleID;
         

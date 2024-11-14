@@ -35,6 +35,11 @@ sp: BEGIN
   DECLARE lv_LastCTSCustID 	                    BIGINT UNSIGNED;
   DECLARE lv_BatchSize 		                      INT UNSIGNED;
   DECLARE lv_MaxCTSCustID 	                    BIGINT UNSIGNED;
+
+  DECLARE CONST_ROLEID_MEMBER				        TINYINT DEFAULT 1;
+  DECLARE CONST_ROLEID_AGENT            		TINYINT DEFAULT 2;
+  DECLARE CONST_ROLEID_MASTER            		TINYINT DEFAULT 3;
+  DECLARE CONST_ROLEID_SUPER            		TINYINT DEFAULT 4;
     
   SET CONST_CATEID_VVIP				                  = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');  
   SET CONST_AGENCY_PARENTID_VVIP				        = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
@@ -120,12 +125,12 @@ CREATE TEMPORARY TABLE Temp_CustInfo(
       ,   cus.SRecommend
       ,   cus.MRecommend
       ,   cus.Recommend
-      ,   (CASE	WHEN cus.RoleID = 1 THEN cus.Recommend 
-                WHEN cus.RoleID = 2 THEN cus.MRecommend
-                WHEN cus.RoleID = 3 THEN cus.SRecommend END) AS DirectUpLineCustID  
-      ,   (CASE	WHEN cus.RoleID = 1 THEN 2 
-                WHEN cus.RoleID = 2 THEN 3
-                WHEN cus.RoleID = 3 THEN 4 END) AS DirectUpLineCustIDRoleID  
+      ,   (CASE	WHEN cus.RoleID = CONST_ROLEID_MEMBER THEN cus.Recommend 
+                WHEN cus.RoleID = CONST_ROLEID_AGENT THEN cus.MRecommend
+                WHEN cus.RoleID = CONST_ROLEID_MASTER THEN cus.SRecommend END) AS DirectUpLineCustID  
+      ,   (CASE	WHEN cus.RoleID = CONST_ROLEID_MEMBER THEN CONST_ROLEID_AGENT 
+                WHEN cus.RoleID = CONST_ROLEID_AGENT THEN CONST_ROLEID_MASTER
+                WHEN cus.RoleID = CONST_ROLEID_MASTER THEN CONST_ROLEID_SUPER END) AS DirectUpLineCustIDRoleID  
       ,   cus.IsLicensee
   FROM CTS_DataCenter.CTSCustomer AS cus 
   WHERE cus.CustSubID = 0
@@ -182,9 +187,9 @@ CREATE TEMPORARY TABLE Temp_CustInfo(
         ,	class.IsFromTW
         ,	class.IsFromCTS
         ,	class.LastModifiedDate
-        ,	(CASE WHEN class.CustID = tmp.Recommend THEN 2
-          WHEN class.CustID = tmp.MRecommend THEN 3
-                  WHEN class.CustID = tmp.SRecommend THEN 4
+        ,	(CASE WHEN class.CustID = tmp.Recommend THEN CONST_ROLEID_AGENT
+          WHEN class.CustID = tmp.MRecommend THEN CONST_ROLEID_MASTER
+                  WHEN class.CustID = tmp.SRecommend THEN CONST_ROLEID_SUPER
                   END) AS FromRoleID
         ,	class.CategoryID AS FromCategoryID        
   FROM Temp_CustInfo AS tmp    
@@ -196,8 +201,8 @@ CREATE TEMPORARY TABLE Temp_CustInfo(
 
 UPDATE Temp_CustCategory AS tmp
   INNER JOIN CTS_DataCenter.CustomerCategoryDownlineMapping AS ccd ON ccd.FromRoleID <= tmp.FromRoleID AND ccd.FromCategoryID = tmp.FromCategoryID AND ccd.ToRoleID = tmp.RoleID
-  LEFT JOIN CTS_DataCenter.CustomerCategory AS cate1 ON cate1.CategoryID = ccd.ToCategoryID AND tmp.RoleID = 1
-  LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cate2 ON cate2.CategoryID = ccd.ToCategoryID AND tmp.RoleID IN (2,3,4)
+  LEFT JOIN CTS_DataCenter.CustomerCategory AS cate1 ON cate1.CategoryID = ccd.ToCategoryID AND tmp.RoleID = CONST_ROLEID_MEMBER
+  LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cate2 ON cate2.CategoryID = ccd.ToCategoryID AND tmp.RoleID IN (CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER)
 SET tmp.CategoryID = IFNULL(cate1.CategoryID,cate2.CategoryID)
   , tmp.CategoryGroupID = IFNULL(cate1.CategoryGroupID,cate2.CategoryGroupID);
 
@@ -214,7 +219,7 @@ SELECT	tmp.CTSCustID
     ,	tmp.RegisterName  
     ,	tmp.RoleID  
     ,	tmp.SubscriberID
-    , CASE WHEN tmp.RoleID = 1 THEN CONST_CATEID_VVIP ELSE catA.CategoryID END AS CategoryID  
+    , CASE WHEN tmp.RoleID = CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER THEN CONST_CATEID_VVIP ELSE catA.CategoryID END AS CategoryID  
     ,	vip.CreatedBy          
 FROM Temp_CustInfo AS tmp
   INNER JOIN Temp_VVIPCust AS vip ON tmp.CTSCustID = vip.CTSCustID

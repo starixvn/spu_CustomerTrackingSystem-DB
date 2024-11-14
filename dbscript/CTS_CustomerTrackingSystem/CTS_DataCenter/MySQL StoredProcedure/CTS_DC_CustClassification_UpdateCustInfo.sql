@@ -22,7 +22,11 @@ BEGIN
 				CALL CTS_DataCenter.CTS_DC_CustClassification_UpdateCustInfo('1,2,3');
 
 */ 
-    
+    DECLARE CONST_ROLEID_MEMBER				TINYINT DEFAULT 1;
+    DECLARE CONST_ROLEID_AGENT            	TINYINT DEFAULT 2;
+    DECLARE CONST_ROLEID_MASTER            	TINYINT DEFAULT 3;
+    DECLARE CONST_ROLEID_SUPER            	TINYINT DEFAULT 4;
+
 	DECLARE lv_CurrentDateTime 			DATETIME DEFAULT CURRENT_TIME();
     
     #=====================================================
@@ -57,35 +61,35 @@ BEGIN
 	/**********UPDATE FOR MEMBER**************************************/
     /* 1: UPDATE CTSCustomerClassification */
 	UPDATE CTS_DataCenter.CTSCustomerClassification AS cls
-		INNER JOIN Temp_CustomerInfo AS tmp ON tmp.CustID = cls.CustID AND tmp.RoleID = 1
+		INNER JOIN Temp_CustomerInfo AS tmp ON tmp.CustID = cls.CustID AND tmp.RoleID = CONST_ROLEID_MEMBER
 	SET	cls.CTSCustID = tmp.CTSCustID 
 		,	cls.SubscriberID = tmp.SubscriberID
         ,	cls.RoleID = tmp.RoleID;
 
     /* 2: WRITE HISTORY (VIEW ON WEB) */    
     UPDATE CTS_DataCenter.CTSCustomerClassification_History AS clh
-		INNER JOIN Temp_CustomerInfo AS tmp ON tmp.CustID = clh.CustID AND tmp.RoleID = 1
+		INNER JOIN Temp_CustomerInfo AS tmp ON tmp.CustID = clh.CustID AND tmp.RoleID = CONST_ROLEID_MEMBER
 	SET clh.CTSCustID = tmp.CTSCustID;
     
     UPDATE CTS_DataCenter.CTSCustomerClassification_Log AS cll
-		INNER JOIN Temp_CustomerInfo AS tmp ON tmp.CustID = cll.CustID AND tmp.RoleID = 1
+		INNER JOIN Temp_CustomerInfo AS tmp ON tmp.CustID = cll.CustID AND tmp.RoleID = CONST_ROLEID_MEMBER
 	SET cll.CTSCustID = tmp.CTSCustID;
     
     /**********UPDATE FOR AGENCY**************************************/
 	UPDATE CTS_DataCenter.CTSCustomerClassificationAgency AS cls
-		INNER JOIN Temp_CustomerInfo AS tmp ON tmp.CustID = cls.CustID AND tmp.RoleID IN (2,3,4)
+		INNER JOIN Temp_CustomerInfo AS tmp ON tmp.CustID = cls.CustID AND tmp.RoleID IN (CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER)
 	SET cls.CTSCustID = tmp.CTSCustID 
 		,	cls.SubscriberID = tmp.SubscriberID
         ,	cls.RoleID = tmp.RoleID;
 
     /* 2: WRITE HISTORY (VIEW ON WEB) */    
     UPDATE CTS_DataCenter.CTSCustomerClassificationAgency_History AS clh
-		INNER JOIN Temp_CustomerInfo AS tmp ON tmp.CustID = clh.CustID AND tmp.RoleID IN (2,3,4)
+		INNER JOIN Temp_CustomerInfo AS tmp ON tmp.CustID = clh.CustID AND tmp.RoleID IN (CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER)
 	SET	clh.CTSCustID = tmp.CTSCustID
 		,	clh.RoleID = tmp.RoleID;
     
     UPDATE CTS_DataCenter.CTSCustomerClassificationAgency_Log AS cll
-		INNER JOIN Temp_CustomerInfo AS tmp ON tmp.CustID = cll.CustID AND tmp.RoleID IN (2,3,4)
+		INNER JOIN Temp_CustomerInfo AS tmp ON tmp.CustID = cll.CustID AND tmp.RoleID IN (CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER)
 	SET cll.CTSCustID = tmp.CTSCustID
 		,	cll.RoleID = tmp.RoleID;
 END$$
