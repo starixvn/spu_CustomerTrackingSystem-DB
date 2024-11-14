@@ -56,7 +56,7 @@ BEGIN
 			END
     INTO lv_NextCategoryScan
     FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
-		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID =  clss.CategoryID
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID =  clss.CategoryID AND cate.IsActive = 1
     WHERE clss.CTSCustID = ip_CTSCustID
 			AND clss.ParentID IN (CONST_AGENCY_PARENTID_PA)
     LIMIT 1;
@@ -71,7 +71,7 @@ BEGIN
 				 END 
 		INTO lv_NextCategoryScan
 		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
-			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID =  clss.CategoryID
+			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID =  clss.CategoryID AND cate.IsActive = 1
 		WHERE clss.CTSCustID = ip_CTSCustID
 			AND clss.ParentID = CONST_AGENCY_PARENTID_NORMAL;
     END IF;
