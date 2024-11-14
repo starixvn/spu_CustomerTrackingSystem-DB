@@ -20,7 +20,8 @@ sp: BEGIN
 			- 202208018@Long.Luu: Use IsDangerProbation in stead of IsPAProbation [Redmine ID: #174219]
             - 20230515@Casey.Huynh:	New Category for Robot OCRD [Redmine ID: #186991]
             - 20240626@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryGroup, ParentID [Redmine ID: #205317]
-            - 20241014@Casey.Huynh: get rescan new cust [Redmine ID: #185799]
+            - 20240923@Jonas.Huynh:	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
+            - 20241014@Casey.Huynh: Get rescan new cust [Redmine ID: #185799]
 
         Param's Explanation:
 
