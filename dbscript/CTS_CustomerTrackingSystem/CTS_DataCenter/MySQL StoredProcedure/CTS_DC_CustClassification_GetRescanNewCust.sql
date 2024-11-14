@@ -27,9 +27,9 @@ sp: BEGIN
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetRescanNewCust(@op_LastCTSCustID);SELECT @op_LastCTSCustID;
 	*/
-  DECLARE CONST_CATEID_VVIP				              INT;
-  DECLARE CONST_AGENCY_PARENTID_VVIP				    INT;
-  DECLARE	CONST_AGENCY_PARENTID_PA				      INT;
+  DECLARE CONST_CATEID_VVIP				        INT;
+  DECLARE CONST_AGENCY_PARENTID_VVIP			INT;
+  DECLARE CONST_AGENCY_PARENTID_PA				INT;
   DECLARE CONST_AGENCY_CATEGROUPID_ROBOT       	INT;
 
   DECLARE lv_LastCTSCustID 	                    BIGINT UNSIGNED;
@@ -42,7 +42,7 @@ sp: BEGIN
   DECLARE CONST_ROLEID_SUPER            		TINYINT DEFAULT 4;
     
   SET CONST_CATEID_VVIP				                  = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');  
-  SET CONST_AGENCY_PARENTID_VVIP				        = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
+  SET CONST_AGENCY_PARENTID_VVIP				      = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
   SET CONST_AGENCY_PARENTID_PA				          = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
   SET CONST_AGENCY_CATEGROUPID_ROBOT			      = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_ROBOT');
 
@@ -219,7 +219,7 @@ SELECT	tmp.CTSCustID
     ,	tmp.RegisterName  
     ,	tmp.RoleID  
     ,	tmp.SubscriberID
-    , CASE WHEN tmp.RoleID = CONST_ROLEID_AGENT,CONST_ROLEID_MASTER,CONST_ROLEID_SUPER THEN CONST_CATEID_VVIP ELSE catA.CategoryID END AS CategoryID  
+    , 	CASE WHEN tmp.RoleID = CONST_ROLEID_MEMBER THEN CONST_CATEID_VVIP ELSE catA.CategoryID END AS CategoryID  
     ,	vip.CreatedBy          
 FROM Temp_CustInfo AS tmp
   INNER JOIN Temp_VVIPCust AS vip ON tmp.CTSCustID = vip.CTSCustID
