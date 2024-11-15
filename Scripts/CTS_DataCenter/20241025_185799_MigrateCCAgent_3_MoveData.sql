@@ -59,10 +59,21 @@ SET 	arc.CategoryID = src.Migrate_ToCategoryID
 	,	arc.ParentID = src.Migrate_ToParentID;
 END;
 
-BEGIN;#============STEP 3: UPDATE CTSCustomerClassificationQueue ==========EST: Duration() RowCount(~)=======================
+BEGIN;#============STEP 4: UPDATE CTSCustomerClassificationQueue ==========EST: Duration() RowCount(~)=======================
 UPDATE CTS_DataCenter.CTSCustomerClassificationQueue AS que
 	INNER JOIN CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue AS src ON src.ID = que.ID
 SET que.CategoryID = src.Migrate_ToCategoryID
 	, que.CategoryGroupID = src.Migrate_ToCategoryGroupID;
 END;
 
+BEGIN;#============STEP 5: UPDATE Adhoc_F185799Mig_TWRobotUser ==========EST: Duration() RowCount(~)=======================
+UPDATE CTS_DataCenter.TWRobotUser AS rb
+	INNER JOIN CTS_DataCenter.Adhoc_F185799Mig_TWRobotUser AS ad ON ad.ID = rb.ID
+SET rb.CategoryID = ad.Migrate_ToCategoryID;
+END; 
+
+BEGIN;#============STEP 6: UPDATE Adhoc_F185799Mig_CTSRobotUser ==========EST: Duration() RowCount(~)=======================
+UPDATE CTS_DataCenter.CTSRobotUser AS rb
+	INNER JOIN CTS_DataCenter.Adhoc_F185799Mig_CTSRobotUser AS ad ON ad.ID = rb.ID
+SET rb.CategoryID = ad.Migrate_ToCategoryID;
+END; 

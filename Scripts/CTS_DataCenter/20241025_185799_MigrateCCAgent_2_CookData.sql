@@ -379,3 +379,35 @@ UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassificationQueue  AS que
 SET que.Migrate_ToCategoryID = 101012
 WHERE ActionType = 1  AND RoleID = 4;
 #===========================================================================================================
+
+BEGIN;#============STEP 5: COOK Adhoc_F185799Mig_TWRobotUser======EST: Duration() RowCount(~)=======================
+********STEP 5.1 GET Adhoc_F185799Mig_TWRobotUser FOR SMA*********************
+INSERT INTO CTS_DataCenter.Adhoc_F185799Mig_TWRobotUser(Migrate_ToCategoryID , ID, CustID, CategoryID, RobotCounter, IsDisabled, CreatedDate, InsertedTime, ArchivedDate)
+SELECT	rb.CategoryID + 100000 AS Migrate_ToCategoryID
+	,	rb.ID
+	,	rb.CustID
+	,	rb.CategoryID
+	,	rb.RobotCounter
+	,	rb.IsDisabled
+	,	rb.CreatedDate
+	,	rb.InsertedTime
+	,	rb.ArchivedDate
+FROM CTS_DataCenter.CTSCustomer AS cus
+	INNER JOIN CTS_DataCenter.TWRobotUser AS rb ON rb.CustID = cus.CustID
+WHERE cus.RoleID IN(2,3,4) AND cus.CustSubID = 0 AND rb.CategoryID IN (21100, 26100);
+
+BEGIN;#============STEP 5: COOK Adhoc_F185799Mig_CTSRobotUser======EST: Duration() RowCount(~)=======================
+********STEP 5.1 GET Adhoc_F185799Mig_CTSRobotUser FOR SMA*********************
+INSERT INTO CTS_DataCenter.Adhoc_F185799Mig_CTSRobotUser(Migrate_ToCategoryID , ID, CustID, CategoryID, Remark, IsDisabled, CreatedDate, InsertedTime, ArchivedDate)
+SELECT	rb.CategoryID + 100000 AS Migrate_ToCategoryID
+	,	rb.ID
+	,	rb.CustID
+	,	rb.CategoryID
+	,	rb.Remark
+	,	rb.IsDisabled
+	,	rb.CreatedDate
+	,	rb.InsertedTime
+	,	rb.ArchivedDate
+FROM CTS_DataCenter.CTSCustomer AS cus
+	INNER JOIN CTS_DataCenter.CTSRobotUser AS rb ON rb.CustID = cus.CustID
+WHERE cus.RoleID IN(2,3,4) AND cus.CustSubID = 0 AND rb.CategoryID IN (21100, 26100);

@@ -163,4 +163,34 @@ CREATE TABLE Adhoc_F185799Mig_CTSCustomerClassificationQueue(
 	,	KEY IX_CTSCustomerClassificationQueue_CustID(CustID) 
 ) ENGINE=InnoDB;
 
+#===============Adhoc_F185799Mig_TWRobotUser=============
+USE CTS_DataCenter; 
+#DROP TABLE IF EXISTS Adhoc_F185799Mig_TWRobotUser;
+CREATE TABLE Adhoc_F185799Mig_TWRobotUser (
+		Migrate_ToCategoryID INT
+	,	ID bigint unsigned NOT NULL
+	,	CustID bigint unsigned NOT NULL
+	,	CategoryID int unsigned NOT NULL
+	,	RobotCounter int unsigned DEFAULT NULL
+	,	IsDisabled bit(1) DEFAULT 0
+	,	CreatedDate datetime DEFAULT NULL
+	,	InsertedTime datetime(3) DEFAULT CURRENT_TIMESTAMP(3)
+	,	ArchivedDate datetime DEFAULT NULL
+	,	PRIMARY KEY (ID)
+	,	KEY IX_AdhocTWRobotUser_CustID_CateID_IsDisabled (CustID,CategoryID,IsDisabled) ) ENGINE=InnoDB;
 
+#===============Adhoc_F185799Mig_CTSRobotUser=============
+USE CTS_DataCenter; 
+#DROP TABLE IF EXISTS Adhoc_F185799Mig_CTSRobotUser;
+CREATE TABLE Adhoc_F185799Mig_CTSRobotUser (
+		Migrate_ToCategoryID INT
+	,	ID bigint unsigned NOT NULL
+	,	CustID bigint unsigned NOT NULL
+	,	CategoryID int unsigned NOT NULL
+	,	Remark varchar(500) COLLATE utf8_unicode_ci DEFAULT NULL
+	,	IsDisabled bit(1) DEFAULT 0
+	,	CreatedDate datetime DEFAULT NULL
+	,	InsertedTime datetime(3) DEFAULT CURRENT_TIMESTAMP(3)
+	,	ArchivedDate datetime DEFAULT NULL
+	,	PRIMARY KEY (ID)
+	,	KEY IX_AdhocCTSRobotUser_CustID_CateID_IsDisabled (CustID,CategoryID,IsDisabled) ) ENGINE=InnoDB;
