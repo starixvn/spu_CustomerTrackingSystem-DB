@@ -136,10 +136,10 @@ BEGIN;#============STEP 2: COOK Adhoc_F185799Mig_CTSCustomerClassification_Histo
 INSERT INTO CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History
 (Migrate_Source, Migrate_IsMove, Migrate_Set, Migrate_ToRoleID, ID,CustID,CTSCustID,ParentID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,SourceTypeID,IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TaggingType,TargetDangerLevel1,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,TWBetCount,RobotCounter,Remark,IsMarkedDirectly,TVSRequestID,IsFromTVS,IsFromTW,IsFromCTS,IsFromAI,IsFromImperva,IsParlay,SportType,IssueTypeID,PerformanceTime,CategoryID,OldCategoryID,DWCategoryID)
 SELECT
-		1 AS Migrate_Source
-	,	1 AS Migrate_IsMove
-	,	1 AS Migrate_Set
-	,	cus.RoleID AS Migrate_ToRoleID
+	1 AS Migrate_Source
+	, CASE WHEN cus.IsLicensee = 0 THEN 1 ELSE 0 END AS Migrate_IsMove
+	, 1 AS Migrate_Set
+	, cus.RoleID AS Migrate_ToRoleID
 	, his.ID
 	, his.CustID
 	, his.CTSCustID
@@ -187,8 +187,8 @@ SELECT
 INSERT INTO CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History
 (Migrate_Source, Migrate_IsMove, Migrate_Set, Migrate_ToRoleID, ID,CustID,CTSCustID,ParentID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,SourceTypeID,IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TaggingType,TargetDangerLevel1,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,TWBetCount,RobotCounter,Remark,IsMarkedDirectly,TVSRequestID,IsFromTVS,IsFromTW,IsFromCTS,IsFromAI,IsFromImperva,IsParlay,SportType,IssueTypeID,PerformanceTime,CategoryID,OldCategoryID,DWCategoryID)
 SELECT 2 AS Migrate_Source
-	,	1 AS Migrate_IsMove
-	,	1 AS Migrate_Set
+	, 1 AS Migrate_IsMove
+	, 1 AS Migrate_Set
 	, cus.RoleID AS Migrate_ToRoleID
 	, his.ID
 	, his.CustID
