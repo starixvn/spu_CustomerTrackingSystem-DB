@@ -67,7 +67,6 @@ CREATE TABLE Adhoc_F185799Mig_CTSCustomerClassification_History(
 	,	Migrate_ToParentID INT
 	,	Migrate_ToTargetCC INT
     ,	Migrate_ToRoleID INT  
-	,	Migrate_ToSourceTypeID SMALLINT UNSIGNED DEFAULT NULL  
     ,	Migrate_ToID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
 	,	ID BIGINT UNSIGNED
 	,	CustID BIGINT UNSIGNED DEFAULT NULL
