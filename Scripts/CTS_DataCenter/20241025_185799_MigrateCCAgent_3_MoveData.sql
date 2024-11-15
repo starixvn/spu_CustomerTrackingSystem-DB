@@ -38,7 +38,7 @@ SELECT  ROW_NUMBER()  OVER (ORDER BY ID ASC) AS  ID,CustID,CTSCustID
     ,	Migrate_ToOldCategoryID AS OldCategoryID
     ,	Migrate_ToDWCategoryID AS DWCategoryID 
     ,	Migrate_ToTargetCC AS TargetCC
-    ,	Migrate_ToSourceTypeID AS SourceTypeID
+    ,	SourceTypeID
 	,	IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TargetDangerLevel1,Remark,IsMarkedDirectly,IsFromTW,IsFromCTS,IsFromAI
 	,	CASE WHEN Migrate_ToParentID = 120000 THEN IFNULL(TurnoverRM,0.0) ELSE TurnoverRM END
 	, 	CASE WHEN Migrate_ToParentID = 120000 THEN IFNULL(WinlossRM,0.0) ELSE WinlossRM END

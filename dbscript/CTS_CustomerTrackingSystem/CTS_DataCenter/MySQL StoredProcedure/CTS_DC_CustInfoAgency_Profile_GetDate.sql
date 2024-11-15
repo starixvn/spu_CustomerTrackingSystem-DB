@@ -20,6 +20,7 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustInfoAgency_Profile_GetDate(114181);
 	*/
 
+	DECLARE CONST_AGENCY_PARENTID_VVIP 					INT;
 	DECLARE	CONST_AGENCY_PARENTID_PA 					INT;
 	DECLARE	CONST_AGENCY_PARENTID_NORMAL 				INT;
 
@@ -33,6 +34,7 @@ BEGIN
     
     DECLARE lv_ScanScheduler		DATETIME DEFAULT CAST(CONCAT(DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) , ' ', '21:00:00') as DATETIME);
 	
+	SET CONST_AGENCY_PARENTID_VVIP 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
 	SET CONST_AGENCY_PARENTID_PA 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
 	SET CONST_AGENCY_PARENTID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
 	SET CONST_AGENCY_CATEGROUPID_NEW 		= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_NEW');
@@ -50,36 +52,45 @@ BEGIN
 	FROM CTS_Archive.CTSCustomerAssociationStatus
 	WHERE CTSCustID = ip_CTSCustID;
     
-    /* PA Category */
-    SELECT CASE WHEN CURRENT_TIMESTAMP() > lv_ScanScheduler THEN DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY) 
-				ELSE CURRENT_DATE() 
-			END
-    INTO lv_NextCategoryScan
-    FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
-		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID =  clss.CategoryID AND cate.IsActive = 1
-    WHERE clss.CTSCustID = ip_CTSCustID
-			AND clss.ParentID IN (CONST_AGENCY_PARENTID_PA)
-    LIMIT 1;
-    
-    /* Normal Category */
-    IF (lv_NextCategoryScan IS NULL) THEN
-		 SELECT CASE WHEN cate.CategoryGroupID = CONST_AGENCY_CATEGROUPID_NEW AND lv_LastTicket <= DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY) AND CURRENT_TIMESTAMP() > lv_ScanScheduler THEN DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)
-					 WHEN cate.CategoryGroupID = CONST_AGENCY_CATEGROUPID_NEW AND lv_LastTicket <= DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY) AND CURRENT_TIMESTAMP() <= lv_ScanScheduler THEN CURRENT_DATE()
-                     WHEN cate.CategoryGroupID = CONST_AGENCY_CATEGROUPID_EARLYSTAGE AND clss.CreatedDate < DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY) THEN DATE(CURRENT_DATE())
-					 WHEN cate.CategoryGroupID = CONST_AGENCY_CATEGROUPID_EARLYSTAGE AND clss.CreatedDate >= DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY) THEN DATE(DATE_ADD(clss.CreatedDate, INTERVAL 3 DAY))
-					 WHEN cate.ScanIntervalInSecond > 0 THEN DATE_ADD(clss.LastScannedDate, INTERVAL cate.ScanIntervalInSecond SECOND)
-				 END 
+	IF EXISTS (	SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls 
+				WHERE clss.CTSCustID = ip_CTSCustID
+					AND clss.ParentID = CONST_AGENCY_PARENTID_VVIP) THEN
+		SELECT 	NULL 				AS NextCategoryScan
+			,	lv_LastTicket		AS LastTicket
+			,	lv_LastLogin 		AS LastLogin
+			,	lv_Created 			AS Created;
+	ELSE
+		/* PA Category */
+		SELECT CASE WHEN CURRENT_TIMESTAMP() > lv_ScanScheduler THEN DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY) 
+					ELSE CURRENT_DATE() 
+				END
 		INTO lv_NextCategoryScan
 		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
 			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID =  clss.CategoryID AND cate.IsActive = 1
 		WHERE clss.CTSCustID = ip_CTSCustID
-			AND clss.ParentID = CONST_AGENCY_PARENTID_NORMAL;
-    END IF;
-    
-    SELECT 	lv_NextCategoryScan AS NextCategoryScan
-		,	lv_LastTicket		AS LastTicket
-		,	lv_LastLogin 		AS LastLogin
-		,	lv_Created 			AS Created;
+				AND clss.ParentID IN (CONST_AGENCY_PARENTID_PA)
+		LIMIT 1;
+		
+		/* Normal Category */
+		IF (lv_NextCategoryScan IS NULL) THEN
+			SELECT CASE WHEN cate.CategoryGroupID = CONST_AGENCY_CATEGROUPID_NEW AND lv_LastTicket <= DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY) AND CURRENT_TIMESTAMP() > lv_ScanScheduler THEN DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY)
+						WHEN cate.CategoryGroupID = CONST_AGENCY_CATEGROUPID_NEW AND lv_LastTicket <= DATE_SUB(CURRENT_DATE(), INTERVAL 29 DAY) AND CURRENT_TIMESTAMP() <= lv_ScanScheduler THEN CURRENT_DATE()
+						WHEN cate.CategoryGroupID = CONST_AGENCY_CATEGROUPID_EARLYSTAGE AND clss.CreatedDate < DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY) THEN DATE(CURRENT_DATE())
+						WHEN cate.CategoryGroupID = CONST_AGENCY_CATEGROUPID_EARLYSTAGE AND clss.CreatedDate >= DATE_SUB(CURRENT_DATE(), INTERVAL 2 DAY) THEN DATE(DATE_ADD(clss.CreatedDate, INTERVAL 3 DAY))
+						WHEN cate.ScanIntervalInSecond > 0 THEN DATE_ADD(clss.LastScannedDate, INTERVAL cate.ScanIntervalInSecond SECOND)
+					END 
+			INTO lv_NextCategoryScan
+			FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
+				INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID =  clss.CategoryID AND cate.IsActive = 1
+			WHERE clss.CTSCustID = ip_CTSCustID
+				AND clss.ParentID = CONST_AGENCY_PARENTID_NORMAL;
+		END IF;
+		
+		SELECT 	lv_NextCategoryScan AS NextCategoryScan
+			,	lv_LastTicket		AS LastTicket
+			,	lv_LastLogin 		AS LastLogin
+			,	lv_Created 			AS Created;
+	END IF;
 END$$
 DELIMITER ;
 

@@ -134,9 +134,11 @@ WHERE ParentID = 20000
 BEGIN;#============STEP 2: COOK Adhoc_F185799Mig_CTSCustomerClassification_History ==EST: Duration() RowCount(~)=======================
 ********STEP 2.1 GET BY JOIN CTSCustomer*********
 INSERT INTO CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History
-(Migrate_Source, Migrate_ToRoleID, ID,CustID,CTSCustID,ParentID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,SourceTypeID,Migrate_ToSourceTypeID,IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TaggingType,TargetDangerLevel1,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,TWBetCount,RobotCounter,Remark,IsMarkedDirectly,TVSRequestID,IsFromTVS,IsFromTW,IsFromCTS,IsFromAI,IsFromImperva,IsParlay,SportType,IssueTypeID,PerformanceTime,CategoryID,OldCategoryID,DWCategoryID)
+(Migrate_Source, Migrate_IsMove, Migrate_Set, Migrate_ToRoleID, ID,CustID,CTSCustID,ParentID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,SourceTypeID,IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TaggingType,TargetDangerLevel1,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,TWBetCount,RobotCounter,Remark,IsMarkedDirectly,TVSRequestID,IsFromTVS,IsFromTW,IsFromCTS,IsFromAI,IsFromImperva,IsParlay,SportType,IssueTypeID,PerformanceTime,CategoryID,OldCategoryID,DWCategoryID)
 SELECT
 		1 AS Migrate_Source
+	,	1 AS Migrate_IsMove
+	,	1 AS Migrate_Set
 	,	cus.RoleID AS Migrate_ToRoleID
 	, his.ID
 	, his.CustID
@@ -148,7 +150,6 @@ SELECT
 	, his.ActiveDays
 	, his.TargetCC
 	, his.SourceTypeID
-	, his.SourceTypeID AS Migrate_ToSourceTypeID
 	, his.IsDataChanged
 	, his.ActionType
 	, his.IsAuto
@@ -184,8 +185,10 @@ SELECT
 
 ********STEP 2.2 GET BY JOIN ArchiveCustomer_CTSCustomer*********
 INSERT INTO CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History
-(Migrate_Source, Migrate_ToRoleID, ID,CustID,CTSCustID,ParentID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,SourceTypeID,Migrate_ToSourceTypeID,IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TaggingType,TargetDangerLevel1,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,TWBetCount,RobotCounter,Remark,IsMarkedDirectly,TVSRequestID,IsFromTVS,IsFromTW,IsFromCTS,IsFromAI,IsFromImperva,IsParlay,SportType,IssueTypeID,PerformanceTime,CategoryID,OldCategoryID,DWCategoryID)
+(Migrate_Source, Migrate_IsMove, Migrate_Set, Migrate_ToRoleID, ID,CustID,CTSCustID,ParentID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,SourceTypeID,IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TaggingType,TargetDangerLevel1,TWGroupBettingRate,TWTicketRejectRate,TWDesktopUsageRate,TWBetCount,RobotCounter,Remark,IsMarkedDirectly,TVSRequestID,IsFromTVS,IsFromTW,IsFromCTS,IsFromAI,IsFromImperva,IsParlay,SportType,IssueTypeID,PerformanceTime,CategoryID,OldCategoryID,DWCategoryID)
 SELECT 2 AS Migrate_Source
+	,	1 AS Migrate_IsMove
+	,	1 AS Migrate_Set
 	, cus.RoleID AS Migrate_ToRoleID
 	, his.ID
 	, his.CustID
@@ -197,7 +200,6 @@ SELECT 2 AS Migrate_Source
 	, his.ActiveDays
 	, his.TargetCC
 	, his.SourceTypeID
-	, his.SourceTypeID AS Migrate_ToSourceTypeID
 	, his.IsDataChanged
 	, his.ActionType
 	, his.IsAuto
@@ -231,25 +233,13 @@ SELECT 2 AS Migrate_Source
 		LEFT JOIN CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History AS mig ON mig.ID = his.ID
 	WHERE cus.RoleID IN(2,3,4) AND cus.CustSubID = 0 AND mig.ID IS NULL; #28.485 sec #56 row(s) affected Records: 56  Duplicates: 0  Warnings: 0
 
-********STEP 2.3 SET Flag Migrate_IsMove=1 EXISTING IN  MOVE Adhoc_F185799Mig_CTSCustomerClassification *********
-UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History AS his
-SET   his.Migrate_IsMove = 1
-    , his.Migrate_Set = 1
-WHERE his.CategoryID IS NOT NULL; #9004 row(s) affected Rows matched: 9002  Changed: 9002  Warnings: 0 #0.485 sec
-
-********STEP 2.4 INVALID *********
-UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History AS his
-	INNER JOIN CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification AS cls ON his.CustID = cls.CustID AND cls.Migrate_IsMove = 1 AND his.CategoryID IS NULL
-SET his.Migrate_Set = -1; 
-
 ********STEP 2.5 UPDATE PA*********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History  AS his
 SET his.Migrate_ToParentID = (CASE WHEN his.ParentID > 0 THEN  his.ParentID + 100000 ELSE his.ParentID END)
 	, his.Migrate_ToCategoryID =(CASE WHEN his.CategoryID > 0 THEN  his.CategoryID + 100000 ELSE his.CategoryID END)
     , his.Migrate_ToDWCategoryID = (CASE WHEN his.DWCategoryID > 0 THEN  his.DWCategoryID + 100000 ELSE his.DWCategoryID END)
     , his.Migrate_ToOldCategoryID = (CASE WHEN his.OldCategoryID > 0 THEN  his.OldCategoryID + 100000 ELSE his.OldCategoryID END)
-    , his.Migrate_ToTargetCC = (CASE WHEN TargetCC > 0 THEN 30000 ELSE NULL END)
-	, his.Migrate_ToSourceTypeID = CASE WHEN his.SourceTypeID IN (36, 37) THEN 31 ELSE his.Migrate_ToSourceTypeID END
+    , his.Migrate_ToTargetCC = (CASE WHEN TargetCC > 0 THEN 30000 ELSE TargetCC END)
 WHERE Migrate_IsMove = 1 AND ParentID = 20000 ; #0.421 sec #8979 row(s) affected Rows matched: 8979  Changed: 8979  Warnings: 0
 
 ********STEP 2.6 UPDATE VVIP Agent*********************
@@ -258,7 +248,7 @@ SET his.Migrate_ToParentID = 101000
 	, his.Migrate_ToCategoryID = 101010 
     , his.Migrate_ToDWCategoryID = NULL 
     , his.Migrate_ToOldCategoryID = (CASE WHEN his.OldCategoryID > 0 THEN  his.OldCategoryID + 100000 ELSE his.OldCategoryID END)  
-    , his.Migrate_ToTargetCC = (CASE WHEN TargetCC > 0 THEN 999 ELSE -1 END)
+    , his.Migrate_ToTargetCC = (CASE WHEN TargetCC > 0 THEN 999 ELSE TargetCC END)
 WHERE Migrate_IsMove = 1 AND ParentID = 1000
 	AND Migrate_ToRoleID = 2; #0.047 sec #19 row(s) affected Rows matched: 19  Changed: 19  Warnings: 0
 
@@ -268,7 +258,7 @@ SET his.Migrate_ToParentID = (CASE WHEN his.ParentID > 0 THEN  his.ParentID + 10
 	, his.Migrate_ToCategoryID = 101011 
     , his.Migrate_ToDWCategoryID = NULL 
     , his.Migrate_ToOldCategoryID = (CASE WHEN his.OldCategoryID > 0 THEN  his.OldCategoryID + 100000 ELSE his.OldCategoryID END)    
-    , his.Migrate_ToTargetCC = (CASE WHEN TargetCC > 0 THEN 999 ELSE -1 END)
+    , his.Migrate_ToTargetCC = (CASE WHEN TargetCC > 0 THEN 999 ELSE TargetCC END)
 WHERE Migrate_IsMove = 1 AND ParentID = 1000
 	AND Migrate_ToRoleID = 3;   #0.047 sec  #5 row(s) affected Rows matched: 5  Changed: 5  Warnings: 0
 
@@ -278,7 +268,7 @@ SET his.Migrate_ToParentID = (CASE WHEN his.ParentID > 0 THEN  his.ParentID + 10
 	, his.Migrate_ToCategoryID = 101012 
     , his.Migrate_ToDWCategoryID = NULL 
     , his.Migrate_ToOldCategoryID = (CASE WHEN his.OldCategoryID > 0 THEN  his.OldCategoryID + 100000 ELSE his.OldCategoryID END)   
-    , his.Migrate_ToTargetCC = (CASE WHEN TargetCC > 0 THEN 999 ELSE -1 END)
+    , his.Migrate_ToTargetCC = (CASE WHEN TargetCC > 0 THEN 999 ELSE TargetCC END)
 WHERE Migrate_IsMove = 1 AND ParentID = 1000
 	AND Migrate_ToRoleID = 4; #0.031 sec #1 row(s) affected Rows matched: 1  Changed: 1  Warnings: 0
 
