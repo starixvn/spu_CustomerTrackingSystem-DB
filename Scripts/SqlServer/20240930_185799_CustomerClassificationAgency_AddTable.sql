@@ -226,6 +226,12 @@ GO
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency] TO [wsv_cts]
 GO
 
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_NormalPool] TO [wsv_cts]
+GO
+
+GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_Priority] TO [wsv_cts]
+GO
+
 GRANT VIEW DEFINITION ON [dbo].[CustomerClassificationAgency_Log] TO [wsv_cts]
 GO
 
