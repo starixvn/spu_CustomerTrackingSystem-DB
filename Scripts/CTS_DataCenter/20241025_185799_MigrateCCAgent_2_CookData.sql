@@ -233,6 +233,12 @@ SELECT 2 AS Migrate_Source
 		LEFT JOIN CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History AS mig ON mig.ID = his.ID
 	WHERE cus.RoleID IN(2,3,4) AND cus.CustSubID = 0 AND mig.ID IS NULL; #28.485 sec #56 row(s) affected Records: 56  Duplicates: 0  Warnings: 0
 
+********STEP 2.4 INVALID *********
+UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History AS his
+SET	his.Migrate_IsMove = 0 
+	,his.Migrate_Set = -1
+WHERE his.Migrate_IsMove = 1 AND his.ParentID = 40000;
+
 ********STEP 2.5 UPDATE PA*********************
 UPDATE CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification_History  AS his
 SET his.Migrate_ToParentID = (CASE WHEN his.ParentID > 0 THEN  his.ParentID + 100000 ELSE his.ParentID END)
