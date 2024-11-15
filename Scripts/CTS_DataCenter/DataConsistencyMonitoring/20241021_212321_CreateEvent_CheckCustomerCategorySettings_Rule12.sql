@@ -16,7 +16,7 @@
 USE CTS_DataCenter;
 
 DELIMITER |
-CREATE EVENT EV_CTS_DC_DataConsistency_CustomerCategory
+ALTER EVENT EV_CTS_DC_DataConsistency_CustomerCategory
     ON SCHEDULE
 		 EVERY '1 03' DAY_HOUR
     DO
@@ -92,6 +92,8 @@ CREATE EVENT EV_CTS_DC_DataConsistency_CustomerCategory
 				
 				IF (lv_General_MinCustID = 0 AND lv_General_NextCustID = 0) THEN
 					SET lv_IsNew = 1;
+				ELSE 
+					SET lv_IsNew = 0;
 				END IF;
 				
 				SELECT ParameterValue
@@ -114,13 +116,18 @@ CREATE EVENT EV_CTS_DC_DataConsistency_CustomerCategory
 					
 					IF (lv_IsNew = 1 AND lv_General_LogID = 0) THEN
 						INSERT INTO CTS_DataCenter.DataConsistencyMonitoring_Log(RuleID,LogInfo,MinCustID,MaxCustID,CreatedDate,InsertedTime)
-						SELECT CONST_GENERAL_RuleID,GROUP_CONCAT(temp.CustID),lv_General_MinCustID
-							,CASE 	WHEN lv_General_MinCustID < lv_General_NextCustID THEN lv_General_NextCustID
-									WHEN lv_General_MinCustID > 0 AND lv_General_NextCustID = 0 THEN lv_General_MinCustID 
-									ELSE NULL END AS MaxCustID
-							,lv_TrackingDate,NOW()
-						FROM Temp_CustIssue AS temp
-						WHERE EXISTS (SELECT 1 FROM DataConsistencyMonitoring WHERE RuleID = CONST_GENERAL_RuleID AND IsActive = 1);
+						WITH CTE_General AS (
+							SELECT CONST_GENERAL_RuleID AS RuleID,GROUP_CONCAT(temp.CustID) AS LogInfo,lv_General_MinCustID AS MinCustID
+								,CASE 	WHEN lv_General_MinCustID < lv_General_NextCustID THEN lv_General_NextCustID
+										WHEN lv_General_MinCustID > 0 AND lv_General_NextCustID = 0 THEN lv_General_MinCustID 
+										ELSE NULL END AS MaxCustID
+								,lv_TrackingDate AS CreatedDate,NOW() AS InsertedTime
+							FROM Temp_CustIssue AS temp
+						)
+						SELECT c.RuleID,c.LogInfo,c.MinCustID,c.MaxCustID,c.CreatedDate,c.InsertedTime
+						FROM CTE_General AS c
+						WHERE c.LogInfo IS NOT NULL
+							AND EXISTS (SELECT 1 FROM DataConsistencyMonitoring AS r WHERE c.RuleID = r.RuleID AND r.IsActive = 1);
 						
 						SET lv_General_LogID = LAST_INSERT_ID();
 					
@@ -130,14 +137,24 @@ CREATE EVENT EV_CTS_DC_DataConsistency_CustomerCategory
 						FROM Temp_CustIssue AS temp
 						WHERE EXISTS (SELECT 1 FROM DataConsistencyMonitoring WHERE RuleID = CONST_GENERAL_RuleID AND IsActive = 1);
 						
+						INSERT INTO CTS_DataCenter.DataConsistencyMonitoring_Log(RuleID,LogInfo,MinCustID,MaxCustID,CreatedDate,InsertedTime)
+						SELECT CONST_GENERAL_RuleID AS RuleID,GROUP_CONCAT(temp.CustID) AS LogInfo,lv_General_MinCustID AS MinCustID
+								,CASE 	WHEN lv_General_MinCustID < lv_General_NextCustID THEN lv_General_NextCustID
+										WHEN lv_General_MinCustID > 0 AND lv_General_NextCustID = 0 THEN lv_General_MinCustID 
+										ELSE NULL END AS MaxCustID
+								,lv_TrackingDate AS CreatedDate,NOW() AS InsertedTime
+						FROM Temp_CustIssue AS temp
+						WHERE lv_General_LogInfo IS NOT NULL
+							AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.DataConsistencyMonitoring_Log AS l WHERE l.ID = lv_General_LogID)
+							AND EXISTS (SELECT 1 FROM DataConsistencyMonitoring AS r WHERE c.RuleID = r.RuleID AND r.IsActive = 1);
+						
 						UPDATE CTS_DataCenter.DataConsistencyMonitoring_Log AS temp
-						SET 	temp.LogInfo = lv_General_LogInfo
-							,	temp.MaxCustID = CASE 	WHEN lv_General_MinCustID < lv_General_NextCustID THEN lv_General_NextCustID
+						SET 	temp.MaxCustID = CASE 	WHEN lv_General_MinCustID < lv_General_NextCustID THEN lv_General_NextCustID
 														WHEN lv_General_MinCustID > 0 AND lv_General_NextCustID = 0 THEN lv_General_MinCustID 
 														ELSE NULL END
 							,	temp.LogInfo = CONCAT(temp.LogInfo,",",lv_General_LogInfo)
 							,	temp.LastModifiedDate = NOW()
-						WHERE temp.ID =  lv_General_LogID;
+						WHERE temp.ID =  lv_General_LogID AND lv_General_LogInfo IS NOT NULL;
 
 					END IF;
 					
@@ -153,6 +170,8 @@ CREATE EVENT EV_CTS_DC_DataConsistency_CustomerCategory
 				
 				IF (lv_BySport_MinCustID = 0 AND lv_BySport_NextCustID = 0) THEN
 					SET lv_IsNew = 1;
+				ELSE 
+					SET lv_IsNew = 0;
 				END IF;
 				
 				SELECT ParameterValue
@@ -176,13 +195,18 @@ CREATE EVENT EV_CTS_DC_DataConsistency_CustomerCategory
 					
 					IF (lv_IsNew = 1 AND lv_BySport_LogID = 0) THEN
 						INSERT INTO CTS_DataCenter.DataConsistencyMonitoring_Log(RuleID,LogInfo,MinCustID,MaxCustID,CreatedDate,InsertedTime)
-						SELECT CONST_BySport_RuleID,GROUP_CONCAT(temp.CustID),lv_BySport_MinCustID
-							,CASE 	WHEN lv_BySport_MinCustID < lv_BySport_NextCustID THEN lv_BySport_NextCustID
-									WHEN lv_BySport_MinCustID > 0 AND lv_BySport_NextCustID = 0 THEN lv_BySport_MinCustID 
-									ELSE NULL END AS MaxCustID
-							,lv_TrackingDate,NOW()
-						FROM Temp_CustIssue_BySport AS temp
-						WHERE EXISTS (SELECT 1 FROM DataConsistencyMonitoring WHERE RuleID = CONST_BySport_RuleID AND IsActive = 1);
+						WITH CTE_BySport AS (
+							SELECT CONST_BySport_RuleID AS RuleID,GROUP_CONCAT(temp.CustID) AS LogInfo,lv_BySport_MinCustID AS MinCustID
+								,CASE 	WHEN lv_BySport_MinCustID < lv_BySport_NextCustID THEN lv_BySport_NextCustID
+										WHEN lv_BySport_MinCustID > 0 AND lv_BySport_NextCustID = 0 THEN lv_BySport_MinCustID 
+										ELSE NULL END AS MaxCustID
+								,lv_TrackingDate AS CreatedDate,NOW() AS InsertedTime
+							FROM Temp_CustIssue_BySport AS temp
+						)
+						SELECT c.RuleID,c.LogInfo,c.MinCustID,c.MaxCustID,c.CreatedDate,c.InsertedTime
+						FROM CTE_BySport AS c
+						WHERE c.LogInfo IS NOT NULL
+							AND EXISTS (SELECT 1 FROM DataConsistencyMonitoring AS r WHERE c.RuleID = r.RuleID AND r.IsActive = 1);
 						
 						SET lv_BySport_LogID = LAST_INSERT_ID();
 					
@@ -192,14 +216,24 @@ CREATE EVENT EV_CTS_DC_DataConsistency_CustomerCategory
 						FROM Temp_CustIssue_BySport AS temp
 						WHERE EXISTS (SELECT 1 FROM DataConsistencyMonitoring WHERE RuleID = CONST_BySport_RuleID AND IsActive = 1);
 						
+						INSERT INTO CTS_DataCenter.DataConsistencyMonitoring_Log(RuleID,LogInfo,MinCustID,MaxCustID,CreatedDate,InsertedTime)
+						SELECT CONST_BySport_RuleID AS RuleID,GROUP_CONCAT(temp.CustID) AS LogInfo,lv_BySport_MinCustID AS MinCustID
+								,CASE 	WHEN lv_BySport_MinCustID < lv_BySport_NextCustID THEN lv_BySport_NextCustID
+										WHEN lv_BySport_MinCustID > 0 AND lv_BySport_NextCustID = 0 THEN lv_BySport_MinCustID 
+										ELSE NULL END AS MaxCustID
+								,lv_TrackingDate AS CreatedDate,NOW() AS InsertedTime
+						FROM Temp_CustIssue_BySport AS temp
+						WHERE lv_BySport_LogID IS NOT NULL
+							AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.DataConsistencyMonitoring_Log AS l WHERE l.ID = lv_BySport_LogID)
+							AND EXISTS (SELECT 1 FROM DataConsistencyMonitoring AS r WHERE c.RuleID = r.RuleID AND r.IsActive = 1);
+						
 						UPDATE CTS_DataCenter.DataConsistencyMonitoring_Log AS temp
-						SET 	temp.LogInfo = lv_BySport_LogInfo
-							,	temp.MaxCustID = CASE 	WHEN lv_BySport_MinCustID < lv_BySport_NextCustID THEN lv_BySport_NextCustID
+						SET 	temp.MaxCustID = CASE 	WHEN lv_BySport_MinCustID < lv_BySport_NextCustID THEN lv_BySport_NextCustID
 														WHEN lv_BySport_MinCustID > 0 AND lv_BySport_NextCustID = 0 THEN lv_BySport_MinCustID 
 														ELSE NULL END
 							,	temp.LogInfo = CONCAT(temp.LogInfo,",",lv_BySport_LogInfo)
 							,	temp.LastModifiedDate = NOW()
-						WHERE temp.ID =  lv_BySport_LogID;
+						WHERE temp.ID =  lv_BySport_LogID AND lv_BySport_LogInfo IS NOT NULL;
 
 					END IF;
 					
