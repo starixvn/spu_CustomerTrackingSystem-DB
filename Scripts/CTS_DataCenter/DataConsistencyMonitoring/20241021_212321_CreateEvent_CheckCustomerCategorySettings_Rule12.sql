@@ -18,8 +18,7 @@ USE CTS_DataCenter;
 DELIMITER |
 ALTER EVENT EV_CTS_DC_DataConsistency_CustomerCategory
     ON SCHEDULE
-		 -- EVERY '1 03' DAY_HOUR
-		 EVERY '1 05' DAY_HOUR
+		 EVERY '1 03' DAY_HOUR
     DO
       BEGIN
         DECLARE CONST_GENERAL_RuleID				INT DEFAULT 1;
