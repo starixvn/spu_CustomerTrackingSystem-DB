@@ -53,8 +53,8 @@ BEGIN
 	WHERE CTSCustID = ip_CTSCustID;
     
 	IF EXISTS (	SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls 
-				WHERE clss.CTSCustID = ip_CTSCustID
-					AND clss.ParentID = CONST_AGENCY_PARENTID_VVIP) THEN
+				WHERE cls.CTSCustID = ip_CTSCustID
+					AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP) THEN
 		SELECT 	NULL 				AS NextCategoryScan
 			,	lv_LastTicket		AS LastTicket
 			,	lv_LastLogin 		AS LastLogin
