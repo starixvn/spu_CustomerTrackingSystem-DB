@@ -12,7 +12,7 @@ Reviewer:
 
 USE CTS_DataCenter;
 
-INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,ItemParentItemID,PriorityOrder,Status,Description,CreatedDate) VALUES
+INSERT INTO StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,ItemParentItemID,PriorityOrder,Status,Description,CreatedDate) VALUES
 (6,86,'Classification CategoryID','CATEGORYID','CONST_AGENCY_CATEID_VVIP','CONST_AGENCY_CATEID_VVIP',101010,101010,3,NULL,1,NULL,NOW())
 ,(6,87,'Classification ParentID','PARENTID','CONST_AGENCY_PARENTID_PA','CONST_AGENCY_PARENTID_PA',120000,120000,2,NULL,1,NULL,NOW())
 ,(6,88,'Classification ParentID','PARENTID','CONST_AGENCY_PARENTID_VVIP','CONST_AGENCY_PARENTID_VVIP',101000,101000,2,NULL,1,NULL,NOW())
@@ -51,7 +51,7 @@ INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,Ite
 ,(24,26,'Flow Classification Remove','INPUTFLOWID','CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP','CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP',1221,1221,3,NULL,1,NULL,NOW())
 ,(24,27,'Flow Classification Remove','INPUTFLOWID','CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA','CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA',1225,1225,3,NULL,1,NULL,NOW());
 
-/*
+
 INSERT INTO CustomerCategoryAgency(CategoryID,CategoryName,CategorySpec,ParentID,RoleID,CustomerClass,CustomerClassName,CategoryGroupID,CategoryPriority,CustomerClassPriority,BusinessCategoryGroupID,IsActive,ScanIntervalInSecond,RelevantCategoryID,IsHedgingReasonMM,IsPAProbation,AFCFraudID,DataSource,CreatedDate,CategoryNameCN,CategoryNameCN3,CategoryNameTHB,CategoryNameIND,CustomerClassNameCN,SabaSportType,RootTaggingID,OldCategoryID,ColorTypeID,Ext_ABIDangerLevel_Credit,Ext_DangerLevelType,Ext_CategoryGroupID,Ext_EvidenceID_Credit)
 VALUES (101010,'VVIP Agent','VVIP Agent',101000,2,999,'Healthy +',101010,10,10,30,1,Null,Null,Null,0,Null,Null,NOW(),'超级贵宾',Null,Null,Null,'健康 +',Null,Null,210,1,Null,1,101010,Null),
 (101011,'VVIP (internal)','VVIP',101000,3,999,'Healthy +',101011,10,10,30,1,Null,Null,Null,0,Null,Null,NOW(),'超级贵宾',Null,Null,Null,'健康+',Null,Null,210,1,Null,1,101011,Null),
@@ -297,4 +297,3 @@ INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDat
 INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(180,'DailyScan_InactiveNewAgency_LastCustID','Daily Scan Inactive New Agency Last CustID','BIGINT UNSIGNED','0');
 INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(181,'SabaDangerLevel_Agency_LastHistoryID','SabaDangerLevel_Agency_LastHistoryID','BIGINT','0');
 INSERT INTO SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(182,'SabaDangerLevel_Agency_ScanBatchSize','SabaDangerLevel_Agency_ScanBatchSize','INT','1000');
-*/
