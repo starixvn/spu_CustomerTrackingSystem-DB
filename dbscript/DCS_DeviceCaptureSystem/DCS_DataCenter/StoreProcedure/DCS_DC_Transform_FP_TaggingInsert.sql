@@ -15,12 +15,13 @@ BEGIN
 
 		Revisions:
 			- 20240730@Jonathan.Doan: Created [Redmine ID: #206403]
+			- 20241111@Jonathan.Doan: Check when Tagging empty [Redmine ID: #212696]
 
 		Param's Explanation (filtered by):
 			
 		Example:
 			CALL DCS_DC_Transform_FP_TaggingInsert('Tagging1,Tagging2,Tagging4');
-
+            select * from DCS_DataCenter.FP_Tagging;
 	*/
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Tagging;
@@ -41,7 +42,8 @@ BEGIN
     INSERT IGNORE INTO DCS_DataCenter.FP_Tagging(Tagging)
 	SELECT Tagging
 	FROM Temp_Tagging
-    WHERE IsNewRecord = 1;
+    WHERE IsNewRecord = 1
+		AND Tagging <> '';
 END$$
 
 DELIMITER ;

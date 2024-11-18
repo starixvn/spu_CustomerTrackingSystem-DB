@@ -32,6 +32,7 @@ BEGIN
 			- 20230807@Terry.Nguyen: Add Fake IP [Redmine: 191829]
 			- 20231123@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
 			- 20240627@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
+			- 20241111@Jonathan.Doan: Add Insert FP_Tagging [Redmine ID: #212696]
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_Transaction_Insert(1,200);
@@ -40,7 +41,7 @@ BEGIN
     
 	DECLARE		lv_SysMinCreatedDate					DATETIME;
     DECLARE 	lv_CurrentDate 							TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
-    
+    DECLARE 	lv_ListFPTagging 						LONGTEXT;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
@@ -246,6 +247,17 @@ BEGIN
         ,   LastLoginTime
     FROM  Temp_LastLoginTimeCTSCust AS tmp_cus;
 
+    /* === Insert new FP_Tagging === */
+	SELECT GROUP_CONCAT(DISTINCT FP_Tagging)
+	INTO lv_ListFPTagging
+	FROM Temp_RawTransaction
+		WHERE FP_Tagging IS NOT NULL;
+    
+    SET lv_ListFPTagging = IFNULL(lv_ListFPTagging,'');
+    IF lv_ListFPTagging <> '' THEN
+		CALL DCS_DC_Transform_FP_TaggingInsert(lv_ListFPTagging);
+	END IF;
+    
 	/* ======= UPDATE ID ========= */
 	UPDATE Temp_RawTransaction AS tmp
 		LEFT JOIN DCS_DataCenter.FP_Tagging AS tg ON tg.Tagging = tmp.FP_Tagging
