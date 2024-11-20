@@ -142,14 +142,14 @@ sp: BEGIN
 		,	tmp.SportType
     FROM Temp_Cust AS cus,
         LATERAL (
-            SELECT clss.ParentID
+            SELECT clss.CustID, clss.ParentID
             FROM CTS_DataCenter.CTSCustomerClassification AS clss
                 INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID AND cate.IsActive = 1
             WHERE clss.CustID = cus.CustID AND clss.ParentID <> CONST_PARENTID_WRAPPER
             ORDER BY cate.CustomerClassPriority ASC
             LIMIT 1
         ) AS cls
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.ParentID = cls.ParentID AND clss.ParentID = CONST_PARENTID_PA
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = cls.CustID AND clss.ParentID = cls.ParentID AND clss.ParentID = CONST_PARENTID_PA
         INNER JOIN Temp_SabaSportType AS tmp ON clss.CategoryID = tmp.CategoryID;
 
     INSERT IGNORE INTO Temp_CustSportType(CustID, SportType)
@@ -157,14 +157,14 @@ sp: BEGIN
 		,	tmp.SportType
     FROM Temp_Cust AS cus,
         LATERAL (
-            SELECT clss.ParentID
+            SELECT clss.CustID, clss.ParentID
             FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
                 INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = clss.CategoryID AND cate.IsActive = 1
             WHERE clss.CustID = cus.CustID
             ORDER BY cate.CustomerClassPriority ASC
             LIMIT 1
         ) AS cls
-		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS clss ON clss.ParentID = cls.ParentID AND clss.ParentID = CONST_AGENCY_PARENTID_PA
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS clss ON clss.CustID = cls.CustID AND clss.ParentID = cls.ParentID AND clss.ParentID = CONST_AGENCY_PARENTID_PA
         INNER JOIN Temp_SabaSportType AS tmp ON clss.CategoryID = tmp.CategoryID;
     
     #Add 
