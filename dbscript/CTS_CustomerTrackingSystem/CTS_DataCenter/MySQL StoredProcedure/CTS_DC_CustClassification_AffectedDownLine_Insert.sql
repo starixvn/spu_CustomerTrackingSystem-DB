@@ -16,15 +16,25 @@ BEGIN
 
 		Revisions:
 			- 20240625@Jonas.Huynh: Created [Redmine ID: #205317]
-        
+			- 20240927@Thomas.Nguyen: Classify Agent's CC [Redmine ID: #185799]
+
 		Param's Explanation (filtered by):
 			- ip_ActionType: 1:Insert VVIP, 2:Remove VVIP, 3:Mark PA, 4:UnMark PA
 	*/
-    DECLARE	CONST_ACTION_INSERTVVIP 	INT DEFAULT 1;
-	DECLARE	CONST_ACTION_REMOVEVVIP 	INT DEFAULT 2;
-	DECLARE	CONST_ACTION_MARKPA 		INT DEFAULT 3;
-	DECLARE	CONST_ACTION_UNMARKPA	 	INT DEFAULT 4;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP				INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY			INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP 				INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA 					INT;
+    DECLARE	CONST_ACTION_INSERTVVIP 									INT DEFAULT 1;
+	DECLARE	CONST_ACTION_REMOVEVVIP 									INT DEFAULT 2;
+	DECLARE	CONST_ACTION_MARKPA 										INT DEFAULT 3;
+	DECLARE	CONST_ACTION_UNMARKPA	 									INT DEFAULT 4;
     
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA						= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA');
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
     CREATE TEMPORARY TABLE Temp_Customer(
 			CTSCustID			BIGINT PRIMARY KEY
@@ -35,15 +45,13 @@ BEGIN
         ,	Remark				VARCHAR(300)
         ,	CategoryID			INT
         ,	CategoryGroupID		INT
-        ,	IsFromTVS			BIT(1)
         ,	IsFromTW			BIT(1)
         ,	IsFromCTS			BIT(1)
-        ,	TVSRequestID		BIT(1)
 		,	LastModifiedDate	DATETIME(3)
 	);
     
 	SET @sql =CONCAT("	INSERT IGNORE INTO Temp_Customer (CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark
-							, CategoryID, CategoryGroupID, IsFromTVS, IsFromTW, IsFromCTS, TVSRequestID, LastModifiedDate) 
+							, CategoryID, CategoryGroupID, IsFromTW, IsFromCTS, LastModifiedDate) 
 						SELECT	ipTbl.CTSCustID
 							,	ipTbl.CustID
                             ,	ipTbl.RoleID
@@ -52,10 +60,8 @@ BEGIN
                             ,	ipTbl.Remark
                             ,	ipTbl.NewCategoryID
                             ,	ipTbl.NewCategoryGroupID
-                            ,	ipTbl.IsFromTVS
                             ,	ipTbl.IsFromTW
                             ,	ipTbl.IsFromCTS
-                            ,	ipTbl.TVSRequestID
 							,	ipTbl.LastModifiedDate
 						FROM ",ip_TableName," AS ipTbl"
 						);
@@ -63,7 +69,7 @@ BEGIN
 	EXECUTE 	stmt1; 
     
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationQueue(CTSCustID, CustID, RoleID, SubscriberID, CreatedBy, Remark, CategoryID, CategoryGroupID, LastDownlineCTSCustID
-		, IsFromTVS, IsFromTW, IsFromCTS, ActionType, InsertTime, TVSRequestID)
+		, IsFromTW, IsFromCTS, ActionType, InsertTime)
 	SELECT tmpPa.CTSCustID
 		,	tmpPa.CustID
 		,	tmpPa.RoleID
@@ -73,17 +79,15 @@ BEGIN
 		,	tmpPa.CategoryID
 		,	tmpPa.CategoryGroupID
 		,	0 AS LastDownlineCTSCustID
-		,	tmpPa.IsFromTVS 
 		,	tmpPa.IsFromTW
 		,	tmpPa.IsFromCTS
 		,	CASE	
-				WHEN ip_InputFlowID = 1 THEN CONST_ACTION_INSERTVVIP
-                WHEN ip_InputFlowID = 5 THEN CONST_ACTION_MARKPA
-                WHEN ip_InputFlowID = 225 THEN CONST_ACTION_UNMARKPA
-                WHEN ip_InputFlowID = 221 THEN CONST_ACTION_REMOVEVVIP
+				WHEN ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP THEN CONST_ACTION_INSERTVVIP
+                WHEN ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY THEN CONST_ACTION_MARKPA
+                WHEN ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA THEN CONST_ACTION_UNMARKPA
+                WHEN ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP THEN CONST_ACTION_REMOVEVVIP
 			END AS ActionType
 		,	CURRENT_TIMESTAMP(3) AS InsertTime
-		,	tmpPa.TVSRequestID
 	FROM Temp_Customer AS tmpPa        
 	WHERE tmpPa.RoleID > 1
 	ORDER BY tmpPa.LastModifiedDate, tmpPa.CategoryID;

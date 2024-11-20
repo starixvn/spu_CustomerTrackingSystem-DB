@@ -16,6 +16,7 @@ BEGIN
 			- 20220307@Irena.Vo: 		Created [Redmine ID: #159014]
             - 20220518@Casey.Huynh: 	Renovate PA Process [Redmine ID: #172561]
 			- 20240703@Victoria.Le: 	Renovate CC phase 2 - Remove Table PinCustomerCategory  [Redmine ID: #205317]
+            - 20241016@Casey.Huynh: 	Agency CC, Check VVIP Seperate Member and Agency [Redmine ID: #185799]
             
 		Param's Explanation (filtered by):
         Example:
@@ -23,10 +24,12 @@ BEGIN
 			CALL CTS_DC_ProblemAccountManagement_ValidateUserName('338HK,338HK,188HK,SMMH,078HK');# --> Pass validate username
 	*/
 
-	DECLARE CONST_CATEID_VVIP 				INT;	
+	DECLARE CONST_PARENTID_VVIP 		INT;	
+    DECLARE CONST_AGENCY_PARENTID_VVIP 	INT;	
 
-	SET CONST_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
-    
+	SET CONST_PARENTID_VVIP 		= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
+    SET CONST_AGENCY_PARENTID_VVIP	= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_UserName;
 	CREATE TEMPORARY TABLE Temp_UserName( 	 			
 			UserName				VARCHAR(50)        
@@ -76,7 +79,9 @@ BEGIN
 				  WHEN c.CustSubID <> 0 THEN 'Sub Account'
                   WHEN (c.IsLicensee = 1 AND c.RoleID > 1) THEN 'Upline Licensee Account'
                   WHEN (c.IsInternal = 1) THEN 'Internal Account'
-                  WHEN (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls WHERE cls.CTSCustID = c.CTSCustID AND cls.CategoryID = CONST_CATEID_VVIP) IS NOT NULL THEN 'VVIP'
+                  WHEN (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls WHERE cls.CTSCustID = c.CTSCustID AND cls.ParentID = CONST_PARENTID_VVIP) IS NOT NULL 
+						OR (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls WHERE cls.CTSCustID = c.CTSCustID AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP) IS NOT NULL
+                        THEN 'VVIP'
                   ELSE NULL
 			END) AS ErrorMsg
 	FROM Temp_UserName AS u

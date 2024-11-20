@@ -24,6 +24,7 @@ BEGIN
 			
 		Revisions: 
 			- 20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
+			- 20241003@Thomas.Nguyen: 		CC Agency [Redmine ID: #185799]
 */
 
 	DECLARE CONST_LIST_CLASSIFICATION		INT DEFAULT 6;
@@ -51,7 +52,7 @@ BEGIN
 		SET lv_GetTypeID = 4;
 		SET lv_GroupID = 1;
 		
-	ELSEIF ip_CateTypeParentName LIKE '%CONST_CC_%' THEN
+	ELSEIF ip_CateTypeParentName LIKE '%_CC_%' THEN
 		SET lv_GetTypeID = 5;
 		SET lv_GroupID = 1;
 		

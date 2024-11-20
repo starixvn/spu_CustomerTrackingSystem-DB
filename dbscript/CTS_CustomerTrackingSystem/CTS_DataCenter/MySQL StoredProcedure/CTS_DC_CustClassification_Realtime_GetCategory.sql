@@ -28,6 +28,7 @@ BEGIN
             - 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
             - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
 			- 20240619@Jonas.Huynh: Renovate CC [Redmine ID: #205317] 
+			- 20241106@Jonas.Huynh: CC Agency [Redmine ID: #185799] 
             
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_CustClassification_Realtime_GetCategory('761925')
@@ -36,23 +37,15 @@ BEGIN
 	DECLARE	CONST_PARENTID_PA 			INT;
 	DECLARE	CONST_PARENTID_POTENTIALPA	INT;
    	DECLARE CONST_PARENTID_WRAPPER		INT;
-    DECLARE	CONST_CATEGROUPID_NEW 		INT;
-	DECLARE	CONST_CATEGROUPID_NORMAL 	INT;
-	DECLARE	CONST_CATEGROUPID_GOOD		INT;
-    DECLARE CONST_CATEGROUPID_INACTIVE	INT;
     
     SET CONST_PARENTID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
     SET CONST_PARENTID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 		= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
    	SET CONST_PARENTID_WRAPPER 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
-    SET CONST_CATEGROUPID_NEW 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_NEW');
-    SET CONST_CATEGROUPID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_NORMAL');
-    SET CONST_CATEGROUPID_GOOD 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_GOOD');
-    SET CONST_CATEGROUPID_INACTIVE 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_INACTIVE');
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
 	CREATE TEMPORARY TABLE Temp_Customers(
-			CustID					BIGINT UNSIGNED
+			CustID					BIGINT UNSIGNED PRIMARY KEY
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustomerCategory;
@@ -89,8 +82,7 @@ BEGIN
                     AND ca.ParentID <> CONST_PARENTID_WRAPPER
 				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
                 LIMIT 1
-		   ) tmplc 
-	WHERE tmplc.ParentID IN (CONST_PARENTID_NORMAL, CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
+		   ) tmplc;
 	
     -- #2: Return customer category for realtime classification
     SELECT DISTINCT temp.CustID AS CustID

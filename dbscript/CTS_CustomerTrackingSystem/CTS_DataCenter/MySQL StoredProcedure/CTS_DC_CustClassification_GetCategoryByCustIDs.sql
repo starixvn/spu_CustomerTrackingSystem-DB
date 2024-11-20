@@ -16,7 +16,8 @@ BEGIN
 		Revisions:
 			- 20240820@Long.Luu: 			Created [Redmine ID: #209403]
 			- 20240822@Victoria.Le: 		Renovate CC phase 2 [Redmine ID: #205317]
-            
+            - 20241016@Thomas.Nguyen: 		Agent CC [Redmine ID: #185799]
+
 		Param's Explanation:
 
 		Example:  
@@ -28,9 +29,18 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers;
     CREATE TEMPORARY TABLE 		Temp_InputCustomers (
-			CustID              BIGINT UNSIGNED PRIMARY KEY 
+			CustID              BIGINT UNSIGNED PRIMARY KEY
     );  
     
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;
+    CREATE TEMPORARY TABLE 		Temp_CustCategory (
+			CustID              BIGINT UNSIGNED
+		,	CategoryID			INT UNSIGNED
+		,	CustomerClass		INT UNSIGNED
+		,	CreatedDate			DATETIME
+		,	PRIMARY KEY (CustID, CategoryID)
+    );
+
     /* 1. Insert CustIDs */
 	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_InputCustomers (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
@@ -38,8 +48,10 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_InputCustomers_Dup;
 	CREATE TEMPORARY TABLE Temp_InputCustomers_Dup LIKE Temp_InputCustomers;
-	INSERT INTO Temp_InputCustomers_Dup SELECT * FROM Temp_InputCustomers;
+	INSERT INTO Temp_InputCustomers_Dup 
+	SELECT CustID FROM Temp_InputCustomers;
 
+	INSERT IGNORE INTO Temp_CustCategory(CustID, CategoryID, CustomerClass, CreatedDate)
 	WITH CTE AS
 	(
 
@@ -66,6 +78,35 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = c.CategoryID
 	WHERE cat.IsActive = 1
 		AND cat.CustomerClass IS NOT NULL;
+
+	/*For Agency*/
+	INSERT IGNORE INTO Temp_CustCategory(CustID, CategoryID, CustomerClass, CreatedDate)
+	WITH CTE_Agency AS
+	(
+		SELECT b.CustID, b.CategoryID, b.CreatedDate
+		FROM Temp_InputCustomers_Dup AS a
+			INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS b ON a.CustID = b.CustID
+			,	LATERAL (
+					SELECT cls.ParentID
+					FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
+						INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = cls.CategoryID AND cat.IsActive = 1
+					WHERE cls.CustID = b.CustID
+					ORDER BY cat.CategoryPriority ASC
+					LIMIT 1
+				) AS ltr
+		WHERE b.ParentID = ltr.ParentID
+	)
+	SELECT c.CustID, cat.CategoryID AS CategoryID, cat.CustomerClass, c.CreatedDate
+	FROM CTE_Agency AS c
+		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = c.CategoryID
+	WHERE cat.IsActive = 1
+		AND cat.CustomerClass IS NOT NULL;
+
+	SELECT	CustID
+		,	CategoryID
+		,	CustomerClass
+		,	CreatedDate
+	FROM Temp_CustCategory;
 
 END$$
 

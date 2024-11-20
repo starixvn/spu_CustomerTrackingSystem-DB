@@ -1,0 +1,243 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*
+Creator:	20240925@Casey.Huynh
+Task:	 	Customer Classification Agent
+Server:  	Master
+DBName:		CTS_DataCenter
+
+Revisions: 
+		- 20240925@Casey.Huynh: Created [Redmine ID: #185799]
+Reviewer:
+*/
+
+USE CTS_DataCenter;
+
+DROP TABLE IF EXISTS CustomerCategoryAgency;
+CREATE TABLE CustomerCategoryAgency(
+  CategoryID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  CategoryName VARCHAR(50) DEFAULT NULL,
+  CategorySpec VARCHAR(200) DEFAULT NULL,
+  ParentID INT UNSIGNED DEFAULT NULL,
+  RoleID TINYINT DEFAULT NULL,
+  CustomerClass INT UNSIGNED DEFAULT NULL,
+  CustomerClassName VARCHAR(50) DEFAULT NULL,
+  CategoryGroupID INT UNSIGNED DEFAULT NULL,
+  CategoryPriority SMALLINT UNSIGNED DEFAULT NULL,
+  CustomerClassPriority SMALLINT UNSIGNED DEFAULT NULL,
+  BusinessCategoryGroupID INT UNSIGNED DEFAULT NULL,
+  IsActive TINYINT(1) DEFAULT 1,
+  ScanIntervalInSecond BIGINT DEFAULT NULL,
+  RelevantCategoryID INT UNSIGNED DEFAULT NULL,
+  IsHedgingReasonMM TINYINT(1) DEFAULT NULL,
+  IsPAProbation TINYINT(1) DEFAULT NULL,
+  AFCFraudID INT DEFAULT NULL,
+  DataSource VARCHAR(50) DEFAULT NULL,
+  CreatedDate DATETIME DEFAULT NULL,
+  CategoryNameCN VARCHAR(50) DEFAULT NULL,
+  CategoryNameCN3 VARCHAR(50) DEFAULT NULL,
+  CategoryNameTHB VARCHAR(50) DEFAULT NULL,
+  CategoryNameIND VARCHAR(50) DEFAULT NULL,
+  CustomerClassNameCN VARCHAR(50) DEFAULT NULL,
+  RootTaggingID SMALLINT UNSIGNED DEFAULT NULL,
+  SabaSportType VARCHAR(50) DEFAULT NULL COMMENT '1:Soccer or 2:Basketball',
+  OldCategoryID INT UNSIGNED DEFAULT NULL,
+  ColorTypeID TINYINT UNSIGNED DEFAULT NULL,
+  Ext_ABIDangerLevel_Credit SMALLINT UNSIGNED DEFAULT NULL,
+  Ext_DangerLevelType SMALLINT DEFAULT NULL,
+  Ext_CategoryGroupID INT UNSIGNED DEFAULT NULL,
+  Ext_EvidenceID_Credit SMALLINT DEFAULT NULL,
+  PRIMARY KEY(CategoryID),
+  INDEX IX_CustomerCategoryAgency_ParentID(ParentID),
+  INDEX IX_CustomerCategoryAgency_IsActive(IsActive),
+  INDEX IX_CustomerCategoryAgency_CategoryGroupID(CategoryGroupID),
+  INDEX IX_CustomerCategoryAgency_RoleID(RoleID),
+  INDEX IX_CustomerCategoryAgency_OldCategoryID(OldCategoryID)
+) ENGINE=InnoDB;
+
+#===================================================
+DROP TABLE IF EXISTS CustomerCategorySettingsAgency;
+CREATE TABLE CustomerCategorySettingsAgency(
+  CategoryID INT UNSIGNED NOT NULL,
+  CategoryGroupID INT UNSIGNED NOT NULL,
+  ParentID INT UNSIGNED DEFAULT NULL,
+  IsParallelParentID TINYINT(1) DEFAULT NULL,
+  IsMultiCateIDSameParentID TINYINT(1) DEFAULT NULL,
+  IsKeepOldCateID TINYINT(1) DEFAULT NULL,
+  RemarkTemplateID INT DEFAULT NULL,
+  PRIMARY KEY(CategoryID,CategoryGroupID),
+  INDEX IX_CustomerCategorySettingsAgency_ParentID(ParentID)
+) ENGINE=InnoDB;
+#===================================================
+DROP TABLE IF EXISTS CustomerClassificationAgency_Remark;
+CREATE TABLE CustomerClassificationAgency_Remark(
+  RemarkID INT UNSIGNED NOT NULL,
+  RemarkTemplate TEXT,
+  Description VARCHAR(200) DEFAULT NULL,
+  CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(RemarkID)
+) ENGINE=InnoDB;
+#===================================================
+DROP TABLE IF EXISTS CTSCustomerClassificationAgency;
+CREATE TABLE CTSCustomerClassificationAgency(
+  CustID BIGINT UNSIGNED NOT NULL,
+  CTSCustID BIGINT UNSIGNED DEFAULT NULL,
+  ParentID INT UNSIGNED NOT NULL,
+  CategoryID INT UNSIGNED NOT NULL,
+  SubscriberID INT UNSIGNED DEFAULT NULL,
+  RoleID TINYINT DEFAULT NULL,
+  IsAffectToDownline TINYINT(1) DEFAULT NULL,
+  Remark VARCHAR(500) DEFAULT NULL,
+  CreatedDate DATETIME DEFAULT NULL,
+  CreatedBy INT DEFAULT NULL,
+  LastModifiedDate DATETIME DEFAULT NULL,
+  LastModifiedBy INT UNSIGNED DEFAULT NULL,
+  LastScannedDate DATETIME DEFAULT NULL,
+  IsMarkedDirectly TINYINT(1) DEFAULT NULL,
+  IsFromTW TINYINT(1) DEFAULT 0,
+  IsFromCTS TINYINT(1) DEFAULT 0,
+  IsFromAI TINYINT(1) DEFAULT 0,
+  PRIMARY KEY(CustID,ParentID,CategoryID),
+  INDEX IX_CTSCCAgency_CTSCustID_ParentID_LastModifiedDate(CTSCustID,ParentID,LastModifiedDate),
+  INDEX IX_CTSCCAgency_SubscriberID_ParentID(SubscriberID,ParentID),
+  INDEX IX_CTSCCAgency_ParentID_CreatedDate(ParentID,CreatedDate),
+  INDEX IX_CTSCCAgency_CategoryID_CustID_LastScannedDate(CategoryID,CustID,LastScannedDate)
+) ENGINE=InnoDB;
+#==========================================
+DROP TABLE IF EXISTS CTSCustomerClassificationAgency_History;
+CREATE TABLE CTSCustomerClassificationAgency_History(
+  ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  CustID BIGINT UNSIGNED DEFAULT NULL,
+  CTSCustID BIGINT UNSIGNED DEFAULT NULL,
+  RoleID TINYINT DEFAULT NULL,
+  ParentID INT UNSIGNED DEFAULT NULL,
+  CategoryID INT DEFAULT NULL,
+  OldCategoryID INT UNSIGNED DEFAULT NULL,
+  DWCategoryID INT UNSIGNED DEFAULT NULL,
+  TargetCC INT DEFAULT NULL,
+  SourceTypeID SMALLINT UNSIGNED DEFAULT NULL,
+  IsDataChanged TINYINT(1) DEFAULT 0,
+  ActionType TINYINT DEFAULT NULL,
+  IsAuto TINYINT(1) DEFAULT NULL,
+  LastModifiedDate DATETIME DEFAULT NULL,
+  LastModifiedBy INT UNSIGNED DEFAULT NULL,
+  InsertDate DATETIME DEFAULT NULL,
+  TargetDangerLevel1 SMALLINT DEFAULT NULL,
+  Remark VARCHAR(500) DEFAULT NULL,
+  IsMarkedDirectly TINYINT(1) DEFAULT NULL,
+  IsFromTW TINYINT(1) DEFAULT 0,
+  IsFromCTS TINYINT(1) DEFAULT 0,
+  IsFromAI TINYINT(1) DEFAULT 0,
+  TurnoverRM DECIMAL(20,4) DEFAULT NULL,
+  WinlossRM DECIMAL(20,4) DEFAULT NULL,
+  BetCount BIGINT DEFAULT NULL,
+  LastXDaysTurnoverRM decimal(20,4) DEFAULT NULL,
+  LastXDaysWinlossRM decimal(20,4) DEFAULT NULL,
+  LastXDaysBetCount bigint DEFAULT NULL,
+  LastYDaysTurnoverRM decimal(20,4) DEFAULT NULL,
+  LastYDaysWinlossRM decimal(20,4) DEFAULT NULL,
+  LastYDaysBetCount bigint DEFAULT NULL,
+  PerformanceTime DATETIME DEFAULT NULL,
+  RobotCounter SMALLINT,
+  PRIMARY KEY(ID),
+  INDEX IX_CTSCCAgency_History_InsertDate(InsertDate),
+  INDEX IX_CTSCCAgency_History_CTSCustID(CTSCustID),
+  INDEX IX_CTSCCAgency_History_CustID_Infor(CustID,ParentID,LastModifiedDate,IsDataChanged)
+) ENGINE=InnoDB;
+#======================================================================================
+DROP TABLE IF EXISTS CTSCustomerClassificationAgency_Log;
+CREATE TABLE CTSCustomerClassificationAgency_Log(
+  ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  CustID BIGINT UNSIGNED DEFAULT NULL,
+  CTSCustID BIGINT UNSIGNED DEFAULT NULL,
+  RoleID TINYINT DEFAULT NULL,
+  ParentID INT UNSIGNED DEFAULT NULL,
+  CategoryID INT DEFAULT NULL,
+  TurnoverRM DECIMAL(20,4) DEFAULT NULL,
+  WinlossRM DECIMAL(20,4) DEFAULT NULL,
+  BetCount BIGINT DEFAULT NULL,
+  LastXDaysTurnoverRM decimal(20,4) DEFAULT NULL,
+  LastXDaysWinlossRM decimal(20,4) DEFAULT NULL,
+  LastXDaysBetCount bigint DEFAULT NULL,
+  LastYDaysTurnoverRM decimal(20,4) DEFAULT NULL,
+  LastYDaysWinlossRM decimal(20,4) DEFAULT NULL,
+  LastYDaysBetCount bigint DEFAULT NULL,
+  TargetCC INT DEFAULT NULL,
+  SourceTypeID SMALLINT UNSIGNED DEFAULT NULL,
+  OldCategoryID INT UNSIGNED DEFAULT NULL,
+  DWCategoryID INT UNSIGNED DEFAULT NULL,
+  IsDataChanged TINYINT(1) DEFAULT 0,
+  ActionType TINYINT DEFAULT NULL,
+  IsAuto TINYINT(1) DEFAULT NULL,
+  LastModifiedDate DATETIME DEFAULT NULL,
+  LastModifiedBy INT UNSIGNED DEFAULT NULL,
+  InsertDate DATETIME NOT NULL,
+  TargetDangerLevel1 SMALLINT DEFAULT NULL,
+  Remark VARCHAR(500) DEFAULT NULL,
+  IsMarkedDirectly TINYINT(1) DEFAULT NULL,
+  IsFromTW TINYINT(1) DEFAULT 0,
+  IsFromCTS TINYINT(1) DEFAULT 0,
+  IsFromAI TINYINT(1) DEFAULT 0,
+  PerformanceTime DATETIME DEFAULT NULL,
+  RobotCounter SMALLINT,
+  PRIMARY KEY(ID,InsertDate),
+  INDEX IX_CTSCCAgency_Log_CustID(CustID)
+) ENGINE=InnoDB
+/*!50100 PARTITION BY RANGE(extract(year_month from InsertDate))
+(PARTITION pm202408 VALUES LESS THAN(202409) ENGINE = InnoDB,
+ PARTITION pm202409 VALUES LESS THAN(202410) ENGINE = InnoDB,
+ PARTITION pm202410 VALUES LESS THAN(202411) ENGINE = InnoDB,
+ PARTITION pm202411 VALUES LESS THAN(202412) ENGINE = InnoDB,
+ PARTITION pm202412 VALUES LESS THAN(202501) ENGINE = InnoDB,
+ PARTITION pm202501 VALUES LESS THAN(202502) ENGINE = InnoDB,
+ PARTITION pm202502 VALUES LESS THAN(202503) ENGINE = InnoDB,
+ PARTITION pm202503 VALUES LESS THAN(202504) ENGINE = InnoDB,
+ PARTITION pm202504 VALUES LESS THAN(202505) ENGINE = InnoDB,
+ PARTITION pm202505 VALUES LESS THAN(202506) ENGINE = InnoDB,
+ PARTITION pm202506 VALUES LESS THAN(202507) ENGINE = InnoDB,
+ PARTITION pm202507 VALUES LESS THAN(202508) ENGINE = InnoDB,
+ PARTITION pm202508 VALUES LESS THAN(202509) ENGINE = InnoDB,
+ PARTITION pm202509 VALUES LESS THAN(202510) ENGINE = InnoDB,
+ PARTITION pm202510 VALUES LESS THAN(202511) ENGINE = InnoDB,
+ PARTITION pm202511 VALUES LESS THAN(202512) ENGINE = InnoDB,
+ PARTITION pm999999 VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */;
+
+#======================================================================
+DROP TABLE IF EXISTS CustomerCategoryDownlineMapping;
+CREATE TABLE CustomerCategoryDownlineMapping(
+		FromCategoryID	INT NOT NULL
+    ,	FromRoleID		INT 
+	,	ToCategoryID	INT NOT NULL
+    ,	ToRoleID		INT
+
+    ,	PRIMARY KEY PK_CustomerCategoryDownlineMapping(FromCategoryID,FromRoleID,ToCategoryID,ToRoleID)
+) ENGINE=InnoDB;
+
+#************************************************************************************************************
+#************************************************************************************************************
+/*USE CTS_Archive;
+DROP TABLE IF EXISTS CTSCustomerAssociationStatusAgency;
+CREATE TABLE CTSCustomerAssociationStatusAgency(
+  CTSCustID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  CustID INT UNSIGNED DEFAULT NULL,
+  RoleID TINYINT,
+  LastTicketDate DATETIME DEFAULT NULL,
+  IsArchived TINYINT(1) DEFAULT 0,
+  IsRollBack TINYINT(1) DEFAULT 0,
+  RollBackDate DATETIME DEFAULT NULL,
+  CreatedDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY(CTSCustID),
+  INDEX IX_CTSCustomerAssociationStatusAgency_CustID(CustID),
+  INDEX IX_CTSCustomerAssociationStatusAgency_IsRollBack_RollBackDate(IsRollBack,RollBackDate),
+  INDEX IX_CTSCustomerAssociationStatusAgency_Archive(IsArchived,CTSCustID,LastTicketDate),
+  INDEX IX_CTSCustomerAssociationStatusAgency_LastTicketDate(LastTicketDate)
+) ENGINE=InnoDB;*/
+#==========================================================================================
+/*DROP TABLE IF EXISTS CTSCustomerAssociationArchiveAgency_Process;
+CREATE TABLE CTSCustomerAssociationArchiveAgency_Process(
+  CTSCustID BIGINT UNSIGNED NOT NULL,
+  CustID INT UNSIGNED NOT NULL,
+  RoleID INT UNSIGNED  NOT NULL,
+  PRIMARY KEY(CTSCustID),
+  INDEX IX_CTSCustomerAssociationArchiveAgency_CustID(CustID)
+) ENGINE=InnoDB;
+*/

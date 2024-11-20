@@ -23,6 +23,7 @@ sp: BEGIN
 			- 	20231023@Jonas.Huynh:	HF wrong reactivated category [Redmine ID: #193050]
 			-	20240321@Thomas.Nguyen:	Clean data for Special CC BySport/History and history of special CC general [Redmine ID: #201360]
 			-	20240628@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
+			- 	20241018@Thomas.Nguyen: CC Agent [Redmine ID: #185799]
 
 		Param's Explanation (filtered by):	
         
@@ -1669,10 +1670,116 @@ sp: BEGIN
             SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
-        SET lv_Table = 'CTS_DataCenter.CTSCustomer';
+        SET lv_Table = 'CTS_DataCenter.CTSCustomerClassificationAgency';
 	 END IF;
 
-    /*************************************** 39. CTS_DataCenter.CTSCustomer ************************************/
+	 /*************************************** 39. CTS_DataCenter.CTSCustomerClassificationAgency ********************/
+    IF (lv_Table = 'CTS_DataCenter.CTSCustomerClassificationAgency') THEN
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss WHERE clss.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassificationAgency_Clean;
+			CREATE TEMPORARY TABLE Temp_CTSCustomerClassificationAgency_Clean(
+					CustID   			BIGINT UNSIGNED  
+				,	ParentID			INT UNSIGNED
+                ,	CategoryID			INT
+                ,	PRIMARY KEY(CustID, ParentID, CategoryID)
+			);
+            
+            DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassificationAgency_Archive;
+			CREATE TEMPORARY TABLE Temp_CTSCustomerClassificationAgency_Archive(
+					ArchiveID			BIGINT UNSIGNED PRIMARY KEY
+				,	CustID   			BIGINT 
+			);
+
+            INSERT IGNORE INTO Temp_CTSCustomerClassificationAgency_Clean(CustID, ParentID, CategoryID)
+            SELECT 	clss.CustID
+				,	clss.ParentID
+                ,	clss.CategoryID
+			FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
+			WHERE  clss.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
+			LIMIT lv_CleanTableBatchSize;
+            
+            INSERT IGNORE INTO Temp_CTSCustomerClassificationAgency_Archive(ArchiveID, CustID)
+            SELECT 	arc.ID, arc.CustID
+			FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc 
+				INNER JOIN Temp_CustInfo AS temp ON temp.ArchiveID = arc.ID AND arc.CustSubID = 0
+			WHERE arc.CategoryID IS NULL;
+
+            IF EXISTS (SELECT 1 FROM Temp_CTSCustomerClassificationAgency_Archive) THEN
+				UPDATE CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc
+					INNER JOIN Temp_CTSCustomerClassificationAgency_Archive AS temp ON temp.ArchiveID = arc.ID
+					,	LATERAL	(
+							SELECT cls.CustID, cls.ParentID, cls.CategoryID
+							FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
+								INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cls.CategoryID = cate.CategoryID AND cate.IsActive = 1
+							WHERE cls.CustID = arc.CustID
+							ORDER BY  cate.CustomerClassPriority ASC 
+									, cls.LastModifiedDate DESC
+							LIMIT 1
+						) AS cate
+				SET arc.CategoryID = cate.CategoryID;
+            END IF;
+
+            DELETE cl
+			FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cl
+				INNER JOIN Temp_CTSCustomerClassificationAgency_Clean AS tmp ON tmp.CustID = cl.CustID 
+																		AND tmp.ParentID = cl.ParentID
+																		AND tmp.CategoryID = cl.CategoryID;
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_DataCenter.CTSCustomerClassificationAgency'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CTSCustomerClassificationAgency_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_DataCenter.CTSCustomerClassificationAgency_History';
+	 END IF; 
+
+	/*************************************** 40. CTS_DataCenter.CTSCustomerClassificationAgency_History ************/
+    IF (lv_Table = 'CTS_DataCenter.CTSCustomerClassificationAgency_History') THEN
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CTSCustomerClassificationAgency_History AS his WHERE his.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomerClassificationAgency_History_Clean;
+			CREATE TEMPORARY TABLE Temp_CTSCustomerClassificationAgency_History_Clean(
+					ID   BIGINT UNSIGNED PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_CTSCustomerClassificationAgency_History_Clean(ID)
+            SELECT 	his.ID
+			FROM CTS_DataCenter.CTSCustomerClassificationAgency_History AS his
+			WHERE  his.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
+			LIMIT lv_CleanTableBatchSize;
+            
+            DELETE his
+			FROM CTS_DataCenter.CTSCustomerClassificationAgency_History AS his
+			WHERE  his.ID IN (SELECT tmp.ID FROM Temp_CTSCustomerClassificationAgency_History_Clean AS tmp);
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_DataCenter.CTSCustomerClassificationAgency_History'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_CTSCustomerClassificationAgency_History_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+        SET lv_Table = 'CTS_DataCenter.CTSCustomer';
+	 END IF; 
+
+    /*************************************** 41. CTS_DataCenter.CTSCustomer ************************************/
 	
     DELETE cus
 	FROM CTS_DataCenter.CTSCustomer AS cus

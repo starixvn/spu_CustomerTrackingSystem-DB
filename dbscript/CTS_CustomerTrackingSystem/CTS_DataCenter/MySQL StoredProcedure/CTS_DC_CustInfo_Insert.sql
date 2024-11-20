@@ -43,6 +43,8 @@ BEGIN
 			- 20231024@Jonas.Huynh: HF wrong reactivated category [Redmine ID: #193050]
 			- 20231207@Long.Luu: 	Add Agent M999RM00 as internal account [Redmine ID: #197915]
 			- 20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
+            - 202409266@Casey.Huynh: Return Agent [Redmine ID: #185799]
+            
 		Param's Explanation (filtered by):
 		Example:
 			 CALL CTS_DataCenter.CTS_DC_CustInfo_Insert('[
@@ -51,6 +53,11 @@ BEGIN
 				,{"BatchId":1,"CustID":18349232,"CustStatusID":1,"UserName":"HAIFARMB01897790","UserName2":"haifa$83884255","Site":"haifa","SiteID":44,"RoleID":1,"CurrencyID":13,"Currency":"RMB","SRecommend":4359240,"MRecommend":4359287,"Recommend":4359308,"CreatedDate":"2015-06-28 07:22:00.000","Danger1":0,"Danger2":0,"Danger3":0,"CustSubID":0}]', true);
 	
     */
+    DECLARE CONST_ROLEID_MEMBER					TINYINT DEFAULT 1;
+    DECLARE CONST_ROLEID_AGENT            		TINYINT DEFAULT 2;
+    DECLARE CONST_ROLEID_MASTER            		TINYINT DEFAULT 3;
+    DECLARE CONST_ROLEID_SUPER            		TINYINT DEFAULT 4;
+
 	DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CTSCustomer;    
@@ -290,26 +297,37 @@ BEGIN
 		INNER JOIN	CTS_DataCenter.MappingSubscriberSite mss ON tmpCus.SiteID = mss.SiteID 
 																AND ((mss.RoleMapping = 1 AND tmpCus.RoleID = 1)
 																	OR (mss.RoleMapping = 2 AND tmpCus.RoleID > 1)
-																	OR (mss.RoleMapping = 0));
-             
+																	OR (mss.RoleMapping = 0));     
         
 	UPDATE Temp_CTSCustomer AS tmpCus
     INNER JOIN Temp_CustInfo AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID
 	SET   tmpCus.SubscriberID = cus.SubscriberID
 		, tmpCus.RegisterName = cus.RegisterName;      
 	
-    #====CREATE CATEGORY FOR NEW OR REACTIVATED CUSTOMER (RoleID = 0)=====================================
+    #====CREATE CATEGORY FOR NEW OR REACTIVATED MEMBER=====================================
     INSERT INTO Temp_CustNewCategory(CustID, IsInternal, SiteID)
     SELECT	tmpCus.CustID
 		,	tmpCus.IsInternal
         ,	tmpCus.SiteID
     FROM Temp_CTSCustomer AS tmpCus
-    WHERE tmpCus.RoleID = 1
+    WHERE tmpCus.RoleID = CONST_ROLEID_MEMBER
         AND tmpCus.CustSubID = 0;    
-   
+
 	CALL CTS_DataCenter.CTS_DC_CustClassification_InsertNormalAccount_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);
-   
-    #=====INSERT NEW CUSTOMER=====================================
+
+    #====CREATE CATEGORY FOR NEW OR REACTIVATED AGENT=====================================
+	TRUNCATE TABLE Temp_CustNewCategory;
+    INSERT INTO Temp_CustNewCategory(CustID, IsInternal, SiteID)
+    SELECT	tmpCus.CustID
+		,	tmpCus.IsInternal
+        ,	tmpCus.SiteID
+    FROM Temp_CTSCustomer AS tmpCus
+    WHERE tmpCus.RoleID = CONST_ROLEID_AGENT AND tmpCus.IsLicensee = 0
+        AND tmpCus.CustSubID = 0;    
+
+	CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_NewCategory('Temp_CustNewCategory', ip_IsNewCustomer);    
+
+    #=====INSERT NEW CUSTOMER===================================================================
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomer(SubscriberID, CustID, CustSubID, UserName, UserName2, SiteID, Site, RoleID, Currency, CurrencyID
 			, SRecommend, MRecommend, Recommend, CreatedDate , RegisterName , CustStatusID , Danger1 ,Danger2 , Danger3 , Danger4 , Danger5, DangerSabaSc, DangerSabaBkb , InsertedTime , ModifiedTime, IsLicensee, IsInternal)
 	SELECT    tmpCus.SubscriberID
@@ -363,7 +381,34 @@ BEGIN
 	#=====UPDATE CTSCustomerClassification_History====================
     UPDATE CTS_DataCenter.CTSCustomerClassification_History AS ch
     INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
-    SET	ch.CTSCustID = tmpCus.CTSCustID;
+    SET		ch.CTSCustID = tmpCus.CTSCustID;
+
+    /* ===> NOT Insert CTSCustID To LOG due to suport trace data team(victoria) 
+    #=====UPDATE CTSCustomerClassification_History_Log====================
+    UPDATE CTS_DataCenter.CTSCustomerClassification_History_Log AS cl
+		INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cl.CustID
+    SET	cl.CTSCustID = tmpCus.CTSCustID;
+    */
+    
+	#=====UPDATE CTSCustomerClassification====================
+    UPDATE CTS_DataCenter.CTSCustomerClassificationAgency AS cc
+    INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID
+    SET		cc.CTSCustID = tmpCus.CTSCustID
+		,	cc.SubscriberID = tmpCus.SubscriberID
+		,	cc.RoleID = tmpCus.RoleID;
+            
+	#=====UPDATE CTSCustomerClassification_History====================
+    UPDATE CTS_DataCenter.CTSCustomerClassificationAgency_History AS ch
+    INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= ch.CustID
+    SET		ch.CTSCustID = tmpCus.CTSCustID	
+		,	ch.RoleID = tmpCus.RoleID; 
+    
+    /* ===> NOT Insert CTSCustID To LOG due to suport trace data team(victoria) 
+    #=====UPDATE CTSCustomerClassification_History_Log====================
+    UPDATE CTS_DataCenter.CTSCustomerClassification_History_Log AS cl
+		INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cl.CustID
+    SET	cl.CTSCustID = tmpCus.CTSCustID;
+    */
 
 	SELECT	CTSCustID
 		,	SubscriberID
