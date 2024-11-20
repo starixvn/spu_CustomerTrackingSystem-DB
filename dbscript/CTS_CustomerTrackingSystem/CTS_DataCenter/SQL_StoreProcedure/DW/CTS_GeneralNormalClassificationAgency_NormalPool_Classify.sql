@@ -116,7 +116,7 @@ BEGIN
 		LastYDaysMargin			DECIMAL(19, 4)	NOT NULL,
         LastYDaysWinlossRM		DECIMAL(19, 4)	NOT NULL,
         LastYDaysBetCount		INT				NOT NULL,
-		LastXYDaysWinlossRatio	SMALLINT		NOT NULL,
+		LastXYDaysWinlossRatio	DECIMAL(19, 4)	NOT NULL,
 		PerformanceTime			DATETIME		NOT NULL
 	);
 
@@ -260,7 +260,7 @@ BEGIN
 			,	a.LastYDaysTurnoverRM
 			,	a.LastYDaysWinlossRM
 			,	a.LastYDaysBetCount
-			,	a.LastXYDaysWinlossRatio
+			,	CASE WHEN a.LastXYDaysWinlossRatio > 32767 THEN 32767 ELSE a.LastXYDaysWinlossRatio END
 			,	ISNULL(a.PerformanceTime, @CurrentDateTime)
 		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK);
 
