@@ -1,3 +1,17 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*
+Creator:	20241121@Thomas.Nguyen
+Task:	 	script init data
+Server:  	Master
+DBName:		CTS_DataCenter
+
+Revisions: 
+		- 20241121@Thomas.Nguyen: Created [Redmine ID: #185799]
+Reviewer:
+*/
+
+USE CTS_DataCenter;
+
 /************************************************* STEP 2 *******************************************************/
 DROP TEMPORARY TABLE IF EXISTS Temp_Cust; 
 CREATE TEMPORARY TABLE Temp_Cust 
