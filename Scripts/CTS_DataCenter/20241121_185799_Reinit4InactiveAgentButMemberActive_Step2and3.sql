@@ -11,7 +11,7 @@ INSERT INTO Temp_Cust (CTSCustID, CustID)
 SELECT cus.CTSCustID, cus.CustID
 FROM CTS_DataCenter.Adhoc_Agent2Init AS ad
 INNER JOIN CTS_DataCenter.CTSCustomer AS cus
-ON cus.CustID = ad.CustID AND cus.IsLicensee = 0 AND cus.CustSubID = 0 AND cus.CustStatusID <> 2;
+ON cus.CustID = ad.CustID AND cus.CustSubID = 0 AND cus.RoleID = 2;
 
 INSERT IGNORE INTO Temp_Cust (CTSCustID, CustID)
 SELECT CTSCustID, CustID
