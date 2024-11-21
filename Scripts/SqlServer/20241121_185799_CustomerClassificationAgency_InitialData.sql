@@ -39,7 +39,7 @@ GO
 INSERT INTO #tmpLastTransAgency(CustId, LastTransTime)
 SELECT a.CustID, MAX(l.LastTransTime)
 FROM dbo.[CTS_Adhoc_RescanAgent] AS a
-	INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON c.recommend = a.CustID AND c.roleid = 2
+	INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON c.recommend = a.CustID AND c.roleid = 1
 	INNER JOIN dbo.CustomerClassification_LatestActiveDay AS l ON l.CustId = c.custid
 	LEFT JOIN bodb02.dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON c.Srecommend = cs.custid
 WHERE cs.CustID IS NULL
