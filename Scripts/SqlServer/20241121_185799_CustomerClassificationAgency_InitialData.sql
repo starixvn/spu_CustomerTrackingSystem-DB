@@ -19,7 +19,6 @@ IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Custo
 DROP TABLE [dbo].[CustomerClassificationAgency_InitialData]
 CREATE TABLE [dbo].[CustomerClassificationAgency_InitialData](
 		[CustId]		INT PRIMARY KEY
-	,	LastTransTime	DATETIME DEFAULT NULL
 ) 
 GO
 
@@ -38,7 +37,7 @@ CREATE TABLE #tmpLastTransAgency(
 GO
 
 INSERT INTO #tmpLastTransAgency(CustId, LastTransTime)
-SELECT a.CustId, MAX(a.LastTransTime)
+SELECT a.CustId, MAX(l.LastTransTime)
 FROM dbo.CustomerClassificationAgency_InitialData AS a
 	INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON c.recommend = a.CustId AND c.roleid = 2
 	INNER JOIN dbo.CustomerClassification_LatestActiveDay AS l ON l.CustId = c.custid
