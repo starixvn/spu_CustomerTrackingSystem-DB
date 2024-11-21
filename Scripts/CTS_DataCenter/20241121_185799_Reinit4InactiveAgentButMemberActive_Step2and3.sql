@@ -14,7 +14,7 @@ INNER JOIN CTS_DataCenter.CTSCustomer AS cus
 ON cus.CustID = ad.CustID AND cus.CustSubID = 0 AND cus.RoleID = 2;
 
 INSERT IGNORE INTO Temp_Cust (CTSCustID, CustID)
-SELECT mg.CTSCustID, mg.CustID
+SELECT DISTINCT mg.CTSCustID, mg.CustID
 FROM CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification as mg
 INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mg.CustID
 WHERE mg.Migrate_IsMove = 1 AND cus.CustSubID = 0 AND cus.RoleID = 2;
