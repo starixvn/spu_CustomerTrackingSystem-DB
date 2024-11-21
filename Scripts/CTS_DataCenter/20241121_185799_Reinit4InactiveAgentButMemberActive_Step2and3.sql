@@ -14,9 +14,10 @@ INNER JOIN CTS_DataCenter.CTSCustomer AS cus
 ON cus.CustID = ad.CustID AND cus.CustSubID = 0 AND cus.RoleID = 2;
 
 INSERT IGNORE INTO Temp_Cust (CTSCustID, CustID)
-SELECT CTSCustID, CustID
-FROM CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification
-WHERE Migrate_IsMove = 1;
+SELECT mg.CTSCustID, mg.CustID
+FROM CTS_DataCenter.Adhoc_F185799Mig_CTSCustomerClassification as mg
+INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = mg.CustID
+WHERE mg.Migrate_IsMove = 1 AND cus.RoleID = 2;
 
 /*CTSCustomerAssociationStatus */
 INSERT INTO CTS_Archive.CTSCustomerAssociationStatus(CTSCustID, CustID, LastTicketDate)
@@ -29,7 +30,7 @@ WHERE NOT EXISTS (SELECT 1 FROM CTS_Archive.CTSCustomerAssociationStatus AS arc 
 WITH cteAgent AS (
 SELECT agCC.CustID AS AgentCustID, agCC.CTSCustID AS AgentCTSCustID, MAX(arc.LastTicketDate) AS MAXLastTicketDate
 FROM CTS_Archive.CTSCustomerAssociationStatus AS arc
-    INNER JOIN CTS_DataCenter.CTSCustomer AS me ON me.CTSCustID = arc.CTSCustID 
+    INNER JOIN CTS_DataCenter.CTSCustomer AS me ON me.CTSCustID = arc.CTSCustID AND me.RoleID = 1
     INNER JOIN CTS_DataCenter.Adhoc_Reinit4InactiveAgentButMemberActive AS ag ON ag.CustID = me.recommend
     INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS agCC 
         ON agCC.ParentID = 140000 AND agCC.CategoryID = 140700 AND agCC.CustID = ag.CustID 
