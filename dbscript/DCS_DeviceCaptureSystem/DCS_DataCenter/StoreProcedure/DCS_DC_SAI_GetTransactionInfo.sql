@@ -22,6 +22,9 @@ BEGIN
 	Example:
 		CALL DCS_DataCenter.DCS_DC_SAI_GetTransactionInfo(0, 10);
 	*/
+    DECLARE lv_MaxInsertTime DATETIME;
+    
+    SET lv_MaxInsertTime = (SELECT DATE_SUB(NOW(), INTERVAL 5 MINUTE));
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     
@@ -49,6 +52,10 @@ BEGIN
         ,	DeviceStatus TINYINT
         ,	DeviceFingerprintID BIGINT UNSIGNED
         ,	FP_UserAgentID BIGINT UNSIGNED
+        ,	CustID INT UNSIGNED
+        ,	FingerprintCode VARCHAR(620)
+        ,	DeviceCode VARCHAR(32)
+        ,	UserAgent VARCHAR(1000)
     );
     
     INSERT IGNORE INTO Temp_Transaction(TransID, TransTime, AccountID, LoginName, SubscriberID, CreatedDate, Flagged, UserAgentKey, IP, IPID, URLID, ActionResultID, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, DeviceID, DeviceCodeID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, FP_UserAgentID)
@@ -77,11 +84,38 @@ BEGIN
 		,	FP_UserAgentID
     FROM DCS_DataCenter.Transaction07
     WHERE TransID > ip_LastTransID
+		AND InsertTime < lv_MaxInsertTime
     ORDER BY TransID ASC
     LIMIT ip_BatchSize;
     
+    /* === Add index for Temp_Transaction === */
+	ALTER TABLE Temp_Transaction
+	ADD INDEX IX_Temp_Transaction_AccountID (AccountID),
+	ADD INDEX IX_Temp_Transaction_DeviceID (DeviceID),
+	ADD INDEX IX_Temp_Transaction_DeviceCodeID (DeviceCodeID),
+	ADD INDEX IX_Temp_Transaction_UserAgentKey (UserAgentKey);
+    
+    /* === Get more data for large tables === */
+    UPDATE Temp_Transaction AS trans
+		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = trans.AccountID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cda.CTSCustID
+	SET trans.CustID = cus.CustID;
+    
+    UPDATE Temp_Transaction AS trans
+		INNER JOIN DCS_DataCenter.DeviceFingerprint AS df ON df.DeviceFingerprintID = trans.DeviceFingerprintID AND df.DeviceID = trans.DeviceID
+	SET trans.FingerprintCode = df.FingerprintCode;
+    
+    UPDATE Temp_Transaction AS trans
+		LEFT JOIN DCS_DataCenter.DeviceCode AS dc ON dc.DeviceCodeID = trans.DeviceCodeID
+	SET trans.DeviceCode = dc.DeviceCode;
+    
+    UPDATE Temp_Transaction AS trans
+		LEFT JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
+	SET trans.UserAgent = ua.UserAgent;
+    
+    /* === Return values === */
 	SELECT 	trans.TransID
-		,	cus.CustID
+		,	trans.CustID
 		,	trans.TransTime
 		,	trans.AccountID
 		,	trans.loginName
@@ -91,7 +125,7 @@ BEGIN
 		,	trans.Flagged
 		,	sl.ItemName AS RobotTracking
 		,	trans.UserAgentKey
-		,	ua.UserAgent
+		,	trans.UserAgent
 		,	trans.IP
 		,	trans.IPID
 		,	trans.URLID
@@ -105,25 +139,20 @@ BEGIN
 		,	trans.BotComponentID
 		,	trans.FakeIP
 		,	trans.DeviceID
-		,	dc.DeviceCode
+		,	trans.DeviceCode
 		,	trans.FirstDeviceCode
 		,	trans.DeviceStatus
 		,	trans.DeviceFingerprintID
-		,	df.FingerprintCode
+		,	trans.FingerprintCode
 		,	fos.OSName
 		,	fos.OSVersion
 		,	fbr.BrowserName
 		,	fbr.BrowserVersion
 	FROM Temp_Transaction AS trans
-		LEFT JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = trans.AccountID
-		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cda.CTSCustID
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = trans.Flagged
 		LEFT JOIN DCS_DataCenter.URL AS url ON url.URLID = trans.URLID
-		LEFT JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
 		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID
-		LEFT JOIN DCS_DataCenter.DeviceCode AS dc ON dc.DeviceCodeID = trans.DeviceCodeID
-		LEFT JOIN DCS_DataCenter.DeviceFingerprint AS df ON df.DeviceFingerprintID = trans.DeviceFingerprintID
 		LEFT JOIN DCS_DataCenter.FP_UserAgent AS fua ON fua.ID = trans.FP_UserAgentID
 		LEFT JOIN DCS_DataCenter.FP_OS AS fos ON fos.ID = fua.OSID
 		LEFT JOIN DCS_DataCenter.FP_Browser AS fbr ON fbr.ID = fua.BrowserID;
