@@ -88,13 +88,6 @@ BEGIN
     ORDER BY TransID ASC
     LIMIT ip_BatchSize;
     
-    /* === Add index for Temp_Transaction === */
-	ALTER TABLE Temp_Transaction
-	ADD INDEX IX_Temp_Transaction_AccountID (AccountID),
-	ADD INDEX IX_Temp_Transaction_DeviceID (DeviceID),
-	ADD INDEX IX_Temp_Transaction_DeviceCodeID (DeviceCodeID),
-	ADD INDEX IX_Temp_Transaction_UserAgentKey (UserAgentKey);
-    
     /* === Get more data for large tables === */
     UPDATE Temp_Transaction AS trans
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = trans.AccountID
@@ -106,11 +99,11 @@ BEGIN
 	SET trans.FingerprintCode = df.FingerprintCode;
     
     UPDATE Temp_Transaction AS trans
-		LEFT JOIN DCS_DataCenter.DeviceCode AS dc ON dc.DeviceCodeID = trans.DeviceCodeID
+		INNER JOIN DCS_DataCenter.DeviceCode AS dc ON dc.DeviceCodeID = trans.DeviceCodeID
 	SET trans.DeviceCode = dc.DeviceCode;
     
     UPDATE Temp_Transaction AS trans
-		LEFT JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
+		INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
 	SET trans.UserAgent = ua.UserAgent;
     
     /* === Return values === */
@@ -150,7 +143,7 @@ BEGIN
 		,	fbr.BrowserVersion
 	FROM Temp_Transaction AS trans
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
-		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = trans.Flagged
+		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND sl.ItemID = trans.Flagged
 		LEFT JOIN DCS_DataCenter.URL AS url ON url.URLID = trans.URLID
 		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID
 		LEFT JOIN DCS_DataCenter.FP_UserAgent AS fua ON fua.ID = trans.FP_UserAgentID
