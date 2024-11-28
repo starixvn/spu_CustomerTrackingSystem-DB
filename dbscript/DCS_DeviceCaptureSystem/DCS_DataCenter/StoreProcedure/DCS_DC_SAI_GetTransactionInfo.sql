@@ -120,7 +120,7 @@ BEGIN
 		,	trans.UserAgentKey
 		,	trans.UserAgent
 		,	trans.IP
-		,	trans.IPID
+		,	CAST(trans.IPID AS CHAR) AS IPID
 		,	trans.URLID
 		,	url.URLDetails
 		,	trans.ActionResultID
