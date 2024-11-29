@@ -1,0 +1,59 @@
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_MBOS_Insert`;
+
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_MBOS_Insert`(
+	IN ip_MBOSJson	LONGTEXT
+)
+    SQL SECURITY INVOKER
+BEGIN
+    /*
+	    Created: 20241121@Jonathan.Doan
+	    Task : Insert MBOS
+	    DB: DCS_DataCenter
+	    Original:
+
+	    Revisions:
+		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #214026]
+	    Param's Explanation (filtered by):
+		Example:
+			CALL DCS_DC_Transform_MBOS_Insert('[{"OSName":"OSName1","Version":"1.1.3"},{"OSName":"OSName2","Version":"1.1.3"},{"OSName":"OSName2"},{"Version":"1.1.5"},{}]');
+            SELECT * FROM DCS_DataCenter.MBOS ORDER BY ID DESC;
+    */
+    DECLARE lv_CurrentDatetime 	DATETIME DEFAULT NOW();
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_MBOSInsert;
+	CREATE TEMPORARY TABLE Temp_MBOSInsert(
+			OSName				VARCHAR(32) NOT NULL
+		,	Version				VARCHAR(32) NOT NULL
+        
+		,	IsNewRecord			TINYINT	DEFAULT 1
+        ,	PRIMARY KEY (OSName, Version)
+    );
+    
+    INSERT IGNORE INTO Temp_MBOSInsert(OSName, Version)
+    SELECT	IFNULL(js.OSName, '') AS OSName
+		,	IFNULL(js.Version, '') AS Version
+	FROM JSON_TABLE(
+			ip_MBOSJson,
+			 "$[*]" COLUMNS(
+						OSName			VARCHAR(32) 	PATH "$.OSName"
+					,	Version			VARCHAR(32) 	PATH "$.Version"
+				)
+		   ) AS js
+	WHERE js.OSName IS NOT NULL;
+	 
+    UPDATE Temp_MBOSInsert AS tmp
+		INNER JOIN DCS_DataCenter.MBOS AS os ON os.OSName = tmp.OSName 
+											AND os.Version = tmp.Version
+    SET tmp.IsNewRecord = 0;
+	
+	INSERT IGNORE INTO DCS_DataCenter.MBOS(OSName, Version, InsertedTime, LastAccessedDate)
+	SELECT	OSName
+		,	Version
+		,	lv_CurrentDatetime AS InsertedTime
+		,	lv_CurrentDatetime AS LastAccessedDate
+	FROM Temp_MBOSInsert
+    WHERE IsNewRecord = 1;
+END$$
+DELIMITER ;
