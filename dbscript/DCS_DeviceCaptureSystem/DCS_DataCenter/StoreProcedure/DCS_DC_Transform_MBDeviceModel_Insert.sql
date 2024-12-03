@@ -14,7 +14,7 @@ BEGIN
 	    Original:
 
 	    Revisions:
-		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #214026]
+		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_MBDeviceModel_Insert('[{"ModelName":"ModelName3","Manufacturer":"Manufacturer1","Brand":"Brand1"},{"ModelName":"ModelName2"},{"ModelName":"ModelName3","Brand":"Brand3"},{}]');

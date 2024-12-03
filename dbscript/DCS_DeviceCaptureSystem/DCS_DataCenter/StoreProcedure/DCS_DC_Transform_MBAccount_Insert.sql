@@ -14,7 +14,7 @@ BEGIN
 	    Original:
 
 	    Revisions:
-		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #214026]
+		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_MBAccount_Insert('[{"SubscriberID":2,"LoginName":"qatest002","TransTime":"2024-11-21 05:06:07"}]');
