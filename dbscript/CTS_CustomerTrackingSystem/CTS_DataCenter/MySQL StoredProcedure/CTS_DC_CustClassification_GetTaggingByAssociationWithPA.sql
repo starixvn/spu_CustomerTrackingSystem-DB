@@ -25,6 +25,7 @@ BEGIN
            - 20220422@Irena.Vo: Mapping Root Tagging from table CustomerCategory [Redmine ID: #170468]
            - 20240620@Jonas.Huynh: 	Renovate CC [RedmineID: #205317]
 		   - 20241018@Thomas.Nguyen: CC Agent - Get more data for Agency [Redmine ID: #185799]
+		   - 20241203@Jonas.Huynh: CC 210x - Device Association [Redmine ID: #214353]
            
 		Param's Explanation (filtered by):
         Example:
@@ -69,13 +70,7 @@ BEGIN
     CREATE TEMPORARY TABLE 	Temp_CustLevel1 (			
 			CTSCustID		BIGINT UNSIGNED PRIMARY KEY
 	);
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_LatestCategory;
-    CREATE TEMPORARY TABLE 	Temp_LatestCategory (			
-			CTSCustID		BIGINT UNSIGNED PRIMARY KEY,
-            ParentID		INT
-	);
-    
+       
     DROP TEMPORARY TABLE IF EXISTS Temp_PA;
     CREATE TEMPORARY TABLE 	Temp_PA (			
 			CTSCustID		BIGINT UNSIGNED PRIMARY KEY
@@ -160,27 +155,23 @@ BEGIN
     SELECT DISTINCT CTSCustID_Aff AS Level1  
     FROM 	Temp_CustAssociation;       
      
-	INSERT INTO Temp_LatestCategory(CTSCustID, ParentID)
-	SELECT DISTINCT tmplc.CTSCustID, tmplc.ParentID
-	FROM 	Temp_CustLevel1 AS cus
-	,	LATERAL	
-		  (		SELECT cc.CTSCustID, ca.ParentID
-				FROM CTS_DataCenter.CTSCustomerClassification AS cc 
-					INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
-				WHERE cc.CTSCustID = cus.CTSCustID
-					AND ca.IsActive = 1
-					AND ca.ParentID <> CONST_PARENTID_WRAPPER
-				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
-				LIMIT 1
-		   ) AS tmplc;
-
+	/*For Member*/     
 	INSERT INTO Temp_PA(CTSCustID, RootTaggingID)
     SELECT 	lc.CTSCustID, ca.RootTaggingID
-	FROM Temp_LatestCategory AS lc
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = lc.CTSCustID
+	FROM Temp_CustLevel1 AS cus
+		,	LATERAL	
+			(		SELECT cc.CTSCustID, ca.ParentID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cc 
+						INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
+					WHERE cc.CTSCustID = cus.CTSCustID
+						AND ca.IsActive = 1
+						AND ca.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
+					LIMIT 1
+			 ) AS tmplc
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CTSCustID = tmplc.CTSCustID AND cc.ParentID = CONST_PARENTID_PA
 		INNER JOIN CTS_DataCenter.CustomerCategory AS ca ON ca.CategoryID = cc.CategoryID
-	WHERE lc.ParentID = CONST_PARENTID_PA
-        AND ca.RootTaggingID IS NOT NULL
+	WHERE ca.RootTaggingID IS NOT NULL
     ON DUPLICATE KEY UPDATE RootTaggingID = CASE WHEN ca.RootTaggingID = 10 THEN 10
 												 WHEN ca.RootTaggingID = 8 AND Temp_PA.RootTaggingID = 10 THEN 10
 												 WHEN ca.RootTaggingID = 13 AND Temp_PA.RootTaggingID = 10 THEN 10
@@ -231,7 +222,13 @@ BEGIN
 	
     UPDATE 	Temp_Customer AS cus
 		INNER JOIN Temp_CustAssociationPA AS pa ON cus.CustID = pa.CustID
-    SET 	cus.TaggingID = pa.TaggingID;
+    SET cus.TaggingID = pa.TaggingID;
+
+	UPDATE 	Temp_Customer AS cus
+		INNER JOIN CTS_DataCenter.DangerousAssociation AS a ON cus.CustID = a.CustID
+    SET cus.TaggingID = CASE WHEN cus.RootTaggingID = 10 THEN 10 ELSE 8	END
+	WHERE cus.TaggingType = 1
+		AND a.IsDisabled = 0;
     
     SELECT CustID, TaggingID, TaggingType 
     FROM Temp_Customer;
