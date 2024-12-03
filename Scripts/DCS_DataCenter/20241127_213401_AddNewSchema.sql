@@ -27,9 +27,9 @@ CREATE TABLE MBRawTransaction (
     Brand VARCHAR(32),
     SDKVersion VARCHAR(32),
     OSName VARCHAR(32),
+    CountryName VARCHAR(32),
     Timezone VARCHAR(32),
     Language VARCHAR(32),
-    Country VARCHAR(32),
     InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX IX_MBRawTransaction_SubscriberName (SubscriberName)
 );

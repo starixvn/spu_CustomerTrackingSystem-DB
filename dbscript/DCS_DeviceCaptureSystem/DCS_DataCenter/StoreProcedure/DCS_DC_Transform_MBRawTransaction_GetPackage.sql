@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService,ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_MBTransaction_GetPackage`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_MBRawTransaction_GetPackage`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_MBTransaction_GetPackage` (
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_MBRawTransaction_GetPackage` (
         IN ip_NoOfTickets   INT
     ,   IN ip_NoOfBatch     INT
 )
@@ -15,7 +15,7 @@ BEGIN
 	    Original:
 
 	    Revisions:
-		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #214026]
+		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
             
 	    Param's Explanation (filtered by):
 			CALL DCS_DC_Transform_MBTransaction_GetPackage(10,2);

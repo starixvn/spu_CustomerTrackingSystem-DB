@@ -29,7 +29,7 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"LoginName":"test1","SubscriberName":"Alpha","TransTime":"2024-08-05T15:10:59.051","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"464d165f74c441ee924c2c7adedba28f","FingerprintCode":"45174aef1a33a67c31d443a81a0877f320166613;c5ca1ab37b1378c2626993e2921c8d9d","FingerprintMoreInfo":"6QiqFW9UJpa64drfM/VSENyo7IkHmVlnMxCI8JwitEY=","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36","IP":"::1","FakeIP":"","IPId":1,"IsIPV6":true,"PluginID":0,"URL":"http://localhost:60207","Action":"Login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FPSTransId":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","FPTagging":"464d165f74c441ee924c2c7adedba28f","FPFingerPrintCode":"8b5ee6dab25b9db5818ad7d5bbd68d6e","FPFingerPrintExtraCode":"b5b2333484fb344440bc31a349e8e1a0","FPFingerPrintOldCode":"5b7c23ba59b230eb5415eb8c4684bf22","ChallengeCode":"6386619f64de47f598576b290e48b170","FPUserAgentCode":"c92baae71318dc81de51a663df2f8b4f","IsIncognitoMode":false,"MBDeviceCodeMachine":"42679e3362cdec47d7d889082e972457","MBDeviceCodeMachineOSType":2,"MBDeviceCodeTagging":"ad921d60486366258809553a3db49a4a","MBDeviceCodeMediaDRM":"550714e40b4d3ff77cb888ac94e82ad6","MBIsMobileApp":true,"MBIsEmulator":true,"MBModelName":"sdk_gphone64_x86_64","MBManufacturer":"Google","MBBrand":"google","MBSDKVersion":"35","MBOS":"Android","MBTimezone":"Indochina Time","MBLanguage":"English","MBCountry":"US"}]');
+			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"LoginName":"test1","SubscriberName":"Alpha","TransTime":"2024-08-05T15:10:59.051","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"464d165f74c441ee924c2c7adedba28f","FingerprintCode":"45174aef1a33a67c31d443a81a0877f320166613;c5ca1ab37b1378c2626993e2921c8d9d","FingerprintMoreInfo":"6QiqFW9UJpa64drfM/VSENyo7IkHmVlnMxCI8JwitEY=","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36","IP":"::1","FakeIP":"","IPId":1,"IsIPV6":true,"PluginID":0,"URL":"http://localhost:60207","Action":"Login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FPSTransId":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","FPTagging":"464d165f74c441ee924c2c7adedba28f","FPFingerPrintCode":"8b5ee6dab25b9db5818ad7d5bbd68d6e","FPFingerPrintExtraCode":"b5b2333484fb344440bc31a349e8e1a0","FPFingerPrintOldCode":"5b7c23ba59b230eb5415eb8c4684bf22","ChallengeCode":"6386619f64de47f598576b290e48b170","FPUserAgentCode":"c92baae71318dc81de51a663df2f8b4f","IsIncognitoMode":false,"MBDeviceCodeMachine":"42679e3362cdec47d7d889082e972457","MBDeviceCodeTagging":"ad921d60486366258809553a3db49a4a","MBDeviceCodeMediaDRM":"550714e40b4d3ff77cb888ac94e82ad6","MBIsMobileApp":true,"MBIsEmulator":true,"MBModelName":"sdk_gphone64_x86_64","MBManufacturer":"Google","MBBrand":"google","MBSDKVersion":"35","MBOS":"Android","MBTimezone":"Indochina Time","MBLanguage":"English","MBCountry":"US"}]');
 	*/
 	
     DECLARE lv_FlaggedHuman	INT UNSIGNED DEFAULT 1;
@@ -72,7 +72,6 @@ BEGIN
         ,	IsIncognitoMode				BOOLEAN						NULL
 		,	MBDeviceCodeMediaDRM		VARCHAR(32)					NULL
         ,	MBDeviceCodeMachine			VARCHAR(32)					NULL
-        ,	MBDeviceCodeMachineOSType	SMALLINT					NULL
 		,	MBDeviceCodeTagging			VARCHAR(32)					NULL
 		,	MBIsMobileApp				BOOLEAN						NULL		DEFAULT '0'
 		,	MBIsEmulator				BOOLEAN						NULL		DEFAULT '0'
@@ -98,7 +97,6 @@ BEGIN
         ,	FlaggedCode					VARCHAR(100)				NULL	
 		,	MBDeviceCodeMediaDRM		VARCHAR(32)					NULL
         ,	MBDeviceCodeMachine			VARCHAR(32)					NULL
-        ,	MBDeviceCodeMachineOSType	SMALLINT					NULL
 		,	MBDeviceCodeTagging			VARCHAR(32)					NULL
 		,	IsEmulator					BOOLEAN						NULL		DEFAULT '0'
 		,	ModelName					VARCHAR(32)					NULL	
@@ -124,7 +122,7 @@ BEGIN
 		,	IsNewRecord					TINYINT		 				DEFAULT 1
     );
 		
-	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode, ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeMachineOSType, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode, ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -153,7 +151,6 @@ BEGIN
 		,	rt.IsIncognitoMode
 		,	rt.MBDeviceCodeMediaDRM
         ,	rt.MBDeviceCodeMachine
-        ,	rt.MBDeviceCodeMachineOSType
 		,	rt.MBDeviceCodeTagging
         ,	IFNULL(rt.MBIsMobileApp, '0') AS MBIsMobileApp
 		,	IFNULL(rt.MBIsEmulator, '0') AS MBIsEmulator
@@ -195,7 +192,6 @@ BEGIN
                             ,	IsIncognitoMode				BOOLEAN			PATH "$.IsIncognitoMode"
 							,	MBDeviceCodeMediaDRM		VARCHAR(32)		PATH "$.MBDeviceCodeMediaDRM"
                             ,	MBDeviceCodeMachine			VARCHAR(32)		PATH "$.MBDeviceCodeMachine"
-                            ,	MBDeviceCodeMachineOSType	SMALLINT		PATH "$.MBDeviceCodeMachineOSType"
 							,	MBDeviceCodeTagging			VARCHAR(32)		PATH "$.MBDeviceCodeTagging"
 							,	MBIsMobileApp				BOOLEAN			PATH "$.MBIsMobileApp"
 							,	MBIsEmulator				BOOLEAN			PATH "$.MBIsEmulator"
@@ -216,7 +212,7 @@ BEGIN
 	ADD INDEX IX_Temp_Transaction_BotComponentCode (BotComponentCode);
            
 	/******* Insert Temp Mobile RawTransaction ********************/
-    INSERT INTO Temp_MBTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, FlaggedCode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeMachineOSType, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language)
+    INSERT INTO Temp_MBTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, FlaggedCode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -227,7 +223,6 @@ BEGIN
 		,	rt.FlaggedCode
 		,	rt.MBDeviceCodeMediaDRM
         ,	rt.MBDeviceCodeMachine
-        ,	rt.MBDeviceCodeMachineOSType
 		,	rt.MBDeviceCodeTagging
 		,	rt.MBIsEmulator 		AS IsEmulator
 		,	rt.MBModelName 			AS ModelName
@@ -316,7 +311,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     
     /*******Mobile RawTransaction********************/
-    INSERT INTO DCS_DataCenter.MBRawTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeMachineOSType, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language)
+    INSERT INTO DCS_DataCenter.MBRawTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -327,7 +322,6 @@ BEGIN
         ,	sl.ItemID AS Flagged
 		,	rt.MBDeviceCodeMediaDRM
         ,	rt.MBDeviceCodeMachine
-        ,	rt.MBDeviceCodeMachineOSType
 		,	rt.MBDeviceCodeTagging
 		,	rt.IsEmulator
 		,	rt.ModelName
