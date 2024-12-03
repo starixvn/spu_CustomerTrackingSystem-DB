@@ -32,3 +32,11 @@ CREATE TABLE DangerousAssociation_DevicePool
 	PRIMARY KEY (ID),
 	KEY IX_DangerousAssociation_DevicePool_CTSCustID_DCSDeviceID (CTSCustID, DCSDeviceID)
 );
+
+
+ALTER TABLE CTS_DataCenter.CustomerCategorySettings 
+ADD COLUMN FlowNormalDgrAssociation	 	TINYINT NOT NULL DEFAULT 0 COMMENT 'Flow Normal Dangerous Association - Check category to scan';
+
+UPDATE CTS_DataCenter.CustomerCategorySettings AS s
+SET 	s.FlowNormalDgrAssociation = CASE WHEN s.CategoryID IN (40100,40400,40500,40600) THEN 1 ELSE 0 END;
+    
