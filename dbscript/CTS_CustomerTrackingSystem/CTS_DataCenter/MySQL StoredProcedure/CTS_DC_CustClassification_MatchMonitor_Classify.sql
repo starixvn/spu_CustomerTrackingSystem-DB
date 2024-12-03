@@ -98,7 +98,7 @@ BEGIN
 	INSERT INTO Temp_ExcludePACategoryID(CategoryID)
     SELECT ccs.CategoryID
     FROM CTS_DataCenter.CustomerCategorySettings AS ccs
-    WHERE ccs.ExcludedClassifyMM = 1;
+    WHERE ccs.ExcludedFromClassifyMM = 1;
 
     INSERT INTO Temp_MatchMonitorDetailsCust(CustID, MMDetailsID, MatchID, NoOfCust)
     WITH CTE_MatchMonitorDetials AS
