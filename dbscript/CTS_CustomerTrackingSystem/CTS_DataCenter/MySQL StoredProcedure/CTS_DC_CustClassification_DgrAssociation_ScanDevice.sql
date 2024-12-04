@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_DangerousAssociation_Check`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_DgrAssociation_ScanDevice`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_DangerousAssociation_Check`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_DgrAssociation_ScanDevice`(
 		IN ip_BatchSize INT 
 	,	OUT op_LastCTSAssDevID BIGINT
 )
@@ -17,7 +17,7 @@ BEGIN
 			- 20241203@Thomas.Nguyen: 	Created [Redmine ID: #214353]
 
 		Param's Explanation (filtered by):    
-			CALL CTS_DC_CustClassification_DangerousAssociation_Check()
+			CALL CTS_DC_CustClassification_DgrAssociation_ScanDevice_xpre(5000,@op_LastCTSAssDevID)
 	*/ 
 	DECLARE	CONST_PARENTID_WRAPPER		INT;
 	DECLARE CONST_ROLEID_MEMBER			SMALLINT DEFAULT 1;
