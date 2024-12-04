@@ -20,6 +20,7 @@ BEGIN
 			CALL CTS_DC_CustClassification_DangerousAssociation_Check()
 	*/ 
 	DECLARE	CONST_PARENTID_WRAPPER		INT;
+	DECLARE CONST_ROLEID_MEMBER			SMALLINT DEFAULT 1;
     DECLARE lv_LastCTSAssDevID 			BIGINT;
 
 	SET CONST_PARENTID_WRAPPER			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
@@ -62,7 +63,9 @@ BEGIN
 
 	INSERT IGNORE INTO Temp_Cust (CTSCustID/*, DCSDeviceID*/)
 	SELECT DISTINCT tmp.CTSCustID/*, tmp.DCSDeviceID*/
-	FROM Temp_CustDevice AS tmp;
+	FROM Temp_CustDevice AS tmp
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID
+	WHERE cus.RoleID = CONST_ROLEID_MEMBER AND cus.IsInternal = 0;
 
 	INSERT IGNORE INTO Temp_CustDgrAssociation(CTSCustID/*, ParentID, CategoryID*/)
 	SELECT tmp.CTSCustID/*, cate.ParentID, cate.CategoryID*/
@@ -82,6 +85,8 @@ BEGIN
 	SELECT MAX(DCSDeviceID)
 	INTO op_LastCTSAssDevID
 	FROM Temp_CustDevice;
+
+	SET op_LastCTSAssDevID = IFNULL(op_LastCTSAssDevID, lv_LastCTSAssDevID);
 
     /*Return*/
     SELECT DISTINCT tmp.CTSCustID, tcd.DCSDeviceID
