@@ -310,6 +310,6 @@ BEGIN
 		,   MBRawTransactionID AS FirstMBRawTransactionID
 		,   RecoverType
     FROM Temp_MBDeviceMapping
-    WHERE FP_DeviceID > 0;
+    WHERE MBDeviceID > 0;
 END$$
 DELIMITER ;

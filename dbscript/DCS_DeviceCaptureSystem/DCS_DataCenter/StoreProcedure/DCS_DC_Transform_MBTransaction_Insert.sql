@@ -332,7 +332,7 @@ BEGIN
 		,   rt.Timezone
 		,   rt.Language
 		,   lv_CurrentDate AS InsertedTime
-	FROM DCS_DataCenter.MBRawTransaction AS rt;
+	FROM Temp_MBRawTransaction AS rt;
         
 	DELETE rt
 	FROM DCS_DataCenter.MBRawTransaction AS rt
