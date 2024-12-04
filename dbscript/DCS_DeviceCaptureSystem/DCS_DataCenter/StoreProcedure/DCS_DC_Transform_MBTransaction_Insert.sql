@@ -20,18 +20,19 @@ BEGIN
 		Example:
 			CALL DCS_DC_Transform_MBTransaction_Insert(1,200);
     */    
-    DECLARE lv_CurrentDate 		TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
     
+    DECLARE lv_CurrentDate 					TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
     DECLARE lv_ListMBDeviceCodeMediaDRM 	LONGTEXT;
     DECLARE lv_ListMBDeviceCodeTagging	 	LONGTEXT;
     DECLARE lv_MBAccountJson 				LONGTEXT;
+    DECLARE lv_ActionResultJson 			LONGTEXT;
     DECLARE lv_MBDeviceCodeMachineJson 		LONGTEXT;
     DECLARE lv_MBOSJson 					LONGTEXT;
     DECLARE lv_MBDeviceModelJson 			LONGTEXT;
     DECLARE lv_MBUserSettingJson 			LONGTEXT;
 
-    DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
-	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
+    DROP TEMPORARY TABLE IF EXISTS Temp_MBRawTransaction;
+	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_MBRawTransaction (
 			ID 							BIGINT UNSIGNED PRIMARY KEY
 		,	LoginName 					VARCHAR(100)
 		,	SubscriberID 				INT
@@ -64,7 +65,7 @@ BEGIN
         ,	ActionResultID				INT
 	);
         
-	INSERT INTO Temp_RawTransaction(ID, LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language, ActionResultID)
+	INSERT INTO Temp_MBRawTransaction(ID, LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language)
     SELECT 	rt.ID
         ,   rt.LoginName
         ,   rt.SubscriberName
@@ -86,13 +87,11 @@ BEGIN
         ,   rt.CountryName
         ,   rt.Timezone
         ,   rt.Language
-        ,	ar.ActionResultID
         
 	FROM DCS_DataCenter.MBRawTransaction AS rt
-		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
     WHERE ID BETWEEN ip_FromTransID AND ip_ToTransID;
 
-	UPDATE Temp_RawTransaction AS tmp
+	UPDATE Temp_MBRawTransaction AS tmp
 		INNER JOIN CTS_Admin.Subscriber AS sub ON tmp.SubscriberName = sub.SubscriberName
 	SET tmp.SubscriberID = sub.SubscriberID;
     
@@ -102,7 +101,7 @@ BEGIN
 				SubscriberID
 			,	LoginName
 			,	TransTime
-		FROM Temp_RawTransaction
+		FROM Temp_MBRawTransaction
 		WHERE SubscriberID IS NOT NULL
 			AND LoginName IS NOT NULL
     )
@@ -119,10 +118,31 @@ BEGIN
     SET lv_MBAccountJson = IFNULL(lv_MBAccountJson,'[{}]');
 	CALL DCS_DC_Transform_MBAccount_Insert(lv_MBAccountJson);
     
+    /* === Insert new ActionResult === */ 
+	WITH cte_DistinctData AS (
+		SELECT	DISTINCT
+				Action
+			,	ActionResult
+		FROM Temp_MBRawTransaction
+		WHERE Action IS NOT NULL
+			AND ActionResult IS NOT NULL
+    )
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+					'Action'			, Action
+				,	'ActionResult'		, ActionResult
+			)
+		) AS json_data
+	INTO lv_ActionResultJson
+	FROM cte_DistinctData;
+    
+    SET lv_ActionResultJson = IFNULL(lv_ActionResultJson,'[{}]');
+	CALL DCS_DC_Transform_ActionResult_Insert(lv_ActionResultJson);
+    
     /* === Insert new MBDeviceCodeMediaDRM === */
 	SELECT GROUP_CONCAT(DISTINCT MBDeviceCodeMediaDRM)
 	INTO lv_ListMBDeviceCodeMediaDRM
-	FROM Temp_RawTransaction
+	FROM Temp_MBRawTransaction
 	WHERE MBDeviceCodeMediaDRM IS NOT NULL;
     
     IF (lv_ListMBDeviceCodeMediaDRM IS NOT NULL AND lv_ListMBDeviceCodeMediaDRM <> '') THEN
@@ -133,7 +153,7 @@ BEGIN
     WITH cte_DistinctData AS (
 		SELECT	DISTINCT
 				MBDeviceCodeMachine
-		FROM Temp_RawTransaction
+		FROM Temp_MBRawTransaction
 		WHERE SubscriberID IS NOT NULL
 			AND LoginName IS NOT NULL
     )
@@ -152,7 +172,7 @@ BEGIN
     /* === Insert new MBDeviceCodeTagging === */
 	SELECT GROUP_CONCAT(DISTINCT MBDeviceCodeTagging)
 	INTO lv_ListMBDeviceCodeTagging
-	FROM Temp_RawTransaction
+	FROM Temp_MBRawTransaction
 	WHERE MBDeviceCodeTagging IS NOT NULL;
     
     IF (lv_ListMBDeviceCodeTagging IS NOT NULL AND lv_ListMBDeviceCodeTagging <> '') THEN
@@ -165,7 +185,7 @@ BEGIN
 				ModelName
 			,	Manufacturer
             ,	Brand
-		FROM Temp_RawTransaction
+		FROM Temp_MBRawTransaction
 		WHERE ModelName IS NOT NULL
 			OR Manufacturer IS NOT NULL
 			OR Brand IS NOT NULL
@@ -190,7 +210,7 @@ BEGIN
 				CountryName
 			,	TimeZone
 			,	Language
-		FROM Temp_RawTransaction
+		FROM Temp_MBRawTransaction
 		WHERE CountryName IS NOT NULL
 			OR TimeZone IS NOT NULL
 			OR Language IS NOT NULL
@@ -214,7 +234,7 @@ BEGIN
 		SELECT	DISTINCT
 				OSName
 			,	SDKVersion
-		FROM Temp_RawTransaction
+		FROM Temp_MBRawTransaction
 		WHERE OSName IS NOT NULL
     )
 	SELECT JSON_ARRAYAGG(
@@ -231,35 +251,39 @@ BEGIN
 	END IF;
     
 	/* ======= UPDATE ID ========= */
-	UPDATE Temp_RawTransaction AS tmp
+	UPDATE Temp_MBRawTransaction AS tmp
 		INNER JOIN DCS_DataCenter.MBAccount AS acc ON acc.SubscriberID = tmp.SubscriberID AND acc.LoginName = tmp.LoginName
 	SET tmp.MBAccountID = acc.ID;
     
-	UPDATE Temp_RawTransaction AS tmp
+    UPDATE Temp_MBRawTransaction AS tmp
+		INNER JOIN DCS_DataCenter.ActionResult AS ar ON tmp.Action = ar.Action AND IFNULL(tmp.ActionResult,'') = ar.ActionResult
+	SET tmp.ActionResultID = ar.ActionResultID;
+    
+	UPDATE Temp_MBRawTransaction AS tmp
 		INNER JOIN DCS_DataCenter.MBDeviceCodeMediaDRM AS drm ON drm.Code = tmp.MBDeviceCodeMediaDRM
 	SET tmp.MBDeviceCodeMediaDRMID = drm.ID;
     
-	UPDATE Temp_RawTransaction AS tmp
+	UPDATE Temp_MBRawTransaction AS tmp
 		INNER JOIN DCS_DataCenter.MBDeviceCodeMachine AS mc ON mc.Code = tmp.MBDeviceCodeMachine
 	SET tmp.MBDeviceCodeMachineID = mc.ID;
     
-	UPDATE Temp_RawTransaction AS tmp
+	UPDATE Temp_MBRawTransaction AS tmp
 		INNER JOIN DCS_DataCenter.MBDeviceCodeTagging AS tg ON tg.Code = tmp.MBDeviceCodeTagging
 	SET tmp.MBDeviceCodeTaggingID = tg.ID;
     
-	UPDATE Temp_RawTransaction AS tmp
+	UPDATE Temp_MBRawTransaction AS tmp
 		INNER JOIN DCS_DataCenter.MBDeviceModel AS dm ON dm.ModelName = tmp.ModelName 
 													AND dm.Manufacturer = tmp.Manufacturer
 													AND dm.Brand = tmp.Brand
 	SET tmp.MBDeviceModelID = dm.ID;
     
-	UPDATE Temp_RawTransaction AS tmp
+	UPDATE Temp_MBRawTransaction AS tmp
 		INNER JOIN DCS_DataCenter.MBUserSetting AS us ON us.CountryName = tmp.CountryName 
 													AND us.TimeZone = tmp.TimeZone
 													AND us.LanguageName = tmp.Language
 	SET tmp.MBUserSettingID = us.ID;
     
-	UPDATE Temp_RawTransaction AS tmp
+	UPDATE Temp_MBRawTransaction AS tmp
 		INNER JOIN DCS_DataCenter.MBOS AS os ON os.OSName = tmp.OSName 
 											AND os.Version = tmp.SDKVersion
 	SET tmp.MBOSID = os.ID;
@@ -282,11 +306,11 @@ BEGIN
 		,   trt.MBOSID
 		,   trt.MBUserSettingID
         ,   lv_CurrentDate AS InsertedTime
-	FROM Temp_RawTransaction AS trt;
+	FROM Temp_MBRawTransaction AS trt;
     
     /* ======= INSERT MBProcessedTransaction ========= */
 	INSERT IGNORE INTO DCS_DataCenter.MBProcessedTransaction(CreatedDate, LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, Country, Timezone, Language, InsertedTime)
-	SELECT  rt.InsertedTime
+	SELECT  DATE(rt.TransTime) AS CreatedDate
 		,   rt.LoginName
 		,   rt.SubscriberName
 		,   rt.TransTime
@@ -308,12 +332,11 @@ BEGIN
 		,   rt.Timezone
 		,   rt.Language
 		,   lv_CurrentDate AS InsertedTime
-	FROM DCS_DataCenter.MBRawTransaction AS rt
-	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON rt.ID = tmp_rm.ID;
+	FROM DCS_DataCenter.MBRawTransaction AS rt;
         
 	DELETE rt
 	FROM DCS_DataCenter.MBRawTransaction AS rt
-	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON rt.ID = tmp_rm.ID;
+	    INNER JOIN	Temp_MBRawTransaction	AS tmp_rm ON rt.ID = tmp_rm.ID;
     
 END$$
 DELIMITER ;
