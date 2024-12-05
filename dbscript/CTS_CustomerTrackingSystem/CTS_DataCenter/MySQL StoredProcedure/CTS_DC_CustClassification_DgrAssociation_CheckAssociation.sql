@@ -33,7 +33,7 @@ BEGIN
 		,	CTSCustID				BIGINT UNSIGNED
 		,	DCSDeviceID				BIGINT
 		,	PRIMARY KEY(ID)
-        ,   KEY IX_Temp_CustDeviceOrg_CTSCustID (CTSCustID, DCSDeviceID)
+        ,   KEY IX_Temp_CustDeviceOrg_DCSDeviceID_CTSCustID (DCSDeviceID, CTSCustID)
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustDevice;
@@ -77,10 +77,11 @@ BEGIN
 
 	INSERT IGNORE INTO Temp_CustDevice (CTSCustID, DCSDeviceID)
 	SELECT tmp.CTSCustID, tmp.DCSDeviceID
-	FROM Temp_CustDeviceOrg AS tmp;
+	FROM Temp_CustDeviceOrg AS tmp
+	WHERE tmp.DCSDeviceID IS NOT NULL;
 
 	INSERT IGNORE INTO Temp_CustDevice (CTSCustID, DCSDeviceID)
-	SELECT tmp.CTSCustID, tmp.DCSDeviceID
+	SELECT tmp.CTSCustID, dv.DCSDeviceID
 	FROM Temp_CustDeviceOrg AS tmp
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv	ON dv.CTSCustID = tmp.CTSCustID
 	WHERE tmp.DCSDeviceID IS NULL;
