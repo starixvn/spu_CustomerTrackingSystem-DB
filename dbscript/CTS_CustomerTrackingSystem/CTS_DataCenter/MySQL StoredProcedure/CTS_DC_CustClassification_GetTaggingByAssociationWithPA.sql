@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_GetTaggingByAssociationWithPA`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_GetTaggingByAssociationWithPA_UAT3`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_GetTaggingByAssociationWithPA`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_GetTaggingByAssociationWithPA_UAT3`(
 	IN ip_ListCustID		TEXT 
 )
     SQL SECURITY INVOKER
@@ -226,7 +226,7 @@ BEGIN
 
 	UPDATE 	Temp_Customer AS cus
 		INNER JOIN CTS_DataCenter.DangerousAssociation AS a ON cus.CustID = a.CustID
-    SET cus.TaggingID = CASE WHEN cus.RootTaggingID = 10 THEN 10 ELSE 8	END
+    SET cus.TaggingID = CASE WHEN cus.TaggingID = 10 THEN 10 ELSE 8	END
 	WHERE cus.TaggingType = 1
 		AND a.IsDisabled = 0;
     
