@@ -20,80 +20,58 @@ BEGIN
 	    Param's Explanation (filtered by):
 			CALL DCS_DC_Transform_MBTransaction_GetPackage(100, 2);
 	*/
-    DECLARE 	CONST_SYSTEMSETTINGID_MINTRANSID 			INT 		DEFAULT 1;
-    DECLARE 	CONST_SYSTEMSETTINGID_MINCREATEDDATE 		INT 		DEFAULT 2;
-	
-	DECLARE		lv_TotalRecord				INT UNSIGNED DEFAULT 0;
-	DECLARE		lv_RateBatch				DECIMAL(4,2);
-    DECLARE 	lv_FromTransID				BIGINT UNSIGNED;
-    DECLARE		lv_FromInsertedTime			DATETIME;
-    DECLARE		lv_CountAccountID			INT;
-    DECLARE		lv_NoOfBatchOfAccountID		INT;
-    DECLARE		lv_SkipDeviceMapping		TINYINT(1) UNSIGNED;
-
+    DECLARE		lv_TotalRecord				INT UNSIGNED DEFAULT 0;
+    DECLARE 	lv_FromTransID				BIGINT UNSIGNED DEFAULT 0;
+    
+    SET @currentBatch = 0;
+    SET lv_TotalRecord = ip_NoOfTickets*ip_NoOfBatch;
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_MBTransaction;
-    DROP TEMPORARY TABLE IF EXISTS Temp_MBAccount;
+	DROP TEMPORARY TABLE IF EXISTS Temp_SetBatchID;
     
     CREATE TEMPORARY TABLE Temp_MBTransaction(	
-		    ID						BIGINT	UNSIGNED PRIMARY KEY
-		,   MBRawTransactionID		BIGINT	UNSIGNED
-		,   MBAccountID				BIGINT	UNSIGNED
-		,   BatchID					INT
+		    ID							BIGINT	UNSIGNED PRIMARY KEY
+		,   MBRawTransactionID			BIGINT	UNSIGNED
+		,   MBDeviceCodeMediaDRMID		BIGINT	UNSIGNED
+		,   MBDeviceCodeMachineID		BIGINT	UNSIGNED
+		,   MBDeviceCodeTaggingID		BIGINT	UNSIGNED
+		,   BatchID						INT
     );
     
-    CREATE TEMPORARY TABLE Temp_MBAccount(	
-		    ID						BIGINT	UNSIGNED PRIMARY KEY
-		,   BatchID					INT
-    );
-    
-	SET lv_TotalRecord 	    	= ip_NoOfTickets*ip_NoOfBatch;
-    SET lv_FromTransID 	    	= (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_SYSTEMSETTINGID_MINTRANSID);
+	CREATE TEMPORARY TABLE Temp_SetBatchID(
+			ID							BIGINT UNSIGNED NOT NULL PRIMARY KEY
+		,	BatchID						INT DEFAULT 0
 
-    INSERT INTO Temp_MBTransaction(ID, MBRawTransactionID, MBAccountID)
+		,	FirstDeviceID				BIGINT UNSIGNED
+		,	SecondDeviceID				BIGINT UNSIGNED
+		,	ThirdDeviceID				BIGINT UNSIGNED
+	);
+    
+    INSERT INTO Temp_MBTransaction(ID, MBRawTransactionID, MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID)
 	SELECT	ID
 		,   MBRawTransactionID
-		,   MBAccountID
+		,   IFNULL(MBDeviceCodeMediaDRMID, 0) AS MBDeviceCodeMediaDRMID
+		,   IFNULL(MBDeviceCodeMachineID, 0) AS MBDeviceCodeMachineID
+		,   IFNULL(MBDeviceCodeTaggingID, 0) AS MBDeviceCodeTaggingID
 	FROM DCS_DataCenter.MBTransaction
 	WHERE ID >= lv_FromTransID
 	ORDER BY ID ASC
 	LIMIT lv_TotalRecord;
     
-    ALTER TABLE Temp_MBTransaction
-    ADD KEY IX_Temp_MBTransaction_MBAccountID (MBAccountID),
-    ADD KEY IX_Temp_MBTransaction_MBRawTransactionID (MBRawTransactionID);
-    
-	SET lv_FromTransID = IFNULL((SELECT MIN(MBRawTransactionID) FROM Temp_MBTransaction), lv_FromTransID); 
-    
-    INSERT INTO Temp_MBAccount(ID)
-	SELECT DISTINCT MBAccountID
-	FROM Temp_MBTransaction;
-    
-    SET lv_CountAccountID = (SELECT COUNT(1) FROM Temp_MBAccount);
-    
-	SET @RowId = 0;
-    IF(lv_CountAccountID IS NOT NULL AND lv_CountAccountID > 0) THEN
-		SET lv_NoOfBatchOfAccountID = CEIL(lv_CountAccountID / ip_NoOfBatch);
-    
-		UPDATE Temp_MBAccount
-		SET BatchID = CEIL(@RowId := @RowId + 1 / lv_NoOfBatchOfAccountID)
-		ORDER BY ID;
+    /********************** Check Same Device ***********************************/
+    INSERT INTO Temp_SetBatchID(ID, FirstDeviceID, SecondDeviceID, ThirdDeviceID)
+    SELECT 	ID
+		,	MBDeviceCodeMediaDRMID AS FirstDeviceID
+		,	MBDeviceCodeMachineID AS SecondDeviceID
+		,	MBDeviceCodeTaggingID AS ThirdDeviceID
+    FROM Temp_MBTransaction;
         
-        UPDATE Temp_MBTransaction AS tmpT
-			INNER JOIN Temp_MBAccount AS tmpA ON tmpA.ID = tmpT.MBAccountID
-		SET tmpT.BatchID = tmpA.BatchID;
-
-		IF(lv_FromTransID IS NOT NULL AND lv_FromTransID > 0) THEN
-			UPDATE DCS_DataCenter.SystemSetting
-			SET VValue = CONCAT('', lv_FromTransID),
-				UpdatedTime = CURRENT_TIMESTAMP()
-			WHERE ID = CONST_SYSTEMSETTINGID_MINTRANSID;
-		END IF;
-		
-		#RETURN OUTPUT
-		SELECT  ID
-			,   BatchID
-		FROM Temp_MBTransaction;
-    END IF;
+    CALL DCS_DC_Transform_MBTransaction_SetBatchID('Temp_SetBatchID', ip_NoOfBatch);
+    
+	#RETURN OUTPUT
+	SELECT  ID
+		,   BatchID
+	FROM Temp_SetBatchID;
     
 END$$
 DELIMITER ;
