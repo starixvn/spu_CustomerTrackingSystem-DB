@@ -27,6 +27,7 @@ BEGIN
 			- 20240415@Casey.Huynh: Fix Missing DangerScrore info in remark [Redmine ID: #203889]
 			- 20240423@Thomas.Nguyen: Classify Initial Group Betting - Add Remark [RedmineID: #200854]
 			- 20240703@Victoria.Le:   Renovate CC phase 2 - Remove Table PinCustomerCategory  [Redmine ID: #205317]
+			- 20241205@Victoria.Le:   Incorect Datatype for ActiveDays [Redmine ID: #214567]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
@@ -73,7 +74,7 @@ BEGIN
         ,	TurnoverRM				DECIMAL(20,4)
         ,	WinlossRM				DECIMAL(20,4)
         , 	BetCount				BIGINT 
-        , 	ActiveDays				BIT(1) 
+        , 	ActiveDays				INT
         ,	IsMarkedDirectly		BIT(1)
         ,	IsLicenseeVIP			BIT(1)
         ,	IsLicenseeBA			BIT(1)
