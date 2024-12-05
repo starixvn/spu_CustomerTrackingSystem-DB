@@ -40,7 +40,6 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_CustDevice(
 			CTSCustID				BIGINT UNSIGNED
 		,	DCSDeviceID				BIGINT
-		,	IsNewCate				BIT(1) DEFAULT 0
 		,	PRIMARY KEY(CTSCustID, DCSDeviceID)
 	);
 
@@ -72,15 +71,9 @@ BEGIN
 	INSERT IGNORE INTO Temp_CustDeviceOrg (ID, CTSCustID, DCSDeviceID)
 	SELECT dp.ID, dp.CTSCustID, dp.DCSDeviceID
 	FROM CTS_DataCenter.DangerousAssociation_DevicePool AS dp
-	WHERE dp.ID > lv_LastScannedID - 10
+	WHERE dp.ID > lv_LastScannedID
 	ORDER BY dp.ID ASC
 	LIMIT ip_BatchSize;
-
-	SELECT MAX(ID)
-	INTO op_LastScannedID
-	FROM Temp_CustDeviceOrg;
-
-	SET op_LastScannedID = IFNULL(op_LastScannedID, lv_LastScannedID);
 
 	INSERT IGNORE INTO Temp_CustDevice (CTSCustID, DCSDeviceID)
 	SELECT tmp.CTSCustID, tmp.DCSDeviceID
@@ -134,6 +127,12 @@ BEGIN
 				) AS cate
 		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS st ON st.CategoryID = cate.CategoryID AND st.CategoryID <> CONST_CATEID_NEW AND st.FlowNormalDgrAssociation = 1;
 
+	SELECT MAX(ID)
+	INTO op_LastScannedID
+	FROM Temp_CustDeviceOrg;
+
+	SET op_LastScannedID = IFNULL(op_LastScannedID, lv_LastScannedID);
+
 	/*Return*/
 	SELECT cus.CustID
 	FROM Temp_CustNewCateByDevice AS tcn
@@ -141,7 +140,6 @@ BEGIN
 			ON tcn.DCSDeviceID = tcd.DCSDeviceID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus
 			ON cus.CTSCustID = tcn.CTSCustID AND cus.RoleID = CONST_ROLEID_MEMBER AND cus.IsInternal = 0;
-
 
 END$$
 DELIMITER ;

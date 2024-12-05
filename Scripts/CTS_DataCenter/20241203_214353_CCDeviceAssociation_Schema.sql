@@ -31,7 +31,7 @@ CREATE TABLE DangerousAssociation_DevicePool
     DCSDeviceID BIGINT,
 	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
 	PRIMARY KEY (ID),
-	KEY IX_DangerousAssociation_DevicePool_CTSCustID_DCSDeviceID (CTSCustID, DCSDeviceID)
+	KEY IX_DgrAssociation_DevicePool_CTSCustID_DCSDeviceID (CTSCustID, DCSDeviceID)
 );
 
 /*Add setting column*/
@@ -44,3 +44,12 @@ SET 	s.FlowNormalDgrAssociation = CASE WHEN s.CategoryID IN (40100,40400,40500,4
 /*Init params*/
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(183,'NormalDangerousAssociationCheck_LastCTSAssDevID','NormalDangerousAssociationCheck_LastCTSAssDevID','BIGINT UNSIGNED','0');
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(184,'NormalDangerousAssociationScan_LastScannedID','NormalDangerousAssociationScan_LastScannedID','BIGINT','0');
+
+/*Update param*/
+SELECT MAX(CTSAssDevID)
+INTO @lv_MaxCTSAssDevID
+FROM CTS_DataCenter.AssociationByDevice;
+
+UPDATE CTS_DataCenter.SystemParameter
+SET ParameterValue = @lv_MaxCTSAssDevID
+WHERE ParameterID = 183;

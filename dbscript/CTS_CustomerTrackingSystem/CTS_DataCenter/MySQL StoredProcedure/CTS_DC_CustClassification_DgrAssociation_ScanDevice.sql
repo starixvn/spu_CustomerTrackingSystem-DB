@@ -37,16 +37,13 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
 	CREATE TEMPORARY TABLE Temp_Cust(
 			CTSCustID				BIGINT UNSIGNED
-		/*,	DCSDeviceID				BIGINT*/
 		,	PRIMARY KEY(CTSCustID)	
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustDgrAssociation;
 	CREATE TEMPORARY TABLE 		Temp_CustDgrAssociation (
 			CTSCustID			BIGINT UNSIGNED
-		/*,	ParentID			INT UNSIGNED
-		,	CategoryID   		INT UNSIGNED*/
-		,	PRIMARY KEY(CTSCustID/*, ParentID, CategoryID*/)
+		,	PRIMARY KEY(CTSCustID)
 	);  
 
     SELECT ParameterValue 
@@ -57,32 +54,32 @@ BEGIN
 	INSERT IGNORE INTO Temp_CustDevice (CTSAssDevID, CTSCustID, DCSDeviceID)
 	SELECT dv.CTSAssDevID, dv.CTSCustID, dv.DCSDeviceID
 	FROM CTS_DataCenter.AssociationByDevice AS dv
-	WHERE dv.CTSAssDevID > lv_LastCTSAssDevID - 10
+	WHERE dv.CTSAssDevID > lv_LastCTSAssDevID
 	ORDER BY dv.CTSAssDevID ASC
 	LIMIT ip_BatchSize;
 
-	INSERT IGNORE INTO Temp_Cust (CTSCustID/*, DCSDeviceID*/)
-	SELECT DISTINCT tmp.CTSCustID/*, tmp.DCSDeviceID*/
+	INSERT IGNORE INTO Temp_Cust (CTSCustID)
+	SELECT DISTINCT tmp.CTSCustID
 	FROM Temp_CustDevice AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID
 	WHERE cus.RoleID = CONST_ROLEID_MEMBER AND cus.IsInternal = 0;
 
-	INSERT IGNORE INTO Temp_CustDgrAssociation(CTSCustID/*, ParentID, CategoryID*/)
-	SELECT tmp.CTSCustID/*, cate.ParentID, cate.CategoryID*/
-	FROM Temp_Cust AS tmp,
-	LATERAL
-		(
-			SELECT cls.CustID, cls.CategoryID
-			FROM CTS_DataCenter.CTSCustomerClassification AS cls
-				INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID AND cate.IsActive = 1
-			WHERE cls.CTSCustID = tmp.CTSCustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
-			ORDER BY  cate.CustomerClassPriority ASC 
-					, cls.LastModifiedDate DESC
-			LIMIT 1
-		) AS cate
+	INSERT IGNORE INTO Temp_CustDgrAssociation(CTSCustID)
+	SELECT tmp.CTSCustID
+	FROM Temp_Cust AS tmp
+		,	LATERAL
+				(
+					SELECT cls.CustID, cls.CategoryID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cls
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID AND cate.IsActive = 1
+					WHERE cls.CTSCustID = tmp.CTSCustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY  cate.CustomerClassPriority ASC 
+							, cls.LastModifiedDate DESC
+					LIMIT 1
+				) AS cate
 	INNER JOIN CTS_DataCenter.CustomerCategorySettings AS st ON st.CategoryID = cate.CategoryID AND st.FlowNormalDgrAssociation = 1;
 
-	SELECT MAX(DCSDeviceID)
+	SELECT MAX(CTSAssDevID)
 	INTO op_LastCTSAssDevID
 	FROM Temp_CustDevice;
 
