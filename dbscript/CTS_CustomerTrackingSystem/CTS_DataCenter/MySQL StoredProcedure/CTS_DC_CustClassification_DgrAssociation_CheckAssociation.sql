@@ -27,13 +27,35 @@ BEGIN
     SET CONST_CATEID_NEW			    = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_NEW');
 	SET CONST_PARENTID_WRAPPER			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustDevice;
-	CREATE TEMPORARY TABLE Temp_CustDevice(
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustDeviceOrg;
+	CREATE TEMPORARY TABLE Temp_CustDeviceOrg(
 			ID						BIGINT
 		,	CTSCustID				BIGINT UNSIGNED
 		,	DCSDeviceID				BIGINT
 		,	PRIMARY KEY(ID)
-        ,   KEY IX_Temp_CustDevice_CTSCustID (CTSCustID, DCSDeviceID)
+        ,   KEY IX_Temp_CustDeviceOrg_CTSCustID (CTSCustID, DCSDeviceID)
+	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustDevice;
+	CREATE TEMPORARY TABLE Temp_CustDevice(
+			CTSCustID				BIGINT UNSIGNED
+		,	DCSDeviceID				BIGINT
+		,	IsNewCate				BIT(1) DEFAULT 0
+		,	PRIMARY KEY(CTSCustID, DCSDeviceID)
+	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustNewCateByDevice;
+	CREATE TEMPORARY TABLE Temp_CustNewCateByDevice(
+			CTSCustID				BIGINT UNSIGNED
+		,	DCSDeviceID				BIGINT
+		,	PRIMARY KEY(CTSCustID, DCSDeviceID)
+	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustPSRCateByDevice;
+	CREATE TEMPORARY TABLE Temp_CustPSRCateByDevice(
+			CTSCustID				BIGINT UNSIGNED
+		,	DCSDeviceID				BIGINT
+		,	PRIMARY KEY(CTSCustID, DCSDeviceID)
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Device;
@@ -42,121 +64,84 @@ BEGIN
 		,	PRIMARY KEY(DCSDeviceID)
 	);
 
-	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
-	CREATE TEMPORARY TABLE Temp_Cust(
-			CTSCustID				BIGINT UNSIGNED
-		/*,	DCSDeviceID				BIGINT*/
-		,	PRIMARY KEY(CTSCustID)	
-	);
-    
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustDgrAssociation;
-	CREATE TEMPORARY TABLE 		Temp_CustDgrAssociation (
-			CTSCustID			BIGINT UNSIGNED
-		/*,	ParentID			INT UNSIGNED
-		,	CategoryID   		INT UNSIGNED*/
-		,	PRIMARY KEY(CTSCustID/*, ParentID, CategoryID*/)
-	);  
-
     SELECT ParameterValue 
     INTO lv_LastScannedID 
     FROM CTS_DataCenter.SystemParameter 
     WHERE ParameterID = 184;
 
-	INSERT IGNORE INTO Temp_CustDevice (ID, CTSCustID, DCSDeviceID)
+	INSERT IGNORE INTO Temp_CustDeviceOrg (ID, CTSCustID, DCSDeviceID)
 	SELECT dp.ID, dp.CTSCustID, dp.DCSDeviceID
 	FROM CTS_DataCenter.DangerousAssociation_DevicePool AS dp
 	WHERE dp.ID > lv_LastScannedID - 10
 	ORDER BY dp.ID ASC
 	LIMIT ip_BatchSize;
 
-	INSERT IGNORE INTO Temp_Cust (CTSCustID)
-	SELECT DISTINCT tmp.CTSCustID
-	FROM Temp_CustDevice AS tmp
-	WHERE tmp.DCSDeviceID IS NULL;
+	SELECT MAX(ID)
+	INTO op_LastScannedID
+	FROM Temp_CustDeviceOrg;
 
-	INSERT IGNORE INTO Temp_CustDevice (ID, CTSCustID, DCSDeviceID)
+	SET op_LastScannedID = IFNULL(op_LastScannedID, lv_LastScannedID);
+
+	INSERT IGNORE INTO Temp_CustDevice (CTSCustID, DCSDeviceID)
 	SELECT tmp.CTSCustID, tmp.DCSDeviceID
-	FROM Temp_Cust AS tmp
-		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv	ON dv.CTSCustID = tmp.CTSCustID;
+	FROM Temp_CustDeviceOrg AS tmp;
+
+	INSERT IGNORE INTO Temp_CustDevice (CTSCustID, DCSDeviceID)
+	SELECT tmp.CTSCustID, tmp.DCSDeviceID
+	FROM Temp_CustDeviceOrg AS tmp
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv	ON dv.CTSCustID = tmp.CTSCustID
+	WHERE tmp.DCSDeviceID IS NULL;
 
 	INSERT IGNORE INTO Temp_Device (DCSDeviceID)
 	SELECT DISTINCT DCSDeviceID
 	FROM Temp_CustDevice;
 
-    /*Find Cust Null cate from PSR by Device*/
-    INSERT IGNORE INTO Temp_CustDetected (ID, CTSCustID, DCSDeviceID)
-	SELECT *
+	INSERT IGNORE INTO Temp_CustNewCateByDevice (CTSCustID, DCSDeviceID)
+	SELECT dv.CTSCustID, tmp.DCSDeviceID
 	FROM Temp_Device AS tmp
-	INNER JOIN CTS_DataCenter.AssociationByDevice AS dv	ON dv.DCSDeviceID = tmp.DCSDeviceID AND dv.CTSCustID <> tmp.CTSCustID
-    ,   LATERAL
-            (
-                SELECT cls.CustID, cls.CategoryID
-                FROM CTS_DataCenter.CTSCustomerClassification AS cls
-                    INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID AND cate.IsActive = 1
-                WHERE cls.CTSCustID = tmp.CTSCustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
-                ORDER BY  cate.CustomerClassPriority ASC 
-                        , cls.LastModifiedDate DESC
-                LIMIT 1
-            ) AS cate
-        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS st ON st.CategoryID = cate.CategoryID AND st.FlowNormalDgrAssociation = 1 AND st.CategoryID <> CONST_CATEID_NEW
-    WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls WHERE cls.CTSCustID = dv.CTSCustID);
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.DCSDeviceID = tmp.DCSDeviceID
+		,   LATERAL
+				(
+					SELECT cls.CTSCustID, cls.CategoryID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cls
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.IsActive = 1
+					WHERE cls.CTSCustID = dv.CTSCustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY  cat.CustomerClassPriority ASC 
+							, cls.LastModifiedDate DESC
+					LIMIT 1
+				) AS cate
+	WHERE cate.CategoryID = CONST_CATEID_NEW;
 
-
-
-	INSERT IGNORE INTO Temp_CustNewCate (ID, CTSCustID, DCSDeviceID)
-	SELECT *
+	INSERT IGNORE INTO Temp_CustNewCateByDevice (CTSCustID, DCSDeviceID)
+	SELECT dv.CTSCustID, tmp.DCSDeviceID
 	FROM Temp_Device AS tmp
-	INNER JOIN CTS_DataCenter.AssociationByDevice AS dv	ON dv.DCSDeviceID = tmp.DCSDeviceID
-    ,   LATERAL
-            (
-                SELECT cls.CustID, cls.CategoryID
-                FROM CTS_DataCenter.CTSCustomerClassification AS cls
-                    INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID AND cate.IsActive = 1
-                WHERE cls.CTSCustID = tmp.CTSCustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
-                ORDER BY  cate.CustomerClassPriority ASC 
-                        , cls.LastModifiedDate DESC
-                LIMIT 1
-            ) AS cate
-        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS st ON st.CategoryID = cate.CategoryID AND st.FlowNormalDgrAssociation = 1;
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.DCSDeviceID = tmp.DCSDeviceID
+	WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls WHERE cls.CTSCustID = dv.CTSCustID);
 
+	INSERT IGNORE INTO Temp_CustPSRCateByDevice (CTSCustID, DCSDeviceID)
+	SELECT dv.CTSCustID, tmp.DCSDeviceID
+	FROM Temp_Device AS tmp
+		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.DCSDeviceID = tmp.DCSDeviceID
+		,   LATERAL
+				(
+					SELECT cls.CTSCustID, cls.CategoryID
+					FROM CTS_DataCenter.CTSCustomerClassification AS cls
+						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.IsActive = 1
+					WHERE cls.CTSCustID = dv.CTSCustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
+					ORDER BY  cat.CustomerClassPriority ASC 
+							, cls.LastModifiedDate DESC
+					LIMIT 1
+				) AS cate
+		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS st ON st.CategoryID = cate.CategoryID AND st.CategoryID <> CONST_CATEID_NEW AND st.FlowNormalDgrAssociation = 1;
 
+	/*Return*/
+	SELECT cus.CustID
+	FROM Temp_CustNewCateByDevice AS tcn
+		INNER JOIN Temp_CustPSRCateByDevice AS tcd
+			ON tcn.DCSDeviceID = tcd.DCSDeviceID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus
+			ON cus.CTSCustID = tcn.CTSCustID AND cus.RoleID = CONST_ROLEID_MEMBER AND cus.IsInternal = 0;
 
-
-
-	INSERT IGNORE INTO Temp_Cust (CTSCustID/*, DCSDeviceID*/)
-	SELECT DISTINCT tmp.CTSCustID/*, tmp.DCSDeviceID*/
-	FROM Temp_CustDevice AS tmp
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID
-	WHERE cus.RoleID = CONST_ROLEID_MEMBER AND cus.IsInternal = 0;
-
-	INSERT IGNORE INTO Temp_CustDgrAssociation(CTSCustID/*, ParentID, CategoryID*/)
-	SELECT tmp.CTSCustID/*, cate.ParentID, cate.CategoryID*/
-	FROM Temp_Cust AS tmp,
-	LATERAL
-		(
-			SELECT cls.CustID, cls.CategoryID
-			FROM CTS_DataCenter.CTSCustomerClassification AS cls
-				INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID AND cate.IsActive = 1
-			WHERE cls.CTSCustID = tmp.CTSCustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
-			ORDER BY  cate.CustomerClassPriority ASC 
-					, cls.LastModifiedDate DESC
-			LIMIT 1
-		) AS cate
-	INNER JOIN CTS_DataCenter.CustomerCategorySettings AS st ON st.CategoryID = cate.CategoryID AND st.FlowNormalDgrAssociation = 1;
-
-	SELECT MAX(DCSDeviceID)
-	INTO op_LastScannedID
-	FROM Temp_CustDevice;
-
-	SET op_LastScannedID = IFNULL(op_LastScannedID, lv_LastScannedID);
-
-    /*Return*/
-    SELECT DISTINCT tmp.CTSCustID, tcd.DCSDeviceID
-    FROM Temp_Cust AS tmp
-        INNER JOIN Temp_CustDevice AS tcd ON tcd.CTSCustID = tmp.CTSCustID
-        LEFT JOIN Temp_CustDgrAssociation AS cda ON cda.CTSCustID = tmp.CTSCustID
-    WHERE cda.CTSCustID IS NOT NULL
-        OR NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls WHERE cls.CTSCustID = tmp.CTSCustID);
 
 END$$
 DELIMITER ;
