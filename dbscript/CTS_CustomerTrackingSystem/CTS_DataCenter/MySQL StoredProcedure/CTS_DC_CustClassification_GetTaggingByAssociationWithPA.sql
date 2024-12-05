@@ -157,7 +157,7 @@ BEGIN
      
 	/*For Member*/     
 	INSERT INTO Temp_PA(CTSCustID, RootTaggingID)
-    SELECT 	lc.CTSCustID, ca.RootTaggingID
+    SELECT 	cus.CTSCustID, ca.RootTaggingID
 	FROM Temp_CustLevel1 AS cus
 		,	LATERAL	
 			(		SELECT cc.CTSCustID, ca.ParentID
