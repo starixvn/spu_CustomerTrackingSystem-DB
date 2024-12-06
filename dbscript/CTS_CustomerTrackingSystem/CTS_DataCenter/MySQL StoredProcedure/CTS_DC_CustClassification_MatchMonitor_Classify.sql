@@ -21,6 +21,7 @@ BEGIN
 			- 20240530@Casey.Huynh:	Saba Group Betting (NOT Classify Saba GB Match) [Redmine ID: #191972]
 			- 20240717@Jonas.Huynh:	Renovate CC [Redmine ID: #205317]
             - 20241202@Casey.Huynh: Potential Risk cannot be classified into System Detect GB [Redmine ID: #214567]
+            - 20241202@Casey.Huynh: Potential Risk - Correct Data [Redmine ID: #214567]
             
 		Param's Explanation:
         
@@ -37,101 +38,8 @@ BEGIN
 
     SET CONST_CATEID_SYSTEMDETECTGB	 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SYSTEMDETECTGB');    
     SET CONST_CATEGROUPID_SYSTEMDETECTGB 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SYSTEMDETECTGB');
-
-    
-    /*****GET SYSTEM Parameter VALUE****/
-    SELECT s.ParameterValue
-    INTO lv_PackSize
-    FROM CTS_DataCenter.SystemParameter AS s
-    WHERE s.ParameterID = 95;
-    
-    SELECT s.ParameterValue
-    INTO lv_MatchID
-    FROM CTS_DataCenter.SystemParameter AS s
-    WHERE s.ParameterID = 96;
-   
-    IF lv_MatchID = 0 THEN    
-		SELECT mm.MatchID
-        INTO lv_MatchID
-        FROM CTS_DataCenter.MatchMonitor AS mm
-        WHERE mm.ClassifyStatus = 2	AND SportType IN (1,2) 
-			AND mm.LeagueGroupID IS NULL
-        ORDER BY mm.KickOffTime ASC
-        LIMIT 1;
-        
-        UPDATE CTS_DataCenter.SystemParameter AS s
-        SET s.ParameterValue = lv_MatchID
-        WHERE s.ParameterID = 96;        
-	END IF;
- 
-    DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorDetailsCust;
-    CREATE TEMPORARY TABLE Temp_MatchMonitorDetailsCust(
-			CustID			INT UNSIGNED
-		,	MMDetailsID		INT
-        ,	Reason			TINYINT
-		,	MatchID			INT		      
-        ,	NoOfCust		INT
-        
-        ,	INDEX IX_Temp_MatchMonitorDetailsCust(CustID, MMDetailsID)
-    );
-   
-	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
-    CREATE TEMPORARY TABLE Temp_Cust(
-			CustID			INT UNSIGNED
-		,	MMDetailsID		INT  
-		,	MatchID			INT		      
-        ,	CTSCustID		BIGINT UNSIGNED
-        ,	RoleID			TINYINT
-        ,	SubscriberID	INT UNSIGNED
-        ,	IsLicensee		TINYINT(1)
-        
-        ,	PRIMARY KEY PK_Temp_Cust(CustID, MMDetailsID)
-    );
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_ExcludePACategoryID;
-    CREATE TEMPORARY TABLE Temp_ExcludePACategoryID(
-    
-			CategoryID		INT UNSIGNED	       
-        ,	PRIMARY KEY PK_Temp_ExcludePA(CategoryID)
-    );
-
-	INSERT INTO Temp_ExcludePACategoryID(CategoryID)
-    SELECT ccs.CategoryID
-    FROM CTS_DataCenter.CustomerCategorySettings AS ccs
-    WHERE ccs.ExcludedFromClassifyMM = 1;
-
-    INSERT INTO Temp_MatchMonitorDetailsCust(CustID, MMDetailsID, MatchID, NoOfCust)
-    WITH CTE_MatchMonitorDetials AS
-    ( 	SELECT	mmd.ID AS MMDetailsID
-			,	mmd.HighStakeLicCustList
-            ,	mmd.MatchID
-		FROM CTS_DataCenter.MatchMonitorDetails AS mmd
-        WHERE mmd.MatchID = lv_MatchID
-			AND mmd.Reason = 0
-			AND mmd.ClassifyStatus = 0
-        LIMIT lv_PackSize
-	)
-	SELECT	js.CustID
-		,	cte.MMDetailsID
-        ,	cte.MatchID
-        ,	LENGTH(cte.HighStakeLicCustList) - LENGTH(REPLACE(cte.HighStakeLicCustList,',','')) + 1 AS NoOfCust
-	FROM CTE_MatchMonitorDetials AS cte
-		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(cte.HighStakeLicCustList), ',', '","'), 
-						'$[*]' COLUMNS (CustID BIGINT UNSIGNED PATH '$')
-						) js;    
-
-    INSERT INTO Temp_Cust(CustID, MMDetailsID, MatchID, CTSCustID, RoleID, SubscriberID, IsLicensee)
-    SELECT	tmpMmc.CustID
-		,	tmpMmc.MMDetailsID
-        ,	tmpMmc.MatchID
-        ,	cus.CTSCustID
-        ,	cus.RoleID
-        ,	cus.SubscriberID
-        ,	cus.IsLicensee
-    FROM Temp_MatchMonitorDetailsCust AS tmpMmc
-		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpMmc.CustID = cus.CustID
-	WHERE tmpMmc.CustID IS NOT NULL;
-
+	
+    #======================CORRECT DATA ====================
     SELECT	DISTINCT tmpCust.CustID
         ,	tmpCust.MatchID
         ,	tmpCust.CTSCustID
@@ -140,15 +48,12 @@ BEGIN
         ,	tmpCust.IsLicensee
         ,	CONST_CATEID_SYSTEMDETECTGB AS CategoryID # Group Betting
         , 	CONST_CATEGROUPID_SYSTEMDETECTGB AS CategoryGroup # Group Betting
-	FROM Temp_Cust AS tmpCust
-	WHERE NOT EXISTS (	SELECT 1 
-						FROM CTS_DataCenter.CTSCustomerClassification AS cls 
-							INNER JOIN Temp_ExcludePACategoryID AS exl ON cls.CategoryID = exl.CategoryID
-						WHERE cls.CustID = tmpCust.CustID);
+	FROM CTS_Adhoc.HF214567_MatchMonitorDetailsCust_CorrectData AS tmpCust;
         
-    SELECT GROUP_CONCAT(DISTINCT MmDetailsID) AS MmDetailsIDList
-    FROM Temp_MatchMonitorDetailsCust AS tmp;
+    SELECT '' AS MmDetailsIDList;
+
     
-    SELECT lv_MatchID AS MatchID;
+    SELECT 0 AS MatchID;
+    
 END$$
 DELIMITER ;
