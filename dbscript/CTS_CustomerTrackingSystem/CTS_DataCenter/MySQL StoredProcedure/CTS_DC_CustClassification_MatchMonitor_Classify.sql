@@ -34,11 +34,11 @@ BEGIN
   	DECLARE	CONST_CATEGROUPID_SYSTEMDETECTGB		INT;
     
 	DECLARE lv_PackSize INT;
-	DECLARE lv_MatchID INT;
+	DECLARE lv_MatchID INT DEFAULT 0;
 
     SET CONST_CATEID_SYSTEMDETECTGB	 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SYSTEMDETECTGB');    
     SET CONST_CATEGROUPID_SYSTEMDETECTGB 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SYSTEMDETECTGB');
-	
+
     #======================CORRECT DATA ====================
     SELECT	DISTINCT tmpCust.CustID
         ,	tmpCust.MatchID
@@ -53,7 +53,7 @@ BEGIN
     SELECT '' AS MmDetailsIDList;
 
     
-    SELECT 0 AS MatchID;
+    SELECT lv_MatchID AS MatchID;
     
 END$$
 DELIMITER ;
