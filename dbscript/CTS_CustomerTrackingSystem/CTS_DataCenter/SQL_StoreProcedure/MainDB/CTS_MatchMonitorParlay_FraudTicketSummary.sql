@@ -183,7 +183,7 @@ BEGIN
 			,	tmpTo.Refno
 			,	bt.Stake * bt.actualrate AS TurnOver
 		FROM #tmpParsedRefno AS tmpTo WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.Bettrans14 AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno AND bt.MatchID = tmpTo.MatchID
+			INNER JOIN bodb02.dbo.Bettrans14 AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno
 		WHERE tmpTo.DataSource = @CONST_DATASOURCE_14;
 		
 		DELETE tmpRn
