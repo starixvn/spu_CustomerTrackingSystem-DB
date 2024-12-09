@@ -17,9 +17,13 @@ BEGIN
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
 	    Param's Explanation (filtered by):
 		Example:
-			CALL DCS_DC_Transform_MBDeviceCodeMachine_Insert('[{"Code":"Code4","MachineOSType":"2"},{"Code":"Code2"},{"Code":"Code3","MachineOSType":""}]');
+			CALL DCS_DC_Transform_MBDeviceCodeMachine_Insert('[{"Code":"Code4","MachineOSType":"Android"},{"Code":"Code2"},{"Code":"Code3","MachineOSType":""}]');
             SELECT * FROM DCS_DataCenter.MBDeviceCodeMachine ORDER BY ID DESC;
     */
+    
+    DECLARE CONST_MACHINEOSTYPE_ANDROID	VARCHAR(32) DEFAULT 'Android';
+    DECLARE CONST_MACHINEOSTYPE_IOS	VARCHAR(32) DEFAULT 'iOS';
+    
     DECLARE lv_CurrentDatetime 	DATETIME DEFAULT NOW();
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeMachineInsert;
@@ -33,12 +37,15 @@ BEGIN
     
     INSERT IGNORE INTO Temp_MBDeviceCodeMachineInsert(Code, MachineOSType)
     SELECT	js.Code
-		,	IFNULL(js.MachineOSType, 0) AS MachineOSType
+		,	CASE 
+				WHEN MachineOS = CONST_MACHINEOSTYPE_ANDROID THEN 1
+                WHEN MachineOS = CONST_MACHINEOSTYPE_IOS THEN 2
+			END AS MachineOSType
 	FROM JSON_TABLE(
 			ip_MBDeviceCodeMachineJson,
 			 "$[*]" COLUMNS(
 						Code				VARCHAR(32) 	PATH "$.Code"
-					,	MachineOSType		SMALLINT 		PATH "$.MachineOSType"
+					,	MachineOS			VARCHAR(32) 	PATH "$.MachineOS"
 				)
 		   ) AS js
 	WHERE IFNULL(js.Code,'') <> '';

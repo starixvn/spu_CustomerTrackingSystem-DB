@@ -152,7 +152,8 @@ BEGIN
     /* === Insert new MBDeviceCodeMachine === */ -- [{"Code":"Code4", "MachineOSType":"2"},{"Code":"Code2"},{"Code":"Code3", "MachineOSType":""}]
     WITH cte_DistinctData AS (
 		SELECT	DISTINCT
-				MBDeviceCodeMachine
+				MBDeviceCodeMachine,
+                OSName
 		FROM Temp_MBRawTransaction
 		WHERE SubscriberID IS NOT NULL
 			AND LoginName IS NOT NULL
@@ -160,6 +161,8 @@ BEGIN
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
 					'Code'			, MBDeviceCodeMachine
+				,	'MachineOS'		, OSName
+                    
 			)
 		) AS json_data
 	INTO lv_MBDeviceCodeMachineJson
