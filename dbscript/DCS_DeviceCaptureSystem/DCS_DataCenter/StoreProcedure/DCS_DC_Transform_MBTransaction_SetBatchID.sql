@@ -140,22 +140,3 @@ BEGIN
 END$$
 
 DELIMITER ;
-
-
-
-			DROP TABLE IF EXISTS Temp_NewDevice;
-			CREATE TEMPORARY TABLE Temp_NewDevice(
-					ID							INT NOT NULL AUTO_INCREMENT PRIMARY KEY 
-				,	BatchID						INT DEFAULT 0
-
-				,	FirstDeviceID				BIGINT UNSIGNED
-				,	SecondDeviceID				BIGINT UNSIGNED
-				,	ThirdDeviceID				BIGINT UNSIGNED
-			);
-            
-			INSERT INTO Temp_NewDevice(FirstDeviceID, SecondDeviceID, ThirdDeviceID)
-			VALUES(1,1,1) ,(2,2,2) ,(1,1,5) ,(3,2,2) ,(0,0,0);
-            
-			SET sql_safe_updates = 0;
-			CALL DCS_DC_Transform_MBTransaction_SetBatchID('Temp_NewDevice', 4);
-            select * from Temp_NewDevice;

@@ -26,52 +26,67 @@ BEGIN
     SET @currentBatch = 0;
     SET lv_TotalRecord = ip_NoOfTickets*ip_NoOfBatch;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_MBTransaction;
+	DROP TEMPORARY TABLE IF EXISTS Temp_CheckSameDevice;
 	DROP TEMPORARY TABLE IF EXISTS Temp_SetBatchID;
     
-    CREATE TEMPORARY TABLE Temp_MBTransaction(	
-		    ID							BIGINT	UNSIGNED PRIMARY KEY
-		,   MBRawTransactionID			BIGINT	UNSIGNED
-		,   MBDeviceCodeMediaDRMID		BIGINT	UNSIGNED
-		,   MBDeviceCodeMachineID		BIGINT	UNSIGNED
-		,   MBDeviceCodeTaggingID		BIGINT	UNSIGNED
-		,   BatchID						INT
-    );
+	CREATE TEMPORARY TABLE Temp_CheckSameDevice(
+			ID								BIGINT UNSIGNED NOT NULL PRIMARY KEY
+		,	SameDeviceWithRawTransID		BIGINT UNSIGNED DEFAULT 0
+		,	RecoverType						SMALLINT UNSIGNED DEFAULT 0
+
+		,	FirstDeviceID					BIGINT UNSIGNED
+		,	SecondDeviceID					BIGINT UNSIGNED
+		,	ThirdDeviceID					BIGINT UNSIGNED
+		,   BatchID							INT
+	);
     
 	CREATE TEMPORARY TABLE Temp_SetBatchID(
 			ID							BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	BatchID						INT DEFAULT 0
-
-		,	FirstDeviceID				BIGINT UNSIGNED
-		,	SecondDeviceID				BIGINT UNSIGNED
-		,	ThirdDeviceID				BIGINT UNSIGNED
 	);
     
-    INSERT INTO Temp_MBTransaction(ID, MBRawTransactionID, MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID)
-	SELECT	ID
-		,   MBRawTransactionID
-		,   IFNULL(MBDeviceCodeMediaDRMID, 0) AS MBDeviceCodeMediaDRMID
-		,   IFNULL(MBDeviceCodeMachineID, 0) AS MBDeviceCodeMachineID
-		,   IFNULL(MBDeviceCodeTaggingID, 0) AS MBDeviceCodeTaggingID
+    /********************** Check Same Device ***********************************/
+    INSERT INTO Temp_CheckSameDevice(ID, FirstDeviceID, SecondDeviceID, ThirdDeviceID)
+    SELECT 	ID
+		,   IFNULL(MBDeviceCodeMediaDRMID, 0) AS FirstDeviceID
+		,   IFNULL(MBDeviceCodeMachineID, 0) AS SecondDeviceID
+		,   IFNULL(MBDeviceCodeTaggingID, 0) AS ThirdDeviceID
 	FROM DCS_DataCenter.MBTransaction
 	WHERE ID >= lv_FromTransID
 	ORDER BY ID ASC
 	LIMIT lv_TotalRecord;
     
-    /********************** Check Same Device ***********************************/
-    INSERT INTO Temp_SetBatchID(ID, FirstDeviceID, SecondDeviceID, ThirdDeviceID)
-    SELECT 	ID
-		,	MBDeviceCodeMediaDRMID AS FirstDeviceID
-		,	MBDeviceCodeMachineID AS SecondDeviceID
-		,	MBDeviceCodeTaggingID AS ThirdDeviceID
-    FROM Temp_MBTransaction;
-        
-    CALL DCS_DC_Transform_MBTransaction_SetBatchID('Temp_SetBatchID', ip_NoOfBatch);
+    CALL DCS_DataCenter.DCS_DC_Transform_MBDeviceMapping_UpdateTheSameDevice('Temp_CheckSameDevice');
     
-	#RETURN OUTPUT
-	SELECT  ID
-		,   BatchID
-	FROM Temp_SetBatchID;
+    /********************** Set BatchID ***********************************/
+    INSERT INTO Temp_SetBatchID(ID)
+    SELECT DISTINCT SameDeviceWithRawTransID
+    FROM Temp_CheckSameDevice;
+    
+    SELECT COUNT(ID)
+    INTO @CountFirstDevice
+    FROM Temp_SetBatchID;
+    
+    SET @RowId = 0;
+    SET @NoOfBatch = CEIL(@CountFirstDevice / ip_NoOfBatch);
+    
+    UPDATE Temp_SetBatchID
+	SET BatchID = CEIL(@RowId := @RowId + 1 / @NoOfBatch)
+    ORDER BY (ID = 0) ASC, ID ASC;
+    
+    UPDATE Temp_CheckSameDevice AS tmpSD
+		INNER JOIN Temp_SetBatchID AS tmpB ON tmpB.ID = tmpSD.SameDeviceWithRawTransID
+	SET tmpSD.BatchID = tmpB.BatchID;
+    
+    /********************** RETURN OUTPUT ***********************************/
+    SELECT	ID
+		,	SameDeviceWithRawTransID
+        ,	RecoverType
+        ,	FirstDeviceID
+        ,	SecondDeviceID
+        ,	ThirdDeviceID
+        ,	BatchID
+	FROM Temp_CheckSameDevice;
     
 END$$
 DELIMITER ;
