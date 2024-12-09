@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transform_MBDevice_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_MBDevice_Insert`(
-    IN ip_TransIDs LONGTEXT
+    IN ip_MBTransactionInfoJson LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -31,50 +31,51 @@ BEGIN
     
     DECLARE lv_InsertionTime 			TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
     
-    #============================================
-	DROP TEMPORARY TABLE IF EXISTS Temp_Input;
 	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceMappingInfo;
-    #==============================================
-    
-	#======GET DATA FROM RAW TRANSACTION===========================
-	CREATE TEMPORARY TABLE Temp_Input(
-			TransID			 		BIGINT	UNSIGNED NOT NULL		PRIMARY KEY
-    );
-	
 	CREATE TEMPORARY TABLE Temp_DeviceMappingInfo(
 			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY 
-		,	MBRawTransactionID			BIGINT UNSIGNED NOT NULL
+		,	MBRawTransactionID			BIGINT UNSIGNED
 		,	MBAccountID					BIGINT UNSIGNED
 		,	SubscriberID				BIGINT UNSIGNED
 
 		,	MBDeviceCodeMediaDRMID		BIGINT UNSIGNED
 		,	MBDeviceCodeMachineID		BIGINT UNSIGNED
 		,	MBDeviceCodeTaggingID		BIGINT UNSIGNED
+		,	SameDeviceWithRawTransID	BIGINT UNSIGNED DEFAULT 0
+		,	RecoverType					SMALLINT UNSIGNED DEFAULT 0
 		
 		,	MBDeviceMappingID			BIGINT UNSIGNED
 		,	MBDeviceID					BIGINT UNSIGNED
-		,	RecoverType					SMALLINT UNSIGNED
 	);
+
+	#========GET INPUT DATA===========================        
+    INSERT INTO Temp_DeviceMappingInfo(TransID, MBRawTransactionID, MBAccountID, SubscriberID, SameDeviceWithRawTransID, RecoverType, MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID)
+	SELECT 	tmp.TransID
+		,	trans.MBRawTransactionID
+		,	trans.MBAccountID
+		,	trans.SubscriberID
+		,	tmp.SameDeviceWithRawTransID
+		,	tmp.RecoverType
+		,	tmp.MBDeviceCodeMediaDRMID
+		,	tmp.MBDeviceCodeMachineID
+		,	tmp.MBDeviceCodeTaggingID
+    FROM JSON_TABLE(
+			ip_MBTransactionInfoJson,
+			 "$[*]" COLUMNS(
+							TransID						BIGINT UNSIGNED		PATH "$.TransID"
+						,	SameDeviceWithRawTransID	BIGINT UNSIGNED 	PATH "$.SameDeviceWithRawTransID"
+						,	RecoverType					SMALLINT UNSIGNED 	PATH "$.MBAccountID"
+						,	MBDeviceCodeMediaDRMID		BIGINT UNSIGNED 	PATH "$.MBDeviceCodeMediaDRMID"
+						,	MBDeviceCodeMachineID		BIGINT UNSIGNED 	PATH "$.MBDeviceCodeMachineID"
+						,	MBDeviceCodeTaggingID		BIGINT UNSIGNED 	PATH "$.MBDeviceCodeTaggingID"
+					)
+		) AS tmp
+		INNER JOIN DCS_DataCenter.MBTransaction AS trans ON trans.ID = tmp.TransID;
     
-	#========GET INPUT DATA===========================
-    SET @sql = CONCAT("INSERT IGNORE INTO Temp_Input(TransID) VALUES ('", REPLACE(ip_TransIDs, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
-    
-	INSERT INTO Temp_DeviceMappingInfo(TransID, MBRawTransactionID, MBAccountID, SubscriberID, MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID)
-    SELECT 	tmp.TransID
-		, 	trans.MBRawTransactionID
-		, 	trans.MBAccountID
-		, 	trans.SubscriberID
-		, 	trans.MBDeviceCodeMediaDRMID
-		, 	trans.MBDeviceCodeMachineID
-		, 	trans.MBDeviceCodeTaggingID
-	FROM Temp_Input AS tmp
-		INNER JOIN DCS_DataCenter.MBTransaction AS trans ON trans.ID = tmp.TransID
-    ORDER BY tmp.TransID ASC;
-    
+    select * from Temp_DeviceMappingInfo;
 	CALL DCS_DC_Transform_MBDeviceMapping_Insert('Temp_DeviceMappingInfo');
     
+    select * from Temp_DeviceMappingInfo;
     /* === Insert new Association === */
     WITH cte_DistinctData AS (
 		SELECT	DISTINCT
@@ -82,8 +83,8 @@ BEGIN
 			,	MBDeviceID
 			,	SubscriberID
 		FROM Temp_DeviceMappingInfo
-		WHERE MBAccountID = 0
-			AND MBDeviceID = 0
+		WHERE MBAccountID > 0
+			AND MBDeviceID > 0
     )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
@@ -95,8 +96,9 @@ BEGIN
 	INTO lv_AssociationJson
 	FROM cte_DistinctData;
     
+    select lv_AssociationJson;
     IF lv_AssociationJson IS NOT NULL THEN
-		CALL DCS_DC_Transform_Association_Insert(lv_AssociationJson);
+		CALL DCS_DC_Transform_MBAssociation_Insert(lv_AssociationJson);
     END IF;
     
 	INSERT IGNORE INTO DCS_DataCenter.MBTransaction07(CreatedDate, MBRawTransactionID, TransTime, SubscriberID, MBAccountID, IP, IPID, ActionResultID, Flagged, MBDeviceModelID, MBOSID, MBUserSettingID, MBDeviceMappingID, MBDeviceID, RecoverType, InsertedTime)

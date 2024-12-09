@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_MBDeviceMappingUpdateTheSameDevice`;
+DROP PROCEDURE IF EXISTS `DCS_DC_Transform_MBDeviceMapping_UpdateTheSameDevice`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_MBDeviceMappingUpdateTheSameDevice`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_MBDeviceMapping_UpdateTheSameDevice`(
 		IN ip_TableName VARCHAR(50)
 )
     SQL SECURITY INVOKER
@@ -21,7 +21,7 @@ BEGIN
         Example:
 			DROP TABLE IF EXISTS Temp_NewDevice;
 			CREATE TEMPORARY TABLE Temp_NewDevice(
-					MBRawTransactionID							BIGINT UNSIGNED NOT NULL PRIMARY KEY
+					ID											BIGINT UNSIGNED NOT NULL PRIMARY KEY
 				,	SameDeviceWithRawTransID					BIGINT UNSIGNED DEFAULT 0
 				,	RecoverType									SMALLINT UNSIGNED DEFAULT 0
 				
@@ -30,11 +30,11 @@ BEGIN
 				,	ThirdDeviceID								BIGINT UNSIGNED
 			);
             
-            INSERT INTO Temp_NewDevice(MBRawTransactionID, FirstDeviceID, SecondDeviceID, ThirdDeviceID)
+            INSERT INTO Temp_NewDevice(ID, FirstDeviceID, SecondDeviceID, ThirdDeviceID)
             VALUES(1, 1, 1, 1), (2, 1, 1, 2), (3, 2, 2, 3), (4, 2, 3, 4);
             
 			SET sql_safe_updates = 0;
-			CALL DCS_DC_Transform_MBDeviceMappingUpdateTheSameDevice('Temp_NewDevice');
+			CALL DCS_DC_Transform_MBDeviceMapping_UpdateTheSameDevice('Temp_NewDevice');
             select * from Temp_NewDevice;
 	*/
     DECLARE CONST_RECOVERTYPE_FIRSTRULE		SMALLINT DEFAULT 1;
@@ -62,7 +62,7 @@ BEGIN
 	);
     
 	SET @sql = CONCAT('INSERT INTO Temp_SameMBDevice(ID, FirstDeviceID, SecondDeviceID, ThirdDeviceID) 
-						SELECT 	MBRawTransactionID AS ID
+						SELECT 	ID
 							,	FirstDeviceID
 							,	SecondDeviceID
 							,	ThirdDeviceID
@@ -137,7 +137,7 @@ BEGIN
         WHERE ID = lv_CurrentID;
         
 		SET @sql = CONCAT('UPDATE ', ip_TableName,' AS tmp
-								INNER JOIN Temp_SameMBDevice AS tmpNd ON tmpNd.ID = tmp.MBRawTransactionID
+								INNER JOIN Temp_SameMBDevice AS tmpNd ON tmpNd.ID = tmp.ID
 							SET tmp.SameDeviceWithRawTransID = IFNULL(tmpNd.SameDeviceWithID, 0),
 								tmp.RecoverType = IFNULL(tmpNd.RecoverType, 0)');
 		PREPARE stmt FROM @sql;

@@ -9,16 +9,16 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_MBTransaction_GetPacka
     SQL SECURITY INVOKER
 BEGIN
 	/*
-	    Created: 20241129@Lando.Vu
+	    Created: 20241205@Jonathan.Doan
 	    Task : Transform Transaction
 	    DB: DCS_DataCenter
 	    Original:
 
 	    Revisions:
-            - 20241129@Lando.Vu: Integrate Mobile App (Phase 2) [Redmine ID: #213401]
+            - 20241205@Jonathan.Doan: Integrate Mobile App (Phase 2) [Redmine ID: #213401]
 
 	    Param's Explanation (filtered by):
-			CALL DCS_DC_Transform_MBTransaction_GetPackage(100, 2);
+			CALL DCS_DC_Transform_MBTransaction_GetPackage(100, 3);
 	*/
     DECLARE		lv_TotalRecord				INT UNSIGNED DEFAULT 0;
     DECLARE 	lv_FromTransID				BIGINT UNSIGNED DEFAULT 0;
@@ -80,6 +80,7 @@ BEGIN
     
     /********************** RETURN OUTPUT ***********************************/
     SELECT	ID
+		,	MBRawTransactionID
 		,	SameDeviceWithRawTransID
         ,	RecoverType
         ,	FirstDeviceID
