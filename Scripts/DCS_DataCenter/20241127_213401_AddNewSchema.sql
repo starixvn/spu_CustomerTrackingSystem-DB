@@ -216,15 +216,3 @@ CREATE TABLE MBAssociation (
     UNIQUE KEY UX_MBAssociation_MBAccountID_MBDeviceID (MBAccountID, MBDeviceID),
     KEY IX_MBAssociation_MBDeviceID_MBAccountID (MBDeviceID, MBAccountID)
 );
-
-DROP TABLE IF EXISTS MBLastAccessedDate;
-CREATE TABLE MBLastAccessedDate (
-  `ID` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  `TableName` VARCHAR(255) NOT NULL,
-  `RecordID` BIGINT UNSIGNED NOT NULL,
-  `LastAccessedDate` DATETIME DEFAULT NULL,
-  `InsertedTime` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
-  `ModifiedTime` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY `UX_MBLastAccessedDate_TableName_RecordID` (`TableName`,`RecordID`)
-);
-
