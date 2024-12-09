@@ -49,7 +49,7 @@ BEGIN
 
     /********************** Local variables ***********************************/
     DECLARE lv_InsertedTime 					TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-    
+
     /********************** CREAT TEMP TABLE ***********************************/
 	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceMapping;
 	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceMappingInsert;
