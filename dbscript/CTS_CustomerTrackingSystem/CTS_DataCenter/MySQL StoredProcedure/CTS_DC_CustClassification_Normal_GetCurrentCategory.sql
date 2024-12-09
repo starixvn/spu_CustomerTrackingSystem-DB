@@ -20,6 +20,7 @@ BEGIN
             - 20230915@Jonas.Huynh [Redmine ID: #193050]: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category
             - 20231024@Jonas.Huynh [Redmine ID: #193050]: Rollback code
 			- 20240619@Jonas.Huynh [Redmine ID: #205317]: Renovate CC 
+            - 20240912@Jonas.Huynh	: HF Inconsistent classification
             
 		Param's Explanation:
         
@@ -56,7 +57,8 @@ BEGIN
 			CustID 				BIGINT UNSIGNED PRIMARY KEY
         ,	CategoryID			INT UNSIGNED
         ,	CategoryGroupID		INT UNSIGNED
-        ,	IsProbationLastDay	BIT DEFAULT(0)
+        ,	ParentID			INT UNSIGNED
+		,	CreatedDate			DATETIME
 		,	INDEX IX_Temp_CustCategory_CategoryGroup(CategoryGroupID)
     );
     
@@ -78,11 +80,12 @@ BEGIN
     END IF;	
 	
     #2. Get latest normal category
-	INSERT INTO Temp_CustCategory(CustID, CategoryID, CategoryGroupID, IsProbationLastDay)
+	INSERT INTO Temp_CustCategory(CustID, CategoryID, CategoryGroupID, ParentID, CreatedDate)
 	SELECT 	tmpc.CustID
 		,	tmplc.CategoryID
         ,	tmplc.CategoryGroupID
-        ,	CASE WHEN tmplc.CategoryGroupID = CONST_GROUP_PROBATION AND tmplc.CreatedDate <= lv_LastDayProbation THEN 1 ELSE 0 END /*Up to Smart, Risky*/
+        ,	tmplc.ParentID
+        , 	tmplc.CreatedDate
 	FROM Temp_Cust AS tmpc
 		, LATERAL	
 			(	SELECT cc.CustID, cc.CategoryID, ca.CategoryGroupID, cc.CreatedDate, cc.ParentID
@@ -93,8 +96,7 @@ BEGIN
                     AND cc.ParentID <> CONST_PARENTID_WRAPPER 
 				ORDER BY ca.CategoryPriority ASC, cc.LastModifiedDate DESC
 				LIMIT 1
-		   ) tmplc 
-	WHERE tmplc.ParentID = CONST_PARENTID_NORMAL;
+		   ) tmplc;
    
     #3. Return data set
 	SELECT	DISTINCT tmpCust.CustID
@@ -104,8 +106,10 @@ BEGIN
                 ELSE tmpCc.CategoryGroupID
 			END AS CategoryID
 		,   CASE WHEN tmpCust.CreatedDate >= DATE_SUB(lv_CurrentTime, INTERVAL 29 DAY) THEN 1 ELSE 0 END AS IsNewCreated
-        ,	tmpCc.IsProbationLastDay AS IsProbationLastDay
+        ,	CASE WHEN tmpCc.CategoryGroupID IS NOT NULL AND tmpCc.CategoryGroupID = CONST_GROUP_PROBATION AND tmpCc.CreatedDate <= lv_LastDayProbation THEN 1 ELSE 0 END AS IsProbationLastDay /*Up to Smart, Risky*/
 	FROM Temp_Cust AS tmpCust
-		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID;
+		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID
+	WHERE tmpCc.CategoryGroupID IS NULL 
+	 	OR tmpCc.ParentID = CONST_PARENTID_NORMAL;
 END$$
 DELIMITER ;
