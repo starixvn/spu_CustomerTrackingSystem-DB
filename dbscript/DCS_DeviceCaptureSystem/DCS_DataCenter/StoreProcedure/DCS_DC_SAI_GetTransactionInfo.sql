@@ -16,6 +16,7 @@ BEGIN
 
 	Revisions:
 		- 20241122@Jonathan.Doan: Get Data [Redmine ID: 214111]
+		- 20241206@Jonathan.Doan: Change the data source [Redmine ID: 214111]
 		
 	Param's Explanation (filtered by):
 
@@ -51,14 +52,16 @@ BEGIN
         ,	FirstDeviceCode VARCHAR(64)
         ,	DeviceStatus TINYINT
         ,	DeviceFingerprintID BIGINT UNSIGNED
-        ,	FP_UserAgentID BIGINT UNSIGNED
         ,	CustID INT UNSIGNED
         ,	FingerprintCode VARCHAR(620)
         ,	DeviceCode VARCHAR(32)
         ,	UserAgent VARCHAR(1000)
+        ,	OSName VARCHAR(100)
+        ,	BrowserName VARCHAR(100)
+        ,	DeviceType VARCHAR(20)
     );
     
-    INSERT IGNORE INTO Temp_Transaction(TransID, TransTime, AccountID, LoginName, SubscriberID, CreatedDate, Flagged, UserAgentKey, IP, IPID, URLID, ActionResultID, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, DeviceID, DeviceCodeID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, FP_UserAgentID)
+    INSERT IGNORE INTO Temp_Transaction(TransID, TransTime, AccountID, LoginName, SubscriberID, CreatedDate, Flagged, UserAgentKey, IP, IPID, URLID, ActionResultID, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, DeviceID, DeviceCodeID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID)
     SELECT 	TransID
 		,	TransTime
 		,	AccountID
@@ -81,7 +84,6 @@ BEGIN
 		,	FirstDeviceCode
 		,	DeviceStatus
 		,	DeviceFingerprintID
-		,	FP_UserAgentID
     FROM DCS_DataCenter.Transaction07
     WHERE TransID > ip_LastTransID
 		AND InsertTime < lv_MaxInsertTime
@@ -104,7 +106,13 @@ BEGIN
     
     UPDATE Temp_Transaction AS trans
 		INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
-	SET trans.UserAgent = ua.UserAgent;
+		LEFT JOIN DCS_DataCenter.OS AS os ON os.OSID = ua.OSID
+		LEFT JOIN DCS_DataCenter.Browser AS br ON br.BrowserID = ua.BrowserID
+		LEFT JOIN DCS_DataCenter.DeviceType AS dt ON dt.DeviceTypeID = ua.DeviceTypeID
+	SET trans.UserAgent = ua.UserAgent,
+		trans.OSName = os.OSName,
+		trans.BrowserName = br.BrowserName,
+		trans.DeviceType = dt.DeviceTypeName;
     
     /* === Return values === */
 	SELECT 	trans.TransID
@@ -119,6 +127,11 @@ BEGIN
 		,	sl.ItemName AS RobotTracking
 		,	trans.UserAgentKey
 		,	trans.UserAgent
+		,	trans.OSName
+		,	NULL AS OSVersion
+		,	trans.BrowserName
+		,	NULL AS BrowserVersion
+		,	trans.DeviceType
 		,	trans.IP
 		,	CAST(trans.IPID AS CHAR) AS IPID
 		,	trans.URLID
@@ -137,17 +150,11 @@ BEGIN
 		,	trans.DeviceStatus
 		,	trans.DeviceFingerprintID
 		,	trans.FingerprintCode
-		,	fos.OSName
-		,	fos.OSVersion
-		,	fbr.BrowserName
-		,	fbr.BrowserVersion
 	FROM Temp_Transaction AS trans
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND sl.ItemID = trans.Flagged
 		LEFT JOIN DCS_DataCenter.URL AS url ON url.URLID = trans.URLID
-		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID
-		LEFT JOIN DCS_DataCenter.FP_UserAgent AS fua ON fua.ID = trans.FP_UserAgentID
-		LEFT JOIN DCS_DataCenter.FP_OS AS fos ON fos.ID = fua.OSID
-		LEFT JOIN DCS_DataCenter.FP_Browser AS fbr ON fbr.ID = fua.BrowserID;
+		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID;
+        
 END$$
 DELIMITER ;
