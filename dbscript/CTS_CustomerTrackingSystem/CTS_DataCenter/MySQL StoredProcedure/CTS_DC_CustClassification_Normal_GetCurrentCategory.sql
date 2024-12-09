@@ -20,7 +20,7 @@ BEGIN
             - 20230915@Jonas.Huynh [Redmine ID: #193050]: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category
             - 20231024@Jonas.Huynh [Redmine ID: #193050]: Rollback code
 			- 20240619@Jonas.Huynh [Redmine ID: #205317]: Renovate CC 
-            - 20240912@Jonas.Huynh	: HF Inconsistent classification
+            - 20240912@Jonas.Huynh [Redmine ID: #214058]: HF Inconsistent classification
             
 		Param's Explanation:
         
