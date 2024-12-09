@@ -15,6 +15,7 @@ AS
 
 	Revisions:
 		- 20240822@Casey.Huynh: Created [Redmine ID: 207397]
+		- 20241205@Casey.Huynh: Tunning Performance BK
 
 	Params Explaination:
 	-	@FraudTickets is in Json format
@@ -62,6 +63,7 @@ BEGIN
 		,	Bettype		SMALLINT
 		,	BetId		BIGINT
 		,	Refno		BIGINT 
+		,	CustID		INT
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpTurnOver') IS NOT NULL
@@ -75,7 +77,7 @@ BEGIN
 		,	MatchId		INT
 		,	IsLive		BIT
 		,	Bettype		SMALLINT
-		,	BetId		BIGINT
+		,	BetId		BIGINT		
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpParsedFraudInfo') IS NOT NULL
@@ -89,7 +91,7 @@ BEGIN
 		,	IsLive			BIT
 		,	Bettype			SMALLINT
 		,	BetId			BIGINT
-		,	Refno			BIGINT
+		,	Refno			BIGINT		
 	);
 
 	IF @FraudTickets <> ''
@@ -165,9 +167,9 @@ BEGIN
 			,	tmpTo.Refno
 			,	bt.Stake * bt.actualrate AS TurnOver
 		FROM #tmpParsedRefno AS tmpTo WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.Bettrans AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno 
-
-			
+			INNER JOIN bodb02.dbo.Bettrans AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno
+		WHERE tmpTo.DataSource = @CONST_DATASOURCE_ORIGIN;
+		
 		DELETE tmpRn
 		FROM #tmpParsedRefno AS tmpRn WITH(NOLOCK)
 			INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno ;
@@ -181,13 +183,25 @@ BEGIN
 			,	tmpTo.Refno
 			,	bt.Stake * bt.actualrate AS TurnOver
 		FROM #tmpParsedRefno AS tmpTo WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.Bettrans14 AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno AND bt.MatchID = tmpTo.MatchID;
-			
+			INNER JOIN bodb02.dbo.Bettrans14 AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno
+		WHERE tmpTo.DataSource = @CONST_DATASOURCE_14;
+		
 		DELETE tmpRn
 		FROM #tmpParsedRefno AS tmpRn WITH(NOLOCK)
 			INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno;
-			
+
 		--==============GET Turn Over - BK====================================
+		UPDATE tmp WITH(ROWLOCK, UPDLOCK)
+		SET tmp.custid = cus.custid
+		FROM #tmpParsedRefno AS tmp
+			CROSS APPLY 
+			(
+				SELECT TOP(1) bt.CustID
+				FROM bodb_Archive.dbo.Bettransm AS bt WITH(NOLOCK)
+				WHERE bt.refno = tmp.Refno
+			) AS cus;
+
+
 		INSERT INTO #tmpTurnOver(MatchID, IsLive, Bettype, BetId, Refno,TurnOver)
 		SELECT	tmpTo.MatchID
 			,	tmpTo.IsLive
@@ -196,11 +210,12 @@ BEGIN
 			,	tmpTo.Refno
 			,	bt.Stake * bt.actualrate AS TurnOver
 		FROM #tmpParsedRefno AS tmpTo WITH(NOLOCK)
-			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno  AND bt.MatchID = tmpTo.MatchID;
-			
+			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS bt WITH(NOLOCK) on  bt.custid = tmpTo.custid 
+		WHERE bt.Refno = tmpTo.Refno;
+		
 		DELETE tmpRn
 		FROM #tmpParsedRefno AS tmpRn WITH(NOLOCK)
-			INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno;
+			INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno;		
 			
 		CREATE CLUSTERED INDEX #CIX_tmpTurnOver ON #tmpTurnOver(
 				MatchID	DESC
