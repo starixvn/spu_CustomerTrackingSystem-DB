@@ -45,16 +45,16 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustNewCateByDevice;
 	CREATE TEMPORARY TABLE Temp_CustNewCateByDevice(
-			CTSCustID				BIGINT UNSIGNED
-		,	DCSDeviceID				BIGINT
-		,	PRIMARY KEY(CTSCustID, DCSDeviceID)
+			CustID				BIGINT UNSIGNED
+		,	DCSDeviceID			BIGINT
+		,	PRIMARY KEY(DCSDeviceID, CustID)
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustPSRCateByDevice;
 	CREATE TEMPORARY TABLE Temp_CustPSRCateByDevice(
 			CTSCustID				BIGINT UNSIGNED
 		,	DCSDeviceID				BIGINT
-		,	PRIMARY KEY(CTSCustID, DCSDeviceID)
+		,	PRIMARY KEY(DCSDeviceID, CTSCustID)
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Device;
@@ -90,13 +90,13 @@ BEGIN
 	SELECT DISTINCT DCSDeviceID
 	FROM Temp_CustDevice;
 
-	INSERT IGNORE INTO Temp_CustNewCateByDevice (CTSCustID, DCSDeviceID)
-	SELECT dv.CTSCustID, tmp.DCSDeviceID
+	INSERT IGNORE INTO Temp_CustNewCateByDevice (CustID, DCSDeviceID)
+	SELECT cate.CustID, tmp.DCSDeviceID
 	FROM Temp_Device AS tmp
 		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.DCSDeviceID = tmp.DCSDeviceID
 		,   LATERAL
 				(
-					SELECT cls.CTSCustID, cls.CategoryID
+					SELECT cls.CustID, cls.CategoryID
 					FROM CTS_DataCenter.CTSCustomerClassification AS cls
 						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cls.CategoryID = cat.CategoryID AND cat.IsActive = 1
 					WHERE cls.CTSCustID = dv.CTSCustID AND cls.ParentID <> CONST_PARENTID_WRAPPER
@@ -129,12 +129,10 @@ BEGIN
 	SET op_LastScannedID = IFNULL(op_LastScannedID, lv_LastScannedID);
 
 	/*Return*/
-	SELECT cus.CustID
+	SELECT DISTINCT tcn.CustID
 	FROM Temp_CustNewCateByDevice AS tcn
 		INNER JOIN Temp_CustPSRCateByDevice AS tcd
-			ON tcn.DCSDeviceID = tcd.DCSDeviceID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus
-			ON cus.CTSCustID = tcn.CTSCustID AND cus.RoleID = CONST_ROLEID_MEMBER AND cus.IsInternal = 0;
+			ON tcn.DCSDeviceID = tcd.DCSDeviceID;
 
 END$$
 DELIMITER ;
