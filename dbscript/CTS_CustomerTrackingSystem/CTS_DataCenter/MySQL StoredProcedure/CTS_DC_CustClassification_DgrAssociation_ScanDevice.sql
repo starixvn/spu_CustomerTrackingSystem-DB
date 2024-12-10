@@ -91,7 +91,7 @@ BEGIN
         INNER JOIN Temp_CustDevice AS tcd ON tcd.CTSCustID = tmp.CTSCustID
         LEFT JOIN Temp_CustDgrAssociation AS cda ON cda.CTSCustID = tmp.CTSCustID
     WHERE cda.CTSCustID IS NOT NULL
-        OR NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls WHERE cls.CTSCustID = tmp.CTSCustID);
+        OR NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls WHERE cls.CTSCustID = tmp.CTSCustID AND cls.ParentID <> CONST_PARENTID_WRAPPER);
 
 END$$
 DELIMITER ;

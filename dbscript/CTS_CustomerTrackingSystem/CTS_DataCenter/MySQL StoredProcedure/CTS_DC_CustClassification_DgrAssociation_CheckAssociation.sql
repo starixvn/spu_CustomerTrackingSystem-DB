@@ -106,12 +106,6 @@ BEGIN
 				) AS cate
 	WHERE cate.CategoryID = CONST_CATEID_NEW;
 
-	INSERT IGNORE INTO Temp_CustNewCateByDevice (CTSCustID, DCSDeviceID)
-	SELECT dv.CTSCustID, tmp.DCSDeviceID
-	FROM Temp_Device AS tmp
-		INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON dv.DCSDeviceID = tmp.DCSDeviceID
-	WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls WHERE cls.CTSCustID = dv.CTSCustID);
-
 	INSERT IGNORE INTO Temp_CustPSRCateByDevice (CTSCustID, DCSDeviceID)
 	SELECT dv.CTSCustID, tmp.DCSDeviceID
 	FROM Temp_Device AS tmp
