@@ -225,6 +225,7 @@ BEGIN
 				THEN 1 ELSE 0 END AS IsPA
 		,	CASE WHEN s.FlowNormalDgrAssociation = 1 AND temp.NewCategoryID = s.CategoryID AND temp.OldCategoryID IS NULL THEN 1
 				 WHEN s.FlowNormalDgrAssociation = 1 AND temp.NewCategoryID = s.CategoryID AND temp.OldCategoryID <> s.CategoryID THEN 1
+                 WHEN s.FlowNormalDgrAssociation = 1 AND temp.NewCategoryID = s.CategoryID AND temp.OldCategoryID = s.CategoryID AND temp.IsDataChanged = 1 THEN 1
 				 ELSE 0 END AS IsScanDgrAssociation
 		,	lv_CurrentDateTime AS ScannedTime 
 	FROM Temp_NewClassification AS temp
