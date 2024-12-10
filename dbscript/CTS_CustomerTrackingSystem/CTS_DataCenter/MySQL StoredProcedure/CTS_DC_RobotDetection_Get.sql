@@ -22,11 +22,13 @@ BEGIN
 			- 20230315@Victoria.Le:		Add Robot Imperva [Redmine ID: #184773]
             - 20230404@Casey.Huynh:		Return RobotDetection.PeriodRangeName for PeriodRangeType = 200 [Redmine ID: #185777]
             - 20230512@Casey.Huynh:		Return RobotDetection.PeriodRangeName for PeriodRangeType = 300 [Redmine ID: #186992]
-
+			- 20241210@Casey.Huynh: 	New Robot AI, Bot Login Pattern [Redmine ID: #214655]
+            
 		Example:
 			call CTS_DataCenter.CTS_DC_RobotDetection_Get (2211693,@a,@b);  select @a,@b;
 	*/    
-	
+	DECLARE	CONST_ROLEID_MEMBER		INT DEFAULT 1;
+    
 	SELECT 	MIN(rd.CreatedDate), MAX(rd.LastModifiedDate)
     INTO op_FirstRobotDate, op_LastRobotDate
     FROM CTS_DataCenter.RobotDetection AS rd
@@ -45,9 +47,15 @@ BEGIN
 				WHEN rd.PeriodRangeType = 101 THEN 'Consecutive Tickets > 24 Hours and High Ugly Stake Tickets'
                 WHEN rd.PeriodRangeType = 200 THEN 'Consecutive Tickets per Match <= 2 mins and Stake per Ticket < 30 RM'
                 WHEN rd.PeriodRangeType = 300 THEN 'Time Discretization'
+                WHEN rd.PeriodRangeType = 400 THEN 'Login Time Pattern'
+                WHEN rd.PeriodRangeType = 420 THEN 'Massive Login Attempt'
+                WHEN rd.PeriodRangeType = 430 THEN 'Device Variety'
+                WHEN rd.PeriodRangeType = 440 THEN 'IP Diversity'
 			END AS PeriodRangeName
     FROM CTS_DataCenter.RobotDetection AS rd
-    WHERE rd.CustID = ip_CustID;
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON rd.CustID = cus.CustID AND cus.CustSubID = 0
+    WHERE rd.CustID = ip_CustID
+		AND cus.RoleID = CONST_ROLEID_MEMBER;
 	
 	SELECT 	ri.CustID
 		,	ri.CreateTime
