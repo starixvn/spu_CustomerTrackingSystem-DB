@@ -150,5 +150,6 @@ BEGIN
     FROM Temp_MatchMonitorDetailsCust AS tmp;
     
     SELECT lv_MatchID AS MatchID;
+    
 END$$
 DELIMITER ;
