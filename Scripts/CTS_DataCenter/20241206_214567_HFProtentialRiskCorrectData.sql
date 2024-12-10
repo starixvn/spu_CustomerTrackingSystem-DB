@@ -9,7 +9,14 @@ Revisions:
 		- 20241206@Casey.Huynh: Created [Redmine ID: #214567]
 Reviewer:
 */
-
+#===============================GET PARAMETER SYSTEM TO BACKUP ==========================================================================
+    SELECT s.ParameterValue
+    INTO @lv_MatchID
+    FROM CTS_DataCenter.SystemParameter AS s
+    WHERE s.ParameterID = 96;
+    
+    SELECT @lv_MatchID;
+#============================BELOW STEPS- DONE ================================================================
 	/*********************SCHEMA*****************************/
     USE CTS_Adhoc;
     CREATE TABLE HF214567_MatchMonitorDetailsCust_ALL(
