@@ -19,7 +19,7 @@ BEGIN
         
         Example:
 			SET sql_safe_updates = 0;
-			CALL DCS_DC_Transform_MBDevice_Insert('1,2,3,4,5');
+			CALL DCS_DataCenter.DCS_DC_Transform_MBDevice_Insert('[{"TransID":1,"MBRawTransactionID":1,"SameDeviceID":0,"BatchID":1},{"TransID":3,"MBRawTransactionID":3,"SameDeviceID":0,"BatchID":1}]');
 	*/
 
 	DECLARE vrDeviceStatusNew			TINYINT DEFAULT 1;			# New Device
@@ -36,46 +36,50 @@ BEGIN
 			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY 
 		,	MBRawTransactionID			BIGINT UNSIGNED
 		,	MBAccountID					BIGINT UNSIGNED
-		,	SubscriberID				BIGINT UNSIGNED
+		,	SubscriberID				INT
+		,	TransTime					DATETIME(4)
+		,	IP 							VARCHAR(50)
+		,	IPID 						DECIMAL(50,0)
+		,	ActionResultID 				INT
+		,	Flagged 					SMALLINT
+		,	MBDeviceModelID 			BIGINT UNSIGNED
+		,	MBOSID			 			BIGINT UNSIGNED
+		,	MBUserSettingID	 			BIGINT UNSIGNED
 
-		,	MBDeviceCodeMediaDRMID		BIGINT UNSIGNED
-		,	MBDeviceCodeMachineID		BIGINT UNSIGNED
-		,	MBDeviceCodeTaggingID		BIGINT UNSIGNED
-		,	SameDeviceWithRawTransID	BIGINT UNSIGNED DEFAULT 0
+		,	SameDeviceID				BIGINT UNSIGNED DEFAULT 0
 		,	RecoverType					SMALLINT UNSIGNED DEFAULT 0
-		
 		,	MBDeviceMappingID			BIGINT UNSIGNED
 		,	MBDeviceID					BIGINT UNSIGNED
 	);
-
+        
 	#========GET INPUT DATA===========================        
-    INSERT INTO Temp_DeviceMappingInfo(TransID, MBRawTransactionID, MBAccountID, SubscriberID, SameDeviceWithRawTransID, RecoverType, MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID)
+    INSERT INTO Temp_DeviceMappingInfo(TransID, SameDeviceID, RecoverType, MBRawTransactionID, MBAccountID, SubscriberID, TransTime, IP, IPID, ActionResultID, Flagged, MBDeviceModelID, MBOSID, MBUserSettingID)
 	SELECT 	tmp.TransID
+		,	tmp.SameDeviceID
+		,	tmp.RecoverType
 		,	trans.MBRawTransactionID
 		,	trans.MBAccountID
 		,	trans.SubscriberID
-		,	tmp.SameDeviceWithRawTransID
-		,	tmp.RecoverType
-		,	tmp.MBDeviceCodeMediaDRMID
-		,	tmp.MBDeviceCodeMachineID
-		,	tmp.MBDeviceCodeTaggingID
+        ,	trans.TransTime
+		,	trans.IP
+		,	trans.IPID
+		,	trans.ActionResultID
+		,	trans.Flagged
+		,	trans.MBDeviceModelID
+		,	trans.MBOSID
+		,	trans.MBUserSettingID
     FROM JSON_TABLE(
 			ip_MBTransactionInfoJson,
 			 "$[*]" COLUMNS(
-							TransID						BIGINT UNSIGNED		PATH "$.TransID"
-						,	SameDeviceWithRawTransID	BIGINT UNSIGNED 	PATH "$.SameDeviceWithRawTransID"
-						,	RecoverType					SMALLINT UNSIGNED 	PATH "$.MBAccountID"
-						,	MBDeviceCodeMediaDRMID		BIGINT UNSIGNED 	PATH "$.MBDeviceCodeMediaDRMID"
-						,	MBDeviceCodeMachineID		BIGINT UNSIGNED 	PATH "$.MBDeviceCodeMachineID"
-						,	MBDeviceCodeTaggingID		BIGINT UNSIGNED 	PATH "$.MBDeviceCodeTaggingID"
+							TransID			BIGINT UNSIGNED		PATH "$.TransID"
+						,	SameDeviceID	BIGINT UNSIGNED 	PATH "$.SameDeviceID"
+						,	RecoverType		SMALLINT UNSIGNED 	PATH "$.RecoverType"
 					)
 		) AS tmp
 		INNER JOIN DCS_DataCenter.MBTransaction AS trans ON trans.ID = tmp.TransID;
     
-    select * from Temp_DeviceMappingInfo;
 	CALL DCS_DC_Transform_MBDeviceMapping_Insert('Temp_DeviceMappingInfo');
     
-    select * from Temp_DeviceMappingInfo;
     /* === Insert new Association === */
     WITH cte_DistinctData AS (
 		SELECT	DISTINCT
@@ -96,30 +100,28 @@ BEGIN
 	INTO lv_AssociationJson
 	FROM cte_DistinctData;
     
-    select lv_AssociationJson;
     IF lv_AssociationJson IS NOT NULL THEN
 		CALL DCS_DC_Transform_MBAssociation_Insert(lv_AssociationJson);
     END IF;
     
 	INSERT IGNORE INTO DCS_DataCenter.MBTransaction07(CreatedDate, MBRawTransactionID, TransTime, SubscriberID, MBAccountID, IP, IPID, ActionResultID, Flagged, MBDeviceModelID, MBOSID, MBUserSettingID, MBDeviceMappingID, MBDeviceID, RecoverType, InsertedTime)
-	SELECT	DATE(trans.TransTime) AS CreatedDate
-		,	trans.MBRawTransactionID
-        ,	trans.TransTime
-        ,	trans.SubscriberID
-        , 	trans.MBAccountID
-        ,	trans.IP
-        ,	trans.IPID
-        ,	trans.ActionResultID
-        ,	trans.Flagged
-        ,	trans.MBDeviceModelID
-        ,	trans.MBOSID
-        ,	trans.MBUserSettingID
-        ,	IFNULL(tmp.MBDeviceMappingID,0) AS MBDeviceMappingID
-        ,	IFNULL(tmp.MBDeviceID,0) AS MBDeviceID
-        ,	IFNULL(tmp.RecoverType,0) AS RecoverType
+	SELECT	DATE(TransTime) AS CreatedDate
+		,	MBRawTransactionID
+        ,	TransTime
+        ,	SubscriberID
+        , 	MBAccountID
+        ,	IP
+        ,	IPID
+        ,	ActionResultID
+        ,	Flagged
+        ,	MBDeviceModelID
+        ,	MBOSID
+        ,	MBUserSettingID
+        ,	IFNULL(MBDeviceMappingID,0) AS MBDeviceMappingID
+        ,	IFNULL(MBDeviceID,0) AS MBDeviceID
+        ,	IFNULL(RecoverType,0) AS RecoverType
         ,	lv_InsertionTime AS InsertedTime
-	FROM Temp_DeviceMappingInfo AS tmp
-		INNER JOIN DCS_DataCenter.MBTransaction AS trans ON trans.ID = tmp.TransID;
+	FROM Temp_DeviceMappingInfo;
     
 	DELETE trans
 	FROM DCS_DataCenter.MBTransaction AS trans

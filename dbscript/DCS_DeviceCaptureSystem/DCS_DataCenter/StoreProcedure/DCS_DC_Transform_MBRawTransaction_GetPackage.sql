@@ -18,7 +18,7 @@ BEGIN
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
             
 	    Param's Explanation (filtered by):
-			CALL DCS_DC_Transform_MBTransaction_GetPackage(10,2);
+			CALL DCS_DC_Transform_MBRawTransaction_GetPackage(10,2);
 	*/
 	DECLARE	lv_TotalRecord	INT UNSIGNED DEFAULT 0;
     

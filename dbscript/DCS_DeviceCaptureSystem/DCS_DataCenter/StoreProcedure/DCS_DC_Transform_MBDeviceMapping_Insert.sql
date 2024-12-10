@@ -22,6 +22,8 @@ BEGIN
 			CREATE TEMPORARY TABLE Temp_NewDevice(
 					TransID						INT NOT NULL AUTO_INCREMENT PRIMARY KEY 
 				,	MBRawTransactionID			INT DEFAULT 0
+				,	SameDeviceID				BIGINT UNSIGNED
+				,	RecoverType					SMALLINT UNSIGNED
 
 				,	MBDeviceCodeMediaDRMID		BIGINT UNSIGNED
 				,	MBDeviceCodeMachineID		BIGINT UNSIGNED
@@ -29,11 +31,10 @@ BEGIN
                 
 				,	MBDeviceMappingID			BIGINT UNSIGNED
 				,	MBDeviceID					BIGINT UNSIGNED
-				,	RecoverType					SMALLINT UNSIGNED
 			);
             
-			INSERT INTO Temp_NewDevice(MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID)
-			VALUES(1,1,1) ,(2,2,2) ,(1,1,5) ,(3,2,2) ,(0,0,0),(0,3,2),(0,3,7),(0,4,8);
+			INSERT INTO Temp_NewDevice(MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID, SameDeviceID, RecoverType)
+			VALUES(1, 1, 1, 1, 0), (2, 1, 1, 1, 1), (3, 2, 2, 3, 0), (4, 2, 3, 3, 1);
             
             UPDATE Temp_NewDevice
             SET MBRawTransactionID = TransID;
@@ -68,23 +69,23 @@ BEGIN
 		,	MBDeviceCodeTaggingID			BIGINT UNSIGNED
 		,	MBDeviceMappingID				BIGINT UNSIGNED DEFAULT 0
 		,	MBDeviceID						BIGINT UNSIGNED DEFAULT 0
-		,	SameDeviceWithRawTransID		BIGINT UNSIGNED DEFAULT 0
+		,	SameDeviceID					BIGINT UNSIGNED DEFAULT 0
         ,	RecoverType						SMALLINT UNSIGNED DEFAULT 0 /* SELECT * FROM DCS_DataCenter.StaticList WHERE ListID = 5; */
 	);
     
 	CREATE TEMPORARY TABLE Temp_CheckSameDevice(
 			ID								BIGINT UNSIGNED NOT NULL PRIMARY KEY
-		,	SameDeviceWithRawTransID		BIGINT UNSIGNED DEFAULT 0
+		,	SameDeviceID					BIGINT UNSIGNED DEFAULT 0
 		,	MBDeviceID						BIGINT UNSIGNED DEFAULT 0
 		,	RecoverType						SMALLINT UNSIGNED DEFAULT 0
 
-		,	MBDeviceCodeMediaDRMID					BIGINT UNSIGNED
-		,	MBDeviceCodeMachineID					BIGINT UNSIGNED
-		,	MBDeviceCodeTaggingID					BIGINT UNSIGNED
+		,	MBDeviceCodeMediaDRMID			BIGINT UNSIGNED
+		,	MBDeviceCodeMachineID			BIGINT UNSIGNED
+		,	MBDeviceCodeTaggingID			BIGINT UNSIGNED
 	);
     
 	CREATE TEMPORARY TABLE Temp_ExistingDevice(
-			SameDeviceWithRawTransID		BIGINT UNSIGNED NOT NULL PRIMARY KEY
+			SameDeviceID					BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	MBDeviceID						BIGINT UNSIGNED DEFAULT 0
 	);
     
@@ -112,18 +113,19 @@ BEGIN
         , 	PRIMARY KEY (MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID)
     );
     
-	SET @sql = CONCAT('INSERT INTO Temp_DeviceMapping(TransID, MBRawTransactionID, SameDeviceWithRawTransID, RecoverType, MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID) 
-						SELECT 	TransID
-							,	MBRawTransactionID
-							,	SameDeviceWithRawTransID
-							,	RecoverType
-							,	IFNULL(MBDeviceCodeMediaDRMID, 0) AS MBDeviceCodeMediaDRMID
-							,	IFNULL(MBDeviceCodeMachineID, 0) AS MBDeviceCodeMachineID
-							,	IFNULL(MBDeviceCodeTaggingID, 0) AS MBDeviceCodeTaggingID
-                        FROM ', ip_TableName , '
-                        WHERE MBDeviceCodeMediaDRMID > 0
-							OR MBDeviceCodeMachineID > 0
-							OR MBDeviceCodeTaggingID > 0
+	SET @sql = CONCAT('INSERT INTO Temp_DeviceMapping(TransID, MBRawTransactionID, SameDeviceID, RecoverType, MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID) 
+						SELECT 	tmp.TransID
+							,	trans.MBRawTransactionID
+							,	tmp.SameDeviceID
+							,	tmp.RecoverType
+							,	IFNULL(trans.MBDeviceCodeMediaDRMID, 0) AS MBDeviceCodeMediaDRMID
+							,	IFNULL(trans.MBDeviceCodeMachineID, 0) AS MBDeviceCodeMachineID
+							,	IFNULL(trans.MBDeviceCodeTaggingID, 0) AS MBDeviceCodeTaggingID
+                        FROM ', ip_TableName , ' tmp
+							INNER JOIN DCS_DataCenter.MBTransaction AS trans ON trans.ID = tmp.TransID
+                        WHERE trans.MBDeviceCodeMediaDRMID > 0
+							OR trans.MBDeviceCodeMachineID > 0
+							OR trans.MBDeviceCodeTaggingID > 0
                         ');
     PREPARE stmt FROM @sql;
     EXECUTE stmt;
@@ -138,15 +140,15 @@ BEGIN
     
     
     /********************** Insert into Temp_ExistingDevice ***********************************/
-    INSERT INTO Temp_ExistingDevice(SameDeviceWithRawTransID, MBDeviceID)
-    SELECT	SameDeviceWithRawTransID
+    INSERT INTO Temp_ExistingDevice(SameDeviceID, MBDeviceID)
+    SELECT	SameDeviceID
 		,	MIN(MBDeviceID) AS MBDeviceID
 	FROM Temp_DeviceMapping
     WHERE MBDeviceID > 0
-    GROUP BY SameDeviceWithRawTransID;
+    GROUP BY SameDeviceID;
     
     UPDATE Temp_DeviceMapping AS tmp
-		INNER JOIN Temp_ExistingDevice AS tmpED ON tmpED.SameDeviceWithRawTransID = tmp.SameDeviceWithRawTransID
+		INNER JOIN Temp_ExistingDevice AS tmpED ON tmpED.SameDeviceID = tmp.SameDeviceID
 	SET tmp.MBDeviceID = tmpED.MBDeviceID
 	WHERE tmp.MBDeviceID = 0;
     
@@ -175,14 +177,14 @@ BEGIN
     WHERE tmp.MBDeviceID = 0
 		AND tmp1.MBDeviceID > 0;
     
-    INSERT IGNORE INTO Temp_ExistingDevice(SameDeviceWithRawTransID, MBDeviceID)
-    SELECT	SameDeviceWithRawTransID
+    INSERT IGNORE INTO Temp_ExistingDevice(SameDeviceID, MBDeviceID)
+    SELECT	SameDeviceID
 		,	MBDeviceID
 	FROM Temp_DeviceMapping 
     WHERE MBDeviceID > 0;
     
     UPDATE Temp_DeviceMapping AS tmp
-		INNER JOIN Temp_ExistingDevice AS tmpED ON tmpED.SameDeviceWithRawTransID = tmp.SameDeviceWithRawTransID
+		INNER JOIN Temp_ExistingDevice AS tmpED ON tmpED.SameDeviceID = tmp.SameDeviceID
 	SET tmp.MBDeviceID = tmpED.MBDeviceID
 	WHERE tmp.MBDeviceID = 0;
     
@@ -210,14 +212,14 @@ BEGIN
     WHERE tmp.MBDeviceID = 0
 		AND tmp2.MBDeviceID > 0;
     
-    INSERT IGNORE INTO Temp_ExistingDevice(SameDeviceWithRawTransID, MBDeviceID)
-    SELECT	SameDeviceWithRawTransID
+    INSERT IGNORE INTO Temp_ExistingDevice(SameDeviceID, MBDeviceID)
+    SELECT	SameDeviceID
 		,	MBDeviceID
 	FROM Temp_DeviceMapping
     WHERE MBDeviceID > 0;
     
     UPDATE Temp_DeviceMapping AS tmp
-		INNER JOIN Temp_ExistingDevice AS tmpED ON tmpED.SameDeviceWithRawTransID = tmp.SameDeviceWithRawTransID
+		INNER JOIN Temp_ExistingDevice AS tmpED ON tmpED.SameDeviceID = tmp.SameDeviceID
 	SET tmp.MBDeviceID = tmpED.MBDeviceID
 	WHERE tmp.MBDeviceID = 0;
     
@@ -245,26 +247,26 @@ BEGIN
     WHERE tmp.MBDeviceID = 0
 		AND tmp3.MBDeviceID > 0;
     
-    INSERT IGNORE INTO Temp_ExistingDevice(SameDeviceWithRawTransID, MBDeviceID)
-    SELECT	SameDeviceWithRawTransID
+    INSERT IGNORE INTO Temp_ExistingDevice(SameDeviceID, MBDeviceID)
+    SELECT	SameDeviceID
 		,	MBDeviceID
 	FROM Temp_DeviceMapping
     WHERE MBDeviceID > 0;
     
     UPDATE Temp_DeviceMapping AS tmp
-		INNER JOIN Temp_ExistingDevice AS tmpED ON tmpED.SameDeviceWithRawTransID = tmp.SameDeviceWithRawTransID
+		INNER JOIN Temp_ExistingDevice AS tmpED ON tmpED.SameDeviceID = tmp.SameDeviceID
 	SET tmp.MBDeviceID = tmpED.MBDeviceID
 	WHERE tmp.MBDeviceID = 0;
     
     /********************** INSERT New device ***********************************/
     INSERT IGNORE INTO DCS_DataCenter.MBDevice(FirstMBRawTransactionID)
-    SELECT DISTINCT SameDeviceWithRawTransID
+    SELECT DISTINCT SameDeviceID
     FROM Temp_DeviceMapping
     WHERE MBDeviceID = 0
-		AND SameDeviceWithRawTransID > 0;
+		AND SameDeviceID > 0;
     
     UPDATE Temp_DeviceMapping AS tmp
-		INNER JOIN DCS_DataCenter.MBDevice AS dv ON dv.FirstMBRawTransactionID = tmp.SameDeviceWithRawTransID
+		INNER JOIN DCS_DataCenter.MBDevice AS dv ON dv.FirstMBRawTransactionID = tmp.SameDeviceID
 	SET tmp.MBDeviceID = dv.ID
     WHERE tmp.MBDeviceID = 0;
     
@@ -301,7 +303,11 @@ BEGIN
 														AND dm.MBDeviceCodeMachineID = tmp.MBDeviceCodeMachineID
 														AND dm.MBDeviceCodeTaggingID = tmp.MBDeviceCodeTaggingID
 	SET tmp.MBDeviceMappingID = dm.ID,
-		tmp.MBDeviceID = dm.MBDeviceID;
+		tmp.MBDeviceID = dm.MBDeviceID,
+        tmp.RecoverType = CASE WHEN tmp.MBRawTransactionID = dm.FirstMBRawTransactionID
+								THEN tmp.RecoverType
+                                ELSE 1
+							END;
         
     
 	SET @sql = CONCAT('UPDATE ', ip_TableName,' AS tmp

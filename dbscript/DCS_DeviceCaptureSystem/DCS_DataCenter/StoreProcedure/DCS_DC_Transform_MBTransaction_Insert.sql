@@ -19,7 +19,7 @@ BEGIN
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_MBTransaction_Insert(1,200);
-    */    
+    */
     
     DECLARE lv_CurrentDate 					TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
     DECLARE lv_ListMBDeviceCodeMediaDRM 	LONGTEXT;
@@ -87,10 +87,9 @@ BEGIN
         ,   rt.CountryName
         ,   rt.Timezone
         ,   rt.Language
-        
 	FROM DCS_DataCenter.MBRawTransaction AS rt
     WHERE ID BETWEEN ip_FromTransID AND ip_ToTransID;
-
+    
 	UPDATE Temp_MBRawTransaction AS tmp
 		INNER JOIN CTS_Admin.Subscriber AS sub ON tmp.SubscriberName = sub.SubscriberName
 	SET tmp.SubscriberID = sub.SubscriberID;
