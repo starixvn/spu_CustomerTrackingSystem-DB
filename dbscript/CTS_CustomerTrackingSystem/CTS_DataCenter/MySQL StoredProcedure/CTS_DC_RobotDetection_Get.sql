@@ -32,13 +32,11 @@ BEGIN
 	SELECT 	MIN(rd.CreatedDate), MAX(rd.LastModifiedDate)
     INTO op_FirstRobotDate, op_LastRobotDate
     FROM CTS_DataCenter.RobotDetection AS rd
-    WHERE rd.CustID = ip_CustID;
-    
+    WHERE rd.CustID = ip_CustID;    
         
 	SELECT 	rd.CustID
 		,	rd.PeriodRangeType
-		,	CASE 
-				
+		,	CASE 				
                 WHEN rd.PeriodRangeType = 400 THEN 'Login Time Pattern'
                 WHEN rd.PeriodRangeType = 420 THEN 'Massive Login Attempt'
                 WHEN rd.PeriodRangeType = 430 THEN 'Device Variety'
