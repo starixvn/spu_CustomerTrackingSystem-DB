@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation (filtered by): 
         
         Example:
-			CALL SPU_AIML_RD_LP_GetRobotDetails(@ip_CustID:=2211693);
+			CALL SPU_AIML.SPU_AIML_RD_LP_GetRobotDetails(@ip_CustID:=2211693, 100);
 	*/   
     DECLARE CONST_PERIODRANGETYPE_OCRD INT DEFAULT 200;
     
@@ -32,7 +32,7 @@ BEGIN
 		,	bl.DeviceID
         ,	bl.RobotTracking
         ,	bl.DeviceType
-        ,	bl.Browser
+        ,	bl.BrowserName
         ,	bl.IP
         ,	bl.Domain
     FROM SPU_AIML.LIC_BDLB_SuspiciousTransInfo AS bl
