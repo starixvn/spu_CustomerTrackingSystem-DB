@@ -17,7 +17,7 @@ BEGIN
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
 	    Param's Explanation (filtered by):
 		Example:
-			CALL DCS_DC_Transform_MBDeviceModel_Insert('[{"ModelName":"ModelName3","Manufacturer":"Manufacturer1","Brand":"Brand1"},{"ModelName":"ModelName2"},{"ModelName":"ModelName3","Brand":"Brand3"},{}]');
+			CALL DCS_DC_Transform_MBDeviceModel_Insert('[{"ModelName":"ModelName3","Manufacturer":"Manufacturer1","Brand":"Brand1"},{}]');
             SELECT * FROM DCS_DataCenter.MBDeviceModel ORDER BY ID DESC;
     */
     DECLARE lv_CurrentDatetime 	DATETIME DEFAULT NOW();
@@ -33,9 +33,9 @@ BEGIN
     );
     
     INSERT IGNORE INTO Temp_MBDeviceModelInsert(ModelName, Manufacturer, Brand)
-    SELECT	IFNULL(js.ModelName, '') AS ModelName
-		,	IFNULL(js.Manufacturer, '') AS Manufacturer
-		,	IFNULL(js.Brand, '') AS Brand
+    SELECT	js.ModelName
+		,	js.Manufacturer
+		,	js.Brand
 	FROM JSON_TABLE(
 			ip_MBDeviceModelJson,
 			 "$[*]" COLUMNS(
@@ -44,9 +44,9 @@ BEGIN
 					,	Brand				VARCHAR(32) 	PATH "$.Brand"
 				)
 		   ) AS js
-	WHERE js.ModelName IS NOT NULL
-		OR js.Manufacturer IS NOT NULL
-		OR js.Brand IS NOT NULL;
+	WHERE js.ModelName <> ''
+		OR js.Manufacturer <> ''
+		OR js.Brand <> '';
 	 
     UPDATE Temp_MBDeviceModelInsert AS tmp
 		INNER JOIN DCS_DataCenter.MBDeviceModel AS dm ON dm.ModelName = tmp.ModelName 
@@ -59,7 +59,7 @@ BEGIN
 		,	Manufacturer
 		,	Brand
 		,	lv_CurrentDatetime AS InsertedTime
-		,	lv_CurrentDatetime AS LastAccessedDate
+		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
 	FROM Temp_MBDeviceModelInsert
     WHERE IsNewRecord = 1;
 END$$

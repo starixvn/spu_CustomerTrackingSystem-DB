@@ -31,7 +31,7 @@ BEGIN
 			);
             
             INSERT INTO Temp_NewDevice(ID, FirstDeviceID, SecondDeviceID, ThirdDeviceID)
-            VALUES(1, 1, 1, 1), (2, 1, 1, 2), (3, 2, 2, 3), (4, 2, 3, 4);
+            VALUES(1, 1, 1, 1), (2, 1, 1, 2), (3, 2, 2, 3), (4, 2, 3, 4), (5, 3, 4, 4);
             
 			SET sql_safe_updates = 0;
 			CALL DCS_DC_Transform_MBDeviceMapping_UpdateTheSameDevice('Temp_NewDevice');
@@ -67,9 +67,9 @@ BEGIN
 							,	SecondDeviceID
 							,	ThirdDeviceID
                         FROM ', ip_TableName, 
-					' 	WHERE FirstDeviceID IS NOT NULL
-							OR SecondDeviceID IS NOT NULL
-							OR ThirdDeviceID IS NOT NULL
+					' 	WHERE FirstDeviceID > 0
+							OR SecondDeviceID > 0
+							OR ThirdDeviceID > 0
                             ');
     PREPARE stmt FROM @sql;
     EXECUTE stmt;
@@ -111,23 +111,19 @@ BEGIN
 			WHERE SecondDeviceID <> 0
 				AND SecondDeviceID = lv_CurrentSecondDeviceID
 				AND ID < lv_CurrentID;
-			
+
 			IF lv_SameDeviceID IS NULL THEN
-				SET lv_SameDeviceID = lv_CurrentID;
-			END IF;
-        END IF;
-        
-        IF lv_SameDeviceID IS NULL THEN
-			SELECT 	MIN(SameDeviceID)
-				,	MAX(CASE WHEN ID IS NOT NULL THEN CONST_RECOVERTYPE_THIRDRULE ELSE 0 END) AS RecoverType
-			INTO lv_SameDeviceID, lv_RecoverType
-			FROM Temp_SameMBDevice
-			WHERE ThirdDeviceID <> 0
-				AND ThirdDeviceID = lv_CurrentThirdDeviceID
-				AND ID < lv_CurrentID;
-			
-			IF lv_SameDeviceID IS NULL THEN
-				SET lv_SameDeviceID = lv_CurrentID;
+				SELECT 	MIN(SameDeviceID)
+					,	MAX(CASE WHEN ID IS NOT NULL THEN CONST_RECOVERTYPE_THIRDRULE ELSE 0 END) AS RecoverType
+				INTO lv_SameDeviceID, lv_RecoverType
+				FROM Temp_SameMBDevice
+				WHERE ThirdDeviceID <> 0
+					AND ThirdDeviceID = lv_CurrentThirdDeviceID
+					AND ID < lv_CurrentID;
+				
+				IF lv_SameDeviceID IS NULL THEN
+					SET lv_SameDeviceID = lv_CurrentID;
+				END IF;
 			END IF;
         END IF;
         
@@ -135,7 +131,6 @@ BEGIN
         SET SameDeviceID = lv_SameDeviceID,
 			RecoverType = lv_RecoverType
         WHERE ID = lv_CurrentID;
-        
     END WHILE;
         
 	SET @sql = CONCAT('UPDATE ', ip_TableName,' AS tmp

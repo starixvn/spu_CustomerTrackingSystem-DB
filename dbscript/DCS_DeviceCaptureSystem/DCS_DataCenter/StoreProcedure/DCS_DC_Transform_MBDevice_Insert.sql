@@ -22,14 +22,8 @@ BEGIN
 			CALL DCS_DataCenter.DCS_DC_Transform_MBDevice_Insert('[{"TransID":1,"MBRawTransactionID":1,"SameDeviceID":0,"BatchID":1},{"TransID":3,"MBRawTransactionID":3,"SameDeviceID":0,"BatchID":1}]');
 	*/
 
-	DECLARE vrDeviceStatusNew			TINYINT DEFAULT 1;			# New Device
-	DECLARE vrDeviceStatusOld			TINYINT DEFAULT 2;			# Old Device
-	DECLARE vrDeviceStatusRecover		TINYINT DEFAULT 3;			# Recover Device
-	
-    DECLARE lv_AssociationJson 			LONGTEXT;
-    DECLARE lv_NewAccountDeviceJson 	LONGTEXT;
-    
-    DECLARE lv_InsertionTime 			TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
+    DECLARE lv_AssociationJson 	LONGTEXT;
+    DECLARE lv_CurrentDatetime 	DATETIME DEFAULT NOW();
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceMappingInfo;
 	CREATE TEMPORARY TABLE Temp_DeviceMappingInfo(
@@ -46,8 +40,8 @@ BEGIN
 		,	MBOSID			 			BIGINT UNSIGNED
 		,	MBUserSettingID	 			BIGINT UNSIGNED
 
-		,	SameDeviceID				BIGINT UNSIGNED DEFAULT 0
-		,	RecoverType					SMALLINT UNSIGNED DEFAULT 0
+		,	SameDeviceID				BIGINT UNSIGNED
+		,	RecoverType					SMALLINT UNSIGNED
 		,	MBDeviceMappingID			BIGINT UNSIGNED
 		,	MBDeviceID					BIGINT UNSIGNED
 	);
@@ -120,7 +114,7 @@ BEGIN
         ,	IFNULL(MBDeviceMappingID,0) AS MBDeviceMappingID
         ,	IFNULL(MBDeviceID,0) AS MBDeviceID
         ,	IFNULL(RecoverType,0) AS RecoverType
-        ,	lv_InsertionTime AS InsertedTime
+        ,	lv_CurrentDatetime AS InsertedTime
 	FROM Temp_DeviceMappingInfo;
     
 	DELETE trans

@@ -21,15 +21,16 @@ BEGIN
 			CALL DCS_DC_Transform_MBAssociation_Insert('[{"MBDeviceID": 101, "MBAccountID": 3, "SubscriberID": 2}, {"MBDeviceID": 102, "MBAccountID": 3, "SubscriberID": 2}]');
 			select * from MBAssociation;
 	*/
-    DECLARE lv_InsertedTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    DECLARE lv_CurrentDatetime DATETIME DEFAULT NOW();
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBAssociationInsert;
         
 	CREATE TEMPORARY TABLE Temp_MBAssociationInsert(
 			ID					INT UNSIGNED		NOT NULL AUTO_INCREMENT PRIMARY KEY
         ,	MBAccountID			BIGINT UNSIGNED		NOT NULL
-        ,	MBDeviceID			BIGINT UNSIGNED		DEFAULT 0
-        ,	SubscriberID		BIGINT UNSIGNED		
+        ,	MBDeviceID			BIGINT UNSIGNED		NOT NULL
+        ,	SubscriberID		INT		
+        
 		,	IsNewRecord			TINYINT		 		DEFAULT 1
     );
     
@@ -51,14 +52,14 @@ BEGIN
     
     UPDATE Temp_MBAssociationInsert AS tmp
 		INNER JOIN DCS_DataCenter.MBAssociation AS ass ON ass.MBAccountID = tmp.MBAccountID
-													AND ass.MBDeviceID = tmp.MBDeviceID
+														AND ass.MBDeviceID = tmp.MBDeviceID
     SET tmp.IsNewRecord = 0;
     
 	INSERT IGNORE INTO DCS_DataCenter.MBAssociation(MBAccountID, MBDeviceID, SubscriberID, InsertedTime)
 	SELECT	MBAccountID
 		,	MBDeviceID
 		,	SubscriberID
-		,	lv_InsertedTime AS InsertedTime
+		,	lv_CurrentDatetime AS InsertedTime
 	FROM Temp_MBAssociationInsert
     WHERE IsNewRecord = 1;
 END$$

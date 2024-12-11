@@ -33,9 +33,9 @@ BEGIN
     );
     
     INSERT IGNORE INTO Temp_MBUserSettingInsert(CountryName, TimeZone, LanguageName)
-    SELECT	IFNULL(js.CountryName, '') AS CountryName
-		,	IFNULL(js.TimeZone, '') AS TimeZone
-		,	IFNULL(js.LanguageName, '') AS LanguageName
+    SELECT	js.CountryName
+		,	js.TimeZone
+		,	js.LanguageName
 	FROM JSON_TABLE(
 			ip_MBUserSettingJson,
 			 "$[*]" COLUMNS(
@@ -44,9 +44,9 @@ BEGIN
 					,	LanguageName		VARCHAR(32) 	PATH "$.LanguageName"
 				)
 		   ) AS js
-	WHERE js.CountryName IS NOT NULL
-		OR js.TimeZone IS NOT NULL
-		OR js.LanguageName IS NOT NULL;
+	WHERE js.CountryName <> ''
+		OR js.TimeZone <> ''
+		OR js.LanguageName <> '';
 	 
     UPDATE Temp_MBUserSettingInsert AS tmp
 		INNER JOIN DCS_DataCenter.MBUserSetting AS us ON us.CountryName = tmp.CountryName 
@@ -59,7 +59,7 @@ BEGIN
 		,	TimeZone
 		,	LanguageName
 		,	lv_CurrentDatetime AS InsertedTime
-		,	lv_CurrentDatetime AS LastAccessedDate
+		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
 	FROM Temp_MBUserSettingInsert
     WHERE IsNewRecord = 1;
 END$$

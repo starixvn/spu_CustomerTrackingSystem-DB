@@ -32,8 +32,8 @@ BEGIN
     );
     
     INSERT IGNORE INTO Temp_MBOSInsert(OSName, Version)
-    SELECT	IFNULL(js.OSName, '') AS OSName
-		,	IFNULL(js.Version, '') AS Version
+    SELECT	js.OSName
+		,	js.Version
 	FROM JSON_TABLE(
 			ip_MBOSJson,
 			 "$[*]" COLUMNS(
@@ -41,7 +41,7 @@ BEGIN
 					,	Version			VARCHAR(32) 	PATH "$.Version"
 				)
 		   ) AS js
-	WHERE js.OSName IS NOT NULL;
+	WHERE js.OSName <> '';
 	 
     UPDATE Temp_MBOSInsert AS tmp
 		INNER JOIN DCS_DataCenter.MBOS AS os ON os.OSName = tmp.OSName 
@@ -52,7 +52,7 @@ BEGIN
 	SELECT	OSName
 		,	Version
 		,	lv_CurrentDatetime AS InsertedTime
-		,	lv_CurrentDatetime AS LastAccessedDate
+		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
 	FROM Temp_MBOSInsert
     WHERE IsNewRecord = 1;
 END$$

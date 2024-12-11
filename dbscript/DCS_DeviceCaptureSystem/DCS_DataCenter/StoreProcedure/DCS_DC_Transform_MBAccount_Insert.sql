@@ -18,6 +18,7 @@ BEGIN
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_MBAccount_Insert('[{"SubscriberID":2,"LoginName":"qatest002","TransTime":"2024-11-21 05:06:07"}]');
+			CALL DCS_DC_Transform_MBAccount_Insert('[{"SubscriberID":2,"LoginName":"qatest002","TransTime":"2024-11-21 05:06:07"},{"SubscriberID":null},{"LoginName":"qatest003"}]');
             SELECT * FROM DCS_DataCenter.MBAccount ORDER BY ID DESC;
     */
     DECLARE lv_CurrentDatetime DATETIME DEFAULT NOW();
@@ -45,8 +46,8 @@ BEGIN
 					,	TransTime			DATETIME(4) 	PATH "$.TransTime"
 				)
 		   ) AS js
-	WHERE js.SubscriberID IS NOT NULL
-		AND js.LoginName IS NOT NULL;
+	WHERE js.SubscriberID > 0
+		AND js.LoginName <> '';
 	 
     UPDATE Temp_AccountInsert AS tmp
 		INNER JOIN DCS_DataCenter.MBAccount AS acc ON acc.SubscriberID = tmp.SubscriberID AND acc.LoginName = tmp.LoginName

@@ -21,10 +21,7 @@ BEGIN
             SELECT * FROM DCS_DataCenter.MBDeviceCodeMachine ORDER BY ID DESC;
     */
     
-    DECLARE CONST_MACHINEOSTYPE_ANDROID	VARCHAR(32) DEFAULT 'Android';
-    DECLARE CONST_MACHINEOSTYPE_IOS	VARCHAR(32) DEFAULT 'iOS';
-    
-    DECLARE lv_CurrentDatetime 	DATETIME DEFAULT NOW();
+    DECLARE lv_CurrentDatetime DATETIME DEFAULT NOW();
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeMachineInsert;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeMachineInsert(
@@ -46,7 +43,7 @@ BEGIN
 				)
 		   ) AS js
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 5 AND sl.ItemCode = js.MachineOS
-	WHERE IFNULL(js.Code,'') <> '';
+	WHERE js.Code <> '';
 	 
     UPDATE Temp_MBDeviceCodeMachineInsert AS tmp
 		INNER JOIN DCS_DataCenter.MBDeviceCodeMachine AS ar ON ar.Code = tmp.Code AND ar.MachineOSType = tmp.MachineOSType

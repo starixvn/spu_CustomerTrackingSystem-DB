@@ -44,12 +44,12 @@ BEGIN
 	*/
     
     /********************** Constants ***********************************/    
-    DECLARE CONST_RECOVERTYPE_FIRSTRULE			SMALLINT DEFAULT 1;
-    DECLARE CONST_RECOVERTYPE_SECONDRULE		SMALLINT DEFAULT 2;
-    DECLARE CONST_RECOVERTYPE_THIRDRULE			SMALLINT DEFAULT 3;
+    DECLARE CONST_RECOVERTYPE_FIRSTRULE		SMALLINT DEFAULT 1;
+    DECLARE CONST_RECOVERTYPE_SECONDRULE	SMALLINT DEFAULT 2;
+    DECLARE CONST_RECOVERTYPE_THIRDRULE		SMALLINT DEFAULT 3;
 
     /********************** Local variables ***********************************/
-    DECLARE lv_InsertedTime 					TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    DECLARE lv_CurrentDatetime 				DATETIME DEFAULT NOW();
 
     /********************** CREAT TEMP TABLE ***********************************/
 	DROP TEMPORARY TABLE IF EXISTS Temp_DeviceMapping;
@@ -70,7 +70,7 @@ BEGIN
 		,	MBDeviceMappingID				BIGINT UNSIGNED DEFAULT 0
 		,	MBDeviceID						BIGINT UNSIGNED DEFAULT 0
 		,	SameDeviceID					BIGINT UNSIGNED DEFAULT 0
-        ,	RecoverType						SMALLINT UNSIGNED DEFAULT 0 /* SELECT * FROM DCS_DataCenter.StaticList WHERE ListID = 5; */
+        ,	RecoverType						SMALLINT UNSIGNED DEFAULT 0 /* SELECT * FROM DCS_DataCenter.StaticList WHERE ListID = 6; */
 	);
     
 	CREATE TEMPORARY TABLE Temp_CheckSameDevice(
@@ -171,11 +171,11 @@ BEGIN
     
     /********************** Update after Check Rule 1 ***********************************/
     UPDATE Temp_DeviceMapping AS tmp
-		INNER JOIN Temp_MBDeviceCodeMediaDRM AS tmp1 ON tmp1.MBDeviceCodeMediaDRMID = tmp.MBDeviceCodeMediaDRMID
-	SET tmp.MBDeviceID = tmp1.MBDeviceID,
+		INNER JOIN Temp_MBDeviceCodeMediaDRM AS tmpR1 ON tmpR1.MBDeviceCodeMediaDRMID = tmp.MBDeviceCodeMediaDRMID
+	SET tmp.MBDeviceID = tmpR1.MBDeviceID,
 		tmp.RecoverType = CONST_RECOVERTYPE_FIRSTRULE
     WHERE tmp.MBDeviceID = 0
-		AND tmp1.MBDeviceID > 0;
+		AND tmpR1.MBDeviceID > 0;
     
     INSERT IGNORE INTO Temp_ExistingDevice(SameDeviceID, MBDeviceID)
     SELECT	SameDeviceID
@@ -290,7 +290,7 @@ BEGIN
         ,	tmp.MBDeviceID
         ,	tmp.MBRawTransactionID AS FirstMBRawTransactionID
         ,	tmp.RecoverType AS RecoverType
-        ,	lv_InsertedTime AS InsertedTime
+        ,	lv_CurrentDatetime AS InsertedTime
     FROM Temp_DeviceMapping AS tmp
 		INNER JOIN Temp_DeviceMappingInsert AS tmpI ON tmp.MBDeviceCodeMediaDRMID = tmpI.MBDeviceCodeMediaDRMID
 													AND tmp.MBDeviceCodeMachineID = tmpI.MBDeviceCodeMachineID

@@ -24,10 +24,10 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction; 
     
-    CREATE TEMPORARY TABLE Temp_Transaction(		
+    CREATE TEMPORARY TABLE Temp_Transaction(
 		    MinTransID			BIGINT UNSIGNED
         ,   MaxTransID			BIGINT UNSIGNED
-    ); 
+    );
 	
     SET lv_TotalRecord = ip_NoOfTickets * ip_NoOfBatch;
 	set @RowId = 0;

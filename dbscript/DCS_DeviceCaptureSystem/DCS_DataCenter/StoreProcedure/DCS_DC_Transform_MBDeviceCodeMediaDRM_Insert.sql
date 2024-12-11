@@ -17,7 +17,7 @@ BEGIN
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
 	    Param's Explanation (filtered by):
 		Example:
-			CALL DCS_DC_Transform_MBDeviceCodeMediaDRM_Insert('ANC,AZD,aZZ');
+			CALL DCS_DC_Transform_MBDeviceCodeMediaDRM_Insert('ABC,DEF');
             SELECT * FROM DCS_DataCenter.MBDeviceCodeMediaDRM ORDER BY ID DESC;
     */
     DECLARE lv_CurrentDatetime DATETIME DEFAULT NOW();
@@ -39,7 +39,7 @@ BEGIN
 	INSERT IGNORE INTO DCS_DataCenter.MBDeviceCodeMediaDRM(Code, InsertedTime, LastAccessedDate)
 	SELECT	Code
 		,	lv_CurrentDatetime AS InsertedTime
-		,	lv_CurrentDatetime AS LastAccessedDate
+		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
 	FROM Temp_MBDeviceCodeMediaDRMInsert
     WHERE IsNewRecord = 1;
 END$$

@@ -39,7 +39,7 @@ BEGIN
 	INSERT IGNORE INTO DCS_DataCenter.MBDeviceCodeTagging(Code, InsertedTime, LastAccessedDate)
 	SELECT	Code
 		,	lv_CurrentDatetime AS InsertedTime
-		,	lv_CurrentDatetime AS LastAccessedDate
+		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
 	FROM Temp_MBDeviceCodeTaggingInsert
     WHERE IsNewRecord = 1;
 END$$

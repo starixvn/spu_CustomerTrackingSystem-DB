@@ -17,7 +17,7 @@ BEGIN
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #214026]
 	    Param's Explanation (filtered by):
 		Example:
-			CALL DCS_DC_Transform_ActionResult_Insert('[{"Action":"login","ActionResult":"Successfully2"}]');
+			CALL DCS_DC_Transform_ActionResult_Insert('[{"Action":"login","ActionResult":"Successfully2"},{"Action":""},{}]');
             SELECT * FROM DCS_DataCenter.ActionResult ORDER BY ActionResultID DESC;
     */
     DECLARE lv_CurrentDatetime 	DATETIME DEFAULT NOW();
@@ -41,8 +41,10 @@ BEGIN
 						Action				VARCHAR(100) 	PATH "$.Action"
 					,	ActionResult		VARCHAR(100) 	PATH "$.ActionResult"
 				)
-		   ) AS js;
-	 
+		   ) AS js
+	WHERE js.Action <> ''
+		AND js.ActionResult <> '';
+     
     UPDATE Temp_ActionResultInsert AS tmp
 		INNER JOIN DCS_DataCenter.ActionResult AS ar ON ar.Action = tmp.Action AND ar.ActionResult = tmp.ActionResult
     SET tmp.IsNewRecord = 0;

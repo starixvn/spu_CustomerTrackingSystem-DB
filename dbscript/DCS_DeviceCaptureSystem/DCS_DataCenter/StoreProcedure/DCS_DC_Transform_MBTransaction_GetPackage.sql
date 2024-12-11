@@ -18,12 +18,10 @@ BEGIN
             - 20241205@Jonathan.Doan: Integrate Mobile App (Phase 2) [Redmine ID: #213401]
 
 	    Param's Explanation (filtered by):
-			CALL DCS_DC_Transform_MBTransaction_GetPackage(3, 3);
+			CALL DCS_DC_Transform_MBTransaction_GetPackage(1, 30);
 	*/
-    DECLARE	lv_TotalRecord INT UNSIGNED DEFAULT 0;
-    DECLARE lv_FromTransID BIGINT UNSIGNED DEFAULT 0;
-    
-    SET @currentBatch = 0;
+    DECLARE lv_NoOfBatch 	INT;
+    DECLARE lv_RowId 		INT DEFAULT 0;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBTransaction;
 	DROP TEMPORARY TABLE IF EXISTS Temp_CheckSameDevice;
@@ -64,7 +62,6 @@ BEGIN
 		,   IFNULL(MBDeviceCodeMachineID, 0) AS MBDeviceCodeMachineID
 		,   IFNULL(MBDeviceCodeTaggingID, 0) AS MBDeviceCodeTaggingID
 	FROM DCS_DataCenter.MBTransaction
-	WHERE ID >= lv_FromTransID
 	ORDER BY ID ASC
 	LIMIT ip_LimitTotalRecord;
     
@@ -87,10 +84,10 @@ BEGIN
     FROM Temp_SetBatchID;
     
     SET @RowId = 0;
-    SET @NoOfBatch = CEIL(@CountFirstDevice / ip_NoOfBatch);
+    SET lv_NoOfBatch = CEIL(@CountFirstDevice / ip_NoOfBatch);
     
     UPDATE Temp_SetBatchID
-	SET BatchID = CEIL(@RowId := @RowId + 1 / @NoOfBatch)
+	SET BatchID = CEIL(@RowId := @RowId + 1 / lv_NoOfBatch)
     ORDER BY (SameDeviceID = 0) ASC, SameDeviceID ASC;
     
     UPDATE Temp_MBTransaction AS tmp
