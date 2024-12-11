@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsService,ctsAPI" isFunction="0" isNested="0"></info>*/
-DROP procedure IF EXISTS `Casey_CTS_DC_CustClassification_Rescan_Get`;
+DROP procedure IF EXISTS `CTS_DC_CustClassification_Rescan_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Casey_CTS_DC_CustClassification_Rescan_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Rescan_Get`(
 		IN ip_CustIDs	LONGTEXT
 )
     SQL SECURITY INVOKER
@@ -61,8 +61,6 @@ sp: BEGIN
     DECLARE	CONST_PERIODRANGETYPE_LP_MASSIVELOGINATTEMPT	INT DEFAULT 420;
     DECLARE	CONST_PERIODRANGETYPE_LP_IPDEVERSITY			INT DEFAULT 430;    
     DECLARE	CONST_PERIODRANGETYPE_LP_DEVICEDEVERSITY		INT DEFAULT 440;
-    
-    DECLARE	CONST_ROLEID_MEMBER		INT DEFAULT 1;
 
     SET CONST_CATEID_UNAUTHORIZEDLOGIN	 			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_UNAUTHORIZEDLOGIN');
     SET CONST_CATEID_ROBOTUSER	 					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');

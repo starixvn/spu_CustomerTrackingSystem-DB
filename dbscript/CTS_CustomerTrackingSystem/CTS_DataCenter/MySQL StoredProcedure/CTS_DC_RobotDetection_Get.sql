@@ -34,7 +34,22 @@ BEGIN
     FROM CTS_DataCenter.RobotDetection AS rd
     WHERE rd.CustID = ip_CustID;
     
-    SELECT 	rd.CustID
+        
+	SELECT 	rd.CustID
+		,	rd.PeriodRangeType
+		,	CASE 
+				
+                WHEN rd.PeriodRangeType = 400 THEN 'Login Time Pattern'
+                WHEN rd.PeriodRangeType = 420 THEN 'Massive Login Attempt'
+                WHEN rd.PeriodRangeType = 430 THEN 'Device Variety'
+                WHEN rd.PeriodRangeType = 440 THEN 'IP Diversity'
+			END AS PeriodRangeName
+    FROM CTS_DataCenter.RobotDetection AS rd
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON rd.CustID = cus.CustID AND cus.CustSubID = 0
+    WHERE rd.CustID = ip_CustID
+		AND cus.RoleID = CONST_ROLEID_MEMBER;        
+        
+	SELECT 	rd.CustID
 		,	rd.PeriodRangeType
 		,	CASE 
 				WHEN rd.PeriodRangeType = 1 THEN 'Tickets with Time Interval <= 1s'
@@ -46,16 +61,11 @@ BEGIN
 				WHEN rd.PeriodRangeType = 100 THEN 'More than 5/30 Days with Consecutive Tickets > 24 hours'
 				WHEN rd.PeriodRangeType = 101 THEN 'Consecutive Tickets > 24 Hours and High Ugly Stake Tickets'
                 WHEN rd.PeriodRangeType = 200 THEN 'Consecutive Tickets per Match <= 2 mins and Stake per Ticket < 30 RM'
-                WHEN rd.PeriodRangeType = 300 THEN 'Time Discretization'
-                WHEN rd.PeriodRangeType = 400 THEN 'Login Time Pattern'
-                WHEN rd.PeriodRangeType = 420 THEN 'Massive Login Attempt'
-                WHEN rd.PeriodRangeType = 430 THEN 'Device Variety'
-                WHEN rd.PeriodRangeType = 440 THEN 'IP Diversity'
+                WHEN rd.PeriodRangeType = 300 THEN 'Time Discretization'              
 			END AS PeriodRangeName
     FROM CTS_DataCenter.RobotDetection AS rd
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON rd.CustID = cus.CustID AND cus.CustSubID = 0
-    WHERE rd.CustID = ip_CustID
-		AND cus.RoleID = CONST_ROLEID_MEMBER;
+    WHERE rd.CustID = ip_CustID;
 	
 	SELECT 	ri.CustID
 		,	ri.CreateTime
