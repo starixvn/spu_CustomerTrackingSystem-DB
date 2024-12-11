@@ -18,6 +18,7 @@ sp:BEGIN
         
 		Revisions:
 			- 20230915@Casey.Huynh: Created [Redmine ID: #193036]
+            - 20241211@Adam.Tran: 	New Robot AI, Bot Login Pattern [Redmine ID: #214655]
 
 		Param's Explanation (filtered by):
 
@@ -30,6 +31,8 @@ sp:BEGIN
     DECLARE CONST_ROBOTAI_SCE	SMALLINT DEFAULT 2;
 	DECLARE CONST_ROBOTAI_TD	SMALLINT DEFAULT 3;
     DECLARE CONST_ROBOTAI_OCRD	SMALLINT DEFAULT 4;
+    DECLARE CONST_ROBOTAI_LP	SMALLINT DEFAULT 5;
+    DECLARE	CONST_ROLEID_MEMBER		INT DEFAULT 1;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustAIRobot;
 	CREATE TEMPORARY TABLE 		Temp_CustAIRobot (
@@ -49,13 +52,15 @@ sp:BEGIN
 				WHEN rd.PeriodRangeType BETWEEN 100 AND 199 THEN CONST_ROBOTAI_SCE
                 WHEN rd.PeriodRangeType BETWEEN 200 AND 299 THEN CONST_ROBOTAI_OCRD
                 WHEN rd.PeriodRangeType BETWEEN 300 AND 399 THEN CONST_ROBOTAI_TD
+                WHEN rd.PeriodRangeType BETWEEN 400 AND 499 THEN CONST_ROBOTAI_LP
 			END) AS AIType
 		,	DATE(rd.CreatedDate) AS RobotDate
         ,	DATE_SUB(DATE(rd.CreatedDate), INTERVAL DAYOFMONTH(DATE(rd.CreatedDate))-1 DAY) AS RobotMonth
 	FROM CTS_DataCenter.RobotDetection AS rd
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON rd.CustID = cus.CustID AND cus.CustSubID = 0
 	WHERE DATE(rd.CreatedDate) BETWEEN ip_FromDate AND ip_ToDate
-		AND cus.IsLicensee = IFNULL(ip_IsLicensee,cus.IsLicensee);
+		AND cus.IsLicensee = IFNULL(ip_IsLicensee,cus.IsLicensee)
+        AND cus.RoleID = CONST_ROLEID_MEMBER;
 
     #======================RETURN DATA===============================================================
    
@@ -65,6 +70,7 @@ sp:BEGIN
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_SCE THEN CustID ELSE NULL END)) AS 'SCE'
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_OCRD THEN CustID ELSE NULL END)) AS 'OCRD'
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_TD THEN CustID ELSE NULL END)) AS 'TD'
+            ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_LP THEN CustID ELSE NULL END)) AS 'LP'
             ,	COUNT(DISTINCT tmpCr.CustID) AS TotalAccount
         FROM Temp_CustAIRobot AS tmpCr			
         GROUP BY tmpCr.RobotMonth;     
@@ -73,6 +79,7 @@ sp:BEGIN
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_SCE THEN CustID ELSE NULL END)) AS 'SCE'
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_OCRD THEN CustID ELSE NULL END)) AS 'OCRD'
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_TD THEN CustID ELSE NULL END)) AS 'TD'
+            ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_LP THEN CustID ELSE NULL END)) AS 'LP'
         FROM Temp_CustAIRobot AS tmpCr	;
 
     END IF;
@@ -83,6 +90,7 @@ sp:BEGIN
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_SCE THEN CustID ELSE NULL END)) AS 'SCE'
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_OCRD THEN CustID ELSE NULL END)) AS 'OCRD'
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_TD THEN CustID ELSE NULL END)) AS 'TD'
+            ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_LP THEN CustID ELSE NULL END)) AS 'LP'
             ,	COUNT(DISTINCT tmpCr.CustID) AS TotalAccount
         FROM Temp_CustAIRobot AS tmpCr
         GROUP BY tmpCr.RobotDate;        
@@ -91,6 +99,7 @@ sp:BEGIN
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_SCE THEN CustID ELSE NULL END)) AS 'SCE'
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_OCRD THEN CustID ELSE NULL END)) AS 'OCRD'
             ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_TD THEN CustID ELSE NULL END)) AS 'TD'
+            ,	COUNT(DISTINCT(CASE WHEN tmpCr.AIType = CONST_ROBOTAI_LP THEN CustID ELSE NULL END)) AS 'LP'
         FROM Temp_CustAIRobot AS tmpCr;
         
     END IF;
