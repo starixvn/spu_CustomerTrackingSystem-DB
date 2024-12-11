@@ -13,11 +13,11 @@ Reviewer:
 #DELETE del FROM CTS_DataCenter.CustomerCategorySettings AS del WHERE CategoryID IN (21800,26800);
 
 #========================STATICLIST==============================================
-SELECT * FROM StaticList WHERE ListID In (24,6) and ItemID IN (117,118);
+SELECT * FROM CTS_DataCenter.StaticList WHERE ItemID IN (116,117,118);
 
-INSERT INTO StaticList (ListID, ItemID, ListName, ListNameDisplay, ItemName, ItemNameDisplay, ItemParentItemID, ItemDefaultValue, ItemValue, PriorityOrder, Status, Description, CreatedDate)
+INSERT INTO StaticList (ListID, ItemID, ListName, ListNameDisplay, ItemName, ItemNameDisplay, ItemValue,  ItemDefaultValue, ItemParentItemID,PriorityOrder, Status, Description, CreatedDate)
 VALUES (6,117,'Classification CategoryID','CATEGORYID','CONST_CATEID_BOTLOGINPATTERN','CONST_CATEID_BOTLOGINPATTERN',21800,21800,3,NULL,1,NULL,NOW()),
-(6,118,'Classification CategoryID','CATEGORYID','CONST_CATEID_BOTLOGINPATTERNLOSING','CONST_CATEID_BOTLOGINPATTERNLOSING',21800,26800,3,NULL,1,NULL,NOW())
+(6,118,'Classification CategoryID','CATEGORYID','CONST_CATEID_BOTLOGINPATTERNLOSING','CONST_CATEID_BOTLOGINPATTERNLOSING',26800,26800,3,NULL,1,NULL,NOW())
 ;
 
 #========================CustomerCategory==============================================
