@@ -30,7 +30,7 @@ AS
 
 	Revisions:
 		- 20240822@Casey.Huynh: Created [Redmine ID: 152883]
-		- 20240822@Thomas.Nguyen: HF not show data in MM detail for 14/BK [Redmine ID: 152883]
+		- 20241210@Thomas.Nguyen: HF not show data in MM detail for 14/BK [Redmine ID: #214867]
 
 	Params Explaination:
 
@@ -295,7 +295,7 @@ BEGIN
 				,	b.Refno
 			FROM #tmpRefno AS tmpTs WITH(NOLOCK)
 				INNER JOIN bodb_Archive.dbo.bettransm AS b WITH(NOLOCK) ON tmpTs.Refno = b.Refno
-				INNER JOIN bodb_Archive.dbo.bettrans_bk AS bt WITH(NOLOCK) ON b.Refno = bt.Refno
+				INNER JOIN bodb_Archive.dbo.bettrans_bk AS bt WITH(NOLOCK) ON bt.CustID = b.CustID AND bt.winlostdate = @EventDate AND b.Refno = bt.Refno
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
 				INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetCheck = ISNULL(st.BetID,b.BetCheck)
 				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.Currency
