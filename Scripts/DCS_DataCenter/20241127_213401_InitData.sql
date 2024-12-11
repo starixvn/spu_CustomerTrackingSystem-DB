@@ -10,3 +10,6 @@ USE DCS_DataCenter;
 INSERT INTO `DCS_DataCenter`.`SystemSetting` (`ID`, `VGroup`, `VName`, `VValue`, `UpdatedTime`) 
 VALUES ('30', 'UpdateLastAccessedDate', 'MaxMBTransaction07ID', '0', NOW());
 
+INSERT INTO `DCS_DataCenter`.`StaticList` (`ListID`, `ItemID`, `ListCode`, `ListName`, `ItemCode`, `ItemName`, `Status`, `CreatedDate`) 
+VALUES ('5', '1', 'MBDeviceCodeMachine_MachineOSType', 'MBDeviceCodeMachine MachineOSType', 'Android', 'Android', '1', NOW())
+	, ('5', '2', 'MBDeviceCodeMachine_MachineOSType', 'MBDeviceCodeMachine MachineOSType', 'IOS', 'IOS', '2', NOW());
