@@ -169,7 +169,7 @@ BEGIN
             ,   CASE
                     WHEN tmp.CategoryID IN (CONST_CATEID_ROBOTUSER, CONST_CATEID_ROBOTOCRD
 											, CONST_CATEID_ROBOTUSERLOSING, CONST_CATEID_ROBOTOCRDLOSING
-                                            , CONST_CATEID_BOTLOGINPATTERNOCRD, CONST_CATEID_BOTLOGINPATTERNLOSING
+                                            , CONST_CATEID_BOTLOGINPATTERN, CONST_CATEID_BOTLOGINPATTERNLOSING
                                             ) AND tmp.SourceTypeID <> CONST_REMARKID_RESCANROBOT THEN
                         CASE    WHEN clss.IsFromTW = 1 											THEN CONST_REMARKID_ROBOTFROMTW
                                 WHEN clss.IsFromImperva = 1 									THEN CONST_REMARKID_ROBOTFROMIMPERVA
