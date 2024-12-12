@@ -218,6 +218,7 @@ sp: BEGIN
 	FROM Temp_CustInfo AS tmp
 		INNER JOIN CTS_DataCenter.RobotDetection AS bd ON bd.CustID = tmp.CustID
 	WHERE tmp.RoleID = CONST_ROLEID_MEMBER
+		AND bd.IsDisabled = 0
 	ORDER BY bd.CustID, bd.CreatedDate DESC;
 
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)

@@ -18,6 +18,7 @@ BEGIN
 		
 		Revisions: 
 			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
+            - 	20241210@Casey.Huynh:		New Robot AI-Bot Login Pattern, Update Disable for Member Only [Redmine ID: #214655]
 			
 		Param's Expanation:
 			- CTS_DC_CustClassification_Remove_Complete (225,'');
@@ -515,7 +516,7 @@ BEGIN
 		
 		UPDATE CTS_DataCenter.RobotDetection AS rd
 			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID 
-            INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID = 0
+            INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = temp.CustID AND cus.CustSubID = 0
 		SET rd.IsDisabled = 1
 		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID)
 			AND temp.IsExistRobot = 1 AND temp.IsFromAI = 1 AND rd.IsDisabled = 0
