@@ -1,4 +1,4 @@
-
+/*<info serverAlias="DBAIML-SPU_AIML" databaseType="2" executers="aimlServiceAdmin" isFunction="0" isNested="0"></info>*/ 
 DROP PROCEDURE IF EXISTS `SPU_AIML_RD_LP_GetRobotDetails`;
 
 DELIMITER $$
