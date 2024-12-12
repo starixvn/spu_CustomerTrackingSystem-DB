@@ -45,6 +45,7 @@ BEGIN
 			- 20240618@Victoria.Le:		Initial Writing [Redmine ID: #205317]
             - 20240923@Jonas.Huynh:		Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
 			- 20240927@Thomas.Nguyen:	Moved AffectedDownline to Agent's CC flow [Redmine ID: #185799]
+            - 20241203@Jonas.Huynh: 	CC 210x - Device Association [Redmine ID: #214353]
             
 */
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -222,9 +223,14 @@ BEGIN
 						AND temp.IsRobot = 0 
 						AND cate.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL 
 				THEN 1 ELSE 0 END AS IsPA
+		,	CASE WHEN s.FlowNormalDgrAssociation = 1 AND temp.NewCategoryID = s.CategoryID AND temp.OldCategoryID IS NULL THEN 1
+				 WHEN s.FlowNormalDgrAssociation = 1 AND temp.NewCategoryID = s.CategoryID AND temp.OldCategoryID <> s.CategoryID THEN 1
+                 WHEN s.FlowNormalDgrAssociation = 1 AND temp.NewCategoryID = s.CategoryID AND temp.OldCategoryID = temp.NewCategoryID AND temp.IsDataChanged = 1 THEN 1
+				 ELSE 0 END AS IsScanDgrAssociation
 		,	lv_CurrentDateTime AS ScannedTime 
 	FROM Temp_NewClassification AS temp
 		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = temp.NewCategoryID
+        LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS s ON s.CategoryID = cate.CategoryID
 	WHERE temp.IsReturnData = 1;
 	
 END$$
