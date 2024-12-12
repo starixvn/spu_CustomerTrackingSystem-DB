@@ -66,25 +66,7 @@ BEGIN
         INNER JOIN Temp_PeriodRangeType AS pt ON pt.PeriodRangeType = rd.PeriodRangeType
     WHERE rd.CustID = ip_CustID
 		AND cus.RoleID = CONST_ROLEID_MEMBER;        
-     /*   
-	SELECT 	rd.CustID
-		,	rd.PeriodRangeType
-		,	CASE 
-				WHEN rd.PeriodRangeType = 1 THEN 'Tickets with Time Interval <= 1s'
-				WHEN rd.PeriodRangeType = 3 THEN 'Tickets with 1s < Time Interval < 10s'
-				WHEN rd.PeriodRangeType = 5 THEN 'Tickets with 10s <= Time Interval < 20s'
-				WHEN rd.PeriodRangeType = 10 THEN 'Tickets with Time Interval >= 45s'
-				WHEN rd.PeriodRangeType = 20 THEN 'Unconsecutive Tickets with Time Deviation < 2s'
-				WHEN rd.PeriodRangeType = 40 THEN 'Consecutive Tickets with Time Deviation < 2s'                
-				WHEN rd.PeriodRangeType = 100 THEN 'More than 5/30 Days with Consecutive Tickets > 24 hours'
-				WHEN rd.PeriodRangeType = 101 THEN 'Consecutive Tickets > 24 Hours and High Ugly Stake Tickets'
-                WHEN rd.PeriodRangeType = 200 THEN 'Consecutive Tickets per Match <= 2 mins and Stake per Ticket < 30 RM'
-                WHEN rd.PeriodRangeType = 300 THEN 'Time Discretization'              
-			END AS PeriodRangeName
-    FROM CTS_DataCenter.RobotDetection AS rd
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON rd.CustID = cus.CustID AND cus.CustSubID = 0
-    WHERE rd.CustID = ip_CustID;
-	*/
+
 	SELECT 	ri.CustID
 		,	ri.CreateTime
 		,	ri.Platform

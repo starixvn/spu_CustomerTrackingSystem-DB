@@ -69,7 +69,7 @@ BEGIN
 				ELSE CONST_CATEID_ROBOTUSER END) AS CategoryID
 		,	rd.LastModifiedDate
     FROM CTS_DataCenter.RobotDetection AS rd
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON rd.CustID = cus.CustID AND cus.SubCustID = 0
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON rd.CustID = cus.CustID AND cus.CustSubID = 0
     WHERE rd.ID > ip_RobotDetectionLastID
 		AND rd.IsDisabled = 0
         AND cus.RoleID = CONST_ROLEID_MEMBER
