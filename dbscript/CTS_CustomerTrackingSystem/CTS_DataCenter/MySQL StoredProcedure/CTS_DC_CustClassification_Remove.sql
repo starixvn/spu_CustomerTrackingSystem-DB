@@ -40,7 +40,7 @@ BEGIN
 
 		Revisions: 
 			- 20240618@Victoria.Le: 	Initial Writing [Redmine ID: #205317]
-            - 20241210@Casey.Huynh:		New Robot AI-Bot Login Pattern, Update SubSP "CTS_DC_CustClassification_Remove_Complete" [Redmine ID: #214655]
+            - 20241210@Casey.Huynh:		No Change, Update SubSP "CTS_DC_CustClassification_Remove_Complete" [Redmine ID: #214655]
 */
 	DECLARE CONST_INPUTFLOWID_GENERAL_REMOVE_VVIP 			INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_REMOVE_SPECIALCC		INT;
