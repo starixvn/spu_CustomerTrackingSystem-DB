@@ -175,8 +175,7 @@ BEGIN
 			,	tmpTo.Refno
 			,	bt.Stake * bt.actualrate AS TurnOver
 		FROM #tmpParsedRefno AS tmpTo WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.Bettrans AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno
-		WHERE tmpTo.DataSource = @CONST_DATASOURCE_ORIGIN;
+			INNER JOIN bodb02.dbo.Bettrans AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno;
 		
 		DELETE tmpRn
 		FROM #tmpParsedRefno AS tmpRn WITH(NOLOCK)
@@ -191,8 +190,7 @@ BEGIN
 			,	tmpTo.Refno
 			,	bt.Stake * bt.actualrate AS TurnOver
 		FROM #tmpParsedRefno AS tmpTo WITH(NOLOCK)
-			INNER JOIN bodb02.dbo.Bettrans14 AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno
-		WHERE tmpTo.DataSource = @CONST_DATASOURCE_14;
+			INNER JOIN bodb02.dbo.Bettrans14 AS bt WITH(NOLOCK) on bt.Refno = tmpTo.Refno;
 		
 		DELETE tmpRn
 		FROM #tmpParsedRefno AS tmpRn WITH(NOLOCK)
@@ -209,7 +207,6 @@ BEGIN
 				WHERE bt.refno = tmp.Refno
 			) AS cus;
 
-
 		INSERT INTO #tmpTurnOver(MatchID, IsLive, Bettype, BetId, Refno,TurnOver)
 		SELECT	tmpTo.MatchID
 			,	tmpTo.IsLive
@@ -218,13 +215,32 @@ BEGIN
 			,	tmpTo.Refno
 			,	bt.Stake * bt.actualrate AS TurnOver
 		FROM #tmpParsedRefno AS tmpTo WITH(NOLOCK)
-			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS bt WITH(NOLOCK) on  bt.custid = tmpTo.custid AND bt.winlostdate = tmpTo.EventDate
+			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS bt WITH(NOLOCK) on  bt.custid = tmpTo.custid AND bt.winlostdate IN (DATEADD(DD, -1, tmpTo.EventDate), tmpTo.EventDate)
 		WHERE bt.Refno = tmpTo.Refno;
-		
+
 		DELETE tmpRn
 		FROM #tmpParsedRefno AS tmpRn WITH(NOLOCK)
-			INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno;		
+			INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno;	
+
+		IF EXISTS (SELECT TOP 1 1 FROM #tmpParsedRefno AS tmpRn WITH(NOLOCK))
+		BEGIN
+			INSERT INTO #tmpTurnOver(MatchID, IsLive, Bettype, BetId, Refno,TurnOver)
+			SELECT	tmpTo.MatchID
+				,	tmpTo.IsLive
+				,	tmpTo.Bettype
+				,	tmpTo.BetId
+				,	tmpTo.Refno
+				,	bt.Stake * bt.actualrate AS TurnOver
+			FROM #tmpParsedRefno AS tmpTo WITH(NOLOCK)
+				INNER JOIN bodb_Archive.dbo.Bettrans_bk AS bt WITH(NOLOCK) on  bt.custid = tmpTo.custid AND bt.matchid = 29
+			WHERE bt.Refno = tmpTo.Refno
+			OPTION (MAXDOP 4);
 			
+			DELETE tmpRn
+			FROM #tmpParsedRefno AS tmpRn WITH(NOLOCK)
+				INNER JOIN #tmpTurnOver AS tmpTo WITH(NOLOCK) ON tmpTo.Refno = tmpRn.Refno;		
+		END;
+
 		CREATE CLUSTERED INDEX #CIX_tmpTurnOver ON #tmpTurnOver(
 				MatchID	DESC
 			,	IsLive

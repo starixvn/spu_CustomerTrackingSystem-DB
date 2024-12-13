@@ -125,6 +125,7 @@ BEGIN
 			Refno				BIGINT 
 		,	SuspiciousReason	VARCHAR(50)
 		,	SuspiciousGroupId	INT
+		,	TransID				BIGINT
 	);
 
 	CREATE NONCLUSTERED INDEX #IX_tmpSuspiciousTrans_Refno ON #tmpInputRefno(Refno ASC);
@@ -135,7 +136,8 @@ BEGIN
 	END;
 	
 	CREATE TABLE #tmpRefno(
-			Refno BIGINT 
+			Refno 			BIGINT 
+		,	TransID			BIGINT
 	);
 
 	CREATE NONCLUSTERED INDEX #IX_tmpSuspiciousDistinctRefno_Refno ON #tmpRefno(Refno ASC);
@@ -203,18 +205,20 @@ BEGIN
 	IF @ListSuspiciousRefno <> ''
 	BEGIN
 
-		INSERT INTO #tmpInputRefno (Refno,SuspiciousReason,SuspiciousGroupId)
+		INSERT INTO #tmpInputRefno (Refno,SuspiciousReason,SuspiciousGroupId,TransID)
 		SELECT	j.Refno
 			,	j.Reason
 			,	j.GroupId
+			,	j.TransID
 		FROM OPENJSON (@ListSuspiciousRefno) WITH (
 				Refno		BIGINT '$.Refno'
 			,	Reason		VARCHAR(50) '$.Reason'
 			,	GroupId		INT '$.GroupId'
+			,	TransID		BIGINT '$.TransId'
 			) AS j;
 
 		INSERT INTO #tmpRefno
-		SELECT DISTINCT tmpTs.Refno 
+		SELECT DISTINCT tmpTs.Refno, tmpTs.TransID
 		FROM #tmpInputRefno AS tmpTs WITH(NOLOCK);
 		
 	END;
@@ -295,7 +299,7 @@ BEGIN
 				,	b.Refno
 			FROM #tmpRefno AS tmpTs WITH(NOLOCK)
 				INNER JOIN bodb_Archive.dbo.bettransm AS b WITH(NOLOCK) ON tmpTs.Refno = b.Refno
-				INNER JOIN bodb_Archive.dbo.bettrans_bk AS bt WITH(NOLOCK) ON bt.CustID = b.CustID AND bt.winlostdate = @EventDate AND b.Refno = bt.Refno
+				INNER JOIN bodb_Archive.dbo.bettrans_bk AS bt WITH(NOLOCK) ON bt.TransID = tmpTs.TransID
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.Matchid = m.Matchid
 				INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetCheck = ISNULL(st.BetID,b.BetCheck)
 				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = bt.Currency
