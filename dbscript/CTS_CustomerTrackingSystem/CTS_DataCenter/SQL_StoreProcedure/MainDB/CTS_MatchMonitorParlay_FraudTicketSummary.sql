@@ -215,7 +215,7 @@ BEGIN
 			,	tmpTo.Refno
 			,	bt.Stake * bt.actualrate AS TurnOver
 		FROM #tmpParsedRefno AS tmpTo WITH(NOLOCK)
-			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS bt WITH(NOLOCK) on  bt.custid = tmpTo.custid AND bt.winlostdate IN (DATEADD(DD, -1, tmpTo.EventDate), tmpTo.EventDate)
+			INNER JOIN bodb_Archive.dbo.Bettrans_bk AS bt WITH(NOLOCK) on  bt.custid = tmpTo.custid AND bt.matchid = 29 AND bt.winlostdate IN (DATEADD(DD, -1, tmpTo.EventDate), tmpTo.EventDate)
 		WHERE bt.Refno = tmpTo.Refno;
 
 		DELETE tmpRn
