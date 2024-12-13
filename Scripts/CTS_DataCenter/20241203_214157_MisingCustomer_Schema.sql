@@ -17,7 +17,8 @@ ALTER TABLE CTS_DataCenter.JobMonitoring_IncorrectData
 ADD COLUMN IsResolved	BIT(1) DEFAULT 0;
     
 /*Init params*/
-INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES(185,'JobMonitoring_MissingCustomer_LastScanID','JobMonitoring_MissingCustomer_LastScanID','BIGINT UNSIGNED','0');
+INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES
+(185,'JobMonitoring_MissingCustomer_LastScanID','JobMonitoring_MissingCustomer_LastScanID','BIGINT UNSIGNED','0');
 
 /*Update param*/
 SELECT MAX(ID)
