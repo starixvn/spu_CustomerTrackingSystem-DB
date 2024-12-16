@@ -66,14 +66,12 @@ BEGIN
 	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
 	SELECT @CLASSIFICATION_GENERALNORMALINSERT, COUNT(1)
 	FROM [dbo].CustomerClassification WITH (NOLOCK)
-	WHERE [RowVersion] > @General_LastScannedRow
-	ORDER BY [RowVersion] ASC;
+	WHERE [RowVersion] > @General_LastScannedRow;
 
 	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
 	SELECT @CLASSIFICATION_BYSPORTNORMALINSERT, COUNT(1)
 	FROM [dbo].CustomerClassification_BySport WITH (NOLOCK)
-	WHERE [RowVersion] > @BySport_LastScannedRow
-	ORDER BY [RowVersion] ASC;
+	WHERE [RowVersion] > @BySport_LastScannedRow;
 
 	-- 3. Realtime Check Changes
 	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
