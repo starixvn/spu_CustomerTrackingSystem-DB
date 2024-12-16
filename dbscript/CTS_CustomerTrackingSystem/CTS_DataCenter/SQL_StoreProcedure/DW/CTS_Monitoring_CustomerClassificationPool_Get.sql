@@ -7,9 +7,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE [dbo].[CTS_Monitoring_CustomerClassificationPool_Get]
-	@GeneralRecord BIGINT OUTPUT,
-	@BySportRecord BIGINT OUTPUT
-AS
 /*
 	Created: 20240102@Jonas.Huynh
 	Task : Enhance job monitoring
@@ -18,6 +15,7 @@ AS
 
 	Revisions:
 		- 20240102@Jonas.Huynh: Created [Redmine ID: #197999]
+		- 20241213@Jonas.Huynh: Monitoring Realtime Pool [Redmine ID: 214157]
 
 	Param's Explanation:
 
@@ -28,11 +26,69 @@ BEGIN
 	
 	SET NOCOUNT ON;
 
-	SELECT @GeneralRecord = COUNT(1)
-	FROM [dbo].[CustomerClassification_NormalPool] WITH (NOLOCK);
+	DECLARE	@CLASSIFICATION_GENERALPOOL					SMALLINT = 200
+		,	@CLASSIFICATION_BYSPORTPOOL					SMALLINT = 201
+		,	@CLASSIFICATION_GENERALNORMALINSERT			SMALLINT = 203
+		,	@CLASSIFICATION_BYSPORTNORMALINSERT			SMALLINT = 204
+		,	@REALTIME_GENERALCHANGES					SMALLINT = 102
+		,	@REALTIME_BYSPORTCHANGES					SMALLINT = 103
+
+	DECLARE @GENERAL_LASTSCANNEDROW		TINYINT = 1
+		,	@BYSPORT_LASTSCANNEDROW		TINYINT = 2;
+
+	DECLARE @General_LastScannedRow		ROWVERSION
+		,	@BySport_LastScannedRow		ROWVERSION;
+
+	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
+	BEGIN
+		DROP TABLE	#tmpMonitoring;
+	END
+
+	CREATE TABLE #tmpMonitoring(
+		IssueTypeID		       SMALLINT PRIMARY KEY,
+		NumberOfRecord		   BIGINT
+	);
+
+	-- 1. Normal Pool
+	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
+	SELECT @CLASSIFICATION_GENERALPOOL, COUNT(1)
+	FROM [dbo].CustomerClassification_NormalPool WITH (NOLOCK);
 	
-	SELECT @BySportRecord = COUNT(1)
-	FROM [dbo].[CustomerClassification_BySport_NormalPool] WITH (NOLOCK);
+	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
+	SELECT @CLASSIFICATION_BYSPORTPOOL, COUNT(1)
+	FROM [dbo].CustomerClassification_BySport_NormalPool WITH (NOLOCK);
+
+	-- 2. Normal Insert Account
+	SELECT @General_LastScannedRow = CAST(CAST([Value] AS BIGINT) AS ROWVERSION) FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) WHERE [DataId] = @GENERAL_LASTSCANNEDROW;
+	SELECT @BySport_LastScannedRow = CAST(CAST([Value] AS BIGINT) AS ROWVERSION) FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) WHERE [DataId] = @BYSPORT_LASTSCANNEDROW;
+	
+	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
+	SELECT @CLASSIFICATION_GENERALNORMALINSERT, COUNT(1)
+	FROM [dbo].CustomerClassification WITH (NOLOCK)
+	WHERE [RowVersion] > @General_LastScannedRow
+	ORDER BY [RowVersion] ASC;
+
+	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
+	SELECT @CLASSIFICATION_BYSPORTNORMALINSERT = COUNT(1)
+	FROM [dbo].CustomerClassification_BySport WITH (NOLOCK)
+	WHERE [RowVersion] > @BySport_LastScannedRow
+	ORDER BY [RowVersion] ASC;
+
+	-- 3. Realtime Check Changes
+	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
+	SELECT @REALTIME_GENERALCHANGES, COUNT(1)
+	FROM [dbo].CustomerClassification_RealtimeChanges WITH (NOLOCK);
+
+	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
+	SELECT @REALTIME_BYSPORTCHANGES = COUNT(1)
+	FROM [dbo].CustomerClassification_BySport_RealtimeChanges WITH (NOLOCK);
+
+	-- 4. Return result
+	SELECT	IssueTypeID
+		,	NumberOfRecord  
+	FROM #tmpMonitoring;
+
+	DROP TABLE	#tmpMonitoring;
 END;
 GO
 
