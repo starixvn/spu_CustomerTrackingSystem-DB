@@ -26,7 +26,7 @@ INSERT INTO `CTS_DataCenter`.`StaticList`(`ListID`,`ItemID`,`ListName`,`ListName
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES
 (185,'JobMonitoring_MissingCustomer_LastScanID','JobMonitoring_MissingCustomer_LastScanID','BIGINT UNSIGNED','0'),
-(186,'JobMonitoring_ReactivatedCustomerLastScannedTime','JobMonitoring_ReactivatedCustomerLastScannedTime','BIGINT UNSIGNED','0');
+(186,'JobMonitoring_ReactivatedCustomerLastScannedTime','JobMonitoring_ReactivatedCustomerLastScannedTime','BIGINT UNSIGNED', CURRENT_TIMESTAMP(3));
 
 /*Update param*/
 SELECT MAX(ID)
