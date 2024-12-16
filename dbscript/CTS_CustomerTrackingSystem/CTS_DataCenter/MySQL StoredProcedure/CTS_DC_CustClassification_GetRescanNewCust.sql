@@ -22,16 +22,17 @@ sp: BEGIN
             - 20240626@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryGroup, ParentID [Redmine ID: #205317]
             - 20240923@Jonas.Huynh:	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
             - 20241014@Casey.Huynh: Get rescan new cust [Redmine ID: #185799]
+			      - 20241216@Tony.Nguyen: Remove UNSIGNED of SMA Recommend & Modify DirectUpLineCustID, DirectUpLineRoleId (Redmine ID: #214585)
 
         Param's Explanation:
 
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetRescanNewCust(@op_LastCTSCustID);SELECT @op_LastCTSCustID;
 	*/
-  DECLARE CONST_CATEID_VVIP				        INT;
-  DECLARE CONST_AGENCY_PARENTID_VVIP			INT;
-  DECLARE CONST_AGENCY_PARENTID_PA				INT;
-  DECLARE CONST_AGENCY_CATEGROUPID_ROBOT       	INT;
+  DECLARE CONST_CATEID_VVIP				          INT;
+  DECLARE CONST_AGENCY_PARENTID_VVIP			  INT;
+  DECLARE CONST_AGENCY_PARENTID_PA				  INT;
+  DECLARE CONST_AGENCY_CATEGROUPID_ROBOT    INT;
 
   DECLARE lv_LastCTSCustID 	                    BIGINT UNSIGNED;
   DECLARE lv_BatchSize 		                      INT UNSIGNED;
@@ -41,11 +42,16 @@ sp: BEGIN
   DECLARE CONST_ROLEID_AGENT            		TINYINT DEFAULT 2;
   DECLARE CONST_ROLEID_MASTER            		TINYINT DEFAULT 3;
   DECLARE CONST_ROLEID_SUPER            		TINYINT DEFAULT 4;
+
+  DECLARE CONST_DIRECT_CUSTID_MASTER            INT;
+  DECLARE CONST_DIRECT_CUSTID_SUPER             INT;
     
   SET CONST_CATEID_VVIP				                  = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');  
-  SET CONST_AGENCY_PARENTID_VVIP				      = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
+  SET CONST_AGENCY_PARENTID_VVIP				        = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
   SET CONST_AGENCY_PARENTID_PA				          = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
   SET CONST_AGENCY_CATEGROUPID_ROBOT			      = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_ROBOT');
+  SET CONST_DIRECT_CUSTID_MASTER                = -3;
+  SET CONST_DIRECT_CUSTID_SUPER                 = -4;
 
 DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
 CREATE TEMPORARY TABLE Temp_CustInfo(
@@ -56,9 +62,9 @@ CREATE TEMPORARY TABLE Temp_CustInfo(
   ,	RegisterName		    VARCHAR(50) 
   ,	SubscriberID		    INT UNSIGNED
   ,	RoleID				      INT        
-  ,	SRecommend			    BIGINT UNSIGNED
-  ,	MRecommend			    BIGINT UNSIGNED
-  ,	Recommend			      BIGINT UNSIGNED
+  ,	SRecommend			    BIGINT
+  ,	MRecommend			    BIGINT
+  ,	Recommend			      BIGINT
   ,	DirectUpLineCustID	BIGINT UNSIGNED
   ,	DirectUpLineRoleID	BIGINT UNSIGNED
   ,	IsLicensee			    BIT       
@@ -126,12 +132,28 @@ CREATE TEMPORARY TABLE Temp_CustInfo(
       ,   cus.SRecommend
       ,   cus.MRecommend
       ,   cus.Recommend
-      ,   (CASE	WHEN cus.RoleID = CONST_ROLEID_MEMBER THEN cus.Recommend 
-                WHEN cus.RoleID = CONST_ROLEID_AGENT THEN cus.MRecommend
-                WHEN cus.RoleID = CONST_ROLEID_MASTER THEN cus.SRecommend END) AS DirectUpLineCustID  
-      ,   (CASE	WHEN cus.RoleID = CONST_ROLEID_MEMBER THEN CONST_ROLEID_AGENT 
-                WHEN cus.RoleID = CONST_ROLEID_AGENT THEN CONST_ROLEID_MASTER
-                WHEN cus.RoleID = CONST_ROLEID_MASTER THEN CONST_ROLEID_SUPER END) AS DirectUpLineCustIDRoleID  
+      ,   (CASE	WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cus.Recommend NOT IN (CONST_DIRECT_CUSTID_MASTER, CONST_DIRECT_CUSTID_SUPER)
+                  THEN cus.Recommend
+                WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cus.Recommend = CONST_DIRECT_CUSTID_MASTER
+                  THEN cus.MRecommend
+                WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cus.Recommend = CONST_DIRECT_CUSTID_SUPER
+                  THEN cus.SRecommend
+                WHEN cus.RoleID = CONST_ROLEID_AGENT
+                  THEN cus.MRecommend
+                WHEN cus.RoleID = CONST_ROLEID_MASTER
+                  THEN cus.SRecommend
+                END) AS DirectUpLineCustID  
+      ,   (CASE	WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cust.Recommend NOT IN (CONST_DIRECT_CUSTID_MASTER, CONST_DIRECT_CUSTID_SUPER)
+                  THEN CONST_ROLEID_AGENT
+                WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cust.Recommend = CONST_DIRECT_CUSTID_MASTER
+                  THEN CONST_ROLEID_MASTER
+                WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cust.Recommend = CONST_DIRECT_CUSTID_SUPER
+                  THEN CONST_ROLEID_SUPER
+                WHEN cus.RoleID = CONST_ROLEID_AGENT
+                  THEN CONST_ROLEID_MASTER
+                WHEN cus.RoleID = CONST_ROLEID_MASTER
+                  THEN CONST_ROLEID_SUPER
+                END) AS DirectUpLineCustIDRoleID  
       ,   cus.IsLicensee
   FROM CTS_DataCenter.CTSCustomer AS cus 
   WHERE cus.CustSubID = 0
@@ -188,10 +210,10 @@ CREATE TEMPORARY TABLE Temp_CustInfo(
         ,	class.IsFromTW
         ,	class.IsFromCTS
         ,	class.LastModifiedDate
-        ,	(CASE WHEN class.CustID = tmp.Recommend THEN CONST_ROLEID_AGENT
-          WHEN class.CustID = tmp.MRecommend THEN CONST_ROLEID_MASTER
-                  WHEN class.CustID = tmp.SRecommend THEN CONST_ROLEID_SUPER
-                  END) AS FromRoleID
+        ,	( CASE  WHEN class.CustID = tmp.Recommend   THEN CONST_ROLEID_AGENT
+                  WHEN class.CustID = tmp.MRecommend  THEN CONST_ROLEID_MASTER
+                  WHEN class.CustID = tmp.SRecommend  THEN CONST_ROLEID_SUPER
+            END) AS FromRoleID
         ,	class.CategoryID AS FromCategoryID        
   FROM Temp_CustInfo AS tmp    
       STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS class USE INDEX (PRIMARY) ON class.CustID IN (tmp.SRecommend,tmp.MRecommend,tmp.Recommend) 
