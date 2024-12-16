@@ -7,6 +7,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE PROCEDURE [dbo].[CTS_Monitoring_CustomerClassificationPool_Get]
+AS
 /*
 	Created: 20240102@Jonas.Huynh
 	Task : Enhance job monitoring
