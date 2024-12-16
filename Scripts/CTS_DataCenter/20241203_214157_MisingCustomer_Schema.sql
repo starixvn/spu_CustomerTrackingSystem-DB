@@ -17,8 +17,12 @@ ALTER TABLE CTS_DataCenter.JobMonitoring_IncorrectData
 ADD COLUMN IsResolved	BIT(1) DEFAULT 0;
     
 /*Init params*/
+INSERT INTO `CTS_DataCenter`.`StaticList`(`ListID`,`ItemID`,`ListName`,`ListNameDisplay`,`ItemName`,`ItemNameDisplay`,`ItemValue`,`ItemDefaultValue`,`ItemParentItemID`,`PriorityOrder`,`Status`,`Description`,`CreatedDate`) VALUES
+(20,50,'Job Monitoring IssueType','Job Monitoring IssueType','Reactivated Customer - Missing','Reactivated Customer - Missing',null,null,null,null,1,null, NOW());
+
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES
-(185,'JobMonitoring_MissingCustomer_LastScanID','JobMonitoring_MissingCustomer_LastScanID','BIGINT UNSIGNED','0');
+(185,'JobMonitoring_MissingCustomer_LastScanID','JobMonitoring_MissingCustomer_LastScanID','BIGINT UNSIGNED','0'),
+(186,'JobMonitoring_ReactivatedCustomerLastScannedTime','JobMonitoring_ReactivatedCustomerLastScannedTime','BIGINT UNSIGNED','0');
 
 /*Update param*/
 SELECT MAX(ID)

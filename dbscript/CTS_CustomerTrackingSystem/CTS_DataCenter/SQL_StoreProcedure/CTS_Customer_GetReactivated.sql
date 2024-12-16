@@ -4,7 +4,8 @@ SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
 ALTER PROCEDURE	CTS_Customer_GetReactivated
-		@LastScannedDate	DATETIME
+		@LastScannedDate	DATETIME NOT NULL,
+		@NextScannedDate	DATETIME NULL	
 AS
 /*
 	Creator:	20220310@Long.Luu
@@ -13,11 +14,12 @@ AS
 	
 	Revisions:
 		- 20220310@Long.Luu:Created [Redmine ID: 169761]
+		- 20241213@Jonas.Huynh: Job Monitoring [Redmine ID: #214157]
 
 	Developer's Notes:
 		
 
-	exec CTS_Customer_GetReactivated @LastScannedDate = '2021-11-30 07:31:08.000';
+	exec CTS_Customer_GetReactivated @LastScannedDate = '2021-11-30 07:31:08.000', @NextScannedDate = NULL;
 		
 */
 BEGIN;
@@ -31,10 +33,14 @@ BEGIN;
 		,	LogTime		DATETIME
 	);
 
+	IF @NextScannedDate IS NULL
+		SET @NextScannedDate = GETDATE();
+
 	INSERT INTO #tmpReactivatedAccount(CustId, LogTime)
 	SELECT custid, MAX(LogTime)
 	FROM dbo.DBALog_Archive_Dep_Cust_Process WITH(NOLOCK)
 	WHERE LogTime > @LastScannedDate
+		AND LogTime <= @NextScannedDate
 		AND LogId > 0 
 		AND [action] = 'REACTIVATION' 
 		AND [status] = 'Done'
