@@ -4,8 +4,8 @@ SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
 GO
 ALTER PROCEDURE	CTS_Customer_GetReactivated
-		@LastScannedDate	DATETIME NOT NULL,
-		@NextScannedDate	DATETIME NULL	
+		@LastScannedDate	DATETIME,
+		@NextScannedDate	DATETIME	
 AS
 /*
 	Creator:	20220310@Long.Luu
