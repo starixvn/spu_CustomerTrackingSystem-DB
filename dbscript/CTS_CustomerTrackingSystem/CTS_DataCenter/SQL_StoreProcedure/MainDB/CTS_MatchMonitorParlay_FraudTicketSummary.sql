@@ -277,7 +277,7 @@ BEGIN
 					,	SUM(tmpTo.TurnOver) AS Turnover
 					,	COUNT(DISTINCT t.Refno) AS BetCount
 				FROM #tmpParsedFraudInfo AS t WITH(NOLOCK)
-					INNER JOIN bodb02.dbo.bettransm14 AS b WITH(NOLOCK) ON b.Refno = t.Refno
+					INNER JOIN bodb02.dbo.bettransm14 AS b WITH(NOLOCK) ON b.Refno = t.Refno AND  b.MatchID = t.MatchID
 					INNER JOIN #tmpTurnover AS tmpTo WITH(NOLOCK) ON t.MatchId = tmpTo.MatchId AND t.IsLive = tmpTo.IsLive
 												AND t.Bettype = tmpTo.Bettype AND t.BetId = tmpTo.BetId AND b.refno = tmpTo.refno
 				WHERE t.DataSource = @CONST_DATASOURCE_14
