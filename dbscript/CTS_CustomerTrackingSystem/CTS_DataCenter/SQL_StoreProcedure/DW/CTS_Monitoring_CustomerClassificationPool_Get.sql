@@ -70,7 +70,7 @@ BEGIN
 	ORDER BY [RowVersion] ASC;
 
 	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
-	SELECT @CLASSIFICATION_BYSPORTNORMALINSERT = COUNT(1)
+	SELECT @CLASSIFICATION_BYSPORTNORMALINSERT, COUNT(1)
 	FROM [dbo].CustomerClassification_BySport WITH (NOLOCK)
 	WHERE [RowVersion] > @BySport_LastScannedRow
 	ORDER BY [RowVersion] ASC;
@@ -81,7 +81,7 @@ BEGIN
 	FROM [dbo].CustomerClassification_RealtimeChanges WITH (NOLOCK);
 
 	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
-	SELECT @REALTIME_BYSPORTCHANGES = COUNT(1)
+	SELECT @REALTIME_BYSPORTCHANGES, COUNT(1)
 	FROM [dbo].CustomerClassification_BySport_RealtimeChanges WITH (NOLOCK);
 
 	-- 4. Return result
