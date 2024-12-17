@@ -26,6 +26,7 @@ BEGIN
             - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID and return ColorTypeID [Redmine ID: #205317]
 			- 20240923@Jonas.Huynh: Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
 			- 20240930@Casey.Huynh: Agent CC [Redmine ID: #185799]
+			- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
 		---------------------------------------------------------------------------------------------------
 		[Before #192172]: CTS_DC_AssociationDetection_DetectGroup 
 			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
@@ -47,6 +48,8 @@ BEGIN
 	DECLARE CONST_ROLEID_AGENT					SMALLINT DEFAULT 2;
     DECLARE CONST_ROLEID_MASTER					SMALLINT DEFAULT 3;
     DECLARE CONST_ROLEID_SUPER					SMALLINT DEFAULT 4;
+	DECLARE CONST_DIRECT_MEMBER_MASTER      	INT DEFAULT -3;
+	DECLARE CONST_DIRECT_MEMBER_SUPER       	INT DEFAULT -4;
     
 
     DECLARE lv_OrigID 							BIGINT;
@@ -57,6 +60,8 @@ BEGIN
 	DECLARE lv_ToDate							DATE;
 	DECLARE lv_SubSourceID_DirectAPI			TINYINT DEFAULT 1;
 	DECLARE lv_SubSourceID_OddsFeed				TINYINT DEFAULT 2;
+	DECLARE lv_MinDirectMemberType 				TINYINT;
+	DECLARE lv_CountDistinct					INT;
 
 	SET CONST_PARENTID_WRAPPER 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 
@@ -64,10 +69,14 @@ BEGIN
 	CREATE TEMPORARY TABLE	Temp_Cust (
 			RowNumber			INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
 		,	CTSCustID			BIGINT UNSIGNED 
-		,	CustID 				BIGINT UNSIGNED
+		,	CustID 				INT UNSIGNED
 		,	Username			VARCHAR(50)
 		,	CustStatus			VARCHAR(50)
-		,	Recommend			BIGINT UNSIGNED
+		,	Recommend			INT
+		,	MRecommend			INT
+		,	SRecommend			INT
+		,	SMACustID			INT
+		,	DirectMemberType	TINYINT
 		,	Danger1				TINYINT
 		,	Danger2				TINYINT
 		,	Danger3				TINYINT
@@ -78,6 +87,8 @@ BEGIN
 		,   IsLicensee      	BIT 
 		,	Processed 			BIT DEFAULT 0
 		,	SubscriberID		INT
+		,	UplineCustID		INT
+		,	DirectMemberType	TINYINT
 		,	INDEX IX_Temp_Cust_CustID (CustID)
 		,	INDEX IX_Temp_Cust_Processed (Processed)
         ,	INDEX IX_Temp_Cust_RoleID (RoleID)
@@ -91,10 +102,10 @@ BEGIN
         ,	INDEX IX_Temp_Cust(CustID)
 	);
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_Recommend;
-	CREATE TEMPORARY TABLE 	Temp_Recommend (
+    DROP TEMPORARY TABLE IF EXISTS Temp_Upline;
+	CREATE TEMPORARY TABLE 	Temp_Upline (
 			CTSCustID  			BIGINT  UNSIGNED PRIMARY KEY 
-        ,	CustID				BIGINT  UNSIGNED
+        ,	CustID				INT UNSIGNED
         ,	Username			VARCHAR(50)
         ,	Evidence			LONGTEXT
 	);
@@ -162,13 +173,12 @@ BEGIN
 	);
 
     /*****************************Extract Data From Input**************************************************/
-    INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,RoleID,Username,CustStatus,Recommend,Danger1,Danger2,Danger3,Danger4,Danger5,CreatedDate,Processed,IsLicensee,SubscriberID)
+    INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,RoleID,Username,CustStatus,Danger1,Danger2,Danger3,Danger4,Danger5,CreatedDate,Processed,IsLicensee,SubscriberID,Recommend,MRecommend,SRecommend,UplineCustID,DirectMemberType)
 	SELECT 	tmp.CTSCustID
 		, 	cus.CustID
         , 	cus.RoleID
         ,	cus.Username
         ,	sta.ItemName AS CustStatus
-        ,	cus.Recommend
         ,	cus.Danger1
         ,	cus.Danger2
         ,	cus.Danger3
@@ -178,6 +188,16 @@ BEGIN
         ,	CASE WHEN cus.CTSCustID IS NULL OR cus.IsInternal = 1 THEN 1 ELSE 0 END AS Processed
         ,   cus.IsLicensee
         ,	cus.SubscriberID
+        ,	cus.Recommend
+        ,	cus.MRecommend
+        ,	cus.SRecommend
+		,	CASE WHEN cus.RoleID = CONST_ROLEID_MEMBER THEN
+					CASE WHEN cus.Recommend = CONST_DIRECT_MEMBER_SUPER THEN cus.SRecommend
+						 WHEN cus.Recommend = CONST_DIRECT_MEMBER_MASTER THEN cus.MRecommend
+						 ELSE cus.Recommend END
+				 ELSE 0 END AS UplineCustID
+		,	CASE WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cus.Recommend IN (CONST_DIRECT_MEMBER_MASTER,CONST_DIRECT_MEMBER_SUPER) THEN cus.Recommend
+				 ELSE 0 END AS DirectMemberType
 	FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID  
         LEFT JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cus.CustStatusID;
@@ -187,21 +207,82 @@ BEGIN
 		,	CustID
     FROM Temp_Cust
     WHERE Processed = 0;
-    
-    INSERT IGNORE INTO Temp_Recommend(CTSCustID,CustID,Username,Evidence)
-    SELECT 	cus.CTSCustID
-		,	cus.CustID
-		,	cus.Username
-        ,	(SELECT GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode) 
-			 FROM CTS_DataCenter.CustEvidence AS ce  
-				LEFT JOIN CTS_DataCenter.Evidence AS ev ON ev.EvidenceID = ce.EvidenceID
-             WHERE cus.CTSCustID = ce.CTSCustID) AS Evidence
-    FROM Temp_Cust AS tmp
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.Recommend 
-														AND cus.IsInternal = 0
-                                                        AND cus.CustSubID = 0
-    WHERE tmp.RoleID = 1
-        AND tmp.IsLicensee = 0;
+
+	SELECT MIN(DirectMemberType)
+	INTO lv_MinDirectMemberType
+	FROM Temp_Cust
+	WHERE RoleID = CONST_ROLEID_MEMBER
+		AND IsLicensee = 0;
+
+	IF (lv_MinDirectMemberType = CONST_DIRECT_MEMBER_SUPER) THEN
+		SELECT COUNT(DISTINCT SRecommend)
+		INTO lv_CountDistinct
+		FROM Temp_Cust
+		WHERE RoleID = CONST_ROLEID_MEMBER
+			AND IsLicensee = 0;
+
+		IF lv_CountDistinct = 1 THEN
+			INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID,Username,Evidence)
+			SELECT 	cus.CTSCustID
+				,	cus.CustID
+				,	cus.Username
+				,	(SELECT GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode) 
+					FROM CTS_DataCenter.CustEvidence AS ce  
+						LEFT JOIN CTS_DataCenter.Evidence AS ev ON ev.EvidenceID = ce.EvidenceID
+					WHERE cus.CTSCustID = ce.CTSCustID) AS Evidence
+			FROM Temp_Cust AS tmp
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.SRecommend 
+																AND cus.IsInternal = 0
+																AND cus.CustSubID = 0
+			WHERE tmp.RoleID = CONST_ROLEID_MEMBER
+				AND tmp.IsLicensee = 0;
+
+		END IF;
+
+	ELSEIF (lv_MinDirectMemberType = CONST_DIRECT_MEMBER_MASTER) THEN
+		SELECT COUNT(DISTINCT MRecommend)
+		INTO lv_CountDistinct
+		FROM Temp_Cust
+		WHERE RoleID = CONST_ROLEID_MEMBER
+			AND IsLicensee = 0;
+
+		IF lv_CountDistinct = 1 THEN
+			INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID,Username,Evidence)
+			SELECT 	cus.CTSCustID
+				,	cus.CustID
+				,	cus.Username
+				,	(SELECT GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode) 
+					FROM CTS_DataCenter.CustEvidence AS ce  
+						LEFT JOIN CTS_DataCenter.Evidence AS ev ON ev.EvidenceID = ce.EvidenceID
+					WHERE cus.CTSCustID = ce.CTSCustID) AS Evidence
+			FROM Temp_Cust AS tmp
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.MRecommend 
+																AND cus.IsInternal = 0
+																AND cus.CustSubID = 0
+			WHERE tmp.RoleID = CONST_ROLEID_MEMBER
+				AND tmp.IsLicensee = 0;
+
+		END IF;
+	
+	END IF;
+
+	IF (lv_MinDirectMemberType = 0 OR lv_CountDistinct > 1) THEN
+		INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID,Username,Evidence)
+		SELECT 	cus.CTSCustID
+			,	cus.CustID
+			,	cus.Username
+			,	(SELECT GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode) 
+				FROM CTS_DataCenter.CustEvidence AS ce  
+					LEFT JOIN CTS_DataCenter.Evidence AS ev ON ev.EvidenceID = ce.EvidenceID
+				WHERE cus.CTSCustID = ce.CTSCustID) AS Evidence
+		FROM Temp_Cust AS tmp
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.UplineCustID 
+															AND cus.IsInternal = 0
+															AND cus.CustSubID = 0
+		WHERE tmp.RoleID = CONST_ROLEID_MEMBER
+				AND tmp.IsLicensee = 0;
+
+	END IF;
 
 	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasDevice)
     SELECT 	js.OrigID
@@ -631,7 +712,7 @@ BEGIN
 		LEFT JOIN Temp_GroupResult AS grp ON cus.CTSCustID = grp.CTSCustID
         LEFT JOIN Temp_CustClassificationInfo AS cusclss ON cus.CustID = cusclss.CustID
         LEFT JOIN Temp_CustAssociationType AS asTy ON cus.CTSCustID = asTy.CTSCustID
-        LEFT JOIN Temp_Recommend AS re ON cus.Recommend = re.CustID
+        LEFT JOIN Temp_Upline AS re ON cus.UplineCustID = re.CustID
         LEFT JOIN Temp_CustCategory AS cat ON cat.CustID = cus.CustID
         LEFT JOIN Temp_CustLogTransInfo AS cti ON cti.CTSCustID = cus.CTSCustID
 	GROUP BY cus.RowNumber 

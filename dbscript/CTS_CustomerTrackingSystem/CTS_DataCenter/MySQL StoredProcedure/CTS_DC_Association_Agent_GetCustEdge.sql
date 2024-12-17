@@ -14,6 +14,7 @@ BEGIN
         
 		Revisions:
 			- 20231117@Victoria.Le: Initial Writing - Renovate Association Detection [Redmine ID: #192172]
+			- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
 		
 		---------------------------------------------------------------------------------------------------
 		[Before #192172]: CTS_DC_AssociationDetection_Agent_Detect 
@@ -25,29 +26,39 @@ BEGIN
         Example:
 			- CALL CTS_DataCenter.CTS_DC_Association_Agent_GetCustEdge('1,2,3');
 	*/
-	DECLARE CONST_AGENT_RANGE 		BIGINT DEFAULT 3000000000;
-	DECLARE lv_GroupID 				BIGINT DEFAULT CONST_AGENT_RANGE;
-	DECLARE lv_AgentJson	 		JSON;
-	DECLARE lv_OrigID 				BIGINT;
-	DECLARE lv_Count 				INT;
+	DECLARE CONST_AGENT_RANGE 				BIGINT DEFAULT 3000000000;
+	DECLARE lv_GroupID 						BIGINT DEFAULT CONST_AGENT_RANGE;
+	DECLARE CONST_ROLEID_MEMBER				TINYINT DEFAULT 1;
+	DECLARE CONST_DIRECT_MEMBER_MASTER      INT DEFAULT -3;
+	DECLARE CONST_DIRECT_MEMBER_SUPER       INT DEFAULT -4;
+
+	DECLARE lv_UplineJson 					JSON;
+	DECLARE lv_OrigID 						BIGINT;
+	DECLARE lv_Count 						INT;
+	DECLARE lv_MinDirectMemberType 			TINYINT;
+	DECLARE lv_CountDistinct				INT;
 	
 	#=============================================================================	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
 	CREATE TEMPORARY TABLE 	Temp_Cust (
 			CTSCustID 				BIGINT  PRIMARY KEY 
-		,	CustID   				BIGINT	
-        ,	Recommend				BIGINT
+		,	CustID   				INT	
+        ,	Recommend				INT
+		,	MRecommend				INT
+		,	SRecommend				INT
+		,	UplineCustID			INT
+		,	DirectMemberType		TINYINT
 		,	INDEX Temp_Cust_CustID (CustID)
-        ,	INDEX Temp_Cust_Recommend(Recommend)
+        ,	INDEX Temp_Cust_UplineCustID(UplineCustID)
 	);
 
-	DROP TEMPORARY TABLE IF EXISTS Temp_Recommend;
-	CREATE TEMPORARY TABLE 	Temp_Recommend (
+	DROP TEMPORARY TABLE IF EXISTS Temp_Upline;
+	CREATE TEMPORARY TABLE 	Temp_Upline (
 			CTSCustID 				BIGINT  PRIMARY KEY 
-        ,	CustID					BIGINT
+        ,	CustID					INT
         ,	Processed 				BIT 	DEFAULT 0
-        ,	INDEX IX_Temp_Recommend_CustID(CustID)
-        ,	INDEX IX_Temp_Recommend_Processed(Processed)
+        ,	INDEX IX_Temp_Upline_CustID(CustID)
+        ,	INDEX IX_Temp_Upline_Processed(Processed)
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_GroupResult;
@@ -68,36 +79,104 @@ BEGIN
 	);
 
 	#=============================================================================	
-	INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,Recommend)
+	INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,Recommend,MRecommend,SRecommend,UplineCustID,DirectMemberType)
 	SELECT 	cus.CTSCustID
 		, 	cus.CustID
         ,	cus.Recommend
+        ,	cus.MRecommend
+        ,	cus.SRecommend
+		,	CASE WHEN cus.Recommend = CONST_DIRECT_MEMBER_SUPER THEN cus.SRecommend
+				 WHEN cus.Recommend = CONST_DIRECT_MEMBER_MASTER THEN cus.MRecommend
+				 ELSE cus.Recommend END AS UplineCustID
+		,	CASE WHEN cus.Recommend IN (CONST_DIRECT_MEMBER_MASTER,CONST_DIRECT_MEMBER_SUPER) THEN cus.Recommend
+				 ELSE 0 END AS DirectMemberType
 	FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),
 							'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID 
 														AND cus.IsInternal = 0
-                                                        AND cus.RoleID = 1
+                                                        AND cus.RoleID = CONST_ROLEID_MEMBER
                                                         AND cus.IsLicensee = 0;
 														
-	INSERT IGNORE INTO Temp_Recommend(CTSCustID,CustID)
-	SELECT 	cus.CTSCustID
-        ,	cus.CustID
-	FROM Temp_Cust AS tmp
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.Recommend 
-														AND cus.IsInternal = 0
-                                                        AND cus.CustSubID = 0;
-														
-	WITH CTE AS (
-		SELECT DISTINCT 
-				CTSCustID
-			,	CustID
-		FROM Temp_Recommend
-    )
-    SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID)) AS CustJson
-	INTO lv_AgentJson
-    FROM CTE;
+	SELECT MIN(DirectMemberType)
+	INTO lv_MinDirectMemberType
+	FROM Temp_Cust;
+
+	IF (lv_MinDirectMemberType = CONST_DIRECT_MEMBER_SUPER) THEN
+		SELECT COUNT(DISTINCT SRecommend)
+		INTO lv_CountDistinct
+		FROM Temp_Cust;
+
+		IF lv_CountDistinct = 1 THEN
+			INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID)
+			SELECT 	cus.CTSCustID
+				,	cus.CustID
+			FROM Temp_Cust AS tmp
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.SRecommend 
+																AND cus.IsInternal = 0
+																AND cus.CustSubID = 0;
+
+			WITH CTE AS (
+				SELECT DISTINCT 
+						CTSCustID
+					,	CustID
+				FROM Temp_Upline
+			)
+			SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID)) AS CustJson
+			INTO lv_UplineJson
+			FROM CTE;
+
+		END IF;
+
+	ELSEIF (lv_MinDirectMemberType = CONST_DIRECT_MEMBER_MASTER) THEN
+
+		SELECT COUNT(DISTINCT MRecommend)
+		INTO lv_CountDistinct
+		FROM Temp_Cust;
+
+		IF lv_CountDistinct = 1 THEN
+			INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID)
+			SELECT 	cus.CTSCustID
+				,	cus.CustID
+			FROM Temp_Cust AS tmp
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.MRecommend 
+																AND cus.IsInternal = 0
+																AND cus.CustSubID = 0;
+
+			WITH CTE AS (
+				SELECT DISTINCT 
+						CTSCustID
+					,	CustID
+				FROM Temp_Upline
+			)
+			SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID)) AS CustJson
+			INTO lv_UplineJson
+			FROM CTE;
+
+		END IF;
+
+	END IF;
+
+	IF (lv_MinDirectMemberType = 0 OR lv_CountDistinct > 1) THEN
+		INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID)
+		SELECT 	cus.CTSCustID
+			,	cus.CustID
+		FROM Temp_Cust AS tmp
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.UplineCustID 
+															AND cus.IsInternal = 0
+															AND cus.CustSubID = 0;
+
+		WITH CTE AS (
+			SELECT DISTINCT 
+					CTSCustID
+				,	CustID
+			FROM Temp_Upline
+		)
+		SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID)) AS CustJson
+		INTO lv_UplineJson
+		FROM CTE;
+	END IF;
 	
-	CALL CTS_DataCenter.CTS_DC_Association_GetCustEdge(lv_AgentJson,1,0,0);
+	CALL CTS_DataCenter.CTS_DC_Association_GetCustEdge(lv_UplineJson,1,0,0);
 		
 	DROP TEMPORARY TABLE IF EXISTS Temp_Graph_Dup;
 	CREATE TEMPORARY TABLE Temp_Graph_Dup LIKE Temp_Graph;
@@ -114,7 +193,7 @@ BEGIN
 		
 		SELECT CTSCustID
         INTO lv_OrigID
-		FROM Temp_Recommend
+		FROM Temp_Upline
         WHERE Processed = 0
 		LIMIT 1;
 		
@@ -123,7 +202,7 @@ BEGIN
             LEAVE lp; 
         END IF;
         
-		UPDATE Temp_Recommend AS tmp
+		UPDATE Temp_Upline AS tmp
         SET tmp.Processed = 1
         WHERE tmp.CTSCustID = lv_OrigID;
         
@@ -137,7 +216,7 @@ BEGIN
 		) 
 		SELECT cte.OrigID
         FROM CTE_Group AS cte
-        WHERE EXISTS (SELECT 1 FROM Temp_Recommend AS tmp WHERE tmp.CTSCustID = cte.OrigID);
+        WHERE EXISTS (SELECT 1 FROM Temp_Upline AS tmp WHERE tmp.CTSCustID = cte.OrigID);
         
 		SELECT COUNT(1)
         INTO lv_Count
@@ -164,7 +243,7 @@ BEGIN
             ,	lv_GroupID
         FROM Temp_NodeCTSCustID;
 		
-		UPDATE Temp_Recommend AS tmp
+		UPDATE Temp_Upline AS tmp
         SET tmp.Processed = 1
         WHERE  EXISTS (SELECT 1 FROM Temp_GroupResult AS gp WHERE  gp.CTSCustID = tmp.CTSCustID);
         
@@ -179,8 +258,8 @@ BEGIN
 	SELECT 	cus.CTSCustID AS OrigID
         ,	grp.GroupID AS DestID
     FROM Temp_GroupResult AS grp
-		INNER JOIN Temp_Recommend AS re ON re.CTSCustID = grp.CTSCustID
-        INNER JOIN Temp_Cust AS cus ON re.CustID = cus.Recommend;
+		INNER JOIN Temp_Upline AS re ON re.CTSCustID = grp.CTSCustID
+        INNER JOIN Temp_Cust AS cus ON re.CustID = cus.UplineCustID;
 	
 END$$
 
