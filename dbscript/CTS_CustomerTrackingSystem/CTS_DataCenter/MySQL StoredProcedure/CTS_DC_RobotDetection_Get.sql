@@ -25,7 +25,7 @@ BEGIN
 			- 20241210@Casey.Huynh: 	New Robot AI, Bot Login Pattern [Redmine ID: #214655]
             
 		Example:
-			CALL CTS_DataCenter.CTS_DC_RobotDetection_Get(1317, @output1, @op_FirstRobotDate, @op_LastRobotDate); SELECT @op_FirstRobotDate,@op_LastRobotDate;
+			CALL CTS_DataCenter.CTS_DC_RobotDetection_Get(1317, @op_FirstRobotDate, @op_LastRobotDate); SELECT @op_FirstRobotDate,@op_LastRobotDate;
 	*/    
 	DECLARE	CONST_ROLEID_MEMBER		INT DEFAULT 1;
     
@@ -39,7 +39,9 @@ BEGIN
 	SELECT 	MIN(rd.CreatedDate), MAX(rd.LastModifiedDate)
     INTO op_FirstRobotDate, op_LastRobotDate
     FROM CTS_DataCenter.RobotDetection AS rd
-    WHERE rd.CustID = ip_CustID; 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON rd.CustID = cus.CustID AND cus.CustSubID = 0
+    WHERE rd.CustID = ip_CustID
+		AND cus.RoleID = CONST_ROLEID_MEMBER; 
     
     INSERT INTO Temp_PeriodRangeType(PeriodRangeType, PeriodRangeName, AIGroup)
     VALUES	(400,'Login Time Pattern', 1)
