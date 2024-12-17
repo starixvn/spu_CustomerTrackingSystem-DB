@@ -17,6 +17,7 @@ BEGIN
             - 20220518@Casey.Huynh: 	Renovate PA Process [Redmine ID: #172561]
 			- 20240703@Victoria.Le: 	Renovate CC phase 2 - Remove Table PinCustomerCategory  [Redmine ID: #205317]
             - 20241016@Casey.Huynh: 	Agency CC, Check VVIP Seperate Member and Agency [Redmine ID: #185799]
+			- 20241217@Tony.Nguyen:		Remove Recommend [Redmine ID: #214585]
             
 		Param's Explanation (filtered by):
         Example:
@@ -49,7 +50,6 @@ BEGIN
         ,	RoleID					SMALLINT
         ,	CustID					BIGINT UNSIGNED
         ,   CustSubID				SMALLINT
-        ,	Recommend				BIGINT UNSIGNED
         ,	SiteID					INT
         ,	IsLicensee				BIT /* 0: Credit,  1: Licensee */
         ,	IsInternal				BIT 
@@ -65,13 +65,12 @@ BEGIN
 	EXECUTE stmt1;    
 
 	/*3. Get Existed Customers */
-	INSERT IGNORE INTO Temp_ExistedCustomer(CTSCustID, UserName, RoleID, CustID, CustSubID, Recommend, SiteID, SubscriberID, IsLicensee, ErrorMsg)
+	INSERT IGNORE INTO Temp_ExistedCustomer(CTSCustID, UserName, RoleID, CustID, CustSubID, SiteID, SubscriberID, IsLicensee, ErrorMsg)
     SELECT 	c.CTSCustID
 		,	u.UserName
         , 	c.RoleID
         ,	c.CustID
         ,	c.CustSubID
-        ,	c.Recommend
         ,	c.SiteID
         ,	c.SubscriberID
 		,	c.IsLicensee
