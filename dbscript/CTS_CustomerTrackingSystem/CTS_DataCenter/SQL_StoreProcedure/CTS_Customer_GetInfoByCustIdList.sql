@@ -29,7 +29,7 @@ AS
 		- 20220822@Long.Luu:	Return more data [Redmine ID: 175698]
 		- 20221205@Victoria.Le:	Return more data: DangerSabaSc (Saba Soccer) and DangerSabaBkb (Saba Baseketball) [Redmine ID: #181208]
 		- 20240318@Casey.Huynh: Return empty if not existing CustInfo, CustProductStatus , CustInfo, Dep_CustSuper [Redmine ID: #198000]
-		- 20241216@Tony.Nguyen: Return Site, SiteId for Cust Member Direct Super, Master (Redmine ID: #214585)
+		- 20241216@Tony.Nguyen: Change the process so that it retrieves SiteID/Site for the member directly (Redmine ID: #214585)
 
 	Developer's Notes:
 		- @sourceType: 0- GET New Customer Info, 1- Get Info Customer table, 2-Get CustInfo table, 3 GET Info CustProductStatus table

@@ -43,15 +43,13 @@ sp: BEGIN
   DECLARE CONST_ROLEID_MASTER            		TINYINT DEFAULT 3;
   DECLARE CONST_ROLEID_SUPER            		TINYINT DEFAULT 4;
 
-  DECLARE CONST_DIRECT_CUSTID_MASTER            INT;
-  DECLARE CONST_DIRECT_CUSTID_SUPER             INT;
+  DECLARE CONST_DIRECT_MEMBER_MASTER           INT  DEFAULT -3;
+  DECLARE CONST_DIRECT_MEMBER_SUPER            INT  DEFAULT -4;
     
   SET CONST_CATEID_VVIP				                  = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');  
   SET CONST_AGENCY_PARENTID_VVIP				        = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
   SET CONST_AGENCY_PARENTID_PA				          = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
   SET CONST_AGENCY_CATEGROUPID_ROBOT			      = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_ROBOT');
-  SET CONST_DIRECT_CUSTID_MASTER                = -3;
-  SET CONST_DIRECT_CUSTID_SUPER                 = -4;
 
 DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
 CREATE TEMPORARY TABLE Temp_CustInfo(
@@ -132,28 +130,30 @@ CREATE TEMPORARY TABLE Temp_CustInfo(
       ,   cus.SRecommend
       ,   cus.MRecommend
       ,   cus.Recommend
-      ,   (CASE	WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cus.Recommend NOT IN (CONST_DIRECT_CUSTID_MASTER, CONST_DIRECT_CUSTID_SUPER)
-                  THEN cus.Recommend
-                WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cus.Recommend = CONST_DIRECT_CUSTID_MASTER
-                  THEN cus.MRecommend
-                WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cus.Recommend = CONST_DIRECT_CUSTID_SUPER
-                  THEN cus.SRecommend
-                WHEN cus.RoleID = CONST_ROLEID_AGENT
-                  THEN cus.MRecommend
-                WHEN cus.RoleID = CONST_ROLEID_MASTER
-                  THEN cus.SRecommend
-                END) AS DirectUpLineCustID  
-      ,   (CASE	WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cust.Recommend NOT IN (CONST_DIRECT_CUSTID_MASTER, CONST_DIRECT_CUSTID_SUPER)
-                  THEN CONST_ROLEID_AGENT
-                WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cust.Recommend = CONST_DIRECT_CUSTID_MASTER
-                  THEN CONST_ROLEID_MASTER
-                WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cust.Recommend = CONST_DIRECT_CUSTID_SUPER
-                  THEN CONST_ROLEID_SUPER
-                WHEN cus.RoleID = CONST_ROLEID_AGENT
-                  THEN CONST_ROLEID_MASTER
-                WHEN cus.RoleID = CONST_ROLEID_MASTER
-                  THEN CONST_ROLEID_SUPER
-                END) AS DirectUpLineCustIDRoleID  
+      ,   ( CASE	WHEN cus.RoleID = CONST_ROLEID_MEMBER
+                  THEN (
+                        CASE
+                          WHEN cus.Recommend = CONST_DIRECT_MEMBER_MASTER  THEN cus.MRecommend
+                          WHEN cus.Recommend = CONST_DIRECT_MEMBER_SUPER   THEN cus.SRecommend
+                          ELSE cus.Recommend
+                        END)
+                  WHEN cus.RoleID = CONST_ROLEID_AGENT
+                    THEN cus.MRecommend
+                  WHEN cus.RoleID = CONST_ROLEID_MASTER
+                    THEN cus.SRecommend
+            END) AS DirectUpLineCustID  
+      ,   ( CASE	WHEN cus.RoleID = CONST_ROLEID_MEMBER
+                  THEN (
+                        CASE
+                          WHEN cus.Recommend = CONST_DIRECT_MEMBER_MASTER  THEN CONST_ROLEID_MASTER
+                          WHEN cus.Recommend = CONST_DIRECT_MEMBER_SUPER   THEN CONST_ROLEID_SUPER
+                          ELSE CONST_ROLEID_AGENT
+                        END)
+                  WHEN cus.RoleID = CONST_ROLEID_AGENT
+                    THEN CONST_ROLEID_MASTER
+                  WHEN cus.RoleID = CONST_ROLEID_MASTER
+                    THEN CONST_ROLEID_SUPER
+            END) AS DirectUpLineCustIDRoleID  
       ,   cus.IsLicensee
   FROM CTS_DataCenter.CTSCustomer AS cus 
   WHERE cus.CustSubID = 0
