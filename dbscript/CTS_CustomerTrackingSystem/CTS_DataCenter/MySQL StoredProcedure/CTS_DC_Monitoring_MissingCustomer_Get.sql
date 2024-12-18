@@ -10,7 +10,6 @@ BEGIN
 	/*
 		Created:	20241213@Jonas.Huynh
 		Task:		Missing Customer [Redmine ID: 214157]
-		Task:		Missing Customer [Redmine ID: 214157]
 		DB:			CTS_DataCenter
 		Original:
 
@@ -65,7 +64,7 @@ BEGIN
 		END IF;
 	END IF;
     
-    SELECT DISTINCT CustID 
+    SELECT DISTINCT t.CustID 
     FROM Temp_CTSCustomer AS t
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS c ON c.CustID = t.CustID
     WHERE c.CustID IS NULL;

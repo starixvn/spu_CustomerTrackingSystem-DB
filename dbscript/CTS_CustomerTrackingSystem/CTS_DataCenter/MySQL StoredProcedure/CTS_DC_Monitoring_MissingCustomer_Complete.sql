@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation (filtered by):
             
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_Monitoring_MissingCustomer_Complete();
+			- CALL CTS_DataCenter.CTS_DC_Monitoring_MissingCustomer_Complete(1);
 
 	*/
     DECLARE CONST_MISSING_NEWCUSTOMER				TINYINT DEFAULT 2;
@@ -32,8 +32,7 @@ BEGIN
 				AND s.ItemID IN (CONST_MISSING_NEWCUSTOMER, CONST_MISSING_REACTIVATEDCUSTOMER)
 		SET IsResolved = 1
 		WHERE ID <= ip_LastScannedID 
-			AND IsResolved = 0
-		ORDER BY ID ASC;
+			AND IsResolved = 0;
 	 
 		UPDATE CTS_DataCenter.SystemParameter
 		SET ParameterValue = ip_LastScannedID
