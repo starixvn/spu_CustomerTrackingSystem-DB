@@ -75,8 +75,6 @@ BEGIN
 		,	Recommend			INT
 		,	MRecommend			INT
 		,	SRecommend			INT
-		,	SMACustID			INT
-		,	DirectMemberType	TINYINT
 		,	Danger1				TINYINT
 		,	Danger2				TINYINT
 		,	Danger3				TINYINT
