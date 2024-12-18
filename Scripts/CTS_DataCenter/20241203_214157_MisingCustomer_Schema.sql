@@ -26,7 +26,7 @@ INSERT INTO `CTS_DataCenter`.`StaticList`(`ListID`,`ItemID`,`ListName`,`ListName
 (20,103,'Job Monitoring IssueType','Job Monitoring IssueType','Realtime Classification - Excessive BySport Changes','Realtime Classification - Excessive BySport Changes',null,null,null,null,1,null, NOW());
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES
-(185,'JobMonitoring_ReactivatedCustomerLastScannedTime','JobMonitoring_ReactivatedCustomerLastScannedTime','BIGINT UNSIGNED', CURRENT_TIMESTAMP(3));
+(185,'JobMonitoring_ReactivatedCustomerLastScannedTime','JobMonitoring_ReactivatedCustomerLastScannedTime','DATETIME', CURRENT_TIMESTAMP(3));
 
 /*Update Table*/
 ALTER TABLE CTS_DataCenter.JobMonitoring_IncorrectData DROP INDEX IX_JobMonitoring_IncorrectData_IssueTypeID;
