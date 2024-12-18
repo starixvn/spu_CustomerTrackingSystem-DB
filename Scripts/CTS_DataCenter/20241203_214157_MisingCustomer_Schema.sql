@@ -26,14 +26,12 @@ INSERT INTO `CTS_DataCenter`.`StaticList`(`ListID`,`ItemID`,`ListName`,`ListName
 (20,103,'Job Monitoring IssueType','Job Monitoring IssueType','Realtime Classification - Excessive BySport Changes','Realtime Classification - Excessive BySport Changes',null,null,null,null,1,null, NOW());
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) VALUES
-(185,'JobMonitoring_MissingCustomer_LastScanID','JobMonitoring_MissingCustomer_LastScanID','BIGINT UNSIGNED','0'),
-(186,'JobMonitoring_ReactivatedCustomerLastScannedTime','JobMonitoring_ReactivatedCustomerLastScannedTime','BIGINT UNSIGNED', CURRENT_TIMESTAMP(3));
+(185,'JobMonitoring_ReactivatedCustomerLastScannedTime','JobMonitoring_ReactivatedCustomerLastScannedTime','BIGINT UNSIGNED', CURRENT_TIMESTAMP(3));
 
-/*Update param*/
-SELECT MAX(ID)
-INTO @lv_MaxID
-FROM CTS_DataCenter.JobMonitoring_IncorrectData;
+/*Update Table*/
+ALTER TABLE CTS_DataCenter.JobMonitoring_IncorrectData DROP INDEX IX_JobMonitoring_IncorrectData_IssueTypeID;
+CREATE UNIQUE INDEX IX_JobMonitoring_IncorrectData_IssueTypeID_IsResolved ON CTS_DataCenter.JobMonitoring_IncorrectData (IssueTypeID, IsResolved);
 
-UPDATE CTS_DataCenter.SystemParameter
-SET ParameterValue = @lv_MaxID
-WHERE ParameterID = 185;
+
+
+

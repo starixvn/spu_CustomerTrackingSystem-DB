@@ -86,5 +86,8 @@ BEGIN
 		FROM Temp_PotentialCategory2;
 	END IF;
     
+    SELECT ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID,  IsIssueTypeValid
+    FROM Temp_IncorrectData;
+    
 END$$
 DELIMITER ;

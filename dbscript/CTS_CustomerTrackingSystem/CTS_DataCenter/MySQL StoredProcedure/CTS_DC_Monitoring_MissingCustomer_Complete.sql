@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_MissingCustomer_Complete`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Monitoring_MissingCustomer_Complete`(
-	IN ip_LastScannedID		BIGINT
+	IN ip_ResolvedIDs		TEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -21,22 +21,19 @@ BEGIN
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_Monitoring_MissingCustomer_Complete(1);
 
-	*/
-    DECLARE CONST_MISSING_NEWCUSTOMER				TINYINT DEFAULT 2;
-    DECLARE CONST_MISSING_REACTIVATEDCUSTOMER		TINYINT DEFAULT 50;
+	*/  
+	DROP TEMPORARY TABLE IF EXISTS Temp_ResolvedIDs;    
+	CREATE TEMPORARY TABLE Temp_ResolvedIDs( 	  
+		ID		BIGINT	 UNSIGNED PRIMARY KEY
+	);
+	
+    SET @sql = CONCAT("INSERT INTO Temp_ResolvedIDs (ID) VALUES ('", REPLACE(ip_ResolvedIDs, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
+
+	UPDATE CTS_DataCenter.JobMonitoring_IncorrectData AS a
+		INNER JOIN CTS_DataCenter.Temp_ResolvedIDs AS r ON r.ID = a.ID
+	SET IsResolved = 1;
     
-    IF (ip_LastScannedID IS NOT NULL AND ip_LastScannedID > 0) THEN
-		UPDATE CTS_DataCenter.JobMonitoring_IncorrectData AS a
-			INNER JOIN CTS_DataCenter.StaticList AS s ON s.ItemID = a.IssueTypeID 
-				AND s.ListID = 20 
-				AND s.ItemID IN (CONST_MISSING_NEWCUSTOMER, CONST_MISSING_REACTIVATEDCUSTOMER)
-		SET IsResolved = 1
-		WHERE ID <= ip_LastScannedID 
-			AND IsResolved = 0;
-	 
-		UPDATE CTS_DataCenter.SystemParameter
-		SET ParameterValue = ip_LastScannedID
-		WHERE ParameterID = 185;
-	END IF;
 END$$
 DELIMITER ;
