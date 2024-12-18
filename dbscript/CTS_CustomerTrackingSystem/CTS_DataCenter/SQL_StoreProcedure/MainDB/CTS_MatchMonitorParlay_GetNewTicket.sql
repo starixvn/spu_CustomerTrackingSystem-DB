@@ -18,6 +18,7 @@ AS
 
 	Revisions:
 		- 20240822@Casey.Huynh: Created [Redmine ID: 152883]
+		- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
 
 	Params Explaination:
 
@@ -89,14 +90,14 @@ BEGIN
 		,	bt.sequenceid 	AS SequenceId
 		,	bt.transid 		AS TransId
 	FROM bodb02.dbo.bettrans AS bt WITH(NOLOCK)
-		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON bt.recommend = c.custid
+		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON bt.custid = c.custid
 	WHERE	bt.sequenceid > @LastScannedSequenceID
 		AND bt.Currency NOT IN (20,27,28)
-		AND bt.Username NOT LIKE '%Cashout%'
 		AND bt.srecommend NOT IN (41430709) 
 		AND bt.mrecommend NOT IN (27899314,11656504,12146012) 
 		AND bt.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398) 	
 		AND c.site NOT IN ('Nextbet','9wickets','9wsports')
+		AND c.Username NOT LIKE '%Cashout%'
 		AND (CAST(bt.BetCheck AS INT) & 2 = 2  -- Combo 2 bit 2
 			OR CAST(bt.BetCheck AS INT) & 4 = 4) -- Combo 3 bit 3
 		AND bt.Betteam = 1						-- 1:Mix Parlay
