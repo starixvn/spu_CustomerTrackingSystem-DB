@@ -18,6 +18,7 @@ ADD COLUMN IsResolved	BIT(1) DEFAULT 0;
     
 /*Init params*/
 INSERT INTO `CTS_DataCenter`.`StaticList`(`ListID`,`ItemID`,`ListName`,`ListNameDisplay`,`ItemName`,`ItemNameDisplay`,`ItemValue`,`ItemDefaultValue`,`ItemParentItemID`,`PriorityOrder`,`Status`,`Description`,`CreatedDate`) VALUES
+(20,4,'Job Monitoring IssueType','Job Monitoring IssueType','New Customer - Total Unresolved Missing Customers','New Customer - Total Unresolved Missing Customers',null,null,null,null,1,null, NOW()),
 (20,50,'Job Monitoring IssueType','Job Monitoring IssueType','Reactivated Customer - Missing','Reactivated Customer - Missing',null,null,null,null,1,null, NOW()),
 (20,203,'Job Monitoring IssueType','Job Monitoring IssueType','Classification - Excessive Gerneral Normal Insert','Classification - Excessive Gerneral Normal Insert',null,null,null,null,1,null, NOW()),
 (20,204,'Job Monitoring IssueType','Job Monitoring IssueType','Classification - Excessive BySport Normal Insert','Classification - Excessive BySport Normal Insert',null,null,null,null,1,null, NOW()),
