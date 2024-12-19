@@ -29,8 +29,8 @@ INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDe
 (185,'JobMonitoring_ReactivatedCustomerLastScannedTime','JobMonitoring_ReactivatedCustomerLastScannedTime','DATETIME', CURRENT_TIMESTAMP(3));
 
 /*Update Table*/
-ALTER TABLE CTS_DataCenter.JobMonitoring_IncorrectData DROP INDEX IX_JobMonitoring_IncorrectData_IssueTypeID;
-CREATE UNIQUE INDEX IX_JobMonitoring_IncorrectData_IssueTypeID_IsResolved ON CTS_DataCenter.JobMonitoring_IncorrectData (IssueTypeID, IsResolved);
+ALTER TABLE CTS_DataCenter.JobMonitoring_IncorrectData DROP INDEX IX_JobMonitoring_IncorrectData_IssueTypeID_IsResolved;
+CREATE INDEX IX_JobMonitoring_IncorrectData_IssueTypeID_IsResolved ON CTS_DataCenter.JobMonitoring_IncorrectData (IssueTypeID, IsResolved);
 
 
 
