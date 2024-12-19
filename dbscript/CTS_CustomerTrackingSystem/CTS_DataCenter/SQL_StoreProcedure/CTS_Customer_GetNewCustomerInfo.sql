@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" viewers="" isFunction="0" isNested="0"></info>*/
 
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
@@ -54,7 +54,7 @@ BEGIN;
 		,	c.RoleId
 		,	c.UserName2
 		,	c.RepUpdateTime
-	FROM	dbo.Customer AS c WITH(NOLOCK)
+	FROM	bodb02.dbo.Customer AS c WITH(NOLOCK)
 	WHERE	c.CustId > @LastCustId
 	ORDER BY c.CustId ASC;	
 	

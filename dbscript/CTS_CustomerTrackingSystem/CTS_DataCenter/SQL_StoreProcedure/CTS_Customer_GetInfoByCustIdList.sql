@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" viewers="" isFunction="0" isNested="1"></info>*/
 
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
@@ -98,10 +98,10 @@ BEGIN;
 			,	Mrecommend = cust.mrecommend 
 			,	Recommend = cust.recommend	
 			,	CreatedDate = cust.creatdate	
-		FROM dbo.Customer AS cust WITH (NOLOCK)
+		FROM bodb02.dbo.Customer AS cust WITH (NOLOCK)
 			INNER JOIN #tmpCustomers AS tmpCust WITH (NOLOCK) ON cust.custid = tmpCust.CustId
-			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
-			LEFT JOIN dbo.[Site] AS st2 WITH (NOLOCK) ON cust.[site] = st2.[site];
+			INNER JOIN bodb02.dbo.Exchange AS ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
+			LEFT JOIN bodb02.dbo.[Site] AS st2 WITH (NOLOCK) ON cust.[site] = st2.[site];
 
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
 		SET a.CustStatusID = (CASE 
