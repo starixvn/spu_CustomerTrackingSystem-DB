@@ -81,8 +81,8 @@ BEGIN
 	WHERE a.IsResolved = 0;
        
 	IF EXISTS (SELECT 1 FROM Temp_IncorrectData2) THEN
-		INSERT INTO Temp_IncorrectData
-		SELECT (ID, IssueTypeID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IsIssueTypeValid)
+		INSERT INTO Temp_IncorrectData(ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID, IsIssueTypeValid)
+		SELECT ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID, IsIssueTypeValid
 		FROM Temp_IncorrectData2;
 	END IF;
     
