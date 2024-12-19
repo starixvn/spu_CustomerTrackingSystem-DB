@@ -83,7 +83,7 @@ BEGIN
 	IF EXISTS (SELECT 1 FROM Temp_IncorrectData2) THEN
 		INSERT INTO Temp_IncorrectData
 		SELECT (ID, IssueTypeID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IsIssueTypeValid)
-		FROM Temp_PotentialCategory2;
+		FROM Temp_IncorrectData2;
 	END IF;
     
     SELECT ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID,  IsIssueTypeValid
