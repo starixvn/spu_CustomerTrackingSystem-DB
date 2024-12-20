@@ -32,7 +32,7 @@ CREATE TABLE MBRawTransaction (
     CountryName VARCHAR(32),
     Timezone VARCHAR(32),
     Language VARCHAR(32),
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     INDEX IX_MBRawTransaction_SubscriberName (SubscriberName)
 );
 
@@ -42,7 +42,7 @@ CREATE TABLE MBAccount (
     SubscriberID INT NOT NULL,
     LoginName VARCHAR(100) NOT NULL,
     LastLoginTime DATETIME(4) NOT NULL,
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     UNIQUE KEY UX_MBAccount_SubscriberID_LoginName (SubscriberID, LoginName)
 );
 
@@ -50,7 +50,7 @@ DROP TABLE IF EXISTS MBDeviceCodeMediaDRM;
 CREATE TABLE MBDeviceCodeMediaDRM (
     ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     Code VARCHAR(32) NOT NULL,
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     LastAccessedDate DATE NOT NULL,
     UNIQUE KEY UX_MBDeviceCodeMediaDRM_Code (Code)
 );
@@ -60,7 +60,7 @@ CREATE TABLE MBDeviceCodeMachine (
     ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     Code VARCHAR(32) NOT NULL,
     MachineOSType SMALLINT NOT NULL COMMENT 'DCS_DataCenter.StaticList.ListID = 5',
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     LastAccessedDate DATE NOT NULL,
     UNIQUE KEY UX_MBDeviceCodeMachine_Code (Code),
     KEY IX_MBDeviceCodeMachine_MachineOSType (MachineOSType)
@@ -70,7 +70,7 @@ DROP TABLE IF EXISTS MBDeviceCodeTagging;
 CREATE TABLE MBDeviceCodeTagging (
     ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     Code VARCHAR(32) NOT NULL,
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     LastAccessedDate DATE NOT NULL,
     UNIQUE KEY UX_MBDeviceCodeTagging_Code (Code)
 );
@@ -81,7 +81,7 @@ CREATE TABLE MBDeviceModel (
     ModelName VARCHAR(32) NOT NULL,
     Manufacturer VARCHAR(32) NOT NULL,
     Brand VARCHAR(32) NOT NULL,
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     LastAccessedDate DATE NOT NULL,
     UNIQUE KEY UX_MBModelDevice_ModelName_Manufacturer_Brand (ModelName, Manufacturer, Brand)
 );
@@ -91,7 +91,7 @@ CREATE TABLE MBOS (
     ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     OSName VARCHAR(32) NOT NULL,
     Version VARCHAR(32) NOT NULL,
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     LastAccessedDate DATE NOT NULL,
     UNIQUE KEY UX_MBOS_OSName_Version (OSName, Version)
 );
@@ -102,7 +102,7 @@ CREATE TABLE MBUserSetting (
     CountryName VARCHAR(32) NOT NULL,
     TimeZone VARCHAR(32) NOT NULL,
     LanguageName VARCHAR(32) NOT NULL,
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     LastAccessedDate DATE NOT NULL,
     UNIQUE KEY UX_MBUserSetting_CountryName_TimeZone_LanguageName (CountryName, TimeZone, LanguageName)
 );
@@ -125,7 +125,7 @@ CREATE TABLE MBTransaction (
     MBDeviceModelID BIGINT UNSIGNED,
     MBOSID BIGINT UNSIGNED,
     MBUserSettingID BIGINT UNSIGNED,
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     UNIQUE KEY UX_MBTransaction_MBRawTransactionID (MBRawTransactionID)
 );
 
@@ -153,7 +153,7 @@ CREATE TABLE MBProcessedTransaction (
     Timezone VARCHAR(32),
     Language VARCHAR(32),
     Country VARCHAR(32),
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     PRIMARY KEY (ID, CreatedDate),
     KEY IX_MBProcessedTransaction_CreatedDate_SubscriberName (CreatedDate, SubscriberName),
     KEY IX_MBProcessedTransaction_SubscriberName_LoginName (SubscriberName, LoginName)
@@ -187,7 +187,7 @@ CREATE TABLE MBTransaction07 (
     MBDeviceMappingID BIGINT UNSIGNED,
     MBDeviceID BIGINT UNSIGNED,
     RecoverType TINYINT,
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     PRIMARY KEY (ID, CreatedDate),
     KEY IX_MBTransaction07_CreatedDate_SubscriberID (CreatedDate, SubscriberID, MBAccountID),
     KEY IX_MBTransaction07_MBDeviceMappingID (MBDeviceMappingID)
@@ -212,7 +212,7 @@ CREATE TABLE MBDeviceMapping (
     MBDeviceID BIGINT UNSIGNED NOT NULL,
     FirstMBRawTransactionID BIGINT UNSIGNED NOT NULL,
     RecoverType SMALLINT NOT NULL,
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     UNIQUE KEY UX_MBDeviceMapping_Group (MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID),
 	KEY IX_MBDeviceMapping_MBDeviceCodeMediaDRMID (MBDeviceCodeMediaDRMID),
 	KEY IX_MBDeviceMapping_MBDeviceCodeMachineID (MBDeviceCodeMachineID),
@@ -223,7 +223,7 @@ DROP TABLE IF EXISTS MBDevice;
 CREATE TABLE MBDevice (
     ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     FirstMBRawTransactionID BIGINT UNSIGNED NOT NULL,
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     LastAccessedDate DATE NOT NULL,
     UNIQUE KEY UX_MBDevice_FirstMBRawTransactionID (FirstMBRawTransactionID)
 );
@@ -234,7 +234,7 @@ CREATE TABLE MBAssociation (
     MBAccountID BIGINT UNSIGNED NOT NULL,
     MBDeviceID BIGINT UNSIGNED NOT NULL,
     SubscriberID BIGINT UNSIGNED NOT NULL,
-    InsertedTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    InsertedTime DATETIME NOT NULL DEFAULT NOW(),
     UNIQUE KEY UX_MBAssociation_MBAccountID_MBDeviceID (MBAccountID, MBDeviceID),
     KEY IX_MBAssociation_MBDeviceID_MBAccountID (MBDeviceID, MBAccountID)
 );
