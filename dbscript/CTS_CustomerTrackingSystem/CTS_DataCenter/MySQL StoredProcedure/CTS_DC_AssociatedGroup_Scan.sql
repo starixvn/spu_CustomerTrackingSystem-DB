@@ -26,6 +26,7 @@ sp : BEGIN
 			- 20230313@Casey.Huynh:		Applied Betting Parten OTGB [Redmine ID: #184791]
             - 20230421@Casey.Huynh: 	Add AssType to AssociationByIP [Redmine ID: #185783]
             - 20240628@Thomas.Nguyen:	Renovate CC phase 2 - Change datatype for lv_PACategoryID to INT [Redmine ID: #205317]
+            - 20241219@Casey.Huynh: 	HF Add Association Member Only [Redmine ID: #215554]
 
 		Param's Explanation (filtered by):
 
@@ -36,6 +37,8 @@ sp : BEGIN
 	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;
 	DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 4;
 	DECLARE CONST_ASSBYIP_ACTIVESTATUS 		INT DEFAULT 1;
+    
+    DECLARE CONST_ROLEID_MEMBER				TINYINT DEFAULT 1;
     #=================================================
     DECLARE lv_BatchSize 		BIGINT;
     DECLARE lv_LastGroupID 		BIGINT;
@@ -225,7 +228,7 @@ sp : BEGIN
 		FROM  Temp_Device AS dv
 			STRAIGHT_JOIN CTS_DataCenter.AssociationByDevice AS lv1 ON dv.DCSDeviceID = lv1.DCSDeviceID
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = lv1.CTSCustID AND tkd.LastTicketDate >= dv.AddGroupDate 
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = lv1.CTSCustID
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = lv1.CTSCustID AND cus.RoleID = CONST_ROLEID_MEMBER
 		WHERE NOT EXISTS (SELECT 1 
 						  FROM AssociatedGroupAccount AS acc 
 							INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON acc.GroupID =  ag.GroupID AND ag.IsDisable = 0
@@ -244,7 +247,7 @@ sp : BEGIN
 		FROM Temp_Cust AS tmp 
 			STRAIGHT_JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.ToCTSCustID = tmp.CTSCustID
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = ma.FromCTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate 
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.FromCTSCustID
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.FromCTSCustID AND cus.RoleID = CONST_ROLEID_MEMBER
 		WHERE NOT EXISTS (SELECT 1 
 						  FROM AssociatedGroupAccount AS acc 
 							INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON acc.GroupID =  ag.GroupID AND ag.IsDisable = 0
@@ -260,7 +263,7 @@ sp : BEGIN
 		FROM Temp_Cust AS tmp 
 			STRAIGHT_JOIN CTS_DataCenter.AssociationByManual AS ma ON ma.FromCTSCustID  = tmp.CTSCustID
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = ma.ToCTSCustID AND tkd.LastTicketDate >= tmp.AddGroupDate
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.ToCTSCustID
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = ma.ToCTSCustID AND cus.RoleID = CONST_ROLEID_MEMBER
 		WHERE NOT EXISTS (SELECT 1 
 						  FROM AssociatedGroupAccount AS acc
 							INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON acc.GroupID =  ag.GroupID AND ag.IsDisable = 0
@@ -283,7 +286,7 @@ sp : BEGIN
 									FROM CTS_DataCenter.AssociationByAI AS ai
 										INNER JOIN Temp_AssociationByAI_AssType AS tmpAt ON ai.FromCustID = tmp.CustID AND ai.AssType = tmpAt.AssTypeItemValue) AS ltr
 			) AS tmpAi
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpAi.ToCustID AND cus.CustSubID = 0
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpAi.ToCustID AND cus.CustSubID = 0 AND cus.RoleID = CONST_ROLEID_MEMBER
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmpAi.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
 						  FROM CTS_DataCenter.AssociatedGroupAccount AS acc
@@ -303,7 +306,7 @@ sp : BEGIN
 								FROM CTS_DataCenter.AssociationByAI AS ai
 									INNER JOIN Temp_AssociationByAI_AssType AS tmpAt ON ai.ToCustID = tmp.CustID AND ai.AssType = tmpAt.AssTypeItemValue) AS ltr
 			) AS tmpAi
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpAi.FromCustID AND cus.CustSubID = 0
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpAi.FromCustID AND cus.CustSubID = 0 AND cus.RoleID = CONST_ROLEID_MEMBER
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmpAi.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
 						  FROM AssociatedGroupAccount AS acc 
@@ -327,7 +330,7 @@ sp : BEGIN
             ,	cus.IsLicensee
 		FROM  Temp_AIGroup AS gp
 			STRAIGHT_JOIN CTS_DataCenter.AssociationGroupByAI AS lv1 ON gp.GroupID = lv1.GroupID
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = lv1.CustID AND cus.CustSubID = 0
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = lv1.CustID AND cus.CustSubID = 0 AND cus.RoleID = CONST_ROLEID_MEMBER
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= gp.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
 						  FROM AssociatedGroupAccount AS acc
@@ -350,7 +353,7 @@ sp : BEGIN
 									FROM CTS_DataCenter.AssociationByIP AS ip
 										INNER JOIN Temp_AssociationByIP_AssType AS tmpAt ON ip.FromCustID = tmp.CustID AND ip.AssType = tmpAt.AssTypeItemValue) AS ltr
 			 ) AS tmpIp
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpIp.ToCustID AND cus.CustSubID = 0
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpIp.ToCustID AND cus.CustSubID = 0 AND cus.RoleID = CONST_ROLEID_MEMBER
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmpIp.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
 						  FROM AssociatedGroupAccount AS acc 
@@ -370,7 +373,7 @@ sp : BEGIN
 									FROM CTS_DataCenter.AssociationByIP AS ip
 										INNER JOIN Temp_AssociationByIP_AssType AS tmpAt ON ip.ToCustID = tmp.CustID AND ip.AssType = tmpAt.AssTypeItemValue) AS ltr
 			 ) AS tmpIp
-			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpIp.FromCustID AND cus.CustSubID = 0
+			STRAIGHT_JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpIp.FromCustID AND cus.CustSubID = 0 AND cus.RoleID = CONST_ROLEID_MEMBER
 			STRAIGHT_JOIN CTS_Archive.CTSCustomerAssociationStatus AS tkd ON tkd.CTSCustID = cus.CTSCustID AND tkd.LastTicketDate >= tmpIp.AddGroupDate 
 		WHERE NOT EXISTS (SELECT 1 
 						  FROM AssociatedGroupAccount AS acc 
@@ -392,9 +395,10 @@ sp : BEGIN
         ,	cus.IsLicensee
     FROM Temp_CustDetected AS cus
 		LEFT JOIN Temp_PASite AS paSite ON cus.SiteID = paSite.SiteID
-	WHERE  (cus.IsLicensee = 0 AND lv_AllCredit = 1) 
-		OR (cus.IsLicensee = 1 AND lv_AllLicensee = 1)
-        OR EXISTS (SELECT 1 FROM Temp_Site AS site WHERE site.SiteID = cus.SiteID);
+	WHERE cus.RoleID = CONST_ROLEID_MEMBER
+		AND ((cus.IsLicensee = 0 AND lv_AllCredit = 1) 
+			OR (cus.IsLicensee = 1 AND lv_AllLicensee = 1)
+			OR EXISTS (SELECT 1 FROM Temp_Site AS site WHERE site.SiteID = cus.SiteID));
     
 END$$
 DELIMITER ;
