@@ -26,7 +26,8 @@ AS
 		- 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
 		- 20231030@Victoria.Le: New Member Classify Tagging [Redmine ID: #195060]
 		- 20240424@Thomas.Nguyen: Remove logic New Member Classify Tagging [Redmine ID: #200854]
-		- 20240618@Jonas.Nguyen: Renovate CC - Phase 2 [Redmine ID: #205317]
+		- 20240618@Jonas.Huynh: Renovate CC - Phase 2 [Redmine ID: #205317]
+		- 20241223@Jonas.Huynh: HF Incorrect Inactive Category [Redmine ID: #215615]
 
 	Param's Explanation:
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
