@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `Adhoc_HF115554_RescanMemberGroup`;
 
 DELIMITER $$
-CREATE DEFINER=`casey.vn`@`%` PROCEDURE `Adhoc_HF115554_RescanMemberGroup`(	
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `Adhoc_HF115554_RescanMemberGroup`(	
 ) 
     SQL SECURITY INVOKER
 sp : BEGIN
@@ -25,17 +25,8 @@ sp : BEGIN
 	DECLARE CONST_ASSTYPE_IP 				INT DEFAULT 4;
 	DECLARE CONST_ASSBYIP_ACTIVESTATUS 		INT DEFAULT 1;
     
-    DECLARE CONST_ROLEID_MEMBER				TINYINT DEFAULT 1;
     #=================================================
-    DECLARE lv_BatchSize 		BIGINT;
-    DECLARE lv_LastGroupID 		BIGINT;
-    DECLARE lv_LastCTSCustID 	BIGINT;
-    DECLARE lv_AllCredit		SMALLINT;
-	DECLARE lv_AllLicensee		SMALLINT;
-    DECLARE lv_Sites			LONGTEXT;
-    DECLARE lv_PASites			LONGTEXT;
     DECLARE lv_HasDevice		BIT;
-    DECLARE lv_HasManual		BIT;
 	DECLARE lv_HasIP			BIT;
     DECLARE lv_HasAI			BIT;
     
@@ -94,21 +85,20 @@ sp : BEGIN
     
     SELECT gp.GroupID, gp.Created
     INTO lv_ScanGroupID,  lv_ScanCreated
-    FROM Adhoc_HF215554_AssociatedGroupAccount_Group AS gp
+    FROM CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Group AS gp
+	WHERE gp.ProcessStatus = 0
     ORDER BY gp.GroupID ASC, gp.Created ASC
     LIMIT 1;
     
    WHILE lv_ScanGroupID IS NOT NULL
    DO
-		DELETE del FROM Temp_Cust del;
-        DELETE del FROM Temp_CustDetected del;
+		TRUNCATE TABLE Temp_Cust;
+        TRUNCATE TABLE Temp_CustDetected;
         
 		SELECT 	HasDevice
-			,	HasManual
 			,	HasIP
 			,	HasAI
 		INTO 	lv_HasDevice
-			,	lv_HasManual
 			,	lv_HasIP
 			,	lv_HasAI
 		FROM  CTS_DataCenter.AssociatedGroup AS ag
@@ -126,11 +116,10 @@ sp : BEGIN
 			AND Created = lv_ScanCreated;
 
 		/**************************Device*******************************/
-		DROP TABLE IF EXISTS Temp_AssociationByDevice;
-		CREATE TABLE Temp_AssociationByDevice(
+		DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByDevice;
+		CREATE TEMPORARY TABLE Temp_AssociationByDevice(
 				DCSDeviceID BIGINT
 			,	CTSCustID BIGINT
-			
 			,	PRIMARY KEY (DCSDeviceID,CTSCustID)
 		);
 
@@ -148,7 +137,7 @@ sp : BEGIN
 			FROM  Temp_AssociationByDevice AS dv
 			WHERE EXISTS (	SELECT 1
 							FROM CTS_DataCenter.AssociationByDevice AS lv1  
-								INNER JOIN CTS_Adhoc.Adhoc_HF215554_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = lv1.CTSCustID
+								INNER JOIN CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = lv1.CTSCustID
 							WHERE dv.DCSDeviceID = lv1.DCSDeviceID)
 			;
 				
@@ -163,8 +152,9 @@ sp : BEGIN
 				INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON tmp.CustID = ai.FromCustID            
 			WHERE EXISTS (SELECT 1
 							FROM CTS_DataCenter.CTSCustomer AS cus
-								INNER JOIN CTS_Adhoc.Adhoc_HF215554_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
-							WHERE cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.RoleID = 1);
+								INNER JOIN CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
+							WHERE cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.RoleID = 1)
+				AND EXISTS (SELECT 1 FROM Temp_AssociationByAI_AssType AS tmpAt WHERE tmpAt.AssTypeItemValue = ai.AssType);
 			
 			INSERT IGNORE INTO Temp_CustDetected(CTSCustID, AssType)
 			SELECT tmp.CTSCustID, 3
@@ -172,12 +162,13 @@ sp : BEGIN
 				INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON tmp.CustID = ai.ToCustID            
 			WHERE EXISTS (SELECT 1
 							FROM CTS_DataCenter.CTSCustomer AS cus
-								INNER JOIN CTS_Adhoc.Adhoc_HF215554_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
-							WHERE cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.RoleID = 1);
+								INNER JOIN CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
+							WHERE cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.RoleID = 1)
+				AND EXISTS (SELECT 1 FROM Temp_AssociationByAI_AssType AS tmpAt WHERE tmpAt.AssTypeItemValue = ai.AssType);
 				
 			/**************************AI Group*******************************/
-			DROP TABLE IF EXISTS Temp_AssociationGroupByAI;
-			CREATE TABLE Temp_AssociationGroupByAI(
+			DROP TEMPORARY TABLE IF EXISTS Temp_AssociationGroupByAI;
+			CREATE TEMPORARY TABLE Temp_AssociationGroupByAI(
 					GroupID INT
 				,	CustID BIGINT
 				,	CTSCustID BIGINT
@@ -198,8 +189,8 @@ sp : BEGIN
 			FROM	Temp_AssociationGroupByAI AS tmp
 			WHERE EXISTS (	SELECT 1
 							FROM CTS_DataCenter.AssociationGroupByAI AS lv1
-								INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = lv1.CustID AND cus.CustSubID = 0
-								INNER JOIN CTS_Adhoc.Adhoc_HF215554_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
+								INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = lv1.CustID AND cus.CustSubID = 0 AND cus.RoleID = 1
+								INNER JOIN CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
 							WHERE tmp.GroupID = lv1.GroupID)
 			;
 			
@@ -213,8 +204,9 @@ sp : BEGIN
 				INNER JOIN CTS_DataCenter.AssociationByIP AS ai ON tmp.CustID = ai.FromCustID            
 			WHERE EXISTS (SELECT 1
 							FROM CTS_DataCenter.CTSCustomer AS cus
-								INNER JOIN CTS_Adhoc.Adhoc_HF215554_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
-							WHERE cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.RoleID = 1);
+								INNER JOIN CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
+							WHERE cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.RoleID = 1)
+				AND EXISTS (SELECT 1 FROM Temp_AssociationByIP_AssType AS tmpAt WHERE tmpAt.AssTypeItemValue = ai.AssType);
 			
 			INSERT IGNORE INTO Temp_CustDetected(CTSCustID, AssType)
 			SELECT tmp.CTSCustID , 6
@@ -222,37 +214,29 @@ sp : BEGIN
 				INNER JOIN CTS_DataCenter.AssociationByIP AS ai ON tmp.CustID = ai.ToCustID            
 			WHERE EXISTS (SELECT 1
 							FROM CTS_DataCenter.CTSCustomer AS cus
-								INNER JOIN CTS_Adhoc.Adhoc_HF215554_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
-							WHERE cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.RoleID = 1);
+								INNER JOIN CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
+							WHERE cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.RoleID = 1)
+				AND EXISTS (SELECT 1 FROM Temp_AssociationByIP_AssType AS tmpAt WHERE tmpAt.AssTypeItemValue = ai.AssType);
 		END IF;
         
-		INSERT INTO Adhoc_HF215554_AssociatedGroupAccount_Target
-		SELECT ass.*, 1
+		INSERT INTO CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Target(GroupID,CTSCustID,IsAuto,Remark,Created,CreatedBy,LastModifiedDate,LastModifiedBy,IsScaned)
+		SELECT ass.GroupID, ass.CTSCustID, ass.IsAuto, ass.Remark, ass.Created, ass.CreatedBy, ass.LastModifiedDate, ass.LastModifiedBy, 1
 		FROM Temp_CustDetected AS tmp
 			INNER JOIN CTS_DataCenter.AssociatedGroupAccount AS ass ON ass.CTSCustID = tmp.CTSCustID 
 		WHERE ass.GroupID = lv_ScanGroupID AND ass.Created = lv_ScanCreated;
 		
-		UPDATE Adhoc_HF215554_AssociatedGroupAccount_Group AS up
+		UPDATE CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Group AS up
         SET ProcessStatus = 1
 		WHERE GroupID = lv_ScanGroupID
 			AND Created = lv_ScanCreated;		
 
 		SELECT gp.GroupID, gp.Created
 		INTO lv_ScanGroupID, lv_ScanCreated
-		FROM Adhoc_HF215554_AssociatedGroupAccount_Group AS gp
+		FROM CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Group AS gp
         WHERE gp.ProcessStatus = 0
 		ORDER BY gp.GroupID ASC, gp.Created ASC
 		LIMIT 1;
 
-        IF @i%500=0 AND @i >= 500 THEN
-			SELECT lv_ScanGroupID, lv_ScanCreated, COUNT(1) FROM Temp_Cust union
-			
-			SELECT 0, 0, COUNT(1) 
-			FROM Temp_CustDetected AS tmp
-				INNER JOIN CTS_DataCenter.AssociatedGroupAccount AS ass ON ass.CTSCustID = tmp.CTSCustID AND ass.GroupID = lv_ScanGroupID;
-		END IF;
-        
-        SET @i = @i + 1;
 	END WHILE;	
 END$$
 DELIMITER ;
