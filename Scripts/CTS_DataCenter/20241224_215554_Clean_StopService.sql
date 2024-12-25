@@ -13,6 +13,7 @@ Reviewer:
 USE CTS_DataCenter;
 
 /**********************************************RELEASE STEP BY STEP****************************************************************/
+/************************************************MUST STOP SERVICE****************************************************************/
 /*1.Insert new group to scan*/
 INSERT INTO CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Group(GroupID, Created, FromCreated,TotalScanMember,ProcessStatus )
 WITH cte AS
@@ -39,7 +40,7 @@ WITH CTE AS (
 SELECT ass.GroupID, ass.CTSCustID, ass.IsAuto, ass.Remark, ass.Created, ass.CreatedBy, ass.LastModifiedDate, ass.LastModifiedBy
 FROM CTS_DataCenter.AssociatedGroupAccount AS ass
 	INNER JOIN CTE AS ct ON ct.GroupID = ass.GroupID AND ass.Created <= ct.MaxCreated
-LEFT JOIN CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Target AS t On ass.CTSCustID = t.CTSCustID AND ass.GroupID = t.GroupID
+    LEFT JOIN CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Target AS t On ass.CTSCustID = t.CTSCustID AND ass.GroupID = t.GroupID
 WHERE t.CTSCustID IS NULL;
 
 DELETE ass
