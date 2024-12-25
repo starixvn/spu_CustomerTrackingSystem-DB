@@ -40,4 +40,4 @@ WHERE t.CTSCustID IS NULL;
 DELETE ass
 FROM CTS_DataCenter.AssociatedGroupAccount AS ass
     INNER JOIN CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Clean AS c
-ON c.GroupID = ass.GroupID AND c.CTSCustID = CTSCustID;
+ON c.GroupID = ass.GroupID AND c.CTSCustID = ass.CTSCustID;
