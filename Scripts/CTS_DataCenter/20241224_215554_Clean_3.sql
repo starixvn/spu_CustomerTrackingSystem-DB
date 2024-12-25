@@ -28,7 +28,7 @@ CREATE TABLE Adhoc_HF215554_AssociatedGroupAccount_Clean (
 INSERT INTO CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Clean(GroupID,CTSCustID,IsAuto,Remark,Created,CreatedBy,LastModifiedDate,LastModifiedBy)
 WITH CTE AS (
 		SELECT GroupID, Max(Created) AS MaxCreated
-		FROM Adhoc_HF215554_AssociatedGroupAccount_Group AS g
+		FROM CTS_DataCenter.Adhoc_HF215554_AssociatedGroupAccount_Group AS g
 		GROUP BY GroupID
     )
 SELECT ass.GroupID, ass.CTSCustID, ass.IsAuto, ass.Remark, ass.Created, ass.CreatedBy, ass.LastModifiedDate, ass.LastModifiedBy
