@@ -18,7 +18,7 @@ sp : BEGIN
 		Param's Explanation (filtered by):
 
 		Example:
-			- CALL  CTS_DC_AssociatedGroup_Scan(@op_GroupID,@op_GroupName,@op_ABI,@op_Ori,@op_PACategoryID,@op_LastCTSCustID);
+			- CALL  Adhoc_HF115554_RescanMemberGroup();
 	*/
 	DECLARE CONST_ASSTYPE_BETTINGPATTERN 	INT DEFAULT 2;
 	DECLARE CONST_ASSBYAI_ACTIVESTATUS 		INT DEFAULT 1;
