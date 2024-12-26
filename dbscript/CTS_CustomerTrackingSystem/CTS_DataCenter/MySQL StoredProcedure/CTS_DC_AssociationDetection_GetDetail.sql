@@ -49,7 +49,7 @@ sp:BEGIN
         ,	Username			VARCHAR(50)
 		,	Recommend			INT
 		,	MRecommend			INT
-		,	SRecommend			INT UNSIGNED
+		,	SRecommend			INT
 		,	UplineCustID		INT
 		,	DirectMemberType	TINYINT
         ,	RoleID				INT

@@ -45,7 +45,7 @@ BEGIN
 		,	CustID   				INT	
         ,	Recommend				INT
 		,	MRecommend				INT
-		,	SRecommend				INT	UNSIGNED
+		,	SRecommend				INT
 		,	UplineCustID			INT
 		,	DirectMemberType		TINYINT
 		,	INDEX Temp_Cust_CustID (CustID)

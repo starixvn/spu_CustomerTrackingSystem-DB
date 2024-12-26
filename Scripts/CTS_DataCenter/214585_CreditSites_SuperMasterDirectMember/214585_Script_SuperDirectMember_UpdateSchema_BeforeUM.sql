@@ -18,8 +18,8 @@ USE CTS_DataCenter;
 /*1. CTSCustomer*/
 
 ALTER TABLE CTSCustomer
-	ADD COLUMN MRecommend_new INT 
-,	ADD COLUMN Recommend_new INT 
+	ADD COLUMN MRecommend_new INT AFTER SRecommend
+,	ADD COLUMN Recommend_new INT AFTER MRecommend_new
 ;
 
 INSERT INTO SystemParameter (ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
