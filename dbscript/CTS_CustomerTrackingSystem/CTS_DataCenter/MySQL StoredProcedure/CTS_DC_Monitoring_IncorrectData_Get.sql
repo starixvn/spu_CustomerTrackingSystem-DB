@@ -72,7 +72,7 @@ BEGIN
             ,	NULL
             ,	NULL
             ,	0
-            ,	CONST_ISSUETYPEID_TOTALMISSINGCUST	
+             ,	CASE WHEN COUNT(1) > 0 THEN CONST_ISSUETYPEID_TOTALMISSINGCUST ELSE NULL END	
             ,	1
     FROM CTS_DataCenter.JobMonitoring_IncorrectData AS a
 		INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 20 
@@ -80,7 +80,7 @@ BEGIN
 					AND s.ItemID IN (CONST_MISSING_NEWCUSTOMER, CONST_MISSING_REACTIVATEDCUSTOMER)
 	WHERE a.IsResolved = 0;
        
-	IF EXISTS (SELECT 1 FROM Temp_IncorrectData2) THEN
+	IF EXISTS (SELECT 1 FROM Temp_IncorrectData2 WHERE IssueTypeID IS NOT NULL) THEN
 		INSERT INTO Temp_IncorrectData(ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID, IsIssueTypeValid)
 		SELECT ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID, IsIssueTypeValid
 		FROM Temp_IncorrectData2;
