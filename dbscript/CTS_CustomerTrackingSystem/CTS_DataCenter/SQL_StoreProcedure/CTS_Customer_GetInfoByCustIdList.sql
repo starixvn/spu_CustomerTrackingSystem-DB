@@ -70,7 +70,7 @@ BEGIN;
 		,	RoleId			TINYINT
 		,	CurrencyId		TINYINT
 		,	Currency		VARCHAR(50)
-		,	Srecommend		INT
+		,	Srecommend		INT UNSIGNED
 		,	Mrecommend		INT
 		,	Recommend		INT
 		,	CreatedDate		DATETIME	

@@ -60,7 +60,7 @@ CREATE TEMPORARY TABLE Temp_CustInfo(
   ,	RegisterName		    VARCHAR(50) 
   ,	SubscriberID		    INT UNSIGNED
   ,	RoleID				      INT        
-  ,	SRecommend			    BIGINT
+  ,	SRecommend			    BIGINT UNSIGNED
   ,	MRecommend			    BIGINT
   ,	Recommend			      BIGINT
   ,	DirectUpLineCustID	BIGINT UNSIGNED

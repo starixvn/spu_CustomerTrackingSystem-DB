@@ -74,7 +74,7 @@ BEGIN
 		,	CustStatus			VARCHAR(50)
 		,	Recommend			INT
 		,	MRecommend			INT
-		,	SRecommend			INT
+		,	SRecommend			INT	UNSIGNED
 		,	Danger1				TINYINT
 		,	Danger2				TINYINT
 		,	Danger3				TINYINT

@@ -52,7 +52,7 @@ BEGIN
         ,	SiteID			INT
         ,	Site			VARCHAR(20) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		,	RoleID			TINYINT		 
-		,	SRecommend		INT
+		,	SRecommend		INT UNSIGNED
 		,	MRecommend		INT
 		,	Recommend		INT
         ,	Currency		VARCHAR(50) 	
@@ -94,7 +94,7 @@ BEGIN
             ,	SiteID			INT UNSIGNED	PATH "$.SiteID"
             ,	Site			VARCHAR(20) 	PATH "$.Site"
             ,	RoleID			INT UNSIGNED	PATH "$.RoleID"
-            ,	SRecommend		INT 			PATH "$.SRecommend" 
+            ,	SRecommend		INT UNSIGNED	PATH "$.SRecommend" 
 			,	MRecommend		INT 		 	PATH "$.MRecommend" 
 			,	Recommend		INT 		 	PATH "$.Recommend"
             ,	Currency		VARCHAR(50) 	PATH "$.Currency" 

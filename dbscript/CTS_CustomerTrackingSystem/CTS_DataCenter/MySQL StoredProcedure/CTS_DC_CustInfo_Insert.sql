@@ -82,7 +82,7 @@ BEGIN
 		,	RoleID			TINYINT		 
 		,	Currency		VARCHAR(50) 	
 		,	CurrencyID		INT			 	
-		,	SRecommend		INT		 	
+		,	SRecommend		INT	UNSIGNED
 		,	MRecommend		INT
 		,	Recommend		INT
         ,	CreatedDate		DATETIME
@@ -197,7 +197,7 @@ BEGIN
 			,	RoleID			TINYINT		 	PATH "$.RoleID" 
 			,	Currency		VARCHAR(50) 	PATH "$.Currency" 
 			,	CurrencyID		INT			 	PATH "$.CurrencyID" 
-			,	SRecommend		INT				PATH "$.SRecommend" 
+			,	SRecommend		INT UNSIGNED	PATH "$.SRecommend" 
 			,	MRecommend		INT	 		 	PATH "$.MRecommend" 
 			,	Recommend		INT	 		 	PATH "$.Recommend" 
 			,	CreatedDate		DATETIME	 	PATH "$.CreatedDate" 
