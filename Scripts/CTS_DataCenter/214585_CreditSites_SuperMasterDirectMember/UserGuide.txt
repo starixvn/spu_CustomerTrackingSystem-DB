@@ -1,0 +1,24 @@
+Before UM
+1. Add new columns: 
+	MRecommend_new
+	Recommend_new
+2. Update value từ current >> new | batchsize = 4k, interval event = 15s
+	MRecommend >> MRecommend_new
+	Recommend >> Recommend_new
+Within UM
+3. Disable event (2)
+4. Update data if any DIFF (from old >> new) | batchsize = 4k
+5. Rename columns 
+	MRecommend >> MRecommend_bk
+	Recommend >> Recommend_bk
+	MRecommend_new >> MRecommend
+	Recommend_new >> Recommend
+6. Drop index old (2 indexes)
+	IX_CTSCustomer_MRecommend 
+	IX_CTSCustomer_Recommend 
+7. Add new index (2 indexes)
+	IX_CTSCustomer_MRecommend
+	IX_CTSCustomer_Recommend
+8. Drop old column: OPTIONAL
+	MRecommend_bk
+	Recommend_bk

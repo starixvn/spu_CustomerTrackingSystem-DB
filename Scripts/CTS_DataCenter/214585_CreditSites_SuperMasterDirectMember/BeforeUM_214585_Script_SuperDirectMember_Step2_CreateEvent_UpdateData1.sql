@@ -9,7 +9,7 @@
 			
 	Param's Explanation:
 	Example:
-		- CALL CTS_DataCenter.CTS_DC_Adhoc_Credit_SuperMasterDirectMember_Update(4000,0,@op_NextCTSCustID);
+		
 */
 
 USE CTS_DataCenter;
