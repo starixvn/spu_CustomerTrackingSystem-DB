@@ -171,6 +171,16 @@ BEGIN
 		,	BetTypeID		ASC
 	);
 
+	DROP TABLE IF EXISTS #tmpUsername;
+	CREATE TABLE	#tmpUsername(
+			UserName	VARCHAR(50)  PRIMARY KEY	
+	);
+
+	DROP TABLE IF EXISTS #tmpCustomer;
+	CREATE TABLE	#tmpCustomer(
+			CustId		INT PRIMARY KEY	
+	);
+
 	IF ISNULL(@UserNameList,'') <> ''
 	BEGIN
 		INSERT INTO #tmpUsername(UserName)
