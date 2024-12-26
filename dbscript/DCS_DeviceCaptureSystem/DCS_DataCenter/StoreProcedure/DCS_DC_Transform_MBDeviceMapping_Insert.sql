@@ -259,8 +259,9 @@ BEGIN
 	WHERE tmp.MBDeviceID = 0;
     
     /********************** INSERT New device ***********************************/
-    INSERT IGNORE INTO DCS_DataCenter.MBDevice(FirstMBRawTransactionID)
+    INSERT IGNORE INTO DCS_DataCenter.MBDevice(FirstMBRawTransactionID, LastAccessedDate)
     SELECT DISTINCT SameDeviceID
+		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
     FROM Temp_DeviceMapping
     WHERE MBDeviceID = 0
 		AND SameDeviceID > 0;

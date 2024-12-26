@@ -311,8 +311,9 @@ BEGIN
 	FROM Temp_MBRawTransaction AS trt;
     
     /* ======= INSERT MBProcessedTransaction ========= */
-	INSERT IGNORE INTO DCS_DataCenter.MBProcessedTransaction(CreatedDate, LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, Country, Timezone, Language, InsertedTime)
-	SELECT  DATE(rt.TransTime) AS CreatedDate
+	INSERT IGNORE INTO DCS_DataCenter.MBProcessedTransaction(ID, CreatedDate, LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, Country, Timezone, Language, InsertedTime)
+	SELECT  ID
+		,   DATE(rt.TransTime) AS CreatedDate
 		,   rt.LoginName
 		,   rt.SubscriberName
 		,   rt.TransTime
