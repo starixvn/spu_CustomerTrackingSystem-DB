@@ -283,7 +283,7 @@ BEGIN
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
+				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 		END;
 		
 		IF @IsGetDataFrom14 = 1
@@ -324,7 +324,7 @@ BEGIN
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
+				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 		END;
 		
 		IF @IsGetDataFromBK = 1
@@ -365,7 +365,7 @@ BEGIN
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
+				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 		END;
 
 	END;
@@ -409,7 +409,7 @@ BEGIN
 			AND b.liveindicator = @IsLive
 			AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 			AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-			AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
+			AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 	END;
 	
 	IF @ViewMode = 2 --GET All Ticket - Danger Monitor
@@ -459,7 +459,7 @@ BEGIN
 				AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 				AND c.srecommend NOT IN (41430709)
 				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
+				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 		END;
 		
 		IF @IsGetDataFrom14 = 1
@@ -505,7 +505,7 @@ BEGIN
 				AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 				AND c.srecommend NOT IN (41430709)
 				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
+				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 		END;
 	END;
 	

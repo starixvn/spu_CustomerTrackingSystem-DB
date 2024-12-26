@@ -716,7 +716,7 @@ BEGIN
 						INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID 
 						INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-						 AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
+						 AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 
 				END;
 				ELSE IF (@ViewMode = 0)
@@ -774,7 +774,7 @@ BEGIN
 								AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 								AND b.srecommend NOT IN (41430709)
 								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-								AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
+								AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 				
 					END;
 
@@ -833,7 +833,7 @@ BEGIN
 							AND b.srecommend NOT IN (41430709)
 							AND b.TransDate < @LastTransDate
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-							AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)))
+							AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)))
 						ORDER BY b.TransDate DESC;
 
 						SET @MinTransDate= (SELECT MIN(TransDate) FROM #tmpTickets WITH(NOLOCK));
@@ -890,7 +890,7 @@ BEGIN
 							AND b.TransDate = @MinTransDate
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 							AND tmpTk.TransID IS NULL
-							AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
+							AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 					END;
 					
 				END;
@@ -942,7 +942,7 @@ BEGIN
 						INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID 
 						INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 					WHERE (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-						AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
+						AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 					
 				END
 				ELSE IF (@ViewMode = 0)
@@ -1000,7 +1000,7 @@ BEGIN
 							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 							AND b.srecommend NOT IN (41430709)
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-							AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
+							AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 				
 					END;
 
@@ -1059,7 +1059,7 @@ BEGIN
 							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 							AND b.srecommend NOT IN (41430709)
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
-							AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)))
+							AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)))
 						ORDER BY b.sequenceid DESC;
 
 						SET @MinSequenceId = (SELECT MIN(SequenceId) FROM #tmpTickets);
