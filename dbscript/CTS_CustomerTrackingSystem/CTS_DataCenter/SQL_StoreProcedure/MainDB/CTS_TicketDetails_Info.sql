@@ -15,6 +15,7 @@ CREATE PROCEDURE [dbo].[CTS_TicketDetails_Info]
 	,	@IsExclTestCurr				BIT = 0
 	,	@FromTransDate				DATETIME = NULL
 	,	@ToTransDate				DATETIME = NULL
+	,	@UserNameList				VARCHAR(MAX) = ''
 
 	,	@MaxSequenceId				BIGINT		OUTPUT
 	,	@MaxTransDate				DATETIME	OUTPUT
@@ -41,6 +42,7 @@ AS
 		- 20240322@Vitoria.Le: 		Exclude Internal Account for Danger Monitor [Redmine ID: #201380]
 		- 20240521@Thomas.Nguyen:	Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
 		- 20240904@Casey.Huynh:		Rename @TicketType To @ViewMode [Redmine ID: #207397]
+		- 20241226@Thomas.Nguyen: 	Add Username Filter [Redmine ID: #210128]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
@@ -168,6 +170,18 @@ BEGIN
 			SportTypeID	ASC
 		,	BetTypeID		ASC
 	);
+
+	IF ISNULL(@UserNameList,'') <> ''
+	BEGIN
+		INSERT INTO #tmpUsername(UserName)
+		SELECT DISTINCT ssk.value FROM STRING_SPLIT (@UserNameList, ',') AS ssk;
+
+		INSERT INTO #tmpCustomer(CustId)
+		SELECT cs.custid
+		FROM bodb02.dbo.Customer AS cs WITH (NOLOCK) 
+			INNER JOIN #tmpUsername AS un WITH(NOLOCK) ON un.username = cs.username;
+	END;
+
 	--=============================================================================================
 	
 	--=======GET BALANCE UP/ MOVE BET DAY===========================================================
@@ -268,7 +282,8 @@ BEGIN
 			WHERE b.matchid = @MatchID
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
+				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
+				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 		END;
 		
 		IF @IsGetDataFrom14 = 1
@@ -308,7 +323,8 @@ BEGIN
 			WHERE b.matchid = @MatchID
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
+				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
+				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 		END;
 		
 		IF @IsGetDataFromBK = 1
@@ -348,7 +364,8 @@ BEGIN
 			WHERE b.matchid = @MatchID
 				AND b.liveindicator = @IsLive
 				AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
+				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
+				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 		END;
 
 	END;
@@ -391,7 +408,8 @@ BEGIN
 		WHERE b.matchid = @MatchID
 			AND b.liveindicator = @IsLive
 			AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
-			AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
+			AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
+			AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 	END;
 	
 	IF @ViewMode = 2 --GET All Ticket - Danger Monitor
@@ -440,7 +458,8 @@ BEGIN
 				AND c.mrecommend NOT IN (27899314,11656504,12146012) 
 				AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 				AND c.srecommend NOT IN (41430709)
-				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
+				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
+				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 		END;
 		
 		IF @IsGetDataFrom14 = 1
@@ -485,7 +504,8 @@ BEGIN
 				AND c.mrecommend NOT IN (27899314,11656504,12146012) 
 				AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 				AND c.srecommend NOT IN (41430709)
-				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate));
+				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
+				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
 		END;
 	END;
 	
