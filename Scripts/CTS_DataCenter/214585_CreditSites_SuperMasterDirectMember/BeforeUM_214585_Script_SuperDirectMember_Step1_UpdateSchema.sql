@@ -40,10 +40,10 @@ INTO @lv_MaxModifiedTime
 FROM CTSCustomer;
 
 INSERT INTO SystemParameter (ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES (995,'AdhocUpdateDirectMember_CTSCustomer_Batchsize','AdhocUpdateDirectMember_CTSCustomer_Batchsize','BIGINT','4000')
-, (994,'AdhocUpdateDirectMember_CTSCustomer_CTSCustID','AdhocUpdateDirectMember_CTSCustomer_CTSCustID','BIGINT','0')
-, (993,'AdhocUpdateDirectMember_CTSCustomer_TotalCallSP','AdhocUpdateDirectMember_CTSCustomer_TotalCallSP','BIGINT','0')
-, (992,'AdhocUpdateDirectMember_CTSCustomer_MaxModifiedTime','AdhocUpdateDirectMember_CTSCustomer_MaxModifiedTime','DATETIME(4)',@lv_MaxModifiedTime)
+VALUES (995,'AdhocUpdateDirectMember_Batchsize','AdhocUpdateDirectMember_Batchsize','BIGINT','4000')
+, (994,'AdhocUpdateDirectMember_CTSCustID','AdhocUpdateDirectMember_CTSCustID','BIGINT','0')
+, (993,'AdhocUpdateDirectMember_TotalCallSP','AdhocUpdateDirectMember_TotalCallSP','BIGINT','0')
+, (992,'AdhocUpdateDirectMember_MaxModifiedTime','AdhocUpdateDirectMember_MaxModifiedTime','DATETIME(4)',@lv_MaxModifiedTime)
 ;
 
 
