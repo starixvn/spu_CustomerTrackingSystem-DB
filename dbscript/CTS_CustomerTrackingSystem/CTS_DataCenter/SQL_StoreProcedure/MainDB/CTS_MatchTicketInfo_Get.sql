@@ -357,7 +357,7 @@ BEGIN
 				AND cs.srecommend NOT IN (41430709) 
 				AND cs.RoleId = 1
 				AND cust.danger5 > 0 AND cust.danger5 = @Danger
-				
+
 			OPTION (MAXDOP 8)
 			;
 		END;
@@ -399,7 +399,7 @@ BEGIN
 								 ELSE 0 END) AS CustTicketHome
 					,	SUM(CASE WHEN t.BetChoiceType = 2 AND b.betteam = t.BetChoiceAway THEN 1 
 								 ELSE 0 END) AS CustTicketAway			
-				FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
+				FROM bodb02.dbo.bettrans AS b WITH(NOLOCK, INDEX = IX_customerinfo)
 					INNER JOIN #tmpCustomer AS cust WITH(NOLOCK) ON cust.custid = b.custid
 					CROSS APPLY (
 							SELECT bt.BetID, bt.BetChoiceType,bt.BetChoiceHome,bt.BetChoiceAway
@@ -471,7 +471,7 @@ BEGIN
 								 ELSE 0 END) AS CustTicketHome
 					,	SUM(CASE WHEN t.BetChoiceType = 2 AND b.betteam = t.BetChoiceAway THEN 1 
 								 ELSE 0 END) AS CustTicketAway			
-				FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
+				FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK, INDEX = bettrans1423)
 					INNER JOIN #tmpCustomer AS cust WITH(NOLOCK) ON cust.custid = b.custid
 					CROSS APPLY (
 							SELECT bt.BetID, bt.BetChoiceType,bt.BetChoiceHome,bt.BetChoiceAway
@@ -490,8 +490,6 @@ BEGIN
 			GROUP BY tmpCust.MatchId, tmpCust.BetChoiceType, tmpCust.Bettype, tmpCust.LiveIndicator, tmpCust.BetId
 			HAVING SUM(tmpCust.CustAmountHome) >=  @TotalAmount
 				OR SUM(tmpCust.CustAmountAway) >=  @TotalAmount
-		
-			OPTION (MAXDOP 8)
 			;
 
 		IF (@@ROWCOUNT > 0)
