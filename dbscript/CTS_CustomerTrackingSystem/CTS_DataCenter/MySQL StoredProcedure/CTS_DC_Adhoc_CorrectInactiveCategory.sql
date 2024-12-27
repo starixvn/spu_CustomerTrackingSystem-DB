@@ -35,7 +35,8 @@ sp: BEGIN
 	SELECT adh.CustID 
 	FROM CTS_DataCenter.Adhoc_CC_Inactive_Incorrect AS adh
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CustID = adh.CustID
-	WHERE cc.CategoryID = 40700;
+	WHERE cc.CategoryID = 40700
+		AND cc.ParentID = 40000;
 
 	WHILE EXISTS (SELECT 1 FROM Temp_Customers)
 	DO
