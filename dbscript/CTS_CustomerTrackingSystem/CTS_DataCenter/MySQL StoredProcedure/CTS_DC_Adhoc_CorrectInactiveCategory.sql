@@ -55,6 +55,7 @@ sp: BEGIN
 					, 	h.DWCategoryID AS ToCategoryID
 				FROM CTSCustomerClassification_History AS h
 				WHERE h.CustID = adh.CustID
+					AND h.ParentID <> 10000
 				ORDER BY h.ID DESC
 				LIMIT 1
 			) AS h
