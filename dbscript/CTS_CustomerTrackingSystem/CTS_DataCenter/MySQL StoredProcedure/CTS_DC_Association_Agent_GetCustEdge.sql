@@ -156,7 +156,8 @@ BEGIN
 
 	END IF;
 
-	IF (lv_MinDirectMemberType = 0 OR lv_CountDistinct > 1) THEN
+	IF (lv_CountDistinct > 1) 
+		OR EXISTS (SELECT COUNT(DISTINCT Recommend) FROM Temp_Cust WHERE Recommend > 0) > 0 THEN
 		INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID)
 		SELECT 	cus.CTSCustID
 			,	cus.CustID
