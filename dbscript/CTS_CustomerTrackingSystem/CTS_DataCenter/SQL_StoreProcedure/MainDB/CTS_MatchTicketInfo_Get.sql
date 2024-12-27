@@ -32,6 +32,7 @@ AS
 		- 20240521@Thomas.Nguyen: Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
 		- 20240702@Casey.Huynh:	Add Filter by Username and LeagueGroup  [Redmine ID: #206494]	
 		- 20240802@Casey.Huynh:	Add Filter by User Amount and Total Amount  [Redmine ID: #207528]	
+		- 20241227@Casey.Huynh:	Tunning Performance USE MaxDrop[Redmine ID: #214633]	
 
 
 	Params Explaination:
@@ -276,7 +277,9 @@ BEGIN
 				AND cs.srecommend NOT IN (41430709) 
 				AND cs.RoleId = 1
 				AND cust.danger > 0 AND cust.danger = @Danger
-				;
+
+			OPTION (MAXDOP 8)
+			;
 		END;
 		IF @DangerType = 2
 		BEGIN
@@ -294,7 +297,9 @@ BEGIN
 				AND cs.srecommend NOT IN (41430709) 
 				AND cs.RoleId = 1
 				AND cust.danger2 > 0 AND cust.danger2 = @Danger
-				;
+
+			OPTION (MAXDOP 8)
+			;
 		END;
 		IF @DangerType = 3
 		BEGIN
@@ -312,7 +317,9 @@ BEGIN
 				AND cs.srecommend NOT IN (41430709) 
 				AND cs.RoleId = 1
 				AND cust.danger3 > 0 AND cust.danger3 = @Danger
-				;
+				
+			OPTION (MAXDOP 8)
+			;
 		END;
 		IF @DangerType = 4
 		BEGIN
@@ -330,7 +337,9 @@ BEGIN
 				AND cs.srecommend NOT IN (41430709) 
 				AND cs.RoleId = 1
 				AND cust.danger4 > 0 AND cust.danger4 = @Danger
-				;
+				
+			OPTION (MAXDOP 8)
+			;
 		END;
 		IF @DangerType = 5
 		BEGIN
@@ -348,7 +357,9 @@ BEGIN
 				AND cs.srecommend NOT IN (41430709) 
 				AND cs.RoleId = 1
 				AND cust.danger5 > 0 AND cust.danger5 = @Danger
-				;
+				
+			OPTION (MAXDOP 8)
+			;
 		END;
 	END;
 
@@ -406,9 +417,10 @@ BEGIN
 				OR tmpCust.CustAmountAway >= @UserAmount
 			GROUP BY tmpCust.MatchId, tmpCust.BetChoiceType, tmpCust.Bettype, tmpCust.LiveIndicator, tmpCust.BetId
 			HAVING SUM(tmpCust.CustAmountHome) >=  @TotalAmount
-				OR SUM(tmpCust.CustAmountAway) >=  @TotalAmount;
-		-- OPTION (RECOMPILE)
-		;
+				OR SUM(tmpCust.CustAmountAway) >=  @TotalAmount
+		
+			OPTION (MAXDOP 8)
+			;
 
 		IF (@@ROWCOUNT > 0)
 		BEGIN
@@ -477,8 +489,9 @@ BEGIN
 				OR tmpCust.CustAmountAway >= @UserAmount
 			GROUP BY tmpCust.MatchId, tmpCust.BetChoiceType, tmpCust.Bettype, tmpCust.LiveIndicator, tmpCust.BetId
 			HAVING SUM(tmpCust.CustAmountHome) >=  @TotalAmount
-				OR SUM(tmpCust.CustAmountAway) >=  @TotalAmount;
-			-- OPTION (RECOMPILE)
+				OR SUM(tmpCust.CustAmountAway) >=  @TotalAmount
+		
+			OPTION (MAXDOP 8)
 			;
 
 		IF (@@ROWCOUNT > 0)
