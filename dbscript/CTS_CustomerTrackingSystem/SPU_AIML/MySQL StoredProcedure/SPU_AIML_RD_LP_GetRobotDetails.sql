@@ -23,7 +23,7 @@ BEGIN
 	*/   
     
 	SELECT	bl.TransTime
-		,	bl.DeviceID
+		,	bl.FirstDeviceCode AS Device
         ,	bl.RobotTracking
         ,	bl.DeviceType
         ,	bl.BrowserName
