@@ -98,7 +98,7 @@ BEGIN
 		CALL DCS_DC_Transform_MBAssociation_Insert(lv_AssociationJson);
     END IF;
     
-	INSERT IGNORE INTO DCS_DataCenter.MBTransaction07(CreatedDate, MBRawTransactionID, TransTime, SubscriberID, MBAccountID, IP, IPID, ActionResultID, Flagged, MBDeviceModelID, MBOSID, MBUserSettingID, MBDeviceMappingID, MBDeviceID, RecoverType, InsertedTime)
+	INSERT IGNORE INTO DCS_DataCenter.MBTransaction07(CreatedDate, MBRawTransactionID, TransTime, SubscriberID, MBAccountID, IP, IPID, ActionResultID, Flagged, MBDeviceModelID, MBOSID, MBUserSettingID, MBDeviceMappingID, MBDeviceID, DeviceStatus, InsertedTime)
 	SELECT	DATE(TransTime) AS CreatedDate
 		,	MBRawTransactionID
         ,	TransTime
@@ -113,7 +113,7 @@ BEGIN
         ,	MBUserSettingID
         ,	IFNULL(MBDeviceMappingID,0) AS MBDeviceMappingID
         ,	IFNULL(MBDeviceID,0) AS MBDeviceID
-        ,	IFNULL(RecoverType,0) AS RecoverType
+        ,	IFNULL(RecoverType,0) AS DeviceStatus
         ,	lv_CurrentDatetime AS InsertedTime
 	FROM Temp_DeviceMappingInfo;
     
