@@ -23,6 +23,7 @@ sp:BEGIN
 			- 20230428@Jonas.Huynh: 	Realtime Renovation [Redmine ID: #186678]
 			- 20231108@Victoria.Le: 	Add First5TWGBTicketCount [Redmine ID: #195060]
             - 20240628@Thomas.Nguyen: 	Renovate CC phase 2 [Redmine ID: #205317]
+            - 20241231@Victoria.Le: 	Adjust code to update NextID as expected [Redmine ID: #216125]
 
 		Param's Explanation (filtered by):
 
@@ -379,9 +380,15 @@ sp:BEGIN
             ,	PerformanceTime
 		FROM Temp_History;
 		
-		UPDATE CTS_DataCenter.SystemParameter
-		SET ParameterValue = lv_LastIDValid
-		WHERE ParameterID = 35;
+		IF lv_LastIDValid >= lv_NextLastID THEN
+			UPDATE CTS_DataCenter.SystemParameter
+			SET ParameterValue = lv_LastIDValid
+			WHERE ParameterID = 35;
+		ELSE
+			UPDATE CTS_DataCenter.SystemParameter
+			SET ParameterValue = lv_NextLastID
+			WHERE ParameterID = 35;
+		END IF;
 
 		SET op_IsDataExist = 1;
         
