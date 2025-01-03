@@ -34,10 +34,10 @@ BEGIN
 		,	@REALTIME_GENERALCHANGES					SMALLINT = 102
 		,	@REALTIME_BYSPORTCHANGES					SMALLINT = 103
 
-	DECLARE @CONSTGENERAL_LASTSCANNEDROW	TINYINT = 1
+	DECLARE @CONSTGENERAL_LASTSCANNEDID		TINYINT = 3
 		,	@CONSTBYSPORT_LASTSCANNEDROW	TINYINT = 2;
 
-	DECLARE @General_LastScannedRow			ROWVERSION
+	DECLARE @General_LastScannedID			BIGINT
 		,	@BySport_LastScannedRow			ROWVERSION;
 
 	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
@@ -60,13 +60,13 @@ BEGIN
 	FROM [dbo].CustomerClassification_BySport_NormalPool WITH (NOLOCK);
 
 	-- 2. Normal Insert Account
-	SELECT @General_LastScannedRow = CAST(CAST([Value] AS BIGINT) AS ROWVERSION) FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) WHERE [DataId] = @CONSTGENERAL_LASTSCANNEDROW;
+	SELECT @General_LastScannedID = CAST([Value] AS BIGINT) FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) WHERE [DataId] = @CONSTGENERAL_LASTSCANNEDID;
 	SELECT @BySport_LastScannedRow = CAST(CAST([Value] AS BIGINT) AS ROWVERSION) FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) WHERE [DataId] = @CONSTBYSPORT_LASTSCANNEDROW;
 	
 	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
 	SELECT @CLASSIFICATION_GENERALNORMALINSERT, COUNT(1)
 	FROM [dbo].CustomerClassification WITH (NOLOCK)
-	WHERE [RowVersion] > @General_LastScannedRow;
+	WHERE ID > @General_LastScannedID;
 
 	INSERT INTO #tmpMonitoring (IssueTypeID, NumberOfRecord)
 	SELECT @CLASSIFICATION_BYSPORTNORMALINSERT, COUNT(1)
