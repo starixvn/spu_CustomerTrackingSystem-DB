@@ -78,7 +78,7 @@ BEGIN
 	INSERT INTO Temp_IncorrectData2(ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID,  IsIssueTypeValid)
     SELECT 		0
 			,	NULL
-            ,	COUNT(1)
+            ,	COUNT(DISTINCT a.CustID)
             ,	NULL
             ,	CURRENT_TIMESTAMP()
             ,	0
