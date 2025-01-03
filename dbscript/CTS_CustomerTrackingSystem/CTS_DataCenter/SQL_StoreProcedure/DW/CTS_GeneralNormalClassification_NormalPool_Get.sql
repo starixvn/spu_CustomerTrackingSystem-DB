@@ -22,6 +22,7 @@ AS
 		- 20231030@Victoria.Le: New Member Classify Tagging [Redmine ID: #195060]
 		- 20240327@Jonas.Huynh: EC2024 - Resolve Locking [Redmine ID: #200842]
 		- 20240426@Thomas.Nguyen: Remove logic New Member Classify Tagging [Redmine ID: #200854]
+		- 20241226@Jonas.Huynh: HF Incorrect CC  [Redmine ID: #214058]
 
 	Param's Explanation:
 		@ScannedMaxId: This parameter is used to output scanned MaxID
@@ -43,8 +44,8 @@ BEGIN
 			@SCANTAGGINGTYPE_EXIST			TINYINT = 1,
 			@SCANTAGGINGTYPE_EXISTONLY		TINYINT = 2;
 
-	DECLARE @GENERAL_LASTSCANNEDROW			TINYINT = 1;
-	DECLARE @LastScannedRow					ROWVERSION;
+	DECLARE @GENERAL_LASTSCANNEDID			TINYINT = 3;
+	DECLARE @LastScannedID					BIGINT;
 
 	IF	OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
 	DROP TABLE	#tmpCustomers;
@@ -57,12 +58,10 @@ BEGIN
 	);
 
 	-- #1: Get Scanned MaxID
-	SELECT @ScannedMaxId = MAX(c.ID) 
-	FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK);
-
-	SELECT @LastScannedRow = CAST(CAST([Value] AS BIGINT) AS ROWVERSION) 
-	FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) 
-	WHERE [DataId] = @GENERAL_LASTSCANNEDROW;
+	SELECT @ScannedMaxId = MAX(c.ID) FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK);
+	SELECT @LastScannedID = CAST([Value] AS BIGINT) FROM dbo.CustomerClassification_Parameter WITH(NOLOCK) WHERE [DataId] = @GENERAL_LASTSCANNEDID;
+	
+	WAITFOR DELAY '00:00:00.300';
 
 	-- #2: Get top customers by priority
 	IF(@ScannedMaxId IS NOT NULL)
@@ -77,7 +76,7 @@ BEGIN
 					ELSE @SCANTAGGINGTYPE_NOTEXIST END
 		FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK)
 		WHERE c.ID <= @ScannedMaxId
-			AND NOT EXISTS (SELECT 1 FROM dbo.CustomerClassification AS cc WITH (NOLOCK) WHERE cc.[RowVersion] > @LastScannedRow AND cc.CustId = c.CustId)
+			AND NOT EXISTS (SELECT 1 FROM dbo.CustomerClassification AS cc WITH (NOLOCK) WHERE cc.ID > @LastScannedID AND cc.CustId = c.CustId)
 		GROUP BY c.CustId
 		ORDER BY Min(c.Priority) ASC, Min(c.ID) ASC;
 	END
