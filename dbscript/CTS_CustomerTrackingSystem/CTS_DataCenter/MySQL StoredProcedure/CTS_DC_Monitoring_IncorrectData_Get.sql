@@ -80,7 +80,7 @@ BEGIN
 			,	NULL
             ,	COUNT(1)
             ,	NULL
-            ,	NULL
+            ,	CURRENT_TIMESTAMP()
             ,	0
             ,	CASE WHEN COUNT(1) > 0 THEN CONST_ISSUETYPEID_TOTALMISSINGCUST ELSE NULL END	
             ,	1
