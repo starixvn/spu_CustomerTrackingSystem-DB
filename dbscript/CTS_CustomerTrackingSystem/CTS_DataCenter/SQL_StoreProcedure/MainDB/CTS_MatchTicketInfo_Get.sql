@@ -318,9 +318,9 @@ BEGIN
 						  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
-				AND cs.RoleId = 1
+				AND cust.RoleId = 1
 				AND cust.danger > 0 AND cust.danger = @Danger
-			--OPTION (MAXDOP 8)
+			
 				;
 		END;
 		IF @DangerType = 2
@@ -337,10 +337,10 @@ BEGIN
 						  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
-				AND cs.RoleId = 1
+				AND cust.RoleId = 1
 				AND cust.danger2 > 0 AND cust.danger2 = @Danger
 
-				--OPTION (MAXDOP 8)
+				
 				;
 		END;
 		IF @DangerType = 3
@@ -357,10 +357,8 @@ BEGIN
 						  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
-				AND cs.RoleId = 1
+				AND cust.RoleId = 1
 				AND cust.danger3 > 0 AND cust.danger3 = @Danger
-
-				--OPTION (MAXDOP 8)
 				;
 		END;
 		IF @DangerType = 4
@@ -377,10 +375,8 @@ BEGIN
 						  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
-				AND cs.RoleId = 1
+				AND cust.RoleId = 1
 				AND cust.danger4 > 0 AND cust.danger4 = @Danger
-
-				--OPTION (MAXDOP 8)
 				;
 		END;
 		IF @DangerType = 5
@@ -397,10 +393,8 @@ BEGIN
 						  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
-				AND cs.RoleId = 1
+				AND cust.RoleId = 1
 				AND cust.danger5 > 0 AND cust.danger5 = @Danger
-
-				--OPTION (MAXDOP 8)
 				;
 		END;
 	END;
@@ -488,7 +482,6 @@ BEGIN
 							) AS t
 						WHERE b.BetID = t.BetID)
 			INSERT INTO #tmpMatchSum(MatchId, LiveIndicator,BetChoiceType, Bettype,BetID, TotalAmountHome, TotalAmountAway, TotalTicketHome, TotalTicketAway)
-			
 			SELECT 	tmpCust.MatchId
 				,	tmpCust.LiveIndicator
 				,	tmpCust.BetChoiceType
@@ -772,9 +765,7 @@ END;
 																						WHEN ms.Id = @MatchSection_Early AND m.EventDate > @Today THEN 1 END)
 											 WHEN m.EventStatus = ms.EventStatus AND ms.Id = @MatchSection_Closed THEN 1
 											 ELSE 0 END) AS mss
-			
 		-- OPTION (RECOMPILE)
-		;
 		;
 	END
 	ELSE
