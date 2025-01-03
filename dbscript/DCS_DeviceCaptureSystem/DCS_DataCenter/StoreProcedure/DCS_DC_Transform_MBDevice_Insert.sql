@@ -113,7 +113,7 @@ BEGIN
         ,	MBUserSettingID
         ,	IFNULL(MBDeviceMappingID,0) AS MBDeviceMappingID
         ,	IFNULL(MBDeviceID,0) AS MBDeviceID
-        ,	IFNULL(RecoverType,0) AS DeviceStatus
+        ,	IFNULL(RecoverType,-1) AS DeviceStatus
         ,	lv_CurrentDatetime AS InsertedTime
 	FROM Temp_DeviceMappingInfo;
     
