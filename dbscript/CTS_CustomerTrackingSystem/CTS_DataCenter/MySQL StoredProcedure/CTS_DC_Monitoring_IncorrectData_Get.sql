@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_IncorrectData_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Monitoring_IncorrectData_Get`(
-		OUT op_IsContinue 	BIT
+		OUT op_IsContinue 	BOOLEAN
     )
     SQL SECURITY INVOKER
 BEGIN
