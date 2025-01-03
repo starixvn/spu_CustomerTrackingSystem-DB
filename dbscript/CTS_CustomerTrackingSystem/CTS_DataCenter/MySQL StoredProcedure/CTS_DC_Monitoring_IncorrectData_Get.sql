@@ -2,7 +2,9 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_IncorrectData_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Monitoring_IncorrectData_Get`()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Monitoring_IncorrectData_Get`(
+		op_IsContinue BIT(0)
+    )
     SQL SECURITY INVOKER
 BEGIN
 	/*
@@ -28,6 +30,8 @@ BEGIN
     DECLARE CONST_ISSUETYPEID_TOTALMISSINGCUST		TINYINT DEFAULT 4;
     
     DECLARE lv_LastScanID 			BIGINT UNSIGNED;
+    DECLARE lv_MaxScanID	 		BIGINT UNSIGNED;
+    DECLARE lv_CurrentNextScanID 	BIGINT UNSIGNED;
        
 	DROP TEMPORARY TABLE IF EXISTS Temp_IncorrectData;    
 	CREATE TEMPORARY TABLE Temp_IncorrectData(
@@ -62,6 +66,10 @@ BEGIN
     ORDER BY ID ASC
     LIMIT CONST_BATCHSIZE;   
     
+    SELECT MAX(ID) INTO lv_MaxScanID FROM CTS_DataCenter.JobMonitoring_IncorrectData;
+    SELECT MAX(ID) INTO lv_CurrentNextScanID FROM Temp_IncorrectData;
+    SET op_IsContinue = CASE WHEN lv_CurrentNextScanID < lv_MaxScanID AND lv_CurrentNextScanID IS NOT NULL THEN 1 ELSE 0 END;
+    
     DROP TEMPORARY TABLE IF EXISTS Temp_IncorrectData2;    
     CREATE TEMPORARY TABLE Temp_IncorrectData2 LIKE Temp_IncorrectData;
         
@@ -72,7 +80,7 @@ BEGIN
             ,	NULL
             ,	NULL
             ,	0
-             ,	CASE WHEN COUNT(1) > 0 THEN CONST_ISSUETYPEID_TOTALMISSINGCUST ELSE NULL END	
+            ,	CASE WHEN COUNT(1) > 0 THEN CONST_ISSUETYPEID_TOTALMISSINGCUST ELSE NULL END	
             ,	1
     FROM CTS_DataCenter.JobMonitoring_IncorrectData AS a
 		INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 20 
