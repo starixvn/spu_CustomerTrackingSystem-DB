@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_IncorrectData_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Monitoring_IncorrectData_Get`(
-		op_IsContinue 	BIT
+		OUT op_IsContinue 	BIT
     )
     SQL SECURITY INVOKER
 BEGIN
@@ -19,7 +19,9 @@ BEGIN
             
 		Param's Explanation (filtered by):
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_Monitoring_IncorrectData_Get ();
+				set @op_IsContinue = 0;
+				call CTS_DataCenter.CTS_DC_Monitoring_IncorrectData_Get(@op_IsContinue);
+				select @op_IsContinue;
 
 	*/
     DECLARE CONST_BATCHSIZE							SMALLINT DEFAULT 5000;
