@@ -17,7 +17,7 @@ BEGIN
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
 	    Param's Explanation (filtered by):
 		Example:
-			CALL DCS_DC_Transform_MBDeviceCodeTagging_Insert('ANC,UUU');
+			CALL DCS_DC_Transform_MBDeviceCodeTagging_Insert('');
             SELECT * FROM DCS_DataCenter.MBDeviceCodeTagging ORDER BY ID DESC;
     */
     DECLARE lv_CurrentDatetime DATETIME DEFAULT NOW();
@@ -31,6 +31,9 @@ BEGIN
     SET @sql = CONCAT("INSERT IGNORE INTO Temp_MBDeviceCodeTaggingInsert (Code) VALUES ('", REPLACE(ip_Tagging, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
+    
+    DELETE FROM Temp_MBDeviceCodeTaggingInsert
+    WHERE IFNULL(Code,'') = '';
     
     UPDATE Temp_MBDeviceCodeTaggingInsert AS tmp
 		INNER JOIN DCS_DataCenter.MBDeviceCodeTagging AS tg ON tg.Code = tmp.Code

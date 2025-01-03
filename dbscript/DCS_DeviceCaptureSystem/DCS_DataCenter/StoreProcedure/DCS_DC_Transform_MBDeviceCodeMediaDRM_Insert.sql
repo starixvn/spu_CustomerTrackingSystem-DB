@@ -17,7 +17,7 @@ BEGIN
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
 	    Param's Explanation (filtered by):
 		Example:
-			CALL DCS_DC_Transform_MBDeviceCodeMediaDRM_Insert('ABC,DEF');
+			CALL DCS_DC_Transform_MBDeviceCodeMediaDRM_Insert('');
             SELECT * FROM DCS_DataCenter.MBDeviceCodeMediaDRM ORDER BY ID DESC;
     */
     DECLARE lv_CurrentDatetime DATETIME DEFAULT NOW();
@@ -31,6 +31,9 @@ BEGIN
     SET @sql = CONCAT("INSERT IGNORE INTO Temp_MBDeviceCodeMediaDRMInsert (Code) VALUES ('", REPLACE(ip_MediaDRM, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
+    
+    DELETE FROM Temp_MBDeviceCodeMediaDRMInsert
+    WHERE IFNULL(Code,'') = '';
     
     UPDATE Temp_MBDeviceCodeMediaDRMInsert AS tmp
 		INNER JOIN DCS_DataCenter.MBDeviceCodeMediaDRM AS drm ON drm.Code = tmp.Code
