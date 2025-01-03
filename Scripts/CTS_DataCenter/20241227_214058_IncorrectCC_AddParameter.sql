@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="dbvr2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
 /*
     Creator: 	20241226@Jonas.Huynh
     Task:	 	HF Incorrect CC  [Redmine ID: #214058]
