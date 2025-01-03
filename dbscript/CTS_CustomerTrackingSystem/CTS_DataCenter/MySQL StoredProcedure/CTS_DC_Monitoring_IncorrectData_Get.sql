@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_IncorrectData_Get_xtest`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_IncorrectData_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Monitoring_IncorrectData_Get_xtest`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Monitoring_IncorrectData_Get`(
 		op_IsContinue 	BIT
     )
     SQL SECURITY INVOKER
