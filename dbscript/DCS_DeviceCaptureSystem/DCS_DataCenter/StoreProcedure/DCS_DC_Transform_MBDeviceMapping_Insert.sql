@@ -70,14 +70,14 @@ BEGIN
 		,	MBDeviceMappingID				BIGINT UNSIGNED DEFAULT 0
 		,	MBDeviceID						BIGINT UNSIGNED DEFAULT 0
 		,	SameDeviceID					BIGINT UNSIGNED DEFAULT 0
-        ,	RecoverType						SMALLINT UNSIGNED DEFAULT 0 /* SELECT * FROM DCS_DataCenter.StaticList WHERE ListID = 6; */
+        ,	RecoverType						SMALLINT DEFAULT 0 /* SELECT * FROM DCS_DataCenter.StaticList WHERE ListID = 6; */
 	);
     
 	CREATE TEMPORARY TABLE Temp_CheckSameDevice(
 			ID								BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	SameDeviceID					BIGINT UNSIGNED DEFAULT 0
 		,	MBDeviceID						BIGINT UNSIGNED DEFAULT 0
-		,	RecoverType						SMALLINT UNSIGNED DEFAULT 0
+		,	RecoverType						SMALLINT DEFAULT 0
 
 		,	MBDeviceCodeMediaDRMID			BIGINT UNSIGNED
 		,	MBDeviceCodeMachineID			BIGINT UNSIGNED
@@ -312,10 +312,10 @@ BEGIN
         
     
 	SET @sql = CONCAT('UPDATE ', ip_TableName,' AS tmp
-							INNER JOIN Temp_DeviceMapping AS dm ON dm.TransID = tmp.TransID
+							LEFT JOIN Temp_DeviceMapping AS dm ON dm.TransID = tmp.TransID
 						SET tmp.MBDeviceMappingID = dm.MBDeviceMappingID,
 							tmp.MBDeviceID = dm.MBDeviceID,
-							tmp.RecoverType = dm.RecoverType');
+							tmp.RecoverType = CASE WHEN dm.TransID IS NULL THEN -1 ELSE dm.RecoverType END');
 	PREPARE stmt FROM @sql;
 	EXECUTE stmt;
 	DEALLOCATE PREPARE stmt;

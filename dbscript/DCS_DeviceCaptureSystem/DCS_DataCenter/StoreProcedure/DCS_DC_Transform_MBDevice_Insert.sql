@@ -41,7 +41,7 @@ BEGIN
 		,	MBUserSettingID	 			BIGINT UNSIGNED
 
 		,	SameDeviceID				BIGINT UNSIGNED
-		,	RecoverType					SMALLINT UNSIGNED
+		,	RecoverType					SMALLINT
 		,	MBDeviceMappingID			BIGINT UNSIGNED
 		,	MBDeviceID					BIGINT UNSIGNED
 	);
@@ -67,7 +67,7 @@ BEGIN
 			 "$[*]" COLUMNS(
 							TransID			BIGINT UNSIGNED		PATH "$.TransID"
 						,	SameDeviceID	BIGINT UNSIGNED 	PATH "$.SameDeviceID"
-						,	RecoverType		SMALLINT UNSIGNED 	PATH "$.RecoverType"
+						,	RecoverType		SMALLINT		 	PATH "$.RecoverType"
 					)
 		) AS tmp
 		INNER JOIN DCS_DataCenter.MBTransaction AS trans ON trans.ID = tmp.TransID;
