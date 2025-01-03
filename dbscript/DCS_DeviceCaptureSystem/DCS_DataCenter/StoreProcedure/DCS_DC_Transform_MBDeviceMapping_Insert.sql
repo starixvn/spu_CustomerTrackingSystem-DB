@@ -305,9 +305,11 @@ BEGIN
 														AND dm.MBDeviceCodeTaggingID = tmp.MBDeviceCodeTaggingID
 	SET tmp.MBDeviceMappingID = dm.ID,
 		tmp.MBDeviceID = dm.MBDeviceID,
-        tmp.RecoverType = CASE WHEN tmp.MBRawTransactionID = dm.FirstMBRawTransactionID
-								THEN tmp.RecoverType
-                                ELSE 1
+        tmp.RecoverType = CASE WHEN tmp.MBRawTransactionID = dm.FirstMBRawTransactionID THEN tmp.RecoverType
+								WHEN tmp.MBDeviceCodeMediaDRMID > 0 THEN 1
+								WHEN tmp.MBDeviceCodeMachineID > 0 THEN 2
+								WHEN tmp.MBDeviceCodeTaggingID > 0 THEN 3
+								ELSE -1
 							END;
         
     
