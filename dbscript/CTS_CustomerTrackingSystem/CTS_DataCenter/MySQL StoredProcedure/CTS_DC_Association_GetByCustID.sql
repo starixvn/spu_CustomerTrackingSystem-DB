@@ -17,7 +17,7 @@ BEGIN
         
 		Revisions:
 			- 20240122@Victoria.Le: Initial Writing[Redmine ID: #198742]
-		
+			- 20250103@Casey.Huynh: Tunning Performance [Redmine ID: #216376]
 
 		Param's Explanation (filtered by):
 
@@ -152,6 +152,7 @@ BEGIN
 		INSERT IGNORE INTO Temp_Association(CTSCustID_1, CTSCustID_2, AssociationType)
 		SELECT DISTINCT dv.CTSCustID,  dv1.CTSCustID  , 1
 		FROM Temp_CustDevice AS dv
+			INNER JOIN Temp_Cust AS tmp ON dv.CTSCustID = tmp.CTSCustID
 			INNER JOIN Temp_CustDevice_Duplicate AS dv1 ON dv.DCSDeviceID = dv1.DCSDeviceID AND dv.CTSCustID != dv1.CTSCustID;
 			
 	END IF;
