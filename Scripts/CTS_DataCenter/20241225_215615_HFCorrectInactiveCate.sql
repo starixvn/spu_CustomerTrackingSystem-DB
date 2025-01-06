@@ -20,7 +20,7 @@ CALL CTS_DC_Adhoc_CorrectInactiveCategory();
 #3. Inform Jonas to start services
 
 #4. Get cust to rescan Metaverse
-SELECT DISTINCT CustID 
+SELECT DISTINCT adh.CustID 
 FROM CTS_DataCenter.Adhoc_CC_Inactive_Incorrect AS adh
 	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CustID = adh.CustID
 WHERE cc.CategoryID IN (40400,40401,40402,40403,40404,40405,40406,40500,40501,40502,40503,40504,40505,40506,40600,40601,40602,40603,40604,40605,40606)

@@ -71,7 +71,11 @@ sp: BEGIN
 		SET 	cc.CategoryID = b.OldCategoryID
 			,	cc.ParentID = cate.ParentID;
 		
-		DO SLEEP(5);
+        DELETE t
+        FROM Temp_Customers AS t
+            INNER JOIN Temp_CustomersByBatch AS a ON t.CustID = a.CustID;
+            
+        DO SLEEP(0.1);
 	END WHILE;
 END$$
 DELIMITER ;
