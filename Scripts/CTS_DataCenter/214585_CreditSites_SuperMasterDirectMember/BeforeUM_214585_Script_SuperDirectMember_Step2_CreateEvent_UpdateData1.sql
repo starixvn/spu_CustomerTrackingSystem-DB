@@ -6,6 +6,7 @@
 
 	Revisions:
 		- 20241226@Victoria.Le: 	Initial Writing [RedmineID: #214585]
+		- 20241226@Victoria.Le: 	Adjust Event to update MRecommend/Recommend to latest CTSCustID [RedmineID: #214585]
 			
 	Param's Explanation:
 	Example:
@@ -15,7 +16,7 @@
 USE CTS_DataCenter;
 
 DELIMITER |
-CREATE EVENT EV_CTS_DC_Adhoc_CreditSMDirectMember_Update
+ALTER EVENT EV_CTS_DC_Adhoc_CreditSMDirectMember_Update
     ON SCHEDULE
 		 EVERY 15 SECOND
     DO
@@ -46,9 +47,9 @@ CREATE EVENT EV_CTS_DC_Adhoc_CreditSMDirectMember_Update
 		FROM CTS_DataCenter.SystemEventStatus
 		WHERE EventName = 'EV_CTS_DC_Adhoc_CreditSMDirectMember_Update';
 		
-		IF (lv_LastStatus = 'Start') THEN
+		IF (lv_LastStatus IN ('Start','Complete')) THEN
 			INSERT INTO CTS_DataCenter.Adhoc_StoredProcedureExecError(StoredProcedureName, ErrCode, ErrMsg, ErrDate, ErrDateTime)
-			SELECT 'EV_CTS_DC_Adhoc_CreditSMDirectMember_Update', NULL, 'LastStatus:Start', lv_LastExecTime, NOW();
+			SELECT 'EV_CTS_DC_Adhoc_CreditSMDirectMember_Update', NULL, CONCAT('LastStatus:',lv_LastStatus), lv_LastExecTime, NOW();
 			
 			UPDATE CTS_DataCenter.SystemEventStatus 
 			SET 	Status = 'Stop' 
