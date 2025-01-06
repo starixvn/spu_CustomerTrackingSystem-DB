@@ -5,7 +5,7 @@ SET ANSI_NULLS ON;
 GO
 ALTER PROCEDURE	CTS_Customer_GetReactivated
 		@LastScannedDate	DATETIME,
-		@NextScannedDate	DATETIME	
+		@NextScannedDate	DATETIME = NULL	
 AS
 /*
 	Creator:	20220310@Long.Luu
