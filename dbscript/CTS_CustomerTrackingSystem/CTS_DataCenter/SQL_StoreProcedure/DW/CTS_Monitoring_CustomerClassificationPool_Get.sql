@@ -40,7 +40,7 @@ BEGIN
 	DECLARE @General_LastScannedID			BIGINT
 		,	@BySport_LastScannedRow			ROWVERSION;
 
-	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
+	IF OBJECT_ID('tempdb..#tmpMonitoring') IS NOT NULL
 	BEGIN
 		DROP TABLE	#tmpMonitoring;
 	END
@@ -87,7 +87,7 @@ BEGIN
 		,	NumberOfRecord  
 	FROM #tmpMonitoring;
 
-	DROP TABLE	#tmpMonitoring;
+	DROP TABLE #tmpMonitoring;
 END;
 GO
 
