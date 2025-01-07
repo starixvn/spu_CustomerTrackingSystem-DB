@@ -70,8 +70,8 @@ INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = h.FromCa
 SET 	cc.CategoryID = h.FromCategoryID
 	,	cc.ParentID = cate.ParentID
     ,	cc.CreatedDate = h.LastModifiedDate
-WHERE cc.CustID in (151099368, 100846542, 51630090)
+WHERE cc.CustID in (51630090,100846542,122089274,147931314,151099368,177081883)
 	AND cc.ParentID = 40000;
 
 #9. Rescan Metaverse
-151099368, 100846542, 51630090
+51630090,100846542,122089274,147931314,151099368,177081883
