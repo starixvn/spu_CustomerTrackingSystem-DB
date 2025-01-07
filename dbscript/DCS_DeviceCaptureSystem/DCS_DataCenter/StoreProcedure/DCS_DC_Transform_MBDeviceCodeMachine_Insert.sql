@@ -25,10 +25,9 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeMachineInsert;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeMachineInsert(
-			Code					VARCHAR(32) NOT NULL
-		,	MachineOSType	 		SMALLINT NOT NULL COMMENT 'DCS_DataCenter.StaticList.ListID = 5'
-        
-		,	IsNewRecord				TINYINT	DEFAULT 1
+			Code					VARCHAR(32) 	NOT NULL
+		,	MachineOSType	 		SMALLINT 		NOT NULL COMMENT 'DCS_DataCenter.StaticList.ListID = 5'
+		,	IsNewRecord				TINYINT			DEFAULT 1
         ,	PRIMARY KEY (Code, MachineOSType)
     );
     
@@ -49,7 +48,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.MBDeviceCodeMachine AS ar ON ar.Code = tmp.Code AND ar.MachineOSType = tmp.MachineOSType
     SET tmp.IsNewRecord = 0;
 	
-	INSERT IGNORE INTO DCS_DataCenter.MBDeviceCodeMachine(Code, MachineOSType, InsertedTime, LastAccessedDate)
+	INSERT INTO DCS_DataCenter.MBDeviceCodeMachine(Code, MachineOSType, InsertedTime, LastAccessedDate)
 	SELECT	Code
 		,	MachineOSType
 		,	lv_CurrentDatetime AS InsertedTime

@@ -21,7 +21,7 @@ BEGIN
 			CALL DCS_DC_Transform_MBTransaction_Insert(1,200);
     */
     
-    DECLARE lv_CurrentDate 					TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
+    DECLARE lv_CurrentDatetime 				DATETIME DEFAULT NOW();
     DECLARE lv_ListMBDeviceCodeMediaDRM 	LONGTEXT;
     DECLARE lv_ListMBDeviceCodeTagging	 	LONGTEXT;
     DECLARE lv_MBAccountJson 				LONGTEXT;
@@ -307,7 +307,7 @@ BEGIN
 		,   trt.MBDeviceModelID
 		,   trt.MBOSID
 		,   trt.MBUserSettingID
-        ,   lv_CurrentDate AS InsertedTime
+        ,   lv_CurrentDatetime AS InsertedTime
 	FROM Temp_MBRawTransaction AS trt;
     
     /* ======= INSERT MBProcessedTransaction ========= */
@@ -334,12 +334,12 @@ BEGIN
 		,   rt.CountryName
 		,   rt.Timezone
 		,   rt.Language
-		,   lv_CurrentDate AS InsertedTime
+		,   lv_CurrentDatetime AS InsertedTime
 	FROM Temp_MBRawTransaction AS rt;
         
 	DELETE rt
 	FROM DCS_DataCenter.MBRawTransaction AS rt
-	    INNER JOIN	Temp_MBRawTransaction	AS tmp_rm ON rt.ID = tmp_rm.ID;
+	    INNER JOIN Temp_MBRawTransaction AS tmp_rm ON rt.ID = tmp_rm.ID;
     
 END$$
 DELIMITER ;

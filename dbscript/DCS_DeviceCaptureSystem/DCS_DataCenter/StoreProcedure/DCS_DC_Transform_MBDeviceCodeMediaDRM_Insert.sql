@@ -24,8 +24,8 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeMediaDRMInsert;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeMediaDRMInsert(
-			Code			VARCHAR(32) NOT NULL PRIMARY KEY
-		,	IsNewRecord		TINYINT	DEFAULT 1
+			Code			VARCHAR(32) 	NOT NULL PRIMARY KEY
+		,	IsNewRecord		TINYINT			DEFAULT 1
     );
     
     SET @sql = CONCAT("INSERT IGNORE INTO Temp_MBDeviceCodeMediaDRMInsert (Code) VALUES ('", REPLACE(ip_MediaDRM, ",", "'),('"),"');");
@@ -39,7 +39,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.MBDeviceCodeMediaDRM AS drm ON drm.Code = tmp.Code
     SET tmp.IsNewRecord = 0;
 	
-	INSERT IGNORE INTO DCS_DataCenter.MBDeviceCodeMediaDRM(Code, InsertedTime, LastAccessedDate)
+	INSERT INTO DCS_DataCenter.MBDeviceCodeMediaDRM(Code, InsertedTime, LastAccessedDate)
 	SELECT	Code
 		,	lv_CurrentDatetime AS InsertedTime
 		,	DATE(lv_CurrentDatetime) AS LastAccessedDate

@@ -18,7 +18,7 @@ BEGIN
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
             
 	    Param's Explanation (filtered by):
-			CALL DCS_DC_Transform_MBRawTransaction_GetPackage(10,2);
+			CALL DCS_DC_Transform_MBRawTransaction_GetPackage(2,2);
 	*/
 	DECLARE	lv_TotalRecord	INT UNSIGNED DEFAULT 0;
     
@@ -30,7 +30,7 @@ BEGIN
     );
 	
     SET lv_TotalRecord = ip_NoOfTickets * ip_NoOfBatch;
-	set @RowId = 0;
+	SET @RowId = 0;
     
     INSERT INTO Temp_Transaction (MinTransID, MaxTransID)
     SELECT  MIN(ID) AS MinTransID

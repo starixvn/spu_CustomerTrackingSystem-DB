@@ -27,8 +27,7 @@ BEGIN
 			CountryName			VARCHAR(32) NOT NULL
 		,	TimeZone			VARCHAR(32) NOT NULL
 		,	LanguageName		VARCHAR(32) NOT NULL
-        
-		,	IsNewRecord			TINYINT	DEFAULT 1
+		,	IsNewRecord			TINYINT		DEFAULT 1
         ,	PRIMARY KEY (CountryName, TimeZone, LanguageName)
     );
     
@@ -54,7 +53,7 @@ BEGIN
 													AND us.LanguageName = tmp.LanguageName
     SET tmp.IsNewRecord = 0;
 	
-	INSERT IGNORE INTO DCS_DataCenter.MBUserSetting(CountryName, TimeZone, LanguageName, InsertedTime, LastAccessedDate)
+	INSERT INTO DCS_DataCenter.MBUserSetting(CountryName, TimeZone, LanguageName, InsertedTime, LastAccessedDate)
 	SELECT	CountryName
 		,	TimeZone
 		,	LanguageName

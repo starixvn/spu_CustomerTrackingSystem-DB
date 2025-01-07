@@ -27,8 +27,7 @@ BEGIN
 			ModelName			VARCHAR(32) NOT NULL
 		,	Manufacturer		VARCHAR(32) NOT NULL
 		,	Brand				VARCHAR(32) NOT NULL
-        
-		,	IsNewRecord			TINYINT	DEFAULT 1
+		,	IsNewRecord			TINYINT		DEFAULT 1
         ,	PRIMARY KEY (ModelName, Manufacturer, Brand)
     );
     
@@ -54,7 +53,7 @@ BEGIN
 													AND dm.Brand = tmp.Brand
     SET tmp.IsNewRecord = 0;
 	
-	INSERT IGNORE INTO DCS_DataCenter.MBDeviceModel(ModelName, Manufacturer, Brand, InsertedTime, LastAccessedDate)
+	INSERT INTO DCS_DataCenter.MBDeviceModel(ModelName, Manufacturer, Brand, InsertedTime, LastAccessedDate)
 	SELECT	ModelName
 		,	Manufacturer
 		,	Brand

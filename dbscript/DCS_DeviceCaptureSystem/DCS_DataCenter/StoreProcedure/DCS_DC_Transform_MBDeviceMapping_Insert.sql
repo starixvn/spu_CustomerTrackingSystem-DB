@@ -77,8 +77,7 @@ BEGIN
 			ID								BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	SameDeviceID					BIGINT UNSIGNED DEFAULT 0
 		,	MBDeviceID						BIGINT UNSIGNED DEFAULT 0
-		,	RecoverType						SMALLINT DEFAULT 0
-
+		,	RecoverType						SMALLINT		DEFAULT 0
 		,	MBDeviceCodeMediaDRMID			BIGINT UNSIGNED
 		,	MBDeviceCodeMachineID			BIGINT UNSIGNED
 		,	MBDeviceCodeTaggingID			BIGINT UNSIGNED
@@ -109,7 +108,6 @@ BEGIN
 		,	MBDeviceCodeMachineID			BIGINT UNSIGNED
 		,	MBDeviceCodeTaggingID			BIGINT UNSIGNED
 		,	IsNewRecord						TINYINT	DEFAULT 1
-        
         , 	PRIMARY KEY (MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID)
     );
     
@@ -206,11 +204,11 @@ BEGIN
     
     /********************** Update after Check Rule 2 ***********************************/
     UPDATE Temp_DeviceMapping AS tmp
-		INNER JOIN Temp_MBDeviceCodeMachine AS tmp2 ON tmp2.MBDeviceCodeMachineID = tmp.MBDeviceCodeMachineID
-	SET tmp.MBDeviceID = tmp2.MBDeviceID,
+		INNER JOIN Temp_MBDeviceCodeMachine AS tmpR2 ON tmpR2.MBDeviceCodeMachineID = tmp.MBDeviceCodeMachineID
+	SET tmp.MBDeviceID = tmpR2.MBDeviceID,
 		tmp.RecoverType = CONST_RECOVERTYPE_SECONDRULE
     WHERE tmp.MBDeviceID = 0
-		AND tmp2.MBDeviceID > 0;
+		AND tmpR2.MBDeviceID > 0;
     
     INSERT IGNORE INTO Temp_ExistingDevice(SameDeviceID, MBDeviceID)
     SELECT	SameDeviceID
@@ -241,11 +239,11 @@ BEGIN
     
     /********************** Update after Check Rule 3 ***********************************/
     UPDATE Temp_DeviceMapping AS tmp
-		INNER JOIN Temp_MBDeviceCodeTagging AS tmp3 ON tmp3.MBDeviceCodeTaggingID = tmp.MBDeviceCodeTaggingID
-	SET tmp.MBDeviceID = tmp3.MBDeviceID,
+		INNER JOIN Temp_MBDeviceCodeTagging AS tmpR3 ON tmpR3.MBDeviceCodeTaggingID = tmp.MBDeviceCodeTaggingID
+	SET tmp.MBDeviceID = tmpR3.MBDeviceID,
 		tmp.RecoverType = CONST_RECOVERTYPE_THIRDRULE
     WHERE tmp.MBDeviceID = 0
-		AND tmp3.MBDeviceID > 0;
+		AND tmpR3.MBDeviceID > 0;
     
     INSERT IGNORE INTO Temp_ExistingDevice(SameDeviceID, MBDeviceID)
     SELECT	SameDeviceID
@@ -260,7 +258,8 @@ BEGIN
     
     /********************** INSERT New device ***********************************/
     INSERT IGNORE INTO DCS_DataCenter.MBDevice(FirstMBRawTransactionID, LastAccessedDate)
-    SELECT DISTINCT SameDeviceID
+    SELECT 	DISTINCT 
+			SameDeviceID
 		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
     FROM Temp_DeviceMapping
     WHERE MBDeviceID = 0
@@ -284,7 +283,7 @@ BEGIN
 														AND dm.MBDeviceCodeTaggingID = tmp.MBDeviceCodeTaggingID
     SET tmp.IsNewRecord = 0;
     
-    INSERT IGNORE INTO DCS_DataCenter.MBDeviceMapping(MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID, MBDeviceID, FirstMBRawTransactionID, RecoverType, InsertedTime)
+    INSERT INTO DCS_DataCenter.MBDeviceMapping(MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID, MBDeviceID, FirstMBRawTransactionID, RecoverType, InsertedTime)
     SELECT 	tmp.MBDeviceCodeMediaDRMID
 		,	tmp.MBDeviceCodeMachineID
         ,	tmp.MBDeviceCodeTaggingID

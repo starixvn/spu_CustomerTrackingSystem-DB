@@ -23,7 +23,7 @@ BEGIN
     DECLARE CONST_SYSTEMSETTING_MAXMBTRANSACTION07ID  	INT DEFAULT 30;
     
     DECLARE lv_MaxID				BIGINT UNSIGNED;
-    DECLARE lv_CurrentTime			TIMESTAMP DEFAULT CURRENT_TIMESTAMP();
+    DECLARE lv_CurrentDatetime 		DATETIME DEFAULT NOW();
     
     SELECT VValue
     INTO lv_MaxID
@@ -34,64 +34,64 @@ BEGIN
     /*******INIT TEMPORARY TABLE************/
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBTransaction07;
 	CREATE TEMPORARY TABLE Temp_MBTransaction07(
-		  ID            BIGINT UNSIGNED PRIMARY KEY
-		, MBAccountID       BIGINT UNSIGNED
-		, CreatedDate       DATE
-		, TransTime       DATETIME(4)
-		, MBDeviceCodeMediaDRMID  BIGINT UNSIGNED
-		, MBDeviceCodeMachineID BIGINT UNSIGNED
-		, MBDeviceCodeTaggingID BIGINT UNSIGNED
-		, MBDeviceModelID     BIGINT UNSIGNED
-		, MBOSID          BIGINT UNSIGNED
-		, MBUserSettingID     BIGINT UNSIGNED
-		, MBDeviceID        BIGINT UNSIGNED
+		  ID            			BIGINT UNSIGNED PRIMARY KEY
+		, MBAccountID       		BIGINT UNSIGNED
+		, CreatedDate       		DATE
+		, TransTime       			DATETIME(4)
+		, MBDeviceCodeMediaDRMID  	BIGINT UNSIGNED
+		, MBDeviceCodeMachineID 	BIGINT UNSIGNED
+		, MBDeviceCodeTaggingID 	BIGINT UNSIGNED
+		, MBDeviceModelID     		BIGINT UNSIGNED
+		, MBOSID          			BIGINT UNSIGNED
+		, MBUserSettingID     		BIGINT UNSIGNED
+		, MBDeviceID        		BIGINT UNSIGNED
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBAccount;
 	CREATE TEMPORARY TABLE Temp_MBAccount(
-		  ID            BIGINT UNSIGNED PRIMARY KEY
+		  ID            	BIGINT UNSIGNED PRIMARY KEY
 		, LastLoginTime     DATETIME
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeMediaDRM;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeMediaDRM(
-		  ID            BIGINT UNSIGNED PRIMARY KEY
+		  ID            		BIGINT UNSIGNED PRIMARY KEY
 		, MaxLastAccessedDate   DATETIME
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeMachine;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeMachine(
-		  ID            BIGINT UNSIGNED PRIMARY KEY
+		  ID            		BIGINT UNSIGNED PRIMARY KEY
 		, MaxLastAccessedDate   DATETIME
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeTagging;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeTagging(
-		  ID            BIGINT UNSIGNED PRIMARY KEY
+		  ID            		BIGINT UNSIGNED PRIMARY KEY
 		, MaxLastAccessedDate   DATETIME
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceModel;
 	CREATE TEMPORARY TABLE Temp_MBDeviceModel(
-		  ID            BIGINT UNSIGNED PRIMARY KEY
+		  ID            		BIGINT UNSIGNED PRIMARY KEY
 		, MaxLastAccessedDate   DATETIME
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBOS;
 	CREATE TEMPORARY TABLE Temp_MBOS(
-		  ID            BIGINT UNSIGNED PRIMARY KEY
+		  ID            		BIGINT UNSIGNED PRIMARY KEY
 		, MaxLastAccessedDate   DATETIME
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBUserSetting;
 	CREATE TEMPORARY TABLE Temp_MBUserSetting(
-		  ID            BIGINT UNSIGNED PRIMARY KEY
+		  ID            		BIGINT UNSIGNED PRIMARY KEY
 		, MaxLastAccessedDate   DATETIME
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDevice;
 	CREATE TEMPORARY TABLE Temp_MBDevice(
-		  ID            BIGINT UNSIGNED PRIMARY KEY
+		  ID            		BIGINT UNSIGNED PRIMARY KEY
 		, MaxLastAccessedDate   DATETIME
 	);
     
@@ -109,7 +109,7 @@ BEGIN
 		, IFNULL(trans.MBUserSettingID, 0) AS MBUserSettingID
 		, IFNULL(trans.MBDeviceID, 0) AS MBDeviceID
 	FROM DCS_DataCenter.MBTransaction07 AS trans
-	LEFT JOIN DCS_DataCenter.MBDeviceMapping AS dm ON dm.ID = trans.MBDeviceMappingID
+		LEFT JOIN DCS_DataCenter.MBDeviceMapping AS dm ON dm.ID = trans.MBDeviceMappingID
 	WHERE trans.ID > lv_MaxID
 	LIMIT ip_BatchSize;
     
@@ -207,7 +207,6 @@ BEGIN
 	SET us.LastAccessedDate = GREATEST(tmp.MaxLastAccessedDate, us.LastAccessedDate);
     
 	/*******UPDATE MBDevice ********************/
-    
 	UPDATE DCS_DataCenter.MBDevice AS dv
 		INNER JOIN Temp_MBDevice AS tmp ON tmp.ID = dv.ID
 	SET dv.LastAccessedDate = GREATEST(tmp.MaxLastAccessedDate, dv.LastAccessedDate);
@@ -220,7 +219,7 @@ BEGIN
     IF lv_MaxID IS NOT NULL THEN
 		UPDATE DCS_DataCenter.SystemSetting
 		SET VValue = lv_MaxID,
-			UpdatedTime = lv_CurrentTime
+			UpdatedTime = lv_CurrentDatetime
 		WHERE ID = CONST_SYSTEMSETTING_MAXMBTRANSACTION07ID;
     END IF;
 END$$

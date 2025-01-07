@@ -31,8 +31,7 @@ BEGIN
 			ID							BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	MBRawTransactionID			BIGINT UNSIGNED
 		,	SameDeviceID				BIGINT UNSIGNED DEFAULT 0
-		,	RecoverType					SMALLINT DEFAULT 0
-
+		,	RecoverType					SMALLINT 		DEFAULT 0
 		,	MBDeviceCodeMediaDRMID		BIGINT UNSIGNED
 		,	MBDeviceCodeMachineID		BIGINT UNSIGNED
 		,	MBDeviceCodeTaggingID		BIGINT UNSIGNED
@@ -42,8 +41,7 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_CheckSameDevice(
 			ID							BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	SameDeviceID				BIGINT UNSIGNED DEFAULT 0
-		,	RecoverType					SMALLINT DEFAULT 0
-
+		,	RecoverType					SMALLINT 		DEFAULT 0
 		,	FirstDeviceID				BIGINT UNSIGNED
 		,	SecondDeviceID				BIGINT UNSIGNED
 		,	ThirdDeviceID				BIGINT UNSIGNED
@@ -51,7 +49,7 @@ BEGIN
     
 	CREATE TEMPORARY TABLE Temp_SetBatchID(
 			SameDeviceID				BIGINT UNSIGNED NOT NULL PRIMARY KEY
-		,	BatchID						INT DEFAULT 0
+		,	BatchID						INT 			DEFAULT 0
 	);
     
     /********************** Check Same Device ***********************************/

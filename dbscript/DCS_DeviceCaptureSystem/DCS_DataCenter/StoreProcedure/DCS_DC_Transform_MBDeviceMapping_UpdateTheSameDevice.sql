@@ -52,13 +52,12 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_SameMBDevice;
     
 	CREATE TEMPORARY TABLE Temp_SameMBDevice(
-			ID								BIGINT UNSIGNED NOT NULL PRIMARY KEY
-		,	SameDeviceID					BIGINT UNSIGNED
-		,	RecoverType						SMALLINT DEFAULT 0
-
-		,	FirstDeviceID					BIGINT UNSIGNED
-		,	SecondDeviceID					BIGINT UNSIGNED
-		,	ThirdDeviceID					BIGINT UNSIGNED
+			ID						BIGINT UNSIGNED NOT NULL PRIMARY KEY
+		,	SameDeviceID			BIGINT UNSIGNED
+		,	RecoverType				SMALLINT DEFAULT 0
+		,	FirstDeviceID			BIGINT UNSIGNED
+		,	SecondDeviceID			BIGINT UNSIGNED
+		,	ThirdDeviceID			BIGINT UNSIGNED
 	);
     
 	SET @sql = CONCAT('INSERT INTO Temp_SameMBDevice(ID, FirstDeviceID, SecondDeviceID, ThirdDeviceID) 

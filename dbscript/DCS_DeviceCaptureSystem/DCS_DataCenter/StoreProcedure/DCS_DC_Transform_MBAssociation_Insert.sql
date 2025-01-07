@@ -24,13 +24,11 @@ BEGIN
     DECLARE lv_CurrentDatetime DATETIME DEFAULT NOW();
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBAssociationInsert;
-        
 	CREATE TEMPORARY TABLE Temp_MBAssociationInsert(
 			ID					INT UNSIGNED		NOT NULL AUTO_INCREMENT PRIMARY KEY
         ,	MBAccountID			BIGINT UNSIGNED		NOT NULL
         ,	MBDeviceID			BIGINT UNSIGNED		NOT NULL
-        ,	SubscriberID		INT		
-        
+        ,	SubscriberID		INT
 		,	IsNewRecord			TINYINT		 		DEFAULT 1
     );
     
@@ -55,7 +53,7 @@ BEGIN
 														AND ass.MBDeviceID = tmp.MBDeviceID
     SET tmp.IsNewRecord = 0;
     
-	INSERT IGNORE INTO DCS_DataCenter.MBAssociation(MBAccountID, MBDeviceID, SubscriberID, InsertedTime)
+	INSERT INTO DCS_DataCenter.MBAssociation(MBAccountID, MBDeviceID, SubscriberID, InsertedTime)
 	SELECT	MBAccountID
 		,	MBDeviceID
 		,	SubscriberID

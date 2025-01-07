@@ -24,10 +24,9 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBOSInsert;
 	CREATE TEMPORARY TABLE Temp_MBOSInsert(
-			OSName				VARCHAR(32) NOT NULL
-		,	Version				VARCHAR(32) NOT NULL
-        
-		,	IsNewRecord			TINYINT	DEFAULT 1
+			OSName			VARCHAR(32) NOT NULL
+		,	Version			VARCHAR(32) NOT NULL
+		,	IsNewRecord		TINYINT		DEFAULT 1
         ,	PRIMARY KEY (OSName, Version)
     );
     
@@ -48,7 +47,7 @@ BEGIN
 											AND os.Version = tmp.Version
     SET tmp.IsNewRecord = 0;
 	
-	INSERT IGNORE INTO DCS_DataCenter.MBOS(OSName, Version, InsertedTime, LastAccessedDate)
+	INSERT INTO DCS_DataCenter.MBOS(OSName, Version, InsertedTime, LastAccessedDate)
 	SELECT	OSName
 		,	Version
 		,	lv_CurrentDatetime AS InsertedTime

@@ -39,7 +39,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.MBDeviceCodeTagging AS tg ON tg.Code = tmp.Code
     SET tmp.IsNewRecord = 0;
 	
-	INSERT IGNORE INTO DCS_DataCenter.MBDeviceCodeTagging(Code, InsertedTime, LastAccessedDate)
+	INSERT INTO DCS_DataCenter.MBDeviceCodeTagging(Code, InsertedTime, LastAccessedDate)
 	SELECT	Code
 		,	lv_CurrentDatetime AS InsertedTime
 		,	DATE(lv_CurrentDatetime) AS LastAccessedDate

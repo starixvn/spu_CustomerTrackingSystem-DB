@@ -25,12 +25,10 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_AccountInsert;
 	CREATE TEMPORARY TABLE Temp_AccountInsert(
-			SubscriberID			 	INT NOT NULL
-		,	LoginName		 			VARCHAR(100) NOT NULL
-		,	TransTime					DATETIME(4)
-        
-		,	IsNewRecord					TINYINT	DEFAULT 1
-        
+			SubscriberID		INT 			NOT NULL
+		,	LoginName		 	VARCHAR(100) 	NOT NULL
+		,	TransTime			DATETIME(4)
+		,	IsNewRecord			TINYINT			DEFAULT 1
         ,	PRIMARY KEY (SubscriberID, LoginName)
     );
     
@@ -41,7 +39,7 @@ BEGIN
 	FROM JSON_TABLE(
 			ip_AccountJson,
 			 "$[*]" COLUMNS(
-						SubscriberID		int			 	PATH "$.SubscriberID"
+						SubscriberID		INT			 	PATH "$.SubscriberID"
 					,	LoginName			VARCHAR(100) 	PATH "$.LoginName"
 					,	TransTime			DATETIME(4) 	PATH "$.TransTime"
 				)
@@ -53,7 +51,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.MBAccount AS acc ON acc.SubscriberID = tmp.SubscriberID AND acc.LoginName = tmp.LoginName
     SET tmp.IsNewRecord = 0;
 	
-	INSERT IGNORE INTO DCS_DataCenter.MBAccount(SubscriberID, LoginName, LastLoginTime, InsertedTime)
+	INSERT INTO DCS_DataCenter.MBAccount(SubscriberID, LoginName, LastLoginTime, InsertedTime)
 	SELECT	SubscriberID
 		,	LoginName
 		,	TransTime

@@ -39,7 +39,6 @@ BEGIN
 		,	MBDeviceModelID 			BIGINT UNSIGNED
 		,	MBOSID			 			BIGINT UNSIGNED
 		,	MBUserSettingID	 			BIGINT UNSIGNED
-
 		,	SameDeviceID				BIGINT UNSIGNED
 		,	RecoverType					SMALLINT
 		,	MBDeviceMappingID			BIGINT UNSIGNED
