@@ -525,23 +525,9 @@ BEGIN
 
 			IF (@@ROWCOUNT > 0)
 			BEGIN
-			IF EXISTS (SELECT 1 FROM @tmpMatchSection WHERE Id = @MatchSection_Closed)
-			BEGIN
-				INSERT INTO @tmpMatchSection (Id, IsFrom14, EventStatus)
-				SELECT @MatchSection_Closed, 1, *
-				FROM (VALUES ('Completed'),('Closed'),('Postponed'),('internal'))  AS X(a);
-			END;
-			
-			IF (@IsFromActive14 = 0)
-			BEGIN
-				SET @IsFromActive14 = 2;
-			END
-			ELSE
-			BEGIN
-				SET @IsFromActive14 = 3;
+				SET @IsFromActive14 = 1;
 			END;
 		END;
-	END;
 	END;
 
 	IF @Fromdate <= @MoveBetsDay
