@@ -14,13 +14,57 @@
 */
 
 USE CTS_DataCenter;
-
+-- --------------------------------------------
+/*STEP 1: Disable event*/
+-- --------------------------------------------
 ALTER EVENT EV_CTS_DC_Adhoc_CreditSMDirectMember_CheckDIFF
 	DISABLE;
     
 ALTER EVENT EV_CTS_DC_Adhoc_CreditSMDirectMember_Update
 	DISABLE;
 
+-- --------------------------------------------
+/*STEP 2: Check DIFF*/
+-- --------------------------------------------
+SELECT ParameterValue
+INTO @lv_MinCTSCustID
+FROM CTS_DataCenter.SystemParameter
+WHERE ParameterID = 994;
+
+SELECT ParameterValue
+INTO @lv_MaxModifiedTime
+FROM CTS_DataCenter.SystemParameter
+WHERE ParameterID = 992;
+
+SELECT MAX(CTSCustID)
+INTO @lv_MaxCTSCustID
+FROM CTSCustomer;
+
+-- Victoria TO A.LONG >> IF @lv_MaxCTSCustID > lv_MinCTSCustID >> EXECUTE THE COMMAND BELOW
+/*
+	UPDATE CTS_DataCenter.SystemParameter 
+	SET ParameterValue = @lv_MaxCTSCustID
+	WHERE ParameterID = 994;
+	
+	UPDATE CTS_DataCenter.SystemEventStatus 
+	SET 	Status = 'StartedUM' 
+		,	LastExecTime = NOW()
+	WHERE EventName = 'EV_CTS_DC_Adhoc_CreditSMDirectMember_CheckDIFF';
+
+	CAll CTS_DataCenter.CTS_DC_Adhoc_CreditSMDirectMember_CheckDIFF(); 
+	
+	UPDATE CTS_DataCenter.SystemEventStatus 
+	SET 	Status = 'StoppedUM'
+		,	LastExecTime = NOW()
+	WHERE EventName = 'EV_CTS_DC_Adhoc_CreditSMDirectMember_CheckDIFF';
+	
+	SELECT @lv_MinCTSCustID,@lv_MaxCTSCustID,@lv_MaxModifiedTime;
+	
+*/
+
+-- --------------------------------------------
+/*STEP 3: Rename and drop columns - CTSCustomerDuplicate*/
+-- --------------------------------------------
 /*1. CTSCustomerDuplicate*/
 ALTER TABLE CTSCustomerDuplicate
 	RENAME COLUMN MRecommend TO MRecommend_bk
@@ -44,7 +88,9 @@ ALTER TABLE CTSCustomerDuplicate
 ,	DROP COLUMN Recommend_bk
 ;
 
-
+-- --------------------------------------------
+/*STEP 4: Rename columns - CTSCustomer*/
+-- --------------------------------------------
 /*2. CTSCustomer*/
 ALTER TABLE CTSCustomer
 	RENAME COLUMN MRecommend TO MRecommend_bk
@@ -56,16 +102,25 @@ ALTER TABLE CTSCustomer
 ,	RENAME COLUMN Recommend_new TO Recommend
 ;
 
+-- --------------------------------------------
+/*STEP 5: DROP index - CTSCustomer*/
+-- --------------------------------------------
 ALTER TABLE CTSCustomer
 	DROP INDEX IX_CTSCustomer_MRecommend
 ,	DROP INDEX IX_CTSCustomer_Recommend
 ;
 
+-- --------------------------------------------
+/*STEP 6: ADD index - CTSCustomer*/
+-- --------------------------------------------
 ALTER TABLE CTSCustomer
 	ADD INDEX IX_CTSCustomer_MRecommend (MRecommend)
 ,	ADD INDEX IX_CTSCustomer_Recommend (Recommend)
 ;
 
+-- --------------------------------------------
+/*STEP 7: DROP columns - CTSCustomer - OPTIONAL*/
+-- --------------------------------------------
 ALTER TABLE CTSCustomer
 	DROP COLUMN MRecommend_bk
 ,	DROP COLUMN Recommend_bk

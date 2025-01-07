@@ -22,3 +22,4 @@ Within UM
 8. Drop old column: OPTIONAL
 	MRecommend_bk
 	Recommend_bk
+9. Create check MRecommend/Recommend < 0 unitl this feature is released

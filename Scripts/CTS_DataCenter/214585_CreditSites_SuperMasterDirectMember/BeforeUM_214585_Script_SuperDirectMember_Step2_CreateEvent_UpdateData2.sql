@@ -15,7 +15,7 @@
 USE CTS_DataCenter;
 
 DELIMITER |
-CREATE EVENT EV_CTS_DC_Adhoc_CreditSMDirectMember_CheckDIFF
+ALTER EVENT EV_CTS_DC_Adhoc_CreditSMDirectMember_CheckDIFF
     ON SCHEDULE
 		 EVERY 1 DAY
     DO
@@ -52,6 +52,11 @@ CREATE EVENT EV_CTS_DC_Adhoc_CreditSMDirectMember_CheckDIFF
 			WHERE EventName = 'EV_CTS_DC_Adhoc_CreditSMDirectMember_CheckDIFF';
 		
 		ELSEIF (lv_LastStatus = 'Stop') THEN
+
+			UPDATE CTS_DataCenter.SystemEventStatus 
+			SET 	Status = 'Start' 
+				,	LastExecTime = NOW()
+			WHERE EventName = 'EV_CTS_DC_Adhoc_CreditSMDirectMember_CheckDIFF';
 
 			CAll CTS_DataCenter.CTS_DC_Adhoc_CreditSMDirectMember_CheckDIFF(); 
 			

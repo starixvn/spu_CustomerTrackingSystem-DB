@@ -73,6 +73,11 @@ ALTER EVENT EV_CTS_DC_Adhoc_CreditSMDirectMember_Update
 			FROM CTS_DataCenter.SystemParameter
 			WHERE ParameterID = 993;
 
+			UPDATE CTS_DataCenter.SystemEventStatus 
+			SET 	Status = 'Start' 
+				,	LastExecTime = NOW()
+			WHERE EventName = 'EV_CTS_DC_Adhoc_CreditSMDirectMember_Update';
+
 			CAll CTS_DataCenter.CTS_DC_Adhoc_CreditSMDirectMember_Update(lv_BatchSize,lv_MinCTSCustID,lv_NextCTSCustID); 
 			
 			IF (lv_MinCTSCustID = lv_NextCTSCustID) THEN
