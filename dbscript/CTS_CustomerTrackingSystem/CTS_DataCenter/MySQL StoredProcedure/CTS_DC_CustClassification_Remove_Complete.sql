@@ -18,6 +18,7 @@ BEGIN
 		
 		Revisions: 
 			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
+            - 	20241210@Casey.Huynh:		New Robot AI-Bot Login Pattern, Update Disable for Member Only [Redmine ID: #214655]
 			
 		Param's Expanation:
 			- CTS_DC_CustClassification_Remove_Complete (225,'');
@@ -35,9 +36,12 @@ BEGIN
 	DECLARE CONST_INPUTFLOWID_GENERAL_REMOVE_LICVIP			INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_REMOVE_LICBA 			INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_REMOVE_PA 			INT;
+    
+     DECLARE	CONST_ROLEID_MEMBER							INT DEFAULT 1;
 
 	DECLARE CONST_ACTIONTYPE_REMOVE 						INT DEFAULT 2;
 	DECLARE CONST_ACTIONTYPE_UNMARKPA 						INT DEFAULT 4;
+    
 	DECLARE CONST_SOURCETYPE_CUSTOMERCLASS_REMOVE_MANUAL	INT DEFAULT 12;
 	DECLARE CONST_SOURCETYPE_VVIP_UNMARK_MANUAL				INT DEFAULT 14;
 	DECLARE CONST_SOURCETYPE_VVIP_UNMARK_AFFECTED_SUPER		INT DEFAULT 27;
@@ -511,10 +515,12 @@ BEGIN
 		END IF;
 		
 		UPDATE CTS_DataCenter.RobotDetection AS rd
-			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID
-																AND temp.IsExistRobot = 1 AND temp.IsFromAI = 1 AND rd.IsDisabled = 0
+			INNER JOIN Temp_CustomerClassification AS temp ON rd.CustID = temp.CustID 
+            INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = temp.CustID AND cus.CustSubID = 0
 		SET rd.IsDisabled = 1
-		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID);
+		WHERE NOT EXISTS (SELECT 1 FROM Temp_KeepDirect AS tmpKD WHERE temp.CustID = tmpKD.CustID)
+			AND temp.IsExistRobot = 1 AND temp.IsFromAI = 1 AND rd.IsDisabled = 0
+            AND cus.RoleID = CONST_ROLEID_MEMBER;
 		
 		-- ROBOT IMPERVA
 		UPDATE CTS_DataCenter.RobotImperva AS rd

@@ -19,6 +19,7 @@ sp:BEGIN
         
 		Revisions:
 			- 20230915@Casey.Huynh: Created [Redmine ID: #193036]
+			- 20241211@Adam.Tran: 	New Robot AI, Bot Login Pattern [Redmine ID: #214655]
 
 		Param's Explanation (filtered by):
 			ip_IsLicensee: NULL:All, 0:Credit, 1:Licensee
@@ -29,6 +30,7 @@ sp:BEGIN
     DECLARE CONST_ROBOTTYPE_AI		SMALLINT DEFAULT 1;
     DECLARE CONST_ROBOTTYPE_IMPERVA	SMALLINT DEFAULT 2;
     DECLARE CONST_ROBOTTYPE_COUNTER	SMALLINT DEFAULT 3;
+	DECLARE	CONST_ROLEID_MEMBER		INT DEFAULT 1;
     
     #============================================================================
     DROP TEMPORARY TABLE IF EXISTS Temp_CounterRobot;
@@ -57,7 +59,8 @@ sp:BEGIN
 	FROM CTS_DataCenter.RobotDetection AS rd
     		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON rd.CustID = cus.CustID AND cus.CustSubID = 0
 	WHERE DATE(rd.CreatedDate) BETWEEN ip_FromDate AND ip_ToDate
-		AND cus.IsLicensee = IFNULL(ip_IsLicensee,cus.IsLicensee);
+		AND cus.IsLicensee = IFNULL(ip_IsLicensee,cus.IsLicensee)
+		AND cus.RoleID = CONST_ROLEID_MEMBER;
     
     #======================INSERT ROBOT IMPERVA=========================================================
 	INSERT IGNORE INTO Temp_CustRobot(CustID, RobotType, RobotDate, RobotMonth)

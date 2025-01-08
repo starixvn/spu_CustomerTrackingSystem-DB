@@ -25,15 +25,17 @@ sp: BEGIN
 			- 20240620@Jonas.Huynh: 	Renovate CC [RedmineID: #205317]
             - 20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
             - 20241030@Thomas.Nguyen: 	CC Agent - Change source tables when checking affected PA from Upline [RedmineID: #185799]
-
+			- 20241210@Casey.Huynh:		New Robot AI, Bot Login Pattern [Redmine ID: #214655]
+            
         Param's Explanation:
 
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_Rescan_Get_UAT4("1,2,3,4");
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_Rescan_Get("1,2,3,4");
 	*/ 
     DECLARE	CONST_CATEID_UNAUTHORIZEDLOGIN			INT;
     DECLARE	CONST_CATEID_ROBOTUSER					INT;
     DECLARE	CONST_CATEID_ROBOTOCRD					INT;
+    DECLARE	CONST_CATEID_BOTLOGINPATTERN			INT;
     DECLARE	CONST_CATEID_EARLYWARNING				INT;
     DECLARE	CONST_CATEID_INITIALGB					INT;
     DECLARE CONST_CATEID_INITIALSMART				INT;
@@ -53,24 +55,42 @@ sp: BEGIN
 	DECLARE CONST_ROLEID_AGENT					    SMALLINT DEFAULT 2;
     DECLARE CONST_ROLEID_MASTER					    SMALLINT DEFAULT 3;
     DECLARE CONST_ROLEID_SUPER					    SMALLINT DEFAULT 4;
+    
+    DECLARE	CONST_PERIODRANGETYPE_OCRD						INT DEFAULT 200;
+    DECLARE	CONST_PERIODRANGETYPE_LP_LOGINTIMEPATTERN		INT DEFAULT 400;
+    DECLARE	CONST_PERIODRANGETYPE_LP_MASSIVELOGINATTEMPT	INT DEFAULT 420;
+    DECLARE	CONST_PERIODRANGETYPE_LP_IPDEVERSITY			INT DEFAULT 430;    
+    DECLARE	CONST_PERIODRANGETYPE_LP_DEVICEDEVERSITY		INT DEFAULT 440;
 
-    SET CONST_CATEID_UNAUTHORIZEDLOGIN	 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_UNAUTHORIZEDLOGIN');
-    SET CONST_CATEID_ROBOTUSER	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
-    SET CONST_CATEID_ROBOTOCRD	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
-    SET CONST_CATEID_EARLYWARNING	 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_EARLYWARNING');
-    SET CONST_CATEID_INITIALGB	 					= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALGB');
-    SET CONST_CATEID_INITIALSMART	 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMART');
-    SET CONST_PARENTID_PA 							= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
-    SET CONST_AGENCY_CATEID_ROBOT	 				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
-    SET CONST_AGENCY_CATEID_ROBOTLOSING	 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
-    SET CONST_AGENCY_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
-    SET CONST_AGENCY_PARENTID_VVIP				    = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
+    SET CONST_CATEID_UNAUTHORIZEDLOGIN	 			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_UNAUTHORIZEDLOGIN');
+    SET CONST_CATEID_ROBOTUSER	 					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTUSER');
+    SET CONST_CATEID_ROBOTOCRD	 					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRD');
+    SET CONST_CATEID_BOTLOGINPATTERN				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_BOTLOGINPATTERN');
+    SET CONST_CATEID_EARLYWARNING	 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_EARLYWARNING');
+    SET CONST_CATEID_INITIALGB	 					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALGB');
+    SET CONST_CATEID_INITIALSMART	 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMART');
+    SET CONST_PARENTID_PA 							= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
+    SET CONST_AGENCY_CATEID_ROBOT	 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
+    SET CONST_AGENCY_CATEID_ROBOTLOSING	 			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
+    SET CONST_AGENCY_PARENTID_PA 					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
+    SET CONST_AGENCY_PARENTID_VVIP				    = CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
         
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;    
 	CREATE TEMPORARY TABLE Temp_CustID (	  
 			CustID          BIGINT UNSIGNED PRIMARY KEY 	
      );
-             
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_RobotDetection;
+    CREATE TEMPORARY TABLE Temp_RobotDetection(
+			CustID 				INT
+        ,	CategoryID 			INT
+        ,	CreatedDate 		DATETIME(3)
+        ,	LastModifiedDate	DATETIME(3)
+        ,	ID 					INT
+        
+		,	PRIMARY KEY (CustID,CategoryID)
+	);    
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;    
 	CREATE TEMPORARY TABLE Temp_CustInfo (	  
 			CTSCustID		BIGINT UNSIGNED PRIMARY KEY 
@@ -184,10 +204,27 @@ sp: BEGIN
 					 LIMIT 1) AS s;
 	
     /***********************Check Robot Betting****************************/
+
+    INSERT IGNORE INTO Temp_RobotDetection(CustID, CategoryID, CreatedDate, LastModifiedDate)
+    SELECT	bd.CustID
+			, (CASE WHEN bd.PeriodRangeType = CONST_PERIODRANGETYPE_OCRD THEN CONST_CATEID_ROBOTOCRD
+					WHEN bd.PeriodRangeType IN (  CONST_PERIODRANGETYPE_LP_LOGINTIMEPATTERN
+												, CONST_PERIODRANGETYPE_LP_MASSIVELOGINATTEMPT
+                                                , CONST_PERIODRANGETYPE_LP_IPDEVERSITY
+                                                , CONST_PERIODRANGETYPE_LP_DEVICEDEVERSITY) THEN CONST_CATEID_BOTLOGINPATTERN
+					ELSE CONST_CATEID_ROBOTUSER END) AS CategoryID
+			, bd.CreatedDate
+            , bd.LastModifiedDate
+	FROM Temp_CustInfo AS tmp
+		INNER JOIN CTS_DataCenter.RobotDetection AS bd ON bd.CustID = tmp.CustID
+	WHERE tmp.RoleID = CONST_ROLEID_MEMBER
+		AND bd.IsDisabled = 0
+	ORDER BY bd.CustID, bd.CreatedDate DESC;
+
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)
-    SELECT tmp.CTSCustID					AS CTSCustID
+    SELECT 	tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
-        ,	CONST_CATEID_ROBOTOCRD 			AS CategoryID
+        ,	s.CategoryID 					AS CategoryID
         , 	NULL 							AS TVSReasonID
         ,	tmp.RoleID 						AS RoleID
         ,	tmp.SubscriberID 				AS SubscriberID
@@ -203,46 +240,9 @@ sp: BEGIN
         ,	s.CreatedDate 					AS CreatedDate
         ,	s.LastModifiedDate 				AS LastModifiedDate
         ,   CONST_INPUTFLOWID_CATEGORY_PA	AS InputFlowID
-    FROM  Temp_CustInfo AS tmp
-		,	LATERAL (SELECT CreatedDate, LastModifiedDate
-					 FROM CTS_DataCenter.RobotDetection 
-					 WHERE CustID = tmp.CustID
-						AND  PeriodRangeType = 200
-						AND  IsDisabled = 0
-					 ORDER BY CreatedDate DESC
-					 LIMIT 1) AS s;
+    FROM  Temp_CustInfo AS tmp		
+		INNER JOIN Temp_RobotDetection AS s ON tmp.CustID = s.CustID;
 
-	INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)
-    SELECT 	tmp.CTSCustID					AS CTSCustID
-		,	tmp.CustID						AS CustID
-        ,	CONST_CATEID_ROBOTUSER 			AS CategoryID
-        , 	NULL							AS TVSReasonID
-        ,	tmp.RoleID 						AS RoleID
-        ,	tmp.SubscriberID				AS SubscriberID
-		,	tmp.IsLicensee					AS IsLicensee
-        ,	NULL 							AS Remark
-        ,	NULL 							AS CreatedBy
-        ,	1 								AS IsMarkedDirectly
-		,	0 								AS IsFromTVS
-        ,	0 								AS IsFromTW
-        ,   0 								AS IsFromCTS
-        ,	1 								AS IsFromAI
-        ,	0 								AS IsFromImperva
-        ,	s.CreatedDate 					AS CreatedDate
-        ,	s.LastModifiedDate 				AS LastModifiedDate
-        ,   CONST_INPUTFLOWID_CATEGORY_PA	AS InputFlowID
-    FROM  Temp_CustInfo AS tmp
-		,	LATERAL (SELECT CreatedDate, LastModifiedDate
-					 FROM CTS_DataCenter.RobotDetection 
-					 WHERE CustID = tmp.CustID
-						AND  PeriodRangeType <> 200
-						AND  IsDisabled = 0
-					 ORDER BY CreatedDate DESC
-					 LIMIT 1) AS s
-	ON DUPLICATE KEY UPDATE IsFromAI = 1
-						,	LastModifiedDate = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END
-						,	CreatedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.CreatedDate THEN s.CreatedDate ELSE Temp_CustCategory.CreatedDate END;
-	
     /***********************Check CTS RobotUser****************************/
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
@@ -271,7 +271,7 @@ sp: BEGIN
 						,	LastModifiedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.LastModifiedDate THEN s.CreatedDate ELSE Temp_CustCategory.LastModifiedDate END
                         ,	CreatedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.CreatedDate THEN s.CreatedDate ELSE Temp_CustCategory.CreatedDate END
                         ,	Remark = CASE WHEN s.CreatedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END;
-        
+  
 	/***********************Check TWRobotUser****************************/
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, RobotCounter, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
@@ -300,7 +300,7 @@ sp: BEGIN
    	ON DUPLICATE KEY UPDATE IsFromTW = 1
 						,	LastModifiedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.LastModifiedDate THEN s.CreatedDate ELSE Temp_CustCategory.LastModifiedDate END
                         ,	CreatedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.CreatedDate THEN s.CreatedDate ELSE Temp_CustCategory.CreatedDate END;
-                                                
+                                     
 	 /***********************Check System Detect Unauthorized Login****************************/
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)
     SELECT 	tmp.CTSCustID					AS CTSCustID
@@ -324,7 +324,7 @@ sp: BEGIN
     FROM  Temp_CustInfo AS tmp
 		INNER JOIN CTS_DataCenter.CustomerLoginInfoDetection AS s ON s.CustID = tmp.CustID 
     WHERE s.IsDisabled = 0;
-    
+
     /***********************Check TVS Void****************************/
 	INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, TVSRequestID, IsParlay, SportType, IssueTypeID, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
@@ -361,7 +361,7 @@ sp: BEGIN
 	ON DUPLICATE KEY UPDATE  IsFromTVS = 1
 					,	LastModifiedDate = CASE WHEN s.InsertedTime < Temp_CustCategory.LastModifiedDate THEN s.InsertedTime ELSE Temp_CustCategory.LastModifiedDate END
 					,	CreatedDate = CASE WHEN s.InsertedTime < Temp_CustCategory.CreatedDate THEN s.InsertedTime ELSE Temp_CustCategory.CreatedDate END;
-    
+
     /***********************Check affected PA from Upline****************************/   
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
@@ -395,7 +395,7 @@ sp: BEGIN
 						,	LastModifiedDate = CASE WHEN s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.LastModifiedDate ELSE Temp_CustCategory.LastModifiedDate END
 						,	CreatedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.CreatedDate THEN s.CreatedDate ELSE Temp_CustCategory.CreatedDate END
                         ,	IsFromCTS = CASE WHEN s.IsFromCTS = 1 THEN s.IsFromCTS ELSE Temp_CustCategory.IsFromCTS END;
-	
+
     /***********************Check PA from main table ****************************/   
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
@@ -428,7 +428,7 @@ sp: BEGIN
                         ,	IsFromTVS = CASE WHEN s.IsFromTVS = 1 THEN s.IsFromTVS ELSE Temp_CustCategory.IsFromTVS END
                         ,	IsFromAI = CASE WHEN s.IsFromAI = 1 THEN s.IsFromAI ELSE Temp_CustCategory.IsFromAI END
                         ,	IsFromImperva = CASE WHEN s.IsFromImperva = 1 THEN s.IsFromImperva ELSE Temp_CustCategory.IsFromImperva END;
-					
+			
 	/***********************Check Early Warning****************************/
     INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
@@ -525,6 +525,7 @@ sp: BEGIN
 	SELECT cust.CTSCustID
 		,	cust.CustID
 		, 	cc.CategoryID
+        ,	cat.CategoryName
 		, 	cc.TVSReasonID
 		, 	cc.RoleID
 		, 	cc.SubscriberID
@@ -547,6 +548,7 @@ sp: BEGIN
 		, 	CASE WHEN cc.CategoryID IS NULL THEN CONST_INPUTFLOWID_NORMAL ELSE cc.InputFlowID END AS InputFlowID
 	FROM Temp_CustInfo AS cust
 		LEFT JOIN Temp_CustCategory AS cc ON cc.CustID = cust.CustID
+        LEFT JOIN CustomerCategory AS cat ON cc.CategoryID = cat.CategoryID
 	WHERE cc.CustID IS NOT NULL
 		OR (cc.CategoryID IS NULL AND cust.RoleID = 1);
     

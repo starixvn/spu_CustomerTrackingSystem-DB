@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetCCAndDangerLevel`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetCCAndDangerLevel`(
-	IN ip_CustIDs TEXT
+	IN ip_CustIDs LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -19,6 +19,8 @@ BEGIN
 			- 20220817@Long.Luu: Rearrange CC's IDs [Redmine ID: #175698]
             - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
             - 20240930@Casey.Huynh: Return Agency CC and Danger with RoleID [Redmine ID: #185799]
+			- 20241216@Thomas.Nguyen: Change datatype from TEXT to LONGTEXT for ip_CustIDs [Redmine ID: #214655]
+
         Param's Explanation:     
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_GetCCAndDangerLevel('1,2,1277,555555');
