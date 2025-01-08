@@ -24,18 +24,19 @@ BEGIN
             - 20240313@Teddy.le : Add JsChallengeID  [Redmine ID: #196667]
 			- 20240621@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
 			- 20241023@Lando.Vu: Integrate Mobile App [Redmine ID: #199300]
+			- 20241121@Jonathan.Doan: Insert MBRawTransaction [Redmine ID: #213401]
 
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"LoginName":"test1","SubscriberName":"Alpha","TransTime":"2024-08-05T15:10:59.051","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"464d165f74c441ee924c2c7adedba28f","FingerprintCode":"45174aef1a33a67c31d443a81a0877f320166613;c5ca1ab37b1378c2626993e2921c8d9d","FingerprintMoreInfo":"6QiqFW9UJpa64drfM/VSENyo7IkHmVlnMxCI8JwitEY=","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36","IP":"::1","FakeIP":"","IPId":1,"IsIPV6":true,"PluginID":0,"URL":"http://localhost:60207","Action":"Login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FPSTransId":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","FPTagging":"464d165f74c441ee924c2c7adedba28f","FPFingerPrintCode":"8b5ee6dab25b9db5818ad7d5bbd68d6e","FPFingerPrintExtraCode":"b5b2333484fb344440bc31a349e8e1a0","FPFingerPrintOldCode":"5b7c23ba59b230eb5415eb8c4684bf22","ChallengeCode":"6386619f64de47f598576b290e48b170","FPUserAgentCode":"c92baae71318dc81de51a663df2f8b4f","IsIncognitoMode":false,"MBAndroidCode":"42679e3362cdec47d7d889082e972457","MBCustomCode":"ad921d60486366258809553a3db49a4a","MBMediaDRMCode":"550714e40b4d3ff77cb888ac94e82ad6","MBIsMobileApp":true,"MBIsEmulator":true,"MBModelName":"sdk_gphone64_x86_64","MBManufacturer":"Google","MBBrand":"google","MBSDKVersion":"35","MBOS":"Android","MBTimezone":"Indochina Time","MBLanguage":"English","MBCountry":"US"}]');
+			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"LoginName":"test1","SubscriberName":"Alpha","TransTime":"2024-08-05T15:10:59.051","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"464d165f74c441ee924c2c7adedba28f","FingerprintCode":"45174aef1a33a67c31d443a81a0877f320166613;c5ca1ab37b1378c2626993e2921c8d9d","FingerprintMoreInfo":"6QiqFW9UJpa64drfM/VSENyo7IkHmVlnMxCI8JwitEY=","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36","IP":"::1","FakeIP":"","IPId":1,"IsIPV6":true,"PluginID":0,"URL":"http://localhost:60207","Action":"Login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FPSTransId":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","FPTagging":"464d165f74c441ee924c2c7adedba28f","FPFingerPrintCode":"8b5ee6dab25b9db5818ad7d5bbd68d6e","FPFingerPrintExtraCode":"b5b2333484fb344440bc31a349e8e1a0","FPFingerPrintOldCode":"5b7c23ba59b230eb5415eb8c4684bf22","ChallengeCode":"6386619f64de47f598576b290e48b170","FPUserAgentCode":"c92baae71318dc81de51a663df2f8b4f","IsIncognitoMode":false,"MBDeviceCodeMachine":"42679e3362cdec47d7d889082e972457","MBDeviceCodeTagging":"ad921d60486366258809553a3db49a4a","MBDeviceCodeMediaDRM":"550714e40b4d3ff77cb888ac94e82ad6","MBIsMobileApp":true,"MBIsEmulator":true,"MBModelName":"sdk_gphone64_x86_64","MBManufacturer":"Google","MBBrand":"google","MBSDKVersion":"35","MBOS":"Android","MBTimezone":"Indochina Time","MBLanguage":"English","MBCountry":"US"}]');
 	*/
 	
     DECLARE lv_FlaggedHuman	INT UNSIGNED DEFAULT 1;
     DECLARE lv_InsertionTime TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
-	DROP TEMPORARY TABLE IF EXISTS Temp_MB_Transaction;
+	DROP TEMPORARY TABLE IF EXISTS Temp_MBTransaction;
 	DROP TEMPORARY TABLE IF EXISTS Temp_BotDetection;
 	DROP TEMPORARY TABLE IF EXISTS Temp_BotComponent;
     
@@ -69,22 +70,22 @@ BEGIN
         ,	FP_UserAgentCode			VARCHAR(32)					NULL
         ,	ChallengeCode				VARCHAR(50)					NULL
         ,	IsIncognitoMode				BOOLEAN						NULL
-        ,	MB_AndroidCode				VARCHAR(32)					NULL	
-		,	MB_CustomCode				VARCHAR(32)					NULL	
-		,	MB_MediaDRMCode				VARCHAR(32)					NULL	
-		,	MB_IsMobileApp				BOOLEAN						NULL		DEFAULT '0'
-		,	MB_IsEmulator				BOOLEAN						NULL		DEFAULT '0'
-		,	MB_ModelName				VARCHAR(32)					NULL	
-		,	MB_Manufacturer				VARCHAR(32)					NULL	
-		,	MB_Brand					VARCHAR(32)					NULL
-		,	MB_SDKVersion				VARCHAR(32)					NULL	
-		,	MB_OS						VARCHAR(32)					NULL
-		,	MB_Timezone					VARCHAR(32)					NULL
-		,	MB_Language					VARCHAR(32)					NULL
-		,	MB_Country					VARCHAR(32)					NULL
+		,	MBDeviceCodeMediaDRM		VARCHAR(32)					NULL
+        ,	MBDeviceCodeMachine			VARCHAR(32)					NULL
+		,	MBDeviceCodeTagging			VARCHAR(32)					NULL
+		,	MBIsMobileApp				BOOLEAN						NULL		DEFAULT '0'
+		,	MBIsEmulator				BOOLEAN						NULL		DEFAULT '0'
+		,	MBModelName					VARCHAR(32)					NULL	
+		,	MBManufacturer				VARCHAR(32)					NULL	
+		,	MBBrand						VARCHAR(32)					NULL
+		,	MBSDKVersion				VARCHAR(32)					NULL	
+		,	MBOS						VARCHAR(32)					NULL
+		,	MBTimezone					VARCHAR(32)					NULL
+		,	MBLanguage					VARCHAR(32)					NULL
+		,	MBCountry					VARCHAR(32)					NULL
     );
     
-    CREATE TEMPORARY TABLE Temp_MB_Transaction(
+    CREATE TEMPORARY TABLE Temp_MBTransaction(
 			ID							INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
 		,	LoginName					VARCHAR(100) 				NOT NULL	
 		,	SubscriberName				VARCHAR(50) 				NOT NULL
@@ -93,19 +94,19 @@ BEGIN
         ,	IPID						DECIMAL(50,0)				NULL
         ,	`Action`					VARCHAR(100) 				NULL
 		,	ActionResult				VARCHAR(100) 				NULL
-        ,	FlaggedCode					VARCHAR(100)				NULL
-        ,	MB_AndroidCode				VARCHAR(32)					NULL	
-		,	MB_CustomCode				VARCHAR(32)					NULL	
-		,	MB_MediaDRMCode				VARCHAR(32)					NULL	
-		,	MB_IsEmulator				BOOLEAN						NULL		DEFAULT '0'
-		,	MB_ModelName				VARCHAR(32)					NULL	
-		,	MB_Manufacturer				VARCHAR(32)					NULL	
-		,	MB_Brand					VARCHAR(32)					NULL
-		,	MB_SDKVersion				VARCHAR(32)					NULL	
-		,	MB_OS						VARCHAR(32)					NULL
-		,	MB_Timezone					VARCHAR(32)					NULL
-		,	MB_Language					VARCHAR(32)					NULL
-		,	MB_Country					VARCHAR(32)					NULL
+        ,	FlaggedCode					VARCHAR(100)				NULL	
+		,	MBDeviceCodeMediaDRM		VARCHAR(32)					NULL
+        ,	MBDeviceCodeMachine			VARCHAR(32)					NULL
+		,	MBDeviceCodeTagging			VARCHAR(32)					NULL
+		,	IsEmulator					BOOLEAN						NULL		DEFAULT '0'
+		,	ModelName					VARCHAR(32)					NULL	
+		,	Manufacturer				VARCHAR(32)					NULL	
+		,	Brand						VARCHAR(32)					NULL
+		,	SDKVersion					VARCHAR(32)					NULL	
+		,	OSName						VARCHAR(32)					NULL
+		,	CountryName					VARCHAR(32)					NULL
+		,	Timezone					VARCHAR(32)					NULL
+		,	Language					VARCHAR(32)					NULL
     );
 
 	CREATE TEMPORARY TABLE Temp_BotDetection(
@@ -121,7 +122,7 @@ BEGIN
 		,	IsNewRecord					TINYINT		 				DEFAULT 1
     );
 		
-	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode, ChallengeCode, IsIncognitoMode, MB_AndroidCode, MB_CustomCode, MB_MediaDRMCode, MB_IsMobileApp, MB_IsEmulator, MB_ModelName, MB_Manufacturer, MB_Brand, MB_SDKVersion, MB_OS, MB_Timezone, MB_Language, MB_Country)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode, ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -148,70 +149,70 @@ BEGIN
 		,	rt.FP_UserAgentCode
 		,	rt.ChallengeCode
 		,	rt.IsIncognitoMode
-        ,	rt.MB_AndroidCode
-		,	rt.MB_CustomCode
-		,	rt.MB_MediaDRMCode
-        ,	IFNULL(rt.MB_IsMobileApp, '0') AS MB_IsMobileApp
-		,	IFNULL(rt.MB_IsEmulator, '0') AS MB_IsEmulator
-		,	rt.MB_ModelName
-		,	rt.MB_Manufacturer
-		,	rt.MB_Brand
-		,	rt.MB_SDKVersion
-		,	rt.MB_OS
-		,	rt.MB_Timezone
-		,	rt.MB_Language
-		,	rt.MB_Country
+		,	rt.MBDeviceCodeMediaDRM
+        ,	rt.MBDeviceCodeMachine
+		,	rt.MBDeviceCodeTagging
+        ,	IFNULL(rt.MBIsMobileApp, '0') AS MBIsMobileApp
+		,	IFNULL(rt.MBIsEmulator, '0') AS MBIsEmulator
+		,	rt.MBModelName
+		,	rt.MBManufacturer
+		,	rt.MBBrand
+		,	rt.MBSDKVersion
+		,	rt.MBOS
+		,	rt.MBTimezone
+		,	rt.MBLanguage
+		,	rt.MBCountry
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
-								LoginName				VARCHAR(100)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' PATH "$.LoginName"       
-							,	SubscriberName			VARCHAR(50) 	PATH "$.SubscriberName"   
-							,	TransTime				TIMESTAMP(4) 	PATH "$.TransTime"
-							,	DeviceCode				VARCHAR(32)		PATH "$.DeviceCode"
-							,	FingerprintCode			VARCHAR(620)	PATH "$.FingerprintCode"
-							,	UserAgent				TEXT 			PATH "$.UserAgent"
-							,	IP						VARCHAR(50) 	PATH "$.IP"
-                            ,	IPID					DECIMAL(50,0)	PATH "$.IPId"
-							,	PluginID				BIGINT 			PATH "$.PluginID"
-							,	URL						VARCHAR(500) 	PATH "$.URL"
-                            ,	Action					VARCHAR(100)	PATH "$.Action"
-							,	ActionResult			VARCHAR(100) 	PATH "$.ActionResult"
-                            ,	InvalidDevice			TEXT			CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' PATH "$.InvalidDevice"
-                            ,	TransStatus				BIT(16)			PATH "$.TransStatus"
-                            ,	FlaggedCode				VARCHAR(100)	PATH "$.FlaggedCode"
-                            ,	BotDetection			LONGTEXT		PATH "$.BotDetection"
-                            ,	BotComponent			LONGTEXT		PATH "$.BotComponent"
-                            ,	FakeIP					VARCHAR(100)	PATH "$.FakeIP"
-                            ,	FP_Tagging				VARCHAR(32)		PATH "$.FPTagging"
-                            ,	FP_FingerPrintCode		VARCHAR(32)		PATH "$.FPFingerPrintCode"
-                            ,	FP_FingerPrintExtraCode	VARCHAR(32)		PATH "$.FPFingerPrintExtraCode"
-                            ,	FP_FingerPrintOldCode	VARCHAR(32)		PATH "$.FPFingerPrintOldCode"
-                            ,	FP_UserAgentCode		VARCHAR(32)		PATH "$.FPUserAgentCode"
-                            ,	ChallengeCode			VARCHAR(50)		PATH "$.ChallengeCode"
-                            ,	IsIncognitoMode			BOOLEAN			PATH "$.IsIncognitoMode"
-                            ,	MB_AndroidCode			VARCHAR(32)		PATH "$.MBAndroidCode"
-							,	MB_CustomCode			VARCHAR(32)		PATH "$.MBCustomCode"
-							,	MB_MediaDRMCode			VARCHAR(32)		PATH "$.MBMediaDRMCode"
-							,	MB_IsMobileApp			BOOLEAN			PATH "$.MBIsMobileApp"
-							,	MB_IsEmulator			BOOLEAN			PATH "$.MBIsEmulator"
-							,	MB_ModelName			VARCHAR(32)		PATH "$.MBModelName"
-							,	MB_Manufacturer			VARCHAR(32)		PATH "$.MBManufacturer"
-							,	MB_Brand				VARCHAR(32)		PATH "$.MBBrand"
-							,	MB_SDKVersion			VARCHAR(32)		PATH "$.MBSDKVersion"
-							,	MB_OS 					VARCHAR(32)		PATH "$.MBOS"
-							,	MB_Timezone				VARCHAR(32)		PATH "$.MBTimezone"
-							,	MB_Language				VARCHAR(32)		PATH "$.MBLanguage"
-							,	MB_Country				VARCHAR(32)		PATH "$.MBCountry"
+								LoginName					VARCHAR(100)	CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' PATH "$.LoginName"       
+							,	SubscriberName				VARCHAR(50) 	PATH "$.SubscriberName"   
+							,	TransTime					TIMESTAMP(4) 	PATH "$.TransTime"
+							,	DeviceCode					VARCHAR(32)		PATH "$.DeviceCode"
+							,	FingerprintCode				VARCHAR(620)	PATH "$.FingerprintCode"
+							,	UserAgent					TEXT 			PATH "$.UserAgent"
+							,	IP							VARCHAR(50) 	PATH "$.IP"
+                            ,	IPID						DECIMAL(50,0)	PATH "$.IPId"
+							,	PluginID					BIGINT 			PATH "$.PluginID"
+							,	URL							VARCHAR(500) 	PATH "$.URL"
+                            ,	Action						VARCHAR(100)	PATH "$.Action"
+							,	ActionResult				VARCHAR(100) 	PATH "$.ActionResult"
+                            ,	InvalidDevice				TEXT			CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI' PATH "$.InvalidDevice"
+                            ,	TransStatus					BIT(16)			PATH "$.TransStatus"
+                            ,	FlaggedCode					VARCHAR(100)	PATH "$.FlaggedCode"
+                            ,	BotDetection				LONGTEXT		PATH "$.BotDetection"
+                            ,	BotComponent				LONGTEXT		PATH "$.BotComponent"
+                            ,	FakeIP						VARCHAR(100)	PATH "$.FakeIP"
+                            ,	FP_Tagging					VARCHAR(32)		PATH "$.FPTagging"
+                            ,	FP_FingerPrintCode			VARCHAR(32)		PATH "$.FPFingerPrintCode"
+                            ,	FP_FingerPrintExtraCode		VARCHAR(32)		PATH "$.FPFingerPrintExtraCode"
+                            ,	FP_FingerPrintOldCode		VARCHAR(32)		PATH "$.FPFingerPrintOldCode"
+                            ,	FP_UserAgentCode			VARCHAR(32)		PATH "$.FPUserAgentCode"
+                            ,	ChallengeCode				VARCHAR(50)		PATH "$.ChallengeCode"
+                            ,	IsIncognitoMode				BOOLEAN			PATH "$.IsIncognitoMode"
+							,	MBDeviceCodeMediaDRM		VARCHAR(32)		PATH "$.MBDeviceCodeMediaDRM"
+                            ,	MBDeviceCodeMachine			VARCHAR(32)		PATH "$.MBDeviceCodeMachine"
+							,	MBDeviceCodeTagging			VARCHAR(32)		PATH "$.MBDeviceCodeTagging"
+							,	MBIsMobileApp				BOOLEAN			PATH "$.MBIsMobileApp"
+							,	MBIsEmulator				BOOLEAN			PATH "$.MBIsEmulator"
+							,	MBModelName					VARCHAR(32)		PATH "$.MBModelName"
+							,	MBManufacturer				VARCHAR(32)		PATH "$.MBManufacturer"
+							,	MBBrand						VARCHAR(32)		PATH "$.MBBrand"
+							,	MBSDKVersion				VARCHAR(32)		PATH "$.MBSDKVersion"
+							,	MBOS 						VARCHAR(32)		PATH "$.MBOS"
+							,	MBTimezone					VARCHAR(32)		PATH "$.MBTimezone"
+							,	MBLanguage					VARCHAR(32)		PATH "$.MBLanguage"
+							,	MBCountry					VARCHAR(32)		PATH "$.MBCountry"
 				)
 		   ) AS rt; 
            
    /******* Add index ********************/
 	ALTER TABLE Temp_Transaction
-	ADD INDEX IX_Temp_Transaction_MBIsMobileApp (MB_IsMobileApp),
+	ADD INDEX IX_Temp_Transaction_MBIsMobileApp (MBIsMobileApp),
 	ADD INDEX IX_Temp_Transaction_BotComponentCode (BotComponentCode);
            
 	/******* Insert Temp Mobile RawTransaction ********************/
-    INSERT INTO Temp_MB_Transaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, FlaggedCode, MB_AndroidCode, MB_CustomCode, MB_MediaDRMCode, MB_IsEmulator, MB_ModelName, MB_Manufacturer, MB_Brand, MB_SDKVersion, MB_OS, MB_Timezone, MB_Language, MB_Country)
+    INSERT INTO Temp_MBTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, FlaggedCode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -220,23 +221,23 @@ BEGIN
 		,	(CASE WHEN rt.Action IS NULL THEN NULL ELSE rt.Action END) AS Action
 		,	(CASE WHEN rt.ActionResult IS NULL THEN NULL ELSE rt.ActionResult END) AS ActionResult
 		,	rt.FlaggedCode
-        ,	rt.MB_AndroidCode
-		,	rt.MB_CustomCode
-		,	rt.MB_MediaDRMCode
-		,	rt.MB_IsEmulator
-		,	rt.MB_ModelName
-		,	rt.MB_Manufacturer
-		,	rt.MB_Brand
-		,	rt.MB_SDKVersion
-		,	rt.MB_OS
-		,	rt.MB_Timezone
-		,	rt.MB_Language
-		,	rt.MB_Country
+		,	rt.MBDeviceCodeMediaDRM
+        ,	rt.MBDeviceCodeMachine
+		,	rt.MBDeviceCodeTagging
+		,	rt.MBIsEmulator 		AS IsEmulator
+		,	rt.MBModelName 			AS ModelName
+		,	rt.MBManufacturer 		AS Manufacturer
+		,	rt.MBBrand 				AS Brand
+		,	rt.MBSDKVersion 		AS SDKVersion
+		,	rt.MBOS					AS OSName
+		,	rt.MBCountry			AS CountryName
+		,	rt.MBTimezone			AS Timezone
+		,	rt.MBLanguage			AS Language
 	FROM Temp_Transaction AS rt
-    WHERE rt.MB_IsMobileApp = 1;
+    WHERE rt.MBIsMobileApp = 1;
     
     DELETE FROM Temp_Transaction AS rt
-	WHERE rt.MB_IsMobileApp = 1;
+	WHERE rt.MBIsMobileApp = 1;
     
     /******* BotDetection ********************/
 	INSERT INTO Temp_BotDetection(ID, BotDetectionValue)
@@ -310,32 +311,31 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     
     /*******Mobile RawTransaction********************/
-    INSERT INTO DCS_DataCenter.MB_RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, IP, IPID, Action, ActionResult, Flagged, MB_AndroidCode, MB_CustomCode, MB_MediaDRMCode, MB_IsEmulator, MB_ModelName, MB_Manufacturer, MB_Brand, MB_SDKVersion, MB_OS, MB_Timezone, MB_Language, MB_Country)
+    INSERT INTO DCS_DataCenter.MBRawTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
-		,	DATE(rt.TransTime) AS CreatedDate
 		,	rt.IP
         ,	rt.IPID
         ,	rt.Action
 		,	rt.ActionResult
         ,	sl.ItemID AS Flagged
-        ,	rt.MB_AndroidCode
-		,	rt.MB_CustomCode
-		,	rt.MB_MediaDRMCode
-		,	rt.MB_IsEmulator
-		,	rt.MB_ModelName
-		,	rt.MB_Manufacturer
-		,	rt.MB_Brand
-		,	rt.MB_SDKVersion
-		,	rt.MB_OS
-		,	rt.MB_Timezone
-		,	rt.MB_Language
-		,	rt.MB_Country
-	FROM Temp_MB_Transaction AS rt
+		,	rt.MBDeviceCodeMediaDRM
+        ,	rt.MBDeviceCodeMachine
+		,	rt.MBDeviceCodeTagging
+		,	rt.IsEmulator
+		,	rt.ModelName
+		,	rt.Manufacturer
+		,	rt.Brand
+		,	rt.SDKVersion
+		,	rt.OSName
+		,	rt.CountryName
+		,	rt.Timezone
+		,	rt.Language
+	FROM Temp_MBTransaction AS rt
 		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
 													AND sl.ItemCode = rt.FlaggedCode;
-    DROP TEMPORARY TABLE IF EXISTS Temp_MB_Transaction;
+    DROP TEMPORARY TABLE IF EXISTS Temp_MBTransaction;
 END$$
 
 DELIMITER ;
