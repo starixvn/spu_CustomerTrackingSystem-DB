@@ -237,7 +237,7 @@ CREATE TABLE MBDevice (
     ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     FirstMBRawTransactionID BIGINT UNSIGNED NOT NULL,
     InsertedTime DATETIME NOT NULL DEFAULT NOW(),
-    LastAccessedDate DATE NOT NULL DEFAULT NOW(),
+    LastAccessedDate DATE NOT NULL,
     UNIQUE KEY UX_MBDevice_FirstMBRawTransactionID (FirstMBRawTransactionID)
 );
 

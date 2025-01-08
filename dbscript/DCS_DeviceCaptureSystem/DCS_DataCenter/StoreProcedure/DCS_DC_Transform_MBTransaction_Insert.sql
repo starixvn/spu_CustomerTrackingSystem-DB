@@ -95,7 +95,7 @@ BEGIN
 	SET tmp.SubscriberID = sub.SubscriberID;
     
     /* === Insert new MBAccount === */ 
-    WITH cte_DistinctData AS (
+    WITH CTE_DistinctData AS (
 		SELECT	DISTINCT
 				SubscriberID
 			,	LoginName
@@ -112,13 +112,13 @@ BEGIN
 			)
 		) AS json_data
 	INTO lv_MBAccountJson
-	FROM cte_DistinctData;
+	FROM CTE_DistinctData;
     
     SET lv_MBAccountJson = IFNULL(lv_MBAccountJson,'[{}]');
 	CALL DCS_DC_Transform_MBAccount_Insert(lv_MBAccountJson);
     
     /* === Insert new ActionResult === */ 
-	WITH cte_DistinctData AS (
+	WITH CTE_DistinctData AS (
 		SELECT	DISTINCT
 				Action
 			,	ActionResult
@@ -133,7 +133,7 @@ BEGIN
 			)
 		) AS json_data
 	INTO lv_ActionResultJson
-	FROM cte_DistinctData;
+	FROM CTE_DistinctData;
     
     SET lv_ActionResultJson = IFNULL(lv_ActionResultJson,'[{}]');
 	CALL DCS_DC_Transform_ActionResult_Insert(lv_ActionResultJson);
@@ -149,7 +149,7 @@ BEGIN
 	END IF;
     
     /* === Insert new MBDeviceCodeMachine === */ -- [{"Code":"Code4", "MachineOSType":"2"},{"Code":"Code2"},{"Code":"Code3", "MachineOSType":""}]
-    WITH cte_DistinctData AS (
+    WITH CTE_DistinctData AS (
 		SELECT	DISTINCT
 				MBDeviceCodeMachine,
                 OSName
@@ -165,7 +165,7 @@ BEGIN
 			)
 		) AS json_data
 	INTO lv_MBDeviceCodeMachineJson
-	FROM cte_DistinctData;
+	FROM CTE_DistinctData;
     
     IF lv_MBDeviceCodeMachineJson IS NOT NULL THEN
 		CALL DCS_DC_Transform_MBDeviceCodeMachine_Insert(lv_MBDeviceCodeMachineJson);
@@ -182,7 +182,7 @@ BEGIN
 	END IF;
     
     /* === Insert new MBDeviceModel === */ -- {"ModelName":"sdk_gphone64_x86_64", "Manufacturer":"Google", "Brand": "google"}
-    WITH cte_DistinctData AS (
+    WITH CTE_DistinctData AS (
 		SELECT	DISTINCT
 				ModelName
 			,	Manufacturer
@@ -200,14 +200,14 @@ BEGIN
 			)
 		) AS json_data
 	INTO lv_MBDeviceModelJson
-	FROM cte_DistinctData;
+	FROM CTE_DistinctData;
     
     IF lv_MBDeviceModelJson IS NOT NULL THEN
 		CALL DCS_DC_Transform_MBDeviceModel_Insert(lv_MBDeviceModelJson);
 	END IF;
     
     /* === Insert new MBUserSetting === */ -- {"CountryName":"CountryName1", "TimeZone":"TimeZone1", "LanguageName":"LanguageName1"}
-    WITH cte_DistinctData AS (
+    WITH CTE_DistinctData AS (
 		SELECT	DISTINCT
 				CountryName
 			,	TimeZone
@@ -225,14 +225,14 @@ BEGIN
 			)
 		) AS json_data
 	INTO lv_MBUserSettingJson
-	FROM cte_DistinctData;
+	FROM CTE_DistinctData;
     
     IF lv_MBUserSettingJson IS NOT NULL THEN
 		CALL DCS_DC_Transform_MBUserSetting_Insert(lv_MBUserSettingJson);
 	END IF;
     
     /* === Insert new MBOS === */ -- {"OSName":"OSName1", "Version":"1.1.3"}
-    WITH cte_DistinctData AS (
+    WITH CTE_DistinctData AS (
 		SELECT	DISTINCT
 				OSName
 			,	SDKVersion
@@ -246,7 +246,7 @@ BEGIN
 			)
 		) AS json_data
 	INTO lv_MBOSJson
-	FROM cte_DistinctData;
+	FROM CTE_DistinctData;
     
     IF lv_MBOSJson IS NOT NULL THEN
 		CALL DCS_DC_Transform_MBOS_Insert(lv_MBOSJson);

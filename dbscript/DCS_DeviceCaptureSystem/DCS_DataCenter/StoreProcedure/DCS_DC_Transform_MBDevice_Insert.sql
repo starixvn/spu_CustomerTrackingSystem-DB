@@ -74,7 +74,7 @@ BEGIN
 	CALL DCS_DC_Transform_MBDeviceMapping_Insert('Temp_DeviceMappingInfo');
     
     /* === Insert new Association === */
-    WITH cte_DistinctData AS (
+    WITH CTE_DistinctData AS (
 		SELECT	DISTINCT
 				MBAccountID
 			,	MBDeviceID
@@ -91,7 +91,7 @@ BEGIN
 			)
 		) AS json_data
 	INTO lv_AssociationJson
-	FROM cte_DistinctData;
+	FROM CTE_DistinctData;
     
     IF lv_AssociationJson IS NOT NULL THEN
 		CALL DCS_DC_Transform_MBAssociation_Insert(lv_AssociationJson);
