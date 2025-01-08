@@ -74,11 +74,11 @@ spc:BEGIN
 	WHERE CTSCustID > lv_MaxCTSCustID;
 	
 	UPDATE CTS_DataCenter.SystemParameter 
-	SET ParameterValue = IFNULL(lv_NextCTSCustID,lv_NextCTSCustID+1)
+	SET ParameterValue = IFNULL(lv_NextCTSCustID,lv_MaxCTSCustID + 1)
 	WHERE ParameterID = 994;
 	
 	UPDATE CTS_DataCenter.SystemParameter 
-	SET ParameterValue = IFNULL(lv_NextModifiedTime,DATEADD(SECOND,1,lv_NextModifiedTime))
+	SET ParameterValue = IFNULL(lv_NextModifiedTime,DATE_ADD(lv_MaxModifiedTime, INTERVAL 1 SECOND))
 	WHERE ParameterID = 992;
 
 END$$
