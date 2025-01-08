@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_CheckMissingCustomer`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_MissingCustomer_Check`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Monitoring_CheckMissingCustomer`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Monitoring_MissingCustomer_Check`(
 		IN ip_CustomerList 	JSON
 	,	IN ip_LastCTSCustID	BIGINT
     ,	IN ip_QueryTypeID	INT
@@ -19,6 +19,7 @@ BEGIN
 			- 20211213@Harvey: Initial
 			- 20230228@Jonas.Huynh: Update SP [Redmine ID: 183278]
             - 20240223@Jonas.Huynh: Customer Info Monitoring  [Redmine ID: 198000]
+            - 20241213@Jonas.Huynh: Missing Customer [Redmine ID: 214157]
             
 		Param's Explanation (filtered by):
 			- ip_QueryTypeID: 1-Customer Missing, 2-Incorrect CustInfo
