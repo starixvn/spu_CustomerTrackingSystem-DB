@@ -8,18 +8,18 @@ Before UM
 Within UM
 3. Disable event (2)
 4. Update data if any DIFF (from old >> new) | batchsize = 4k
-5. Rename columns 
+5. Drop index old (2 indexes)
+	IX_CTSCustomer_MRecommend 
+	IX_CTSCustomer_Recommend 
+6. Rename columns 
 	MRecommend >> MRecommend_bk
 	Recommend >> Recommend_bk
 	MRecommend_new >> MRecommend
 	Recommend_new >> Recommend
-6. Drop index old (2 indexes)
-	IX_CTSCustomer_MRecommend 
-	IX_CTSCustomer_Recommend 
 7. Add new index (2 indexes)
 	IX_CTSCustomer_MRecommend
 	IX_CTSCustomer_Recommend
 8. Drop old column: OPTIONAL
 	MRecommend_bk
 	Recommend_bk
-9. Create check MRecommend/Recommend < 0 unitl this feature is released
+9. Create event check MRecommend/Recommend < 0 unitl this feature is released

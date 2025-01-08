@@ -63,56 +63,62 @@ FROM CTSCustomer;
 */
 
 -- --------------------------------------------
-/*STEP 3: Rename and drop columns - CTSCustomerDuplicate*/
+/*STEP 3: Rename and drop columns - CTSCustomerDuplicate - Total rows: 2,911 rows*/
 -- --------------------------------------------
 /*1. CTSCustomerDuplicate*/
+/*TOTAL EXEC TIME: 0.016 sec*/
 ALTER TABLE CTSCustomerDuplicate
 	RENAME COLUMN MRecommend TO MRecommend_bk
 ,	RENAME COLUMN Recommend TO Recommend_bk
 ;
 
-
+/*TOTAL EXEC TIME: 0.140 sec*/
 ALTER TABLE CTSCustomerDuplicate
 	ADD COLUMN MRecommend INT AFTER SRecommend
 ,	ADD COLUMN Recommend INT AFTER MRecommend
 ;
 
-
+/*TOTAL EXEC TIME: 0.140 sec*/
 UPDATE CTSCustomerDuplicate
 SET MRecommend = MRecommend_bk
 , 	Recommend = Recommend_bk
 ;
 
+/*TOTAL EXEC TIME: 2.125 sec*/
 ALTER TABLE CTSCustomerDuplicate
 	DROP COLUMN MRecommend_bk
 ,	DROP COLUMN Recommend_bk
 ;
 
+/*2. CTSCustomer - Total rows: 120,797,508 rows*/
 -- --------------------------------------------
-/*STEP 4: Rename columns - CTSCustomer*/
+/*STEP 4: DROP index - CTSCustomer*/
 -- --------------------------------------------
-/*2. CTSCustomer*/
-ALTER TABLE CTSCustomer
-	RENAME COLUMN MRecommend TO MRecommend_bk
-,	RENAME COLUMN Recommend TO Recommend_bk
-;
-
-ALTER TABLE CTSCustomer
-	RENAME COLUMN MRecommend_new TO MRecommend
-,	RENAME COLUMN Recommend_new TO Recommend
-;
-
--- --------------------------------------------
-/*STEP 5: DROP index - CTSCustomer*/
--- --------------------------------------------
+/*TOTAL EXEC TIME: 4.750 sec*/
 ALTER TABLE CTSCustomer
 	DROP INDEX IX_CTSCustomer_MRecommend
 ,	DROP INDEX IX_CTSCustomer_Recommend
 ;
 
 -- --------------------------------------------
+/*STEP 5: Rename columns - CTSCustomer*/
+-- --------------------------------------------
+/*TOTAL EXEC TIME: 0.031 sec*/
+ALTER TABLE CTSCustomer
+	RENAME COLUMN MRecommend TO MRecommend_bk
+,	RENAME COLUMN Recommend TO Recommend_bk
+;
+
+/*TOTAL EXEC TIME: 0.016 sec*/
+ALTER TABLE CTSCustomer
+	RENAME COLUMN MRecommend_new TO MRecommend
+,	RENAME COLUMN Recommend_new TO Recommend
+;
+
+-- --------------------------------------------
 /*STEP 6: ADD index - CTSCustomer*/
 -- --------------------------------------------
+/*TOTAL EXEC TIME: 1200 sec / 20 min*/
 ALTER TABLE CTSCustomer
 	ADD INDEX IX_CTSCustomer_MRecommend (MRecommend)
 ,	ADD INDEX IX_CTSCustomer_Recommend (Recommend)
@@ -121,6 +127,7 @@ ALTER TABLE CTSCustomer
 -- --------------------------------------------
 /*STEP 7: DROP columns - CTSCustomer - OPTIONAL*/
 -- --------------------------------------------
+/*TOTAL EXEC TIME: 6300 sec / 105 min / 1.75 hours*/
 ALTER TABLE CTSCustomer
 	DROP COLUMN MRecommend_bk
 ,	DROP COLUMN Recommend_bk
