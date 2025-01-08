@@ -15,6 +15,7 @@ BEGIN
 
 	    Revisions:
 		    - 20241205@Jonathan.Doan: Created [RedmineID: #213401]
+		    - 20250108@Jonathan.Doan: HotFix when duplicate  [RedmineID: #213401]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -287,16 +288,17 @@ BEGIN
     SELECT 	tmp.MBDeviceCodeMediaDRMID
 		,	tmp.MBDeviceCodeMachineID
         ,	tmp.MBDeviceCodeTaggingID
-        ,	tmp.MBDeviceID
-        ,	tmp.MBRawTransactionID AS FirstMBRawTransactionID
-        ,	tmp.RecoverType AS RecoverType
+        ,	MIN(tmp.MBDeviceID) AS MBDeviceID
+        ,	MIN(tmp.MBRawTransactionID) AS FirstMBRawTransactionID
+        ,	MIN(tmp.RecoverType) AS RecoverType
         ,	lv_CurrentDatetime AS InsertedTime
     FROM Temp_DeviceMapping AS tmp
 		INNER JOIN Temp_DeviceMappingInsert AS tmpI ON tmp.MBDeviceCodeMediaDRMID = tmpI.MBDeviceCodeMediaDRMID
 													AND tmp.MBDeviceCodeMachineID = tmpI.MBDeviceCodeMachineID
 													AND tmp.MBDeviceCodeTaggingID = tmpI.MBDeviceCodeTaggingID
                                                     AND tmpI.IsNewRecord = 1
-    WHERE tmp.MBDeviceID > 0;
+    WHERE tmp.MBDeviceID > 0
+    GROUP BY tmp.MBDeviceCodeMediaDRMID, tmp.MBDeviceCodeMachineID, tmp.MBDeviceCodeTaggingID;
     
     UPDATE Temp_DeviceMapping AS tmp
 		INNER JOIN DCS_DataCenter.MBDeviceMapping AS dm ON dm.MBDeviceCodeMediaDRMID = tmp.MBDeviceCodeMediaDRMID
