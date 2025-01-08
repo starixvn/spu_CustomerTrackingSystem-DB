@@ -55,7 +55,7 @@ spc:BEGIN
 	FROM CTS_DataCenter.CTSCustomer
 	WHERE CTSCustID <= lv_MaxCTSCustID
 		AND ModifiedTime >= lv_MaxModifiedTime
-		AND (MRecommend < 0 OR Recommend < 0)
+		AND (IFNULL(MRecommend,-1) < 0 OR IFNULL(Recommend,-1) < 0)
 	;
 	
 	SELECT MAX(ModifiedTime), COUNT(1),MIN(CTSCustID), MAX(CTSCustID)
