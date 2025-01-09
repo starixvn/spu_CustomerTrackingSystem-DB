@@ -828,5 +828,6 @@ END;
 	DROP TABLE IF EXISTS #tmpMatchSum;
 	DROP TABLE IF EXISTS #tmpMatchInfo;
 	DROP TABLE IF EXISTS #tmpMatchInfo14;
+	DROP TABLE IF EXISTS #tmpCustTrans;
 
 END;
