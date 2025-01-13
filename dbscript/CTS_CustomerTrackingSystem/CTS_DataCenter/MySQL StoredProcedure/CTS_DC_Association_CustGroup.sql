@@ -6,6 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_CustGroup`(
 	,	IN	ip_AI    					JSON 
 	,	IN	ip_IP    					JSON 
 	,	IN	ip_SharedMatches 			JSON 
+	,	IN	ip_SharedIP 				JSON
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -17,7 +18,8 @@ BEGIN
 
 		Revisions:
 			- 	20240610@Casey.Huynh: Created [Redmine ID: #203319]   
-            
+            - 	20250102@Thomas.Nguyen: Add more input param ip_SharedIP [Redmine ID: #214356]  
+
 		Param's Explanation (filtered by):
 		
 		Example:
@@ -92,6 +94,14 @@ BEGIN
     SELECT 	js.OrigID
 		,	js.DestID
 	FROM JSON_TABLE(ip_SharedMatches,
+					"$[*]" COLUMNS( OrigID 				BIGINT 		PATH "$.O"                
+								,	DestID				BIGINT 		PATH "$.D"
+	)) AS js;
+
+	INSERT IGNORE INTO Temp_Graph(OrigID,DestID)
+    SELECT 	js.OrigID
+		,	js.DestID
+	FROM JSON_TABLE(ip_SharedIP,
 					"$[*]" COLUMNS( OrigID 				BIGINT 		PATH "$.O"                
 								,	DestID				BIGINT 		PATH "$.D"
 	)) AS js;

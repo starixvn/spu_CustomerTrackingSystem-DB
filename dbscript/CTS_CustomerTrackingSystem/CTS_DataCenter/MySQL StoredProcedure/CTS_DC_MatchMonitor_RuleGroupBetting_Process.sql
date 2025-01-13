@@ -50,6 +50,7 @@ sp: BEGIN
             -	20240716@Casey.Huynh:	After EuroCup, Rollback AssociationByIP [RedmineID: #207117]
             - 	20240417@Casey.Huynh: 	Renovate GroupBetting Rule [Redmine ID: #203319]
             - 	20240801@Casey.Huynh: 	Fix Issue Insert LicCustList [Redmine ID: #208911]
+			- 	20250102@Thomas.Nguyen: Return more LicCustList [Redmine ID: #214356]  
             
 		Param's Explanation (filtered by):	
 		Example:
@@ -284,6 +285,7 @@ sp: BEGIN
     SELECT	tmpGr.CustIDList
 		,	tmpGr.CTSCustIDList
         ,	tmpGr.SequenceIDList
+		,	tmpGr.LicCustList
     FROM Temp_Group AS tmpGr
 		LEFT JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
 	WHERE tmpCp.GroupID IS NULL AND tmpGr.IsValidGroup = 1;

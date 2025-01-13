@@ -20,7 +20,8 @@ sp: BEGIN
             -	20221205@Casey.Huynh: Rename Table [Redmine ID: #179502]
             -	20240109@Casey.Huynh: Enhance GroupBetting Rule [Redmine ID: #192172]
             - 	20240611@Casey.Huynh: Renovate GroupBetting Rule [Redmine ID: #203319]
-            
+            - 	20250102@Thomas.Nguyen: Return more LicCustList [Redmine ID: #214356]  
+
 		Param's Explanation (filtered by):	
 
 		Example:
@@ -130,6 +131,7 @@ sp: BEGIN
                 ,	GROUP_CONCAT(DISTINCT mms.CustID) AS CustIDList
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
+				,	GROUP_CONCAT(DISTINCT CASE WHEN mms.IsLicensee = 1 THEN mms.CustID ELSE NULL END) AS LicCustList
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS mms
 				INNER JOIN Temp_TotalStake AS tmpTs ON tmpTs.SportType = mms.SportType
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
@@ -196,6 +198,7 @@ sp: BEGIN
                 ,	GROUP_CONCAT(DISTINCT mms.CustID) AS CustIDList
                 ,	GROUP_CONCAT(DISTINCT mms.CTSCustID) AS CTSCustIDList
 				,	GROUP_CONCAT(mms.SequenceID) AS SequenceIDList
+				,	GROUP_CONCAT(DISTINCT CASE WHEN mms.IsLicensee = 1 THEN mms.CustID ELSE NULL END) AS LicCustList
 			FROM CTS_DataCenter.MatchMonitorStagingGroupBettingNonLive AS mms
 				INNER JOIN Temp_TotalStake AS tmpTs ON tmpTs.SportType = mms.SportType
 				LEFT JOIN Temp_OldGroup AS tmpOg ON mms.MatchID = tmpOg.MatchID AND mms.ScoreDiff = tmpOg.ScoreDiff AND mms.BettypeID = tmpOg.BettypeID
