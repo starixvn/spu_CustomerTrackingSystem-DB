@@ -60,8 +60,6 @@ BEGIN
 	DECLARE lv_ToDate							DATE;
 	DECLARE lv_SubSourceID_DirectAPI			TINYINT DEFAULT 1;
 	DECLARE lv_SubSourceID_OddsFeed				TINYINT DEFAULT 2;
-	DECLARE lv_MinDirectMemberType 				TINYINT;
-	DECLARE lv_CountDistinct					INT;
 
 	SET CONST_PARENTID_WRAPPER 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 
@@ -86,7 +84,6 @@ BEGIN
 		,	Processed 			BIT DEFAULT 0
 		,	SubscriberID		INT
 		,	UplineCustID		INT
-		,	DirectMemberType	TINYINT
 		,	INDEX IX_Temp_Cust_CustID (CustID)
 		,	INDEX IX_Temp_Cust_Processed (Processed)
         ,	INDEX IX_Temp_Cust_RoleID (RoleID)
@@ -171,7 +168,7 @@ BEGIN
 	);
 
     /*****************************Extract Data From Input**************************************************/
-    INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,RoleID,Username,CustStatus,Danger1,Danger2,Danger3,Danger4,Danger5,CreatedDate,Processed,IsLicensee,SubscriberID,Recommend,MRecommend,SRecommend,UplineCustID,DirectMemberType)
+    INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,RoleID,Username,CustStatus,Danger1,Danger2,Danger3,Danger4,Danger5,CreatedDate,Processed,IsLicensee,SubscriberID,Recommend,MRecommend,SRecommend,UplineCustID)
 	SELECT 	tmp.CTSCustID
 		, 	cus.CustID
         , 	cus.RoleID
@@ -194,8 +191,6 @@ BEGIN
 						 WHEN cus.Recommend = CONST_DIRECT_MEMBER_MASTER THEN cus.MRecommend
 						 ELSE cus.Recommend END
 				 ELSE 0 END AS UplineCustID
-		,	CASE WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cus.Recommend IN (CONST_DIRECT_MEMBER_MASTER,CONST_DIRECT_MEMBER_SUPER) THEN cus.Recommend
-				 ELSE 0 END AS DirectMemberType
 	FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID  
         LEFT JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cus.CustStatusID;
@@ -206,83 +201,20 @@ BEGIN
     FROM Temp_Cust
     WHERE Processed = 0;
 
-	SELECT MIN(DirectMemberType)
-	INTO lv_MinDirectMemberType
-	FROM Temp_Cust
-	WHERE RoleID = CONST_ROLEID_MEMBER
-		AND IsLicensee = 0;
-
-	IF (lv_MinDirectMemberType = CONST_DIRECT_MEMBER_SUPER) THEN
-		SELECT COUNT(DISTINCT SRecommend)
-		INTO lv_CountDistinct
-		FROM Temp_Cust
-		WHERE RoleID = CONST_ROLEID_MEMBER
-			AND IsLicensee = 0;
-
-		IF lv_CountDistinct = 1 THEN
-			INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID,Username,Evidence)
-			SELECT 	cus.CTSCustID
-				,	cus.CustID
-				,	cus.Username
-				,	(SELECT GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode) 
-					FROM CTS_DataCenter.CustEvidence AS ce  
-						LEFT JOIN CTS_DataCenter.Evidence AS ev ON ev.EvidenceID = ce.EvidenceID
-					WHERE cus.CTSCustID = ce.CTSCustID) AS Evidence
-			FROM Temp_Cust AS tmp
-				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.SRecommend 
-																AND cus.IsInternal = 0
-																AND cus.CustSubID = 0
-			WHERE tmp.RoleID = CONST_ROLEID_MEMBER
-				AND tmp.IsLicensee = 0;
-
-		END IF;
-
-	ELSEIF (lv_MinDirectMemberType = CONST_DIRECT_MEMBER_MASTER) THEN
-		SELECT COUNT(DISTINCT MRecommend)
-		INTO lv_CountDistinct
-		FROM Temp_Cust
-		WHERE RoleID = CONST_ROLEID_MEMBER
-			AND IsLicensee = 0;
-
-		IF lv_CountDistinct = 1 THEN
-			INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID,Username,Evidence)
-			SELECT 	cus.CTSCustID
-				,	cus.CustID
-				,	cus.Username
-				,	(SELECT GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode) 
-					FROM CTS_DataCenter.CustEvidence AS ce  
-						LEFT JOIN CTS_DataCenter.Evidence AS ev ON ev.EvidenceID = ce.EvidenceID
-					WHERE cus.CTSCustID = ce.CTSCustID) AS Evidence
-			FROM Temp_Cust AS tmp
-				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.MRecommend 
-																AND cus.IsInternal = 0
-																AND cus.CustSubID = 0
-			WHERE tmp.RoleID = CONST_ROLEID_MEMBER
-				AND tmp.IsLicensee = 0;
-
-		END IF;
-	
-	END IF;
-
-	IF (lv_CountDistinct > 1) 
-			OR EXISTS (SELECT COUNT(DISTINCT Recommend) FROM Temp_Cust WHERE Recommend > 0) > 0 THEN
-
-		INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID,Username,Evidence)
-		SELECT 	cus.CTSCustID
-			,	cus.CustID
-			,	cus.Username
-			,	(SELECT GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode) 
-				FROM CTS_DataCenter.CustEvidence AS ce  
-					LEFT JOIN CTS_DataCenter.Evidence AS ev ON ev.EvidenceID = ce.EvidenceID
-				WHERE cus.CTSCustID = ce.CTSCustID) AS Evidence
-		FROM Temp_Cust AS tmp
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.UplineCustID 
-															AND cus.IsInternal = 0
-															AND cus.CustSubID = 0
-		WHERE tmp.RoleID = CONST_ROLEID_MEMBER
-				AND tmp.IsLicensee = 0;
-
-	END IF;
+	INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID,Username,Evidence)
+	SELECT 	cus.CTSCustID
+		,	cus.CustID
+		,	cus.Username
+		,	(SELECT GROUP_CONCAT(DISTINCT ' ',ev.EvidenceCode) 
+			FROM CTS_DataCenter.CustEvidence AS ce  
+				LEFT JOIN CTS_DataCenter.Evidence AS ev ON ev.EvidenceID = ce.EvidenceID
+			WHERE cus.CTSCustID = ce.CTSCustID) AS Evidence
+	FROM Temp_Cust AS tmp
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.UplineCustID 
+														AND cus.IsInternal = 0
+														AND cus.CustSubID = 0
+	WHERE tmp.RoleID = CONST_ROLEID_MEMBER
+			AND tmp.IsLicensee = 0;
 
 	INSERT IGNORE INTO Temp_Graph(OrigID,DestID,HasDevice)
     SELECT 	js.OrigID

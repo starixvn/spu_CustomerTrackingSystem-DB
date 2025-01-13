@@ -51,7 +51,6 @@ sp:BEGIN
 		,	MRecommend			INT
 		,	SRecommend			INT
 		,	UplineCustID		INT
-		,	DirectMemberType	TINYINT
         ,	RoleID				INT
         ,	INDEX IX_Temp_Cust_CustID(CustID)
 	);
@@ -140,7 +139,7 @@ sp:BEGIN
         ,	AssociationType2		VARCHAR(100) 
 	);
 
-    INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID, Username, RoleID, Recommend, MRecommend, SRecommend, UplineCustID, DirectMemberType)
+    INSERT IGNORE INTO Temp_Cust(CTSCustID, CustID, Username, RoleID, Recommend, MRecommend, SRecommend, UplineCustID)
 	SELECT 	cus.CTSCustID
 		, 	cus.CustID
         ,	cus.Username
@@ -151,8 +150,6 @@ sp:BEGIN
 		,	CASE WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cus.Recommend = CONST_DIRECT_MEMBER_SUPER THEN cus.SRecommend
 				 WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cus.Recommend = CONST_DIRECT_MEMBER_MASTER THEN cus.MRecommend
 				 ELSE cus.Recommend END AS UplineCustID
-		,	CASE WHEN cus.RoleID = CONST_ROLEID_MEMBER AND cus.Recommend IN (CONST_DIRECT_MEMBER_MASTER,CONST_DIRECT_MEMBER_SUPER) THEN cus.Recommend
-				 ELSE 0 END AS DirectMemberType
 	FROM JSON_TABLE(CONCAT('[',ip_ListCTSCustID,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID;
 	

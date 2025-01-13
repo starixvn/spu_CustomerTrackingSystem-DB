@@ -35,8 +35,6 @@ BEGIN
 	DECLARE lv_UplineJson 					JSON;
 	DECLARE lv_OrigID 						BIGINT;
 	DECLARE lv_Count 						INT;
-	DECLARE lv_MinDirectMemberType 			TINYINT;
-	DECLARE lv_CountDistinct				INT;
 	
 	#=============================================================================	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
@@ -47,7 +45,6 @@ BEGIN
 		,	MRecommend				INT
 		,	SRecommend				INT
 		,	UplineCustID			INT
-		,	DirectMemberType		TINYINT
 		,	INDEX Temp_Cust_CustID (CustID)
         ,	INDEX Temp_Cust_UplineCustID(UplineCustID)
 	);
@@ -79,7 +76,7 @@ BEGIN
 	);
 
 	#=============================================================================	
-	INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,Recommend,MRecommend,SRecommend,UplineCustID,DirectMemberType)
+	INSERT IGNORE INTO Temp_Cust(CTSCustID,CustID,Recommend,MRecommend,SRecommend,UplineCustID)
 	SELECT 	cus.CTSCustID
 		, 	cus.CustID
         ,	cus.Recommend
@@ -88,94 +85,30 @@ BEGIN
 		,	CASE WHEN cus.Recommend = CONST_DIRECT_MEMBER_SUPER THEN cus.SRecommend
 				 WHEN cus.Recommend = CONST_DIRECT_MEMBER_MASTER THEN cus.MRecommend
 				 ELSE cus.Recommend END AS UplineCustID
-		,	CASE WHEN cus.Recommend IN (CONST_DIRECT_MEMBER_MASTER,CONST_DIRECT_MEMBER_SUPER) THEN cus.Recommend
-				 ELSE 0 END AS DirectMemberType
 	FROM JSON_TABLE(CONCAT('[',ip_CTSCustIDs,']'),
 							'$[*]' COLUMNS(NESTED PATH '$' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID 
 														AND cus.IsInternal = 0
                                                         AND cus.RoleID = CONST_ROLEID_MEMBER
                                                         AND cus.IsLicensee = 0;
-														
-	SELECT MIN(DirectMemberType)
-	INTO lv_MinDirectMemberType
-	FROM Temp_Cust;
 
-	IF (lv_MinDirectMemberType = CONST_DIRECT_MEMBER_SUPER) THEN
-		SELECT COUNT(DISTINCT SRecommend)
-		INTO lv_CountDistinct
-		FROM Temp_Cust;
+	INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID)
+	SELECT 	cus.CTSCustID
+		,	cus.CustID
+	FROM Temp_Cust AS tmp
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.UplineCustID 
+														AND cus.IsInternal = 0
+														AND cus.CustSubID = 0;
 
-		IF lv_CountDistinct = 1 THEN
-			INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID)
-			SELECT 	cus.CTSCustID
-				,	cus.CustID
-			FROM Temp_Cust AS tmp
-				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.SRecommend 
-																AND cus.IsInternal = 0
-																AND cus.CustSubID = 0;
-
-			WITH CTE AS (
-				SELECT DISTINCT 
-						CTSCustID
-					,	CustID
-				FROM Temp_Upline
-			)
-			SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID)) AS CustJson
-			INTO lv_UplineJson
-			FROM CTE;
-
-		END IF;
-
-	ELSEIF (lv_MinDirectMemberType = CONST_DIRECT_MEMBER_MASTER) THEN
-
-		SELECT COUNT(DISTINCT MRecommend)
-		INTO lv_CountDistinct
-		FROM Temp_Cust;
-
-		IF lv_CountDistinct = 1 THEN
-			INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID)
-			SELECT 	cus.CTSCustID
-				,	cus.CustID
-			FROM Temp_Cust AS tmp
-				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.MRecommend 
-																AND cus.IsInternal = 0
-																AND cus.CustSubID = 0;
-
-			WITH CTE AS (
-				SELECT DISTINCT 
-						CTSCustID
-					,	CustID
-				FROM Temp_Upline
-			)
-			SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID)) AS CustJson
-			INTO lv_UplineJson
-			FROM CTE;
-
-		END IF;
-
-	END IF;
-
-	IF (lv_CountDistinct > 1) 
-		OR EXISTS (SELECT COUNT(DISTINCT Recommend) FROM Temp_Cust WHERE Recommend > 0) > 0 THEN
-		INSERT IGNORE INTO Temp_Upline(CTSCustID,CustID)
-		SELECT 	cus.CTSCustID
-			,	cus.CustID
-		FROM Temp_Cust AS tmp
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.UplineCustID 
-															AND cus.IsInternal = 0
-															AND cus.CustSubID = 0;
-
-		WITH CTE AS (
-			SELECT DISTINCT 
-					CTSCustID
-				,	CustID
-			FROM Temp_Upline
-		)
-		SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID)) AS CustJson
-		INTO lv_UplineJson
-		FROM CTE;
-	END IF;
+	WITH CTE AS (
+		SELECT DISTINCT 
+				CTSCustID
+			,	CustID
+		FROM Temp_Upline
+	)
+	SELECT JSON_ARRAYAGG(JSON_OBJECT('CTSCustID', CTSCustID ,'CustID', CustID)) AS CustJson
+	INTO lv_UplineJson
+	FROM CTE;
 	
 	CALL CTS_DataCenter.CTS_DC_Association_GetCustEdge(lv_UplineJson,1,0,0);
 		
