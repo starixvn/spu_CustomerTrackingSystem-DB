@@ -24,7 +24,8 @@ sp:BEGIN
 			- 20231108@Victoria.Le: 	Add First5TWGBTicketCount [Redmine ID: #195060]
             - 20240628@Thomas.Nguyen: 	Renovate CC phase 2 [Redmine ID: #205317]
             - 20241231@Victoria.Le: 	Adjust code to update NextID as expected [Redmine ID: #216125]
-
+			- 20241215@CaseyHuynh: 		Rollback Version 20240628@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
+            
 		Param's Explanation (filtered by):
 
 		Example:
@@ -380,15 +381,9 @@ sp:BEGIN
             ,	PerformanceTime
 		FROM Temp_History;
 		
-		IF lv_LastIDValid >= lv_NextLastID THEN
-			UPDATE CTS_DataCenter.SystemParameter
-			SET ParameterValue = lv_LastIDValid
-			WHERE ParameterID = 35;
-		ELSE
-			UPDATE CTS_DataCenter.SystemParameter
-			SET ParameterValue = lv_NextLastID
-			WHERE ParameterID = 35;
-		END IF;
+		UPDATE CTS_DataCenter.SystemParameter
+		SET ParameterValue = lv_LastIDValid
+		WHERE ParameterID = 35;
 
 		SET op_IsDataExist = 1;
         
@@ -430,6 +425,7 @@ sp:BEGIN
 	ELSE
 		SET op_IsDataExist = 0;
 	END IF;
+
 
 END$$
 DELIMITER ;
