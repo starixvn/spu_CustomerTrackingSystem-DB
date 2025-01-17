@@ -20,31 +20,34 @@ BEGIN
 	*/
 
 	
-	INSERT IGNORE INTO CTS_Admin.CTSJob(JobName, GroupName, JobType, APIUrl, MethodName, Controller, IsActive, IsNew)
+	INSERT IGNORE INTO CTS_Admin.CTSJob(JobName, GroupName, EnvironmentID, JobType, APIUrl, MethodName, Controller, IsStartByDefault, IsAdjust)
 	SELECT  js.JobName
 		,	js.GroupName
+		,	js.EnvironmentID
         ,	js.JobType
         ,	js.APIUrl
 		,	js.MethodName
 		,	js.Controller
-		,	js.IsActive
-		,	js.IsNew
+		,	js.IsStartByDefault
+		,	js.IsAdjust
 	FROM JSON_TABLE(ip_JobTrigger,
 					 "$[*]" COLUMNS(
 								JobName				VARCHAR(300) PATH "$.JobName" 
 							,	GroupName			VARCHAR(300) PATH "$.GroupName" 
+							,	EnvironmentID		INT	PATH "$.EnvironmentID"
                             ,	JobType				VARCHAR(300) PATH "$.JobType"
                             ,	APIUrl				VARCHAR(300) PATH "$.ApiUrl" 
 							,	MethodName			VARCHAR(300) PATH "$.MethodName" 
 							,	Controller			VARCHAR(300) PATH "$.Controller" 
-							,	IsActive			TINYINT PATH "$.IsActive"
-							,	IsNew				TINYINT PATH "$.IsNew"
+							,	IsStartByDefault	TINYINT PATH "$.IsStartByDefault"
+							,	IsAdjust			TINYINT PATH "$.IsAdjust"
 						)
 				) AS js;
 				
-	INSERT IGNORE INTO CTS_Admin.CTSTrigger (TriggerName, JobName, TriggerType, IntervalInSecond, CronExpression)
+	INSERT IGNORE INTO CTS_Admin.CTSTrigger (TriggerName, JobName, EnvironmentID, TriggerType, IntervalInSecond, CronExpression)
 	SELECT  js.TriggerName
 		,	js.JobName
+		,	js.EnvironmentID
         ,	js.TriggerType
         ,	js.IntervalInSecond
 		,	js.CronExpression		
@@ -52,6 +55,7 @@ BEGIN
 					 "$[*]" COLUMNS(
 								TriggerName				VARCHAR(300) PATH "$.TriggerName" 
 							,	JobName					VARCHAR(300) PATH "$.JobName" 
+							,	EnvironmentID			INT	PATH "$.EnvironmentID"
                             ,	TriggerType				VARCHAR(300) PATH "$.TriggerType"                            
 							,	IntervalInSecond		INT PATH "$.IntervalInSecond" 
 							,	CronExpression			varchar(300) PATH "$.CronExpression" 										

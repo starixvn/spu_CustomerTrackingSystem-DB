@@ -5,6 +5,7 @@ DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_AD_CTSJob_GetSingle`(
 		IN ip_JobName 		VARCHAR(300)
 	 ,	IN ip_GroupName 	VARCHAR(300)
+	 ,	IN ip_EnvironmentID	INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -22,37 +23,40 @@ BEGIN
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Job;
     CREATE TEMPORARY TABLE Temp_Job(		
-			JobName   			varchar(300)
-        ,	GroupName   		varchar(300)
-		,	JobType				varchar(300)
-		,	APIUrl				varchar(500)
-		,	MethodName			varchar(300)
-		,	Controller			varchar(300)
-		,	IsActive			TINYINT
-		,	IsNew				TINYINT
+			JobName   			VARCHAR(300)
+        ,	GroupName   		VARCHAR(300)			
+		,	JobType				VARCHAR(300)
+		,	APIUrl				VARCHAR(500)
+		,	MethodName			VARCHAR(300)
+		,	Controller			VARCHAR(300)
+		,	IsStartByDefault	TINYINT
+		,	IsAdjust			TINYINT
 		,	PRIMARY KEY (JobName, GroupName)
     );
 	
-	INSERT INTO Temp_Job(JobName, GroupName, JobType, APIUrl, MethodName, Controller, IsActive, IsNew)
+	INSERT INTO Temp_Job(JobName, GroupName, JobType, APIUrl, MethodName, Controller, IsStartByDefault, IsAdjust)
     SELECT	j.JobName
-			, j.GroupName
+			, j.GroupName			
 			, j.JobType
 			, j.APIUrl
 			, j.MethodName
 			, j.Controller
-			, j.IsActive
-			, j.IsNew
+			, j.IsStartByDefault
+			, j.IsAdjust
 	FROM 	CTS_Admin.CTSJob AS j
-	WHERE	j.JobName = ip_JobName AND j.GroupName = ip_GroupName;
+	WHERE	j.JobName = ip_JobName 
+		AND j.GroupName = ip_GroupName 
+		AND j.EnvironmentID = ip_EnvironmentID;
 	
 	SELECT	j.JobName
 			, j.GroupName
+			, ip_EnvironmentID AS EnvironmentID
 			, j.JobType
 			, j.APIUrl
 			, j.MethodName
 			, j.Controller
-			, j.IsActive
-			, j.IsNew
+			, j.IsStartByDefault
+			, j.IsAdjust
 	FROM 	Temp_Job AS j;
 	
 	SELECT 	tr.TriggerName
@@ -61,7 +65,8 @@ BEGIN
 			, tr.IntervalInSecond
 			, tr.CronExpression				
 	FROM 	CTS_Admin.CTSTrigger as tr
-		INNER JOIN Temp_Job AS j ON tr.JobName = j.JobName;
+		INNER JOIN Temp_Job AS j ON tr.JobName = j.JobName
+	WHERE	tr.EnvironmentID = ip_EnvironmentID;
 
 END$$
 

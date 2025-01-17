@@ -23,27 +23,29 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_JobTrigger(		
 			JobName   			VARCHAR(300)
         ,	GroupName   		VARCHAR(300)
+		,	EnvironmentID		INT
 		,	JobType				VARCHAR(300)
 		,	APIUrl				VARCHAR(500)
 		,	MethodName			VARCHAR(300)
 		,	Controller			VARCHAR(300)
-		,	IsActive			TINYINT
-		,	IsNew				TINYINT
+		,	IsStartByDefault	TINYINT
+		,	IsAdjust			TINYINT
 		,	TriggerName			VARCHAR(300)
 		,	TriggerType			VARCHAR(300)
 		,	IntervalInSecond	INT
 		,	CronExpression		VARCHAR(300)
     );	
 	
-	INSERT INTO Temp_JobTrigger(JobName, GroupName, JobType, APIUrl, MethodName, Controller, IsActive, IsNew, TriggerName, TriggerType, IntervalInSecond, CronExpression)
+	INSERT INTO Temp_JobTrigger(JobName, GroupName, EnvironmentID, JobType, APIUrl, MethodName, Controller, IsStartByDefault, IsAdjust, TriggerName, TriggerType, IntervalInSecond, CronExpression)
 	SELECT  js.JobName
 		,	js.GroupName
+		,	js.EnvironmentID
         ,	js.JobType
         ,	js.APIUrl
 		,	js.MethodName
 		,	js.Controller
-		,	js.IsActive
-		,	js.IsNew
+		,	js.IsStartByDefault
+		,	js.IsAdjust
 		,	js.TriggerName
 		,	js.TriggerType
 		,	js.IntervalInSecond
@@ -52,12 +54,13 @@ BEGIN
 					 "$[*]" COLUMNS(
 								JobName				VARCHAR(300) PATH "$.JobName" 
 							,	GroupName			VARCHAR(300) PATH "$.GroupName" 
+							,	EnvironmentID		INT	PATH "$.EnvironmentID" 
                             ,	JobType				VARCHAR(300) PATH "$.JobType"
                             ,	APIUrl				VARCHAR(300) PATH "$.ApiUrl" 
 							,	MethodName			VARCHAR(300) PATH "$.MethodName" 
 							,	Controller			VARCHAR(300) PATH "$.Controller" 
-							,	IsActive			TINYINT PATH "$.IsActive"
-							,	IsNew				TINYINT PATH "$.IsNew"
+							,	IsStartByDefault	TINYINT PATH "$.IsStartByDefault"
+							,	IsAdjust			TINYINT PATH "$.IsAdjust"
 							,	TriggerName			VARCHAR(300) PATH "$.TriggerName" 
 							,	TriggerType			VARCHAR(300) PATH "$.TriggerType" 
 							,	IntervalInSecond	INT	PATH "$.IntervalInSecond" 
@@ -66,16 +69,21 @@ BEGIN
 				) AS js;
 				
 	UPDATE CTS_Admin.CTSJob AS js
-	INNER JOIN Temp_JobTrigger AS tempJs ON js.JobName = tempJs.JobName AND js.GroupName = tempJs.GroupName
+	INNER JOIN Temp_JobTrigger AS tempJs ON js.JobName = tempJs.JobName 
+		AND js.GroupName = tempJs.GroupName
+		AND js.EnvironmentID = tempJs.EnvironmentID
 	SET 
 		  js.JobType = tempJs.JobType
 		, js.APIUrl = tempJs.APIUrl
 		, js.MethodName = tempJs.MethodName
 		, js.Controller = tempJs.Controller
-		, js.IsActive = tempJs.IsActive;
+		, js.IsStartByDefault = tempJs.IsStartByDefault
+		, js.IsAdjust = tempJs.IsAdjust;
 		
 	UPDATE CTS_Admin.CTSTrigger AS tr
-	INNER JOIN Temp_JobTrigger AS tempTr ON tr.TriggerName = tempTr.TriggerName AND tr.JobName = tempTr.JobName
+	INNER JOIN Temp_JobTrigger AS tempTr ON tr.TriggerName = tempTr.TriggerName 
+		AND tr.JobName = tempTr.JobName
+		AND tr.EnvironmentID = tempTr.EnvironmentID
 	SET 
 		  tr.TriggerType = tempTr.TriggerType
 		, tr.IntervalInSecond = tempTr.IntervalInSecond

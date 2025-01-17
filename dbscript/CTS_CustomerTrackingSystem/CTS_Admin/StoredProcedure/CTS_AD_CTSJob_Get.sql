@@ -3,7 +3,8 @@ DROP PROCEDURE IF EXISTS `CTS_AD_CTSJob_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_AD_CTSJob_Get`(
-	IN ip_IsNew			BIT
+		IN ip_IsAdjust			BIT
+	,	IN ip_EnvironmentID		INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -27,24 +28,25 @@ BEGIN
 		,	APIUrl				varchar(500)
 		,	MethodName			varchar(300)
 		,	Controller			varchar(300)
-		,	IsActive			TINYINT
-		,	IsNew				TINYINT
+		,	IsStartByDefault	TINYINT
+		,	IsAdjust			TINYINT
 		,	PRIMARY KEY (JobName, GroupName)
     );
 	
-	INSERT INTO Temp_Job(JobName, GroupName, JobType, APIUrl, MethodName, Controller, IsActive, IsNew)
+	INSERT INTO Temp_Job(JobName, GroupName, JobType, APIUrl, MethodName, Controller, IsStartByDefault, IsAdjust)
     SELECT	j.JobName
 			, j.GroupName
 			, j.JobType
 			, j.APIUrl
 			, j.MethodName
 			, j.Controller
-			, j.IsActive
-			, j.IsNew
+			, j.IsStartByDefault
+			, j.IsAdjust
 	FROM 	CTS_Admin.CTSJob AS j
 	WHERE	j.IsDisable = 0 
+		AND j.EnvironmentID = ip_EnvironmentID
 		AND (CASE 
-				WHEN ip_IsNew = 0 THEN j.IsNew <> 1
+				WHEN ip_IsAdjust = 0 THEN j.IsAdjust <> 1
 				ELSE 1 = 1
 			END);
 	
@@ -54,8 +56,8 @@ BEGIN
 			, j.APIUrl
 			, j.MethodName
 			, j.Controller
-			, j.IsActive
-			, j.IsNew
+			, j.IsStartByDefault
+			, j.IsAdjust
 	FROM 	Temp_Job AS j;
 	
 	SELECT 	tr.TriggerName
@@ -64,7 +66,8 @@ BEGIN
 			, tr.IntervalInSecond
 			, tr.CronExpression				
 	FROM 	CTS_Admin.CTSTrigger as tr
-		INNER JOIN Temp_Job AS j ON tr.JobName = j.JobName;
+		INNER JOIN Temp_Job AS j ON tr.JobName = j.JobName
+	WHERE tr.EnvironmentID = ip_EnvironmentID;
 
 END$$
 

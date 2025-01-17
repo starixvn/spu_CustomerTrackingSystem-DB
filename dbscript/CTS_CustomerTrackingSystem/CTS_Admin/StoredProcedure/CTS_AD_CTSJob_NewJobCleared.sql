@@ -3,8 +3,9 @@ DROP PROCEDURE IF EXISTS `CTS_AD_CTSJob_NewJobCleared`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_AD_CTSJob_NewJobCleared`(
-		IN ip_JobName 		VARCHAR(300)
-	 ,	IN ip_GroupName 	VARCHAR(300)
+		IN ip_JobName 			VARCHAR(300)
+	 ,	IN ip_GroupName 		VARCHAR(300)
+	 ,	IN ip_EnvironmentID		INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -21,10 +22,11 @@ BEGIN
 	*/
 	
 	UPDATE CTS_Admin.CTSJob as j
-	SET j.IsNew = FALSE
-	WHERE j.JobName = ip_JobName AND j.GroupName = ip_GroupName;	
-		
-	
+	SET j.IsAdjust = FALSE
+	WHERE j.JobName = ip_JobName 
+		AND j.GroupName = ip_GroupName 
+		AND j.EnvironmentID = ip_EnvironmentID;
+			
 END$$
 
 DELIMITER ;
