@@ -24,7 +24,7 @@ sp:BEGIN
 			- 20231108@Victoria.Le: 	Add First5TWGBTicketCount [Redmine ID: #195060]
             - 20240628@Thomas.Nguyen: 	Renovate CC phase 2 [Redmine ID: #205317]
             - 20241231@Victoria.Le: 	Adjust code to update NextID as expected [Redmine ID: #216125]
-			- 20250115@CaseyHuynh: 		Enhance SystemParameter when Archive Batch (IsDataChanged = 0) [Redmine ID: #216739]
+			- 20250115@CaseyHuynh: 		Enhance SystemParameter when Archive Batch (AllRecords.IsDataChanged = 0) [Redmine ID: #216739]
             
 		Param's Explanation (filtered by):
 
@@ -37,10 +37,15 @@ sp:BEGIN
     DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
 	DECLARE lv_MaxArchiveID 	BIGINT UNSIGNED;    
     
+    DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
+    CREATE TEMPORARY TABLE Temp_Cust (
+		CustID		BIGINT PRIMARY KEY
+	);
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_ArchiveHistory;
     CREATE TEMPORARY TABLE Temp_ArchiveHistory (
 			ID  					BIGINT UNSIGNED 
-		,	CustID  				BIGINT UNSIGNED
+		,	CustID  				BIGINT 
 		,	CTSCustID  				BIGINT UNSIGNED
 		,	ParentID  				INT UNSIGNED 
 		,	CategoryID  			INT  
@@ -83,7 +88,7 @@ sp:BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustDataShouldBeRemoved;
     CREATE TEMPORARY TABLE Temp_CustDataShouldBeRemoved (
-			CustID  				BIGINT UNSIGNED PRIMARY KEY
+		CustID	BIGINT PRIMARY KEY
     ); 
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_HistoryShouldNotBeRemoved;
@@ -110,11 +115,11 @@ sp:BEGIN
 
 	SELECT MAX(tbl.ID)
     INTO lv_MaxArchiveID
-    FROM (SELECT ID
-		  FROM CTS_DataCenter.CTSCustomerClassification_History
-		  WHERE ID > lv_LastArchiveID
-				AND InsertDate < lv_DateValid
-		  ORDER BY ID ASC
+    FROM (SELECT his.ID
+		  FROM CTS_DataCenter.CTSCustomerClassification_History AS his
+		  WHERE his.ID > lv_LastArchiveID
+				AND his.InsertDate < lv_DateValid
+		  ORDER BY his.ID ASC
 		  LIMIT lv_BatchSize) AS tbl;
 	
     # RETURN SP IF NOT HAVE NEW DATA
@@ -123,46 +128,14 @@ sp:BEGIN
 		LEAVE sp; 
 	END IF;	
     
-    INSERT INTO Temp_ArchiveHistory(	
-			ID
-		,	CustID
-		,	CTSCustID
-		,	ParentID
-		,	CategoryID
-		,	TurnoverRM 
-		,	WinlossRM
-		,	BetCount
-		,	ActiveDays
-		,	RobotCounter
-		,	TargetCC
-		,	SourceTypeID
-		,	OldCategoryID
-		,	DWCategoryID
-		,	IsDataChanged
-		,	ActionType
-		,	IsAuto
-		,	LastModifiedDate
-		,	LastModifiedBy
-		,	InsertDate
-		,	TaggingType
-		,	TargetDangerLevel1
-		,	TWGroupBettingRate
-		,	TWTicketRejectRate
-		,	TWBetCount
-		,	TWDesktopUsageRate
-		,	Remark
-		,	IsMarkedDirectly
-		,	TVSRequestID
-		,	IsFromTVS
-		,	IsFromTW
-		,	IsFromCTS
-		,	IsFromAI
-		,	IsFromImperva
-		,	IsParlay
-		,	SportType
-		,	IssueTypeID
-        ,	PerformanceTime
-	)
+    INSERT INTO Temp_Cust(CustID)
+    SELECT 	DISTINCT his.CustID  
+    FROM CTS_DataCenter.CTSCustomerClassification_History AS his 
+	WHERE his.ID > lv_LastArchiveID AND ID <= lv_MaxArchiveID
+		AND his.IsDataChanged = 1
+        AND his.InsertDate < lv_DateValid;
+     
+    INSERT INTO Temp_ArchiveHistory(ID,CustID,CTSCustID,ParentID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,RobotCounter,TargetCC,SourceTypeID,OldCategoryID,DWCategoryID,IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TaggingType,TargetDangerLevel1,TWGroupBettingRate,TWTicketRejectRate,TWBetCount,TWDesktopUsageRate,Remark,IsMarkedDirectly,TVSRequestID,IsFromTVS,IsFromTW,IsFromCTS,IsFromAI,IsFromImperva,IsParlay,SportType,IssueTypeID,PerformanceTime)
 	SELECT 	his.ID  					
 		,	his.CustID  				
 		,	his.CTSCustID  				
@@ -202,178 +175,90 @@ sp:BEGIN
 		,	his.IssueTypeID
 		,	his.PerformanceTime
 	FROM CTS_DataCenter.CTSCustomerClassification_History AS his
-    WHERE ID > lv_LastArchiveID AND ID <= lv_MaxArchiveID
-		AND IsDataChanged = 1;   
+		INNER JOIN Temp_Cust AS cus ON his.CustID = cus.CustID
+    WHERE his.ID <= lv_MaxArchiveID
+		AND his.IsDataChanged = 1 
+        AND his.InsertDate < lv_DateValid
+    ;
     
     IF EXISTS (SELECT 1 FROM Temp_ArchiveHistory) THEN
     
 		ALTER TABLE Temp_ArchiveHistory ADD INDEX IX_Temp_ArchiveHistory_InsertDateLastModifiedDate (`InsertDate`, `LastModifiedDate`);    
-		
+        
 		# Find custs who have the log ahead --> all logs at this phase should be removed
 		INSERT INTO Temp_CustDataShouldBeRemoved(CustID)
-		WITH cte_CurrentCust (CustID) AS
-		(
-			SELECT DISTINCT CustID
-			FROM Temp_ArchiveHistory
-		)
-		SELECT DISTINCT c.CustID
-		FROM cte_CurrentCust AS c
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON c.CustID = h.CustID
-		WHERE h.ID > lv_MaxArchiveID
-			AND h.InsertDate < DATE(NOW())
-			AND h.IsDataChanged = 1;	
+		SELECT DISTINCT cus.CustID
+		FROM Temp_Cust AS cus
+		WHERE EXISTS  (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification_History AS his
+						WHERE his.ID > lv_MaxArchiveID
+							AND his.InsertDate < DATE(NOW())
+							AND his.IsDataChanged = 1
+                            AND cus.CustID = his.CustID);	
 
 		# find latest log to keep (not be removed)
 		INSERT INTO Temp_HistoryShouldNotBeRemoved(ID)
-		WITH cte_CustLogOrdered (CustID, ID, row_num) AS
+		WITH CTE_CustLogOrdered (CustID, ID, row_num) AS
 		(
-			SELECT 	t.CustID
-				, 	t.ID
-				, 	ROW_NUMBER() OVER(PARTITION BY t.CustID ORDER BY t.InsertDate DESC, t.LastModifiedDate DESC, t.ID DESC) AS row_num  
-			FROM Temp_ArchiveHistory AS t
-				LEFT JOIN Temp_CustDataShouldBeRemoved AS r ON t.CustID = r.CustID
-			WHERE r.CustID IS NULL
+			SELECT 	arc.CustID
+				, 	arc.ID
+				, 	ROW_NUMBER() OVER(PARTITION BY arc.CustID ORDER BY arc.InsertDate DESC, arc.LastModifiedDate DESC, arc.ID DESC) AS row_num  
+			FROM Temp_ArchiveHistory AS arc
+				LEFT JOIN Temp_CustDataShouldBeRemoved AS rem ON arc.CustID = rem.CustID
+			WHERE rem.CustID IS NULL
 		)
-		SELECT ID
-		FROM cte_CustLogOrdered
-		WHERE row_num = 1;        
+		SELECT cte.ID
+		FROM CTE_CustLogOrdered AS cte
+		WHERE cte.row_num = 1;        
 		
-		DELETE  
-		FROM Temp_ArchiveHistory AS h
-		WHERE EXISTS (	SELECT 1 
-						FROM Temp_HistoryShouldNotBeRemoved AS k 
-						WHERE k.ID = h.ID);		
-
-		# take back the old log for the new active ones
-		INSERT INTO Temp_ArchiveHistory(
-				ID
-			,	CustID
-			,	CTSCustID
-			,	ParentID
-			,	CategoryID
-			,	TurnoverRM 
-			,	WinlossRM
-			,	BetCount
-			,	ActiveDays
-			,	RobotCounter
-			,	TargetCC
-			,	SourceTypeID
-			,	OldCategoryID
-			,	DWCategoryID
-			,	IsDataChanged
-			,	ActionType
-			,	IsAuto
-			,	LastModifiedDate
-			,	LastModifiedBy
-			,	InsertDate
-			,	TaggingType
-			,	TargetDangerLevel1
-			,	TWGroupBettingRate
-			,	TWTicketRejectRate
-			,	TWBetCount
-			,	TWDesktopUsageRate
-			,	Remark
-			,	IsMarkedDirectly
-			,	TVSRequestID
-			,	IsFromTVS
-			,	IsFromTW
-			,	IsFromCTS
-			,	IsFromAI
-			,	IsFromImperva
-			,	IsParlay
-			,	SportType
-			,	IssueTypeID
-			,	PerformanceTime
-		)
-		SELECT 	ID  					
-			,	h.CustID  				
-			,	CTSCustID  				
-			,	ParentID  			
-			,	CategoryID  			
-			,	TurnoverRM  			
-			,	WinlossRM  				
-			,	BetCount  				
-			,	ActiveDays  			
-			,	RobotCounter  		
-			,	TargetCC  				
-			,	SourceTypeID  			
-			,	OldCategoryID  		
-			,	DWCategoryID  			
-			,	IsDataChanged  			
-			,	ActionType  			
-			,	IsAuto  				
-			,	LastModifiedDate  		
-			,	LastModifiedBy  		
-			,	InsertDate  			
-			,	TaggingType  			
-			,	TargetDangerLevel1  	
-			,	TWGroupBettingRate  	
-			,	TWTicketRejectRate  	
-			,	TWBetCount  			
-			,	TWDesktopUsageRate  
-			,	Remark 			
-			,	IsMarkedDirectly
-			,	TVSRequestID
-			,	IsFromTVS 				 
-			,	IsFromTW 				
-			,	IsFromCTS 				
-			,	IsFromAI 	
-			,	IsFromImperva
-			,	IsParlay
-			,	SportType
-			,	IssueTypeID
-			,	PerformanceTime
-		FROM Temp_CustDataShouldBeRemoved AS k
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_History AS h ON k.CustID = h.CustID
-		WHERE h.ID <= lv_LastArchiveID
-			AND h.IsDataChanged = 1
-			AND InsertDate < lv_DateValid;          
+		DELETE arc
+		FROM Temp_ArchiveHistory AS arc
+			INNER JOIN Temp_HistoryShouldNotBeRemoved AS nre ON nre.ID = arc.ID
+		;				     
 			
-		DELETE h  
-		FROM CTS_DataCenter.CTSCustomerClassification_History AS h
-		WHERE EXISTS (SELECT 1 
-					  FROM Temp_ArchiveHistory AS r 
-					  WHERE r.ID = h.ID);
+		DELETE his  
+		FROM CTS_DataCenter.CTSCustomerClassification_History AS his
+			INNER JOIN Temp_ArchiveHistory AS arc ON arc.ID = his.ID
+		;
 
-		SELECT	ID  					
-			,	CustID  				
-			,	CTSCustID  				
-			,	ParentID  			
-			,	CategoryID  			
-			,	TurnoverRM  			
-			,	WinlossRM  				
-			,	BetCount  				
-			,	ActiveDays  			
-			,	RobotCounter  		
-			,	TargetCC  				
-			,	SourceTypeID  			
-			,	OldCategoryID  		
-			,	DWCategoryID  			
-			,	IsDataChanged  			
-			,	ActionType  			
-			,	IsAuto  				
-			,	LastModifiedDate  		
-			,	LastModifiedBy  		
-			,	InsertDate  			
-			,	TaggingType  			
-			,	TargetDangerLevel1  	
-			,	TWGroupBettingRate  	
-			,	TWTicketRejectRate  	
-			,	TWBetCount  			
-			,	TWDesktopUsageRate 
-			,	Remark 	
-			,	IsMarkedDirectly
-			,	TVSRequestID
-			,	IsFromTVS 				 
-			,	IsFromTW 				
-			,	IsFromCTS 				
-			,	IsFromAI 	
-			,	IsFromImperva
-			,	IsParlay
-			,	SportType
-			,	IssueTypeID
-			,	PerformanceTime
-		FROM Temp_ArchiveHistory;
+		SELECT	arc.ID  					
+			,	arc.CustID  				
+			,	arc.CTSCustID  				
+			,	arc.ParentID  			
+			,	arc.CategoryID  			
+			,	arc.TurnoverRM  			
+			,	arc.WinlossRM  				
+			,	arc.BetCount  				
+			,	arc.ActiveDays  			
+			,	arc.RobotCounter  		
+			,	arc.TargetCC  				
+			,	arc.SourceTypeID  			
+			,	arc.OldCategoryID  		
+			,	arc.DWCategoryID  			
+			,	arc.IsDataChanged  			
+			,	arc.ActionType  			
+			,	arc.IsAuto  				
+			,	arc.LastModifiedDate  		
+			,	arc.LastModifiedBy  		
+			,	arc.InsertDate  			
+			,	arc.TaggingType  			
+			,	arc.TargetDangerLevel1  	
+			,	arc.TWGroupBettingRate  	
+			,	arc.TWTicketRejectRate  	
+			,	arc.TWBetCount  			
+			,	arc.TWDesktopUsageRate 
+			,	arc.Remark 	
+			,	arc.IsMarkedDirectly
+			,	arc.TVSRequestID
+			,	arc.IsFromTVS 				 
+			,	arc.IsFromTW 				
+			,	arc.IsFromCTS 				
+			,	arc.IsFromAI 	
+			,	arc.IsFromImperva
+			,	arc.IsParlay
+			,	arc.SportType
+			,	arc.IssueTypeID
+			,	arc.PerformanceTime
+		FROM Temp_ArchiveHistory AS arc;
     
     END IF;
     
