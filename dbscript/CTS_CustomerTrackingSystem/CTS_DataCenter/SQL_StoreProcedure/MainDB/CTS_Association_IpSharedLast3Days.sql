@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
@@ -18,6 +18,7 @@ AS
 		- 20230602@Long.Luu:	Add new agent as internal account [Redmine ID: #188554]
         - 20231024@Long.Luu: 	Add Agent HITRM & WINRM as internal account [Redmine ID: #195355]
         - 20231207@Long.Luu: 	Add Agent M999RM00 as internal account [Redmine ID: #197915]
+		- 20250121@Thomas.Nguyen: Exclude 2 IP [Redmine ID: #217111]
 
 	Params Explaination:
 
@@ -110,7 +111,8 @@ BEGIN
 		AND b.username NOT LIKE '%CashOut' 
 		AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 		AND b.currency NOT IN (20,27,28)
-		AND b.IP IS NOT NULL;
+		AND b.IP IS NOT NULL
+		AND b.IP NOT IN ('127.0.0.1','16.162.136.5');
 
 	CREATE CLUSTERED INDEX #CIX_tmp_Bettrans ON #tmp_Bettrans (
 		TransDate, CustID, IP
@@ -148,4 +150,3 @@ BEGIN
 END;
 
 GO
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
