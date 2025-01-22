@@ -46,6 +46,7 @@ BEGIN
 	FROM 	CTS_Admin.CTSJob AS j
 	WHERE	j.JobName = ip_JobName 
 		AND j.GroupName = ip_GroupName 
+		AND j.IsDisable = 0
 		AND j.EnvironmentID = ip_EnvironmentID;
 	
 	SELECT	j.JobName
