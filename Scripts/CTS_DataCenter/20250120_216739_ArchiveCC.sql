@@ -12,20 +12,29 @@ Reviewer:
 #==============UPDATE Archive Take Days SCHEDULE 30 Days=====================
 USE CTS_DataCenter;
 
-SELECT *
-FROM SystemParameter
-WHERE ParameterID IN (41,119);
-
 UPDATE SystemParameter
 SET ParameterValue = 30
 WHERE ParameterID IN (41,119);
 
+#==============UPDATE LastID OF Archive History=====================
+UPDATE SystemParameter
+SET ParameterValue = 1
+WHERE ParameterID IN (35,118);
 
-#==============UPDATE LastID OF ArchiveBySport=====================
+/* CHECK Data 
+SELECT *
+FROM SystemParameter
+WHERE ParameterID IN (35,40,41,117,118,119);
+
 SELECT *
 FROM SystemParameter
 WHERE ParameterID IN (117,118,119);
 
-UPDATE SystemParameter
-SET ParameterValue = @lv_lastArchiveID = <<Suggest update min By SPORT History ID within Count and Monitor data >>
-WHERE ParameterID IN (118);
+SELECT COUNT(1)
+FROM CTSCustomerClassification_History
+WHERE InsertDate <  DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY); #133473948
+
+SELECT COUNT(1)
+FROM CTSCustomerClassification_BySport_History
+WHERE InsertDate <  DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY); #20409022
+*/
