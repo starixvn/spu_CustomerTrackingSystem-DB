@@ -67,7 +67,8 @@ BEGIN
 			, tr.CronExpression				
 	FROM 	CTS_Admin.CTSTrigger as tr
 		INNER JOIN Temp_Job AS j ON tr.JobName = j.JobName
-	WHERE	tr.EnvironmentID = ip_EnvironmentID;
+	WHERE tr.IsDisable = 0
+		AND tr.EnvironmentID = ip_EnvironmentID;
 
 END$$
 
