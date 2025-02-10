@@ -587,18 +587,6 @@ false,
 false);
 
 INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl, MethodName, Controller, IsStartByDefault, IsDisable, IsAdjust) VALUES (
-'CTS_Customer_Hourly_Username2Update',
-'CTS_CC',
-1,
-'Fanex.NAP.SPU.Main.JobSchedulers.Services.JobExecute',
-'http://nap_spu_cts_cc_job_service_LOCAL:5000/api?batchSize=500',
-'UpdateUsername2',
-'TransformCustomer',
-true,
-false,
-false);
-
-INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl, MethodName, Controller, IsStartByDefault, IsDisable, IsAdjust) VALUES (
 'CTS_Customer_Minutely_ReactivatedCustomerInsert',
 'CTS_CC',
 1,

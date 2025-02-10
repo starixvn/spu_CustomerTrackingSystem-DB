@@ -710,15 +710,6 @@ NULL,
 false);
 
 INSERT INTO CTS_Admin.CTSTrigger (TriggerName, JobName, EnvironmentID, TriggerType, IntervalInSecond, CronExpression, IsDisable) VALUES (
-'FS_FlaggedAccount_Trigger',
-'FS_FlaggedAccount',
-1,
-'Simple',
-60,
-NULL,
-false);
-
-INSERT INTO CTS_Admin.CTSTrigger (TriggerName, JobName, EnvironmentID, TriggerType, IntervalInSecond, CronExpression, IsDisable) VALUES (
 'VR_BetLimit_Trigger',
 'VR_BetLimit',
 1,
