@@ -1,3 +1,19 @@
+/*<info serverAlias="CTSMain-CTS_Admin" databaseType="2"></info>*/
+/*
+Creator:	20250102@Adam.Tran
+Task:	 	CTS - Main Service - Extend Functions Scheduler manager [Redmine ID: 215328]
+Server:  	Master
+DBName:		CTS_Admin
+
+Revisions: 
+		- 20250102@Adam.Tran:   Created
+
+*/
+
+USE CTS_Admin;
+
+TRUNCATE TABLE CTS_Admin.CTSTrigger;
+
 INSERT INTO CTS_Admin.CTSTrigger (TriggerName, JobName, EnvironmentID, TriggerType, IntervalInSecond, CronExpression, IsDisable) VALUES (
 'zzzzz_Job_Monitoring_Trigger',
 'zzzzz_Job_Monitoring',
