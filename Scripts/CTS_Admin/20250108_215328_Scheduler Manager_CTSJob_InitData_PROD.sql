@@ -6,7 +6,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'zzzzz_Job_Monitoring',
 'zzzzz_Job_Monitoring',
 'zzzzz_Job_Monitoring',
-false,
+true,
 false,
 false);
 
@@ -18,7 +18,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500&externalSize=5000&addMinute=15',
 'NewCustomerMonitoring',
 'JobMonitoring',
-false,
+true,
 false,
 false);
 
@@ -30,7 +30,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500&addMinute=30',
 'ReactivatedCustomerMonitoring',
 'JobMonitoring',
-false,
+true,
 false,
 false);
 
@@ -42,7 +42,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'CustomerInfoMonitoring',
 'JobMonitoring',
-false,
+true,
 false,
 false);
 
@@ -54,7 +54,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'ReatimeCategoryMonitoring',
 'JobMonitoring',
-false,
+true,
 false,
 false);
 
@@ -66,7 +66,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?threshold=500000',
 'NormalPoolMonitoring',
 'JobMonitoring',
-false,
+true,
 false,
 false);
 
@@ -78,7 +78,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api',
 'IncorrectDataMonitoringNotification',
 'JobMonitoring',
-false,
+true,
 false,
 false);
 
@@ -90,7 +90,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?threshold=50000',
 'LastLoginTransactionMonitoring',
 'monitoring',
-false,
+true,
 false,
 false);
 
@@ -102,7 +102,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?size=500&numberOfBatch=2',
 'TransformAccount',
 'TransformJob',
-false,
+true,
 false,
 false);
 
@@ -114,7 +114,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?size=5000',
 'MatchMonitorInsertTicketDetailLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -126,7 +126,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?size=5000',
 'MatchMonitorInsertTicketDetailNonLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -138,7 +138,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?numberOfThread=6',
 'MatchMonitorProcessRuleGroupBettingLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -150,7 +150,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?numberOfThread=6',
 'MatchMonitorProcessRuleGroupBettingNonLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -162,7 +162,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?numberOfThread=4',
 'MatchMonitorProcessRuleSabaGroupBettingLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -174,7 +174,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?numberOfThread=2',
 'MatchMonitorProcessRuleSabaGroupBettingNonLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -186,7 +186,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?numberOfThread=6',
 'MatchMonitorProcessRuleFixedGameLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -198,7 +198,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?numberOfThread=6',
 'MatchMonitorProcessRuleFixedGameNonLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -210,7 +210,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?numberInternalOfThread=2&numberExternalOfThread=12',
 'MatchMonitorProcessRuleHedgingLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -222,7 +222,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?numberInternalOfThread=2&numberExternalOfThread=12',
 'MatchMonitorProcessRuleHedgingNonLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -234,7 +234,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?numberOfThread=12',
 'MatchMonitorProcessRuleIrrigationNonLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -246,7 +246,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?numberOfThread=6',
 'MatchMonitorProcessRuleArbitrageNonLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -258,7 +258,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?size=5000',
 'MatchMonitorParlayInsertTicketDetailLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -270,7 +270,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?size=5000',
 'MatchMonitorParlayInsertTicketDetailNonLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -282,7 +282,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?numberOfThread=6',
 'MatchMonitorParlayProcessRuleGroupBettingLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -294,7 +294,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?numberOfThread=6',
 'MatchMonitorParlayProcessRuleGroupBettingNonLive',
 'matchmonitor',
-false,
+true,
 false,
 false);
 
@@ -306,7 +306,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api',
 'SyncUserPermission',
 'TransformJob',
-false,
+true,
 false,
 false);
 
@@ -318,7 +318,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?batchSize=500&numberOfBatch=2',
 'TransformAssByDevice',
 'TransformJob',
-false,
+true,
 false,
 false);
 
@@ -330,7 +330,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api',
 'AffectedEvidence',
 'TransformJob',
-false,
+true,
 false,
 false);
 
@@ -342,7 +342,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api?batchSize=5000',
 'ArchiveCustomer',
 'ArchiveData',
-false,
+true,
 false,
 false);
 
@@ -354,7 +354,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api',
 'AffectedEvidenceInsertFromQueue',
 'job',
-false,
+true,
 false,
 false);
 
@@ -366,7 +366,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api',
 'AffectedEvidenceRemoveFromQueue',
 'job',
-false,
+true,
 false,
 false);
 
@@ -378,7 +378,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api',
 'ArchiveHistoryClassification',
 'ArchiveData',
-false,
+true,
 false,
 false);
 
@@ -390,7 +390,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api',
 'ArchiveHistoryClassificationBySport',
 'ArchiveData',
-false,
+true,
 false,
 false);
 
@@ -402,7 +402,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api',
 'ArchiveAssociationCustomer',
 'ArchiveData',
-false,
+true,
 false,
 false);
 
@@ -414,7 +414,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api',
 'RollbackAssociationCustomer',
 'ArchiveData',
-false,
+true,
 false,
 false);
 
@@ -426,7 +426,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api',
 'scanningDailyNormalClassification',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -438,7 +438,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=5000',
 'scanningDailyNormalTaggingClassification',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -450,7 +450,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'scanningDailyProblemClassification',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -462,7 +462,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=5000',
 'realtimeCheckChanges',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -474,7 +474,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchExternalSize=3000&batchInternalSize=1000',
 'scanningRealtimeClassification',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -486,7 +486,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchInternalSize=4000',
 'normalAccountClassification',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -498,7 +498,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchExternalSize=500&batchInternalSize=5000&isLogData=true',
 'normalAccountInsert',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -510,7 +510,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'probationClassification',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -522,7 +522,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchExternalSize=500&batchInternalSize=500',
 'robotTWClassification',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -534,7 +534,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'InsertNewCustomer',
 'TransformCustomer',
-false,
+true,
 false,
 false);
 
@@ -546,7 +546,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'InsertMissingCustomer',
 'TransformCustomer',
-false,
+true,
 false,
 false);
 
@@ -558,7 +558,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=5000&waitTime=120',
 'UpdateCTSCustomerInfo',
 'TransformCustomer',
-false,
+true,
 false,
 false);
 
@@ -570,7 +570,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=1000',
 'UpdateUsername2ForCustMain',
 'TransformCustomer',
-false,
+true,
 false,
 false);
 
@@ -582,7 +582,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=1000',
 'UpdateUsername2ForCustSub',
 'TransformCustomer',
-false,
+true,
 false,
 false);
 
@@ -594,7 +594,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_LOCAL:5000/api?batchSize=500',
 'UpdateUsername2',
 'TransformCustomer',
-false,
+true,
 false,
 false);
 
@@ -606,7 +606,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api',
 'InsertReactivatedCustomer',
 'TransformCustomer',
-false,
+true,
 false,
 false);
 
@@ -618,7 +618,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'InactivateNewCustomers',
 'TransformCustomer',
-false,
+true,
 false,
 false);
 
@@ -630,7 +630,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=3000',
 'ScanTWGBTicket',
 'twgroupbetting',
-false,
+true,
 false,
 false);
 
@@ -642,7 +642,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api',
 'UpdateTotalTWGBTicket',
 'twgroupbetting',
-false,
+true,
 false,
 false);
 
@@ -654,7 +654,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'affectedDownlineClassificationFromQueue',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -666,7 +666,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'newcustomerclassification',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -678,7 +678,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchExternalSize=500&batchInternalSize=500',
 'robotAIDetection',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -690,7 +690,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'tvsProblemAccountInsert',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -702,7 +702,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api',
 'UpdateStatusMatchMonitor',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -714,7 +714,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api',
 'ClassifyMatchMonitor',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -726,7 +726,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=5000',
 'sabaDangerLevel',
 'transExternalDataJobs',
-false,
+true,
 false,
 false);
 
@@ -738,7 +738,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchExternalSize=500&batchInternalSize=5000',
 'NormalAccountInsertBySport',
 'classificationBySportJobs',
-false,
+true,
 false,
 false);
 
@@ -750,7 +750,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchInternalSize=4000',
 'NormalAccountClassificationBySport',
 'classificationBySportJobs',
-false,
+true,
 false,
 false);
 
@@ -762,7 +762,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api',
 'ScanningDailyNormalClassificationBySport',
 'classificationBySportJobs',
-false,
+true,
 false,
 false);
 
@@ -774,7 +774,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api',
 'ScanProbationClassificationBySport',
 'classificationBySportJobs',
-false,
+true,
 false,
 false);
 
@@ -786,7 +786,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchInternalSize=5000',
 'ScanRealtimeClassificationBySport',
 'classificationBySportJobs',
-false,
+true,
 false,
 false);
 
@@ -798,7 +798,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api',
 'ScanAssociatedAccount',
 'associationJob',
-false,
+true,
 false,
 false);
 
@@ -810,7 +810,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchExternalSize=500&batchInternalSize=500',
 'DetectUnauthorizedLoginCustomerCredit',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -822,7 +822,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchExternalSize=500&batchInternalSize=500',
 'DetectUnauthorizedLoginCustomerLicensee',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -834,7 +834,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'scanningDailyDangerousDepositClassification',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -846,7 +846,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'scanningDailyDangerousCreditClassification',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -858,7 +858,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'scanningSecondlyTWInitialGBClassification',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -870,7 +870,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=500',
 'scanningMinutelyTWInitialSmartClassification',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -882,7 +882,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?batchSize=5000',
 'normalDangerousAssociationCheck',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -894,7 +894,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_cc_job_service_prod:5000/api?internalBatchSize=2000&externalBatchSize=5000',
 'normalDangerousAssociationScan',
 'classificationJobs',
-false,
+true,
 false,
 false);
 
@@ -906,7 +906,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_fs_bsng_job_service_prod:5000/api',
 'bigstateneargoal',
 'Job',
-false,
+true,
 false,
 false);
 
@@ -918,7 +918,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_fs_job_service_prod:5000/api',
 'checkbet',
 'Job',
-false,
+true,
 false,
 false);
 
@@ -930,7 +930,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_fs_job_service_prod:5000/api',
 'scannedofficeip',
 'Job',
-false,
+true,
 false,
 false);
 
@@ -942,7 +942,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_fs_job_service_prod:5000/api',
 'delayedgoal',
 'Job',
-false,
+true,
 false,
 false);
 
@@ -954,7 +954,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_fs_job_service_prod:5000/api',
 'dailycapturedata',
 'Job',
-false,
+true,
 false,
 false);
 
@@ -966,7 +966,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_vr_job_service_prod:5000/api',
 'betlimit',
 'Job',
-false,
+true,
 false,
 false);
 
@@ -978,7 +978,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_vr_job_service_prod:5000/api',
 'spaciallicensee',
 'Job',
-false,
+true,
 false,
 false);
 
@@ -990,7 +990,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_vr_job_service_prod:5000/api',
 'adjustvrsetting',
 'Job',
-false,
+true,
 false,
 false);
 
@@ -1002,7 +1002,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_vr_job_service_prod:5000/api',
 'agent',
 'Job',
-false,
+true,
 false,
 false);
 
@@ -1014,7 +1014,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_vr_job_service_prod:5000/api',
 'memberbigstake',
 'Job',
-false,
+true,
 false,
 false);
 
@@ -1026,7 +1026,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_vr_job_service_prod:5000/api?batchSize=20000',
 'SapaSportDangerLevel',
 'Job',
-false,
+true,
 false,
 false);
 
@@ -1038,7 +1038,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_afc_job_service_prod:5000/api',
 'SyncB2CAccount',
 'Job',
-false,
+true,
 false,
 false);
 
@@ -1050,7 +1050,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_job_service_prod:5000/api',
 'ScanDataConsistencyMonitoring',
 'Notification',
-false,
+true,
 false,
 false);
 
@@ -1062,7 +1062,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_agencycc_job_service_prod:5000/api?batchExternalSize=3000&batchInternalSize=1000',
 'scanningRealtimeClassificationAgency',
 'classificationAgencyJobs',
-false,
+true,
 false,
 false);
 
@@ -1074,7 +1074,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_agencycc_job_service_prod:5000/api',
 'scanningDailyNormalClassificationAgency',
 'classificationAgencyJobs',
-false,
+true,
 false,
 false);
 
@@ -1086,7 +1086,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_agencycc_job_service_prod:5000/api?batchInternalSize=2000',
 'normalAccountClassificationAgency',
 'classificationAgencyJobs',
-false,
+true,
 false,
 false);
 
@@ -1098,7 +1098,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_agencycc_job_service_prod:5000/api?batchExternalSize=500&batchInternalSize=2000',
 'normalAccountInsertAgency',
 'classificationAgencyJobs',
-false,
+true,
 false,
 false);
 
@@ -1110,7 +1110,7 @@ INSERT INTO CTS_Admin.CTSJob (JobName, GroupName, EnvironmentID, JobType, APIUrl
 'http://nap_spu_cts_agencycc_job_service_prod:5000/api?batchSize=500',
 'InactivateNewCustomersAgency',
 'TransformCustomerAgency',
-false,
+true,
 false,
 false);
 
