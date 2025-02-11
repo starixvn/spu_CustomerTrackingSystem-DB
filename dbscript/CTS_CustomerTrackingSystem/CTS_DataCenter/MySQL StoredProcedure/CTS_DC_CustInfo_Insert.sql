@@ -44,6 +44,7 @@ BEGIN
 			- 20231207@Long.Luu: 	Add Agent M999RM00 as internal account [Redmine ID: #197915]
 			- 20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
             - 202409266@Casey.Huynh: Return Agent [Redmine ID: #185799]
+			- 20241216@Tony.Nguyen:	Remove UNSIGNED of SMA Recommend (Redmine ID: #214585)
             
 		Param's Explanation (filtered by):
 		Example:
@@ -81,9 +82,9 @@ BEGIN
 		,	RoleID			TINYINT		 
 		,	Currency		VARCHAR(50) 	
 		,	CurrencyID		INT			 	
-		,	SRecommend		INT	 UNSIGNED		 	
-		,	MRecommend		INT	 UNSIGNED 			
-		,	Recommend		INT	 UNSIGNED
+		,	SRecommend		INT	UNSIGNED
+		,	MRecommend		INT
+		,	Recommend		INT
         ,	CreatedDate		DATETIME
         ,	DuplicateType 	TINYINT DEFAULT 0#1-Dup(CustID and CustSubID), 2-Dup UserName(not dup CustID and CustSubID)
         ,	OldCTSCustID	BIGINT UNSIGNED
@@ -196,9 +197,9 @@ BEGIN
 			,	RoleID			TINYINT		 	PATH "$.RoleID" 
 			,	Currency		VARCHAR(50) 	PATH "$.Currency" 
 			,	CurrencyID		INT			 	PATH "$.CurrencyID" 
-			,	SRecommend		INT	 UNSIGNED	PATH "$.SRecommend" 
-			,	MRecommend		INT	 UNSIGNED 	PATH "$.MRecommend" 
-			,	Recommend		INT	 UNSIGNED 	PATH "$.Recommend" 
+			,	SRecommend		INT UNSIGNED	PATH "$.SRecommend" 
+			,	MRecommend		INT	 		 	PATH "$.MRecommend" 
+			,	Recommend		INT	 		 	PATH "$.Recommend" 
 			,	CreatedDate		DATETIME	 	PATH "$.CreatedDate" 
             ,	IsLicensee		BOOLEAN 		PATH "$.IsLicensee" 
 			)

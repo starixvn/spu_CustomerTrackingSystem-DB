@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 
 SET ANSI_NULLS ON
 GO
@@ -22,6 +22,7 @@ AS
 		- 20240411@Vitoria.Le: 	Separate between QueryType = 1 and QueryType in (2,3)  [Redmine ID: #201380]
 		- 20240607@CaseyHuynh:	Return Saba Scocer Ticket [Redmine ID: #191972]
         - 20240704@Casey.Huynh: Saba Group Betting - Add Basketball and enhance Soccer [Redmine ID: #207523]
+		- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service MM Staging (get tickets by @LastScannedTransID, @IsLive & @BatchSize & @ListSportBettype)
@@ -138,7 +139,7 @@ BEGIN
 		FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 			INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-			INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
+			INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
 			INNER JOIN #tmpSportBettype AS t WITH(NOLOCK) ON m.sporttype = t.SportTypeID AND b.bettype = t.BetTypeID
 			LEFT JOIN bodb02.dbo.f_Set_OddsTypeBettypes() AS ot ON ot.BetType = t.BetTypeID
 		WHERE	b.sequenceid > @LastScannedSequenceID
@@ -146,11 +147,11 @@ BEGIN
 			AND b.LiveIndicator = @IsLive
 			AND b.Currency NOT IN (20,27,28)
 			AND b.BetFrom NOT IN ('p','m','w','0','3','6')
-			AND b.Username NOT LIKE '%Cashout%'
 			AND b.srecommend NOT IN (41430709) 
 			AND b.mrecommend NOT IN (27899314,11656504,12146012) 
 			AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)AND b.statusID <> 101 -- Reject		
 			AND c.site NOT IN ('Nextbet','9wickets','9wsports')
+			AND c.Username NOT LIKE '%Cashout%'
 			AND (l.LeagueGroupID NOT IN (42,74,108,113,122,151)
 				 OR (l.LeagueGroupID = 42 AND m.Sporttype IN (1,2)))-- SABA leagues
 			AND ISNULL(b.oddstype,0) <> 0

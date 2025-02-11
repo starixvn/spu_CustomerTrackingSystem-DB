@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" viewers="" isFunction="0" isNested="1"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" viewers="" isFunction="0" isNested="1"></info>*/
 
 SET QUOTED_IDENTIFIER ON;
 SET ANSI_NULLS ON;
@@ -29,6 +29,7 @@ AS
 		- 20220822@Long.Luu:	Return more data [Redmine ID: 175698]
 		- 20221205@Victoria.Le:	Return more data: DangerSabaSc (Saba Soccer) and DangerSabaBkb (Saba Baseketball) [Redmine ID: #181208]
 		- 20240318@Casey.Huynh: Return empty if not existing CustInfo, CustProductStatus , CustInfo, Dep_CustSuper [Redmine ID: #198000]
+		- 20241216@Tony.Nguyen: Change the process so that it retrieves SiteID/Site for the member directly (Redmine ID: #214585)
 
 	Developer's Notes:
 		- @sourceType: 0- GET New Customer Info, 1- Get Info Customer table, 2-Get CustInfo table, 3 GET Info CustProductStatus table
@@ -88,8 +89,8 @@ BEGIN;
 		UPDATE	tmpCust 
 		SET		Username = 	cust.username
 			,	Username2 = cust.username2	
-			,	SiteId = (CASE WHEN cust.roleid = 1 THEN st.siteid ELSE st2.siteid END)
-			,	[Site] = (CASE WHEN cust.roleid = 1 THEN upl.[site] ELSE cust.[site] END)	
+			,	SiteId = st2.siteid
+			,	[Site] = cust.[site]
 			,	RoleId = cust.roleid		
 			,	CurrencyId = cust.currency
 			,	Currency = ex.currency
@@ -97,12 +98,10 @@ BEGIN;
 			,	Mrecommend = cust.mrecommend 
 			,	Recommend = cust.recommend	
 			,	CreatedDate = cust.creatdate	
-		FROM dbo.Customer AS cust WITH (NOLOCK)
+		FROM bodb02.dbo.Customer AS cust WITH (NOLOCK)
 			INNER JOIN #tmpCustomers AS tmpCust WITH (NOLOCK) ON cust.custid = tmpCust.CustId
-			INNER JOIN dbo.Exchange AS ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
-			LEFT JOIN dbo.Customer AS upl WITH (NOLOCK) ON cust.recommend = upl.custid
-			LEFT JOIN dbo.[Site] AS st WITH (NOLOCK) ON upl.[site] = st.[site]
-			LEFT JOIN dbo.[Site] AS st2 WITH (NOLOCK) ON cust.[site] = st2.[site];
+			INNER JOIN bodb02.dbo.Exchange AS ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
+			LEFT JOIN bodb02.dbo.[Site] AS st2 WITH (NOLOCK) ON cust.[site] = st2.[site];
 
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
 		SET a.CustStatusID = (CASE 

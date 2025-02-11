@@ -81,6 +81,7 @@ AS
 		- 20240802@Casey.Huynh:	Enhance Filter Amount Sum by all Selected BetChoice  [Redmine ID: #207528]
 		- 20240904@Casey.Huynh: Rename @ViewMode To @ViewMode [Redmine ID: #207397]
 		- 20241226@Thomas.Nguyen: Add Username Filter [Redmine ID: #210128]
+		- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize) >> refer to new SP CTS_Rpt_MatchMonitor_GetTicketInfo
@@ -761,7 +762,7 @@ BEGIN
 							,	ISNULL(tmpTs.MGroup,0)
 							FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
-								INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
+								INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
 								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
@@ -769,7 +770,7 @@ BEGIN
 								AND b.liveindicator = @IsLive
 								AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 								AND c.site NOT IN ('Nextbet','9wickets','9wsports')
-								AND b.username NOT LIKE '%Cashout%'
+								AND c.username NOT LIKE '%Cashout%'
 								AND b.mrecommend NOT IN (27899314,11656504,12146012) 
 								AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 								AND b.srecommend NOT IN (41430709)
@@ -818,7 +819,7 @@ BEGIN
 						,	ISNULL(tmpTs.MGroup,0)
 						FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 							INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
-							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
+							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
 							INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
 							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID 
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
@@ -827,7 +828,7 @@ BEGIN
 							AND b.liveindicator = @IsLive
 							AND (@IsExclTestCurr = 0 OR (@IsExclTestCurr = 1 AND b.Currency NOT IN (20,27,28)))
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
-							AND b.username NOT LIKE '%Cashout%'
+							AND c.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
 							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 							AND b.srecommend NOT IN (41430709)
@@ -875,7 +876,7 @@ BEGIN
 						,	ISNULL(tmpTs.MGroup,0)
 						FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 							INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
-							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
+							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
 							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID 
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
@@ -883,7 +884,7 @@ BEGIN
 						WHERE	b.matchid = @MatchID
 							AND b.liveindicator = @IsLive
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
-							AND b.username NOT LIKE '%Cashout%'
+							AND c.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
 							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 							AND b.srecommend NOT IN (41430709)
@@ -987,7 +988,7 @@ BEGIN
 						,	ISNULL(tmpTs.MGroup,0)
 						FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 							INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
+							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
 							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
@@ -995,7 +996,7 @@ BEGIN
 							AND b.matchid = @MatchID	
 							AND b.liveindicator = @IsLive
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
-							AND b.username NOT LIKE '%Cashout%'
+							AND c.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
 							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 							AND b.srecommend NOT IN (41430709)
@@ -1045,7 +1046,7 @@ BEGIN
 						,	ISNULL(tmpTs.MGroup,0)
 						FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 							INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
+							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
 							INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
 							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID 
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
@@ -1054,7 +1055,7 @@ BEGIN
 							AND b.matchid = @MatchID
 							AND b.liveindicator = @IsLive
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
-							AND b.username NOT LIKE '%Cashout%'
+							AND c.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
 							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
 							AND b.srecommend NOT IN (41430709)

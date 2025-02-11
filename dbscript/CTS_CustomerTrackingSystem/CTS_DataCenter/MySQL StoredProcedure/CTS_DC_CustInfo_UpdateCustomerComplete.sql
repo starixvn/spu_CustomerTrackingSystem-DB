@@ -23,6 +23,7 @@ BEGIN
 			- 20230602@Long.Luu: 		Add new agent as internal account [Redmine ID: #188554]
             - 20231024@Long.Luu: 		Add Agent HITRM & WINRM as internal account [Redmine ID: #195355]
 			- 20231207@Long.Luu: 		Add Agent M999RM00 as internal account [Redmine ID: #197915]
+			- 20241216@Tony.Nguyen: 	Remove UNSIGNED of SMA Recommend (Redmine ID: #214585)
 
 		Param's Explanation (filtered by):
 		
@@ -51,9 +52,9 @@ BEGIN
         ,	SiteID			INT
         ,	Site			VARCHAR(20) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
 		,	RoleID			TINYINT		 
-		,	SRecommend		INT UNSIGNED	 	
-		,	MRecommend		INT UNSIGNED 			
-		,	Recommend		INT UNSIGNED
+		,	SRecommend		INT UNSIGNED
+		,	MRecommend		INT
+		,	Recommend		INT
         ,	Currency		VARCHAR(50) 	
 		,	CurrencyID		INT
         ,	SubscriberID	INT
@@ -94,8 +95,8 @@ BEGIN
             ,	Site			VARCHAR(20) 	PATH "$.Site"
             ,	RoleID			INT UNSIGNED	PATH "$.RoleID"
             ,	SRecommend		INT UNSIGNED	PATH "$.SRecommend" 
-			,	MRecommend		INT UNSIGNED 	PATH "$.MRecommend" 
-			,	Recommend		INT UNSIGNED 	PATH "$.Recommend"
+			,	MRecommend		INT 		 	PATH "$.MRecommend" 
+			,	Recommend		INT 		 	PATH "$.Recommend"
             ,	Currency		VARCHAR(50) 	PATH "$.Currency" 
 			,	CurrencyID		INT		 		PATH "$.CurrencyID"	
             ,	UpdateType		TINYINT			PATH "$.UpdateType"	

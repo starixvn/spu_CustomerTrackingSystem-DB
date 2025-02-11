@@ -43,6 +43,7 @@ AS
 		- 20240521@Thomas.Nguyen:	Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
 		- 20240904@Casey.Huynh:		Rename @TicketType To @ViewMode [Redmine ID: #207397]
 		- 20241226@Thomas.Nguyen: 	Add Username Filter [Redmine ID: #210128]
+		- 20241217@Victoria.Le: 	Super/Master Direct Member [Redmine ID: #214585]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
@@ -457,7 +458,7 @@ BEGIN
 				,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 			FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 				INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
+				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
 				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
 				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 			WHERE b.matchid = @MatchID
@@ -503,7 +504,7 @@ BEGIN
 				,	b.TransDate
 			FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 				INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.recommend = c.custid
+				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
 				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
 				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 			WHERE b.matchid = @MatchID
