@@ -1,5 +1,5 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_History_Archive`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_BySport_History_Archive`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_History_Archive`(
@@ -19,26 +19,31 @@ sp:BEGIN
             - 20230707@Jonas.Huynh:		Renovate normal classification [Redmine ID: #189875]
             - 20240628@Thomas.Nguyen: 	Renovate CC phase 2 [Redmine ID: #205317]
             - 20241017@Victoria.Le:		Keeping the last record incorrectly  [Redmine ID: #212240]
+            - 20250115@CaseyHuynh: 		Enhance SystemParameter [Redmine ID: #216739]
 
 		Param's Explanation (filtered by):
 
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_History_Archive(@IsDataExist);
 	*/
-	DECLARE lv_BatchSize 		INT;
-	DECLARE lv_DateValid 		DATE;
-    DECLARE lv_NextDate			DATE;
-	DECLARE lv_TakeDay 			INT;
-    DECLARE lv_LastID 			BIGINT UNSIGNED;
-	DECLARE lv_NextLastID 		BIGINT UNSIGNED;
-	DECLARE lv_LastIDValid 		BIGINT UNSIGNED;
-	DECLARE lv_EndID 			BIGINT UNSIGNED;
-	DECLARE lv_NextIDInvalid 	BIGINT UNSIGNED;
+	DECLARE lv_BatchSize 			INT;
+	DECLARE lv_DateValid 			DATETIME;
+	DECLARE lv_TakeDay 				INT;
+    DECLARE lv_LastArchiveID 		BIGINT UNSIGNED;
+	DECLARE lv_MaxArchiveID 		BIGINT UNSIGNED;
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_History;
-    CREATE TEMPORARY TABLE Temp_History (
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustSport;
+    CREATE TEMPORARY TABLE Temp_CustSport(
+			CustID		BIGINT UNSIGNED
+        ,	SportID 	SMALLINT UNSIGNED
+        
+        ,	PRIMARY KEY (CustID, SportID)
+	);
+    
+	DROP TEMPORARY TABLE IF EXISTS Temp_ArchiveHistory;
+    CREATE TEMPORARY TABLE Temp_ArchiveHistory (
 			ID 					BIGINT UNSIGNED NOT NULL PRIMARY KEY
-		,	CustID 				BIGINT UNSIGNED 
+		,	CustID 				BIGINT UNSIGNED
 		,	CTSCustID 			BIGINT UNSIGNED
 		,	ParentID  			INT UNSIGNED  
 		,	SportID 			SMALLINT UNSIGNED 
@@ -55,7 +60,7 @@ sp:BEGIN
         ,	PerformanceTime		DATETIME
 		,	SourceTypeID	 	SMALLINT UNSIGNED
 		,	Remark			 	VARCHAR(500)
-		,	KEY 				IX_Temp_History_CustIDSportID (CustID, SportID)
+		,	KEY 				IX_Temp_ArchiveHistory_CustIDSportID (CustID, SportID)
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustDataShouldBeRemoved;
@@ -76,7 +81,7 @@ sp:BEGIN
 	WHERE ParameterID = 117; 
     
     SELECT ParameterValue
-	INTO lv_LastID
+	INTO lv_LastArchiveID
 	FROM CTS_DataCenter.SystemParameter 
 	WHERE ParameterID = 118; 
     
@@ -88,178 +93,122 @@ sp:BEGIN
     SET	lv_DateValid = DATE_SUB(CURRENT_DATE(), INTERVAL lv_TakeDay DAY);
 
 	SELECT MAX(tbl.ID)
-    INTO lv_NextLastID
-    FROM (SELECT ID
-		  FROM CTS_DataCenter.CTSCustomerClassification_BySport_History
-		  WHERE ID > lv_LastID
-		  ORDER BY ID ASC
+    INTO lv_MaxArchiveID
+    FROM (SELECT his.ID
+		  FROM CTS_DataCenter.CTSCustomerClassification_BySport_History AS his
+		  WHERE his.ID > lv_LastArchiveID
+				AND his.InsertDate < lv_DateValid
+		  ORDER BY his.ID ASC
 		  LIMIT lv_BatchSize) AS tbl;
 	
-	IF lv_NextLastID IS NULL THEN
+    # RETURN SP IF NOT HAVE NEW DATA
+	IF lv_MaxArchiveID IS NULL THEN
 		SET op_IsDataExist = 0;
 		LEAVE sp; 
-	END IF;
-
-    INSERT INTO Temp_History(ID,CustID,CTSCustID,ParentID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime,SourceTypeID,Remark)
-    SELECT 	ID 					
-		,	CustID 				
-		,	CTSCustID 	
-		,	ParentID		
-		,	SportID 			
-		,	CategoryID 			
-		,	TurnoverRM 			
-		,	WinlossRM 			
-		,	BetCount 			
-		,	ActiveDays 			
-		,	TargetCC 				
-		,	ActionType 			
-		,	LastModifiedDate 	
-		,	LastModifiedBy 		
-		,	InsertDate
-        ,   PerformanceTime
-		,	SourceTypeID
-		,	Remark
-	FROM CTS_DataCenter.CTSCustomerClassification_BySport_History
-    WHERE ID BETWEEN lv_LastID AND lv_NextLastID
-        AND InsertDate < lv_DateValid;
+	END IF;		
     
-    IF EXISTS (SELECT 1 FROM Temp_History) THEN
-		# Keep the max pointer
-		SELECT MAX(ID)
-		INTO lv_LastIDValid
-		FROM Temp_History;
+    INSERT INTO Temp_CustSport(CustID, SportID)
+    SELECT	DISTINCT his.CustID
+		,	his.SportID
+    FROM CTS_DataCenter.CTSCustomerClassification_BySport_History AS his 
+	WHERE his.ID > lv_LastArchiveID 
+		AND his.ID <= lv_MaxArchiveID
+        AND his.InsertDate < lv_DateValid;    
+
+    INSERT INTO Temp_ArchiveHistory(ID,CustID,CTSCustID,ParentID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime,SourceTypeID,Remark)
+    SELECT 	his.ID 					
+		,	his.CustID 				
+		,	his.CTSCustID 	
+		,	his.ParentID		
+		,	his.SportID 			
+		,	his.CategoryID 			
+		,	his.TurnoverRM 			
+		,	his.WinlossRM 			
+		,	his.BetCount 			
+		,	his.ActiveDays 			
+		,	his.TargetCC 				
+		,	his.ActionType 			
+		,	his.LastModifiedDate 	
+		,	his.LastModifiedBy 		
+		,	his.InsertDate
+        ,   his.PerformanceTime
+		,	his.SourceTypeID
+		,	his.Remark
+	FROM CTS_DataCenter.CTSCustomerClassification_BySport_History AS his
+		INNER JOIN Temp_CustSport AS cus ON his.CustID = cus.CustID AND his.SportID = cus.SportID
+    WHERE his.ID <= lv_MaxArchiveID
+        AND his.InsertDate < lv_DateValid;
+    
+    IF EXISTS (SELECT 1 FROM Temp_ArchiveHistory) THEN
         
-		ALTER TABLE Temp_History ADD INDEX IX_Temp_History_InsertDate (`InsertDate`);
-        
+		ALTER TABLE Temp_ArchiveHistory ADD INDEX IX_Temp_ArchiveHistory_InsertDate (`InsertDate`);
+
         # Find custs who have the log ahead --> all logs at this phase should be removed
 		INSERT INTO Temp_CustDataShouldBeRemoved(CustID, SportID)
-		WITH cte_CurrentCust (CustID, SportID) AS
-		(
-			SELECT DISTINCT CustID, SportID
-			FROM Temp_History
-		)
-		SELECT DISTINCT c.CustID, c.SportID
-		FROM cte_CurrentCust AS c
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport_History AS h ON c.CustID = h.CustID AND c.SportID = h.SportID
-		WHERE h.ID > lv_LastIDValid;
+		SELECT 	cus.CustID
+			,	cus.SportID
+		FROM Temp_CustSport AS cus
+		WHERE EXISTS (	SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassification_BySport_History AS his 
+                        WHERE  his.ID > lv_MaxArchiveID
+							AND his.InsertDate < DATE(NOW())
+                            AND cus.CustID = his.CustID 
+                            AND cus.SportID = his.SportID
+                            )
+		;
         
         # find latest log to keep (not be removed)
         INSERT INTO Temp_HistoryShouldNotBeRemoved(ID)
-        WITH cte_CustLogOrdered (CustID, SportID, ID, row_num) AS
+        WITH CTE_CustLogOrdered (CustID, SportID, ID, row_num) AS
 		(
-			SELECT 	t.CustID
-				,	t.SportID
-				, 	t.ID
-                , 	ROW_NUMBER() OVER(PARTITION BY t.CustID, t.SportID ORDER BY t.InsertDate DESC, t.LastModifiedDate DESC) AS row_num  
-			FROM Temp_History AS t
-				LEFT JOIN Temp_CustDataShouldBeRemoved AS r ON t.CustID = r.CustID AND t.SportID = r.SportID
-			WHERE r.CustID IS NULL
-				AND r.SportID IS NULL
+			SELECT 	arc.CustID
+				,	arc.SportID
+				, 	arc.ID
+                , 	ROW_NUMBER() OVER(PARTITION BY arc.CustID, arc.SportID ORDER BY arc.InsertDate DESC, arc.LastModifiedDate DESC, arc.ID DESC) AS row_num  
+			FROM Temp_ArchiveHistory AS arc
+				LEFT JOIN Temp_CustDataShouldBeRemoved AS rem ON arc.CustID = rem.CustID AND arc.SportID = rem.SportID
+			WHERE rem.CustID IS NULL
+				AND rem.SportID IS NULL
 		)
-        SELECT ID
-        FROM cte_CustLogOrdered
-        WHERE row_num = 1;
+        SELECT cte.ID
+        FROM CTE_CustLogOrdered AS cte
+        WHERE cte.row_num = 1;
     
-		DELETE  
-		FROM Temp_History AS h
-		WHERE EXISTS (	SELECT 1 
-						FROM Temp_HistoryShouldNotBeRemoved AS k 
-						WHERE k.ID = h.ID);		
-        
-        # take back the old log for the new active ones
-        INSERT INTO Temp_History(ID,CustID,CTSCustID,ParentID,SportID,CategoryID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TargetCC,ActionType,LastModifiedDate,LastModifiedBy,InsertDate,PerformanceTime,SourceTypeID,Remark)
-		SELECT 	h.ID 					
-			,	h.CustID 				
-			,	h.CTSCustID 
-			,	h.ParentID			
-			,	h.SportID 			
-			,	h.CategoryID 			
-			,	h.TurnoverRM 			
-			,	h.WinlossRM 			
-			,	h.BetCount 			
-			,	h.ActiveDays 			
-			,	h.TargetCC 				
-			,	h.ActionType 			
-			,	h.LastModifiedDate 	
-			,	h.LastModifiedBy 		
-			,	h.InsertDate 	
-            ,	h.PerformanceTime
-			,	h.SourceTypeID
-			,	h.Remark
-		FROM Temp_CustDataShouldBeRemoved AS k
-			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport_History AS h ON k.CustID = h.CustID AND k.SportID = h.SportID
-		WHERE h.ID < lv_LastID
-			AND h.InsertDate <= lv_DateValid;    
+		DELETE arc 
+		FROM Temp_ArchiveHistory AS arc
+			INNER JOIN Temp_HistoryShouldNotBeRemoved AS nre ON nre.ID = arc.ID;
+        	
+		DELETE his 
+		FROM CTS_DataCenter.CTSCustomerClassification_BySport_History AS his
+			INNER JOIN Temp_ArchiveHistory AS arc ON arc.ID = his.ID;
+    
+		SELECT	tmp.ID 					
+			,	tmp.CustID 				
+			,	tmp.CTSCustID 	
+			,	tmp.ParentID		
+			,	tmp.SportID 			
+			,	tmp.CategoryID 			
+			,	tmp.TurnoverRM 			
+			,	tmp.WinlossRM 			
+			,	tmp.BetCount 			
+			,	tmp.ActiveDays 			
+			,	tmp.TargetCC 				
+			,	tmp.ActionType 			
+			,	tmp.LastModifiedDate 	
+			,	tmp.LastModifiedBy 		
+			,	tmp.InsertDate
+			, 	tmp.PerformanceTime
+			,	tmp.SourceTypeID
+			,	tmp.Remark
+		FROM Temp_ArchiveHistory AS tmp;
+
+    END IF;        
 	
-		DELETE  
-		FROM CTS_DataCenter.CTSCustomerClassification_BySport_History AS h
-		WHERE EXISTS (SELECT 1 
-					  FROM Temp_History AS r 
-					  WHERE r.ID = h.ID);
+    SET op_IsDataExist = 1;
     
-		 SELECT ID 					
-			,	CustID 				
-			,	CTSCustID 	
-			,	ParentID		
-			,	SportID 			
-			,	CategoryID 			
-			,	TurnoverRM 			
-			,	WinlossRM 			
-			,	BetCount 			
-			,	ActiveDays 			
-			,	TargetCC 				
-			,	ActionType 			
-			,	LastModifiedDate 	
-			,	LastModifiedBy 		
-			,	InsertDate
-            , 	PerformanceTime
-			,	SourceTypeID
-			,	Remark
-		FROM Temp_History;
-		
-		UPDATE CTS_DataCenter.SystemParameter
-		SET ParameterValue = lv_LastIDValid
-		WHERE ParameterID = 118;
-
-		SET op_IsDataExist = 1;
-        
-        LEAVE sp; 
-    END IF;
-    
-    SELECT ID
-	INTO lv_NextIDInvalid
-	FROM CTS_DataCenter.CTSCustomerClassification_BySport_History 
-	WHERE ID BETWEEN lv_LastID AND lv_NextLastID
-		AND InsertDate > lv_DateValid 
-	ORDER BY ID ASC
-	LIMIT 1;
-
-	IF lv_NextIDInvalid IS NOT NULL THEN
-		UPDATE CTS_DataCenter.SystemParameter
-		SET ParameterValue = lv_NextIDInvalid
-		WHERE ParameterID = 118;
-
-		SET op_IsDataExist = 0;
-
-		LEAVE sp; 
-	END IF;
-    
-    SELECT InsertDate
-	INTO lv_NextDate
-	FROM CTS_DataCenter.CTSCustomerClassification_BySport_History 
-	WHERE  ID > lv_NextLastID
-	ORDER BY ID ASC
-	LIMIT 1;
-
 	UPDATE CTS_DataCenter.SystemParameter
-	SET ParameterValue = lv_NextLastID
+	SET ParameterValue = lv_MaxArchiveID
 	WHERE ParameterID = 118; 
-
-	IF lv_NextDate <= lv_DateValid THEN
-		SET op_IsDataExist = 1;
-	ELSE
-		SET op_IsDataExist = 0;
-	END IF;
 
 END$$
 DELIMITER ;
