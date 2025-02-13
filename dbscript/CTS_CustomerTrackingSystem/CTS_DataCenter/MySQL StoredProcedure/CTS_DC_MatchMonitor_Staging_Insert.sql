@@ -38,7 +38,7 @@ sp: BEGIN
             -	20240417@Casey.Huynh: Renovate Arbitrage Rule [Redmine ID: #203639]
             -	20240417@Casey.Huynh: Renovate GroupBetting Rule [Redmine ID: #203319]
 			-	20240704@Casey.Huynh: Saba Group Betting - Add Basketball and enhance Soccer [Redmine ID: #207523]
-            
+            -	20250213@Thomas.Nguyen: Set ScoreDiff = 0, BetID = 0 to only group by Match, bettype, bet team, live indicator for Cricket [Redmine ID: #217745]
            
 		Param's Explanation (filtered by):		
 			ip_PoolType: 
@@ -157,9 +157,9 @@ sp: BEGIN
 			,	js.EventDate
 			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
 			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE (js.LiveHomeScore*10000) + js.LiveAwayScore END) AS ScoreDiff
+			,	(CASE WHEN js.SportType IN (2, 50) THEN 0 ELSE (js.LiveHomeScore*10000) + js.LiveAwayScore END) AS ScoreDiff
 			,	js.BettypeID
-            ,	IFNULL(js.BetID,0)
+            ,	CASE WHEN js.SportType = 50 THEN 0 ELSE IFNULL(js.BetID,0) END
 			,	js.CustID
 			,	js.Stake
             ,	js.Betteam
