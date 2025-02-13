@@ -20,5 +20,5 @@ INSERT INTO SportBettypeSetting(FunctionID,SportTypeID,LeagueGroupID,BetTypeID,S
 VALUES (1,2,0,21,'Basketball','1H Moneyline',null,'1H ML','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,null,1,0,'0',0,10,1);
 
 INSERT INTO BettypeSetting(BetTypeID,BetteamOrder,BetteamName,BetChoiceType,BetTypeName,BetTypeNameDetailsX,BetTypeNameDisplay,BetIDPattern,BetTeamDB,BetteamShortName,Status)
-VALUES (21,1,'Home',2,'1H Moneyline','1H ML','h','h',1)
-,(21,2,'Away',2,'1H Moneyline','1H ML','a','a',1);
+VALUES (21,1,'Home',2,'1H Moneyline',null,'1H ML',null,'h','h',1)
+,(21,2,'Away',2,'1H Moneyline',null,'1H ML',null,'a','a',1);
