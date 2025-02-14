@@ -14,18 +14,9 @@ Reviewer:
 USE CTS_DataCenter;
 
 /*******************************SCRIPT FOR #217732*********************************/
-/*Update SportBettypeSetting*/
-UPDATE SportBettypeSetting
-SET PriorityOrder = PriorityOrder * 100
-WHERE FunctionID = 1 AND SportTypeID = 2 AND LeagueGroupID = 0;
-
-UPDATE SportBettypeSetting
-SET PriorityOrder = 650
-WHERE FunctionID = 1 AND SportTypeID = 2 AND LeagueGroupID = 0 AND BettypeID = 20;
-
 /*Insert SportBettypeSetting*/
 INSERT INTO SportBettypeSetting(FunctionID,SportTypeID,LeagueGroupID,BetTypeID,SportName,BetTypeName,BetTypeNameDetailsX,BettypeNameDisplay,BetChoicePattern,BetChoiceType,BetIDPattern,IsMMDetection,IsMMParlayDetection,MMReason,IsDefaultSelected,PriorityOrder,Status)
-VALUES (1,2,0,21,'Basketball','1H Moneyline',null,'1H ML','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,null,1,0,'0',0,900,1);
+VALUES (1,2,0,21,'Basketball','1H Moneyline',null,'1H ML','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,null,1,0,'0',0,9,1);
 
 /*Insert BettypeSetting*/
 INSERT INTO BettypeSetting(BetTypeID,BetteamOrder,BetteamName,BetChoiceType,BetTypeName,BetTypeNameDetailsX,BetTypeNameDisplay,BetIDPattern,BetTeamDB,BetteamShortName,Status)
