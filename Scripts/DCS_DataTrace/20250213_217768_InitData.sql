@@ -8,6 +8,7 @@
 USE DCS_DataTrace;
 
 INSERT INTO `DCS_DataTrace`.`SystemSetting`(`ID`, `VGroup`, `VName`, `VValue`, `UpdatedTime`)
-VALUES 	(200, 'OpenSearch', 'ListSubID', '4400,4629,4610', NOW())
-	,	(201, 'OpenSearch', 'Transaction07.TransID', '1', NOW())
+VALUES 	(20, 'OpenSearch', 'ListSubID', '2', NOW())
+	,	(21, 'OpenSearch', 'Transaction07.TransID', '1', NOW())
+    , 	(22, 'OpenSearch', 'CutoffMinutes', 5, NOW())
 

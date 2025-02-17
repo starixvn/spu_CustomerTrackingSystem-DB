@@ -21,16 +21,21 @@ BEGIN
 	Example:
         CALL DCS_DataTrace.DCS_DT_OpenSearch_Transaction_Get(100);
 	*/
-    DECLARE CONST_OPENSEARCH_LISTSUBID 				INT 		DEFAULT 200;
-	DECLARE CONST_OPENSEARCH_TRANSACTION07_TRANSID 	INT 		DEFAULT 201;
-
+    DECLARE CONST_OPENSEARCH_LISTSUBID 				INT 		DEFAULT 20;
+	DECLARE CONST_OPENSEARCH_TRANSACTION07_TRANSID 	INT 		DEFAULT 21;
+	DECLARE CONST_OPENSEARCH_CUTOFF_MINUTES 	INT 		DEFAULT 22;
+    
 	DECLARE lv_MaxTransID  			BIGINT UNSIGNED;
 	DECLARE lv_ListSubID			VARCHAR(500);
 	DECLARE lv_CurrentDatetime 		DATETIME DEFAULT CURRENT_TIMESTAMP();
-
+    DECLARE lv_CutoffMinute			INT;
+	DECLARE lv_MaxInsertTime 		DATETIME;
+    
 	SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_OPENSEARCH_TRANSACTION07_TRANSID);
     SET lv_ListSubID = (SELECT VValue FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_OPENSEARCH_LISTSUBID);
-
+    SET lv_CutoffMinute = (SELECT VValue FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_OPENSEARCH_CUTOFF_MINUTES);
+    SET lv_MaxInsertTime = (SELECT DATE_SUB(NOW(), INTERVAL lv_CutoffMinute MINUTE));
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
 	DROP TEMPORARY TABLE IF EXISTS Temp_SubscriberID;
     
@@ -67,10 +72,11 @@ BEGIN
         , 	FP_DeviceStatus 			TINYINT
         ,	FingerprintCode 			VARCHAR(620)
         ,	DeviceCode					VARCHAR(32)
+        ,	UserAgent					VARCHAR(1000)
 	);
 
 	CREATE TEMPORARY TABLE Temp_SubscriberID(
-			SubscriberID				INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
+			SubscriberID				INT NOT NULL AUTO_INCREMENT PRIMARY KEY
 	);
     
     SET @sql = CONCAT("INSERT IGNORE INTO Temp_SubscriberID (SubscriberID) VALUES ('", REPLACE(lv_ListSubID, ",", "'),('"),"');");
@@ -110,13 +116,14 @@ BEGIN
 			,   FP_DeviceStatus
     FROM DCS_DataCenter.Transaction07
     WHERE TransID > lv_MaxTransID
+		AND InsertTime < lv_MaxInsertTime
     ORDER BY TransID ASC
     LIMIT ip_BatchSize;
     
  	SET lv_MaxTransID = (SELECT MAX(TransID) FROM Temp_Trans07);
     
     ALTER TABLE Temp_Trans07
-    ADD KEY IX_Temp_Trans07_TransID_SubscriberID (TransID, SubscriberID);
+    ADD KEY IX_Temp_Trans07_TransID_SubscriberID (SubscriberID);
     
 	DELETE trans
  	FROM Temp_Trans07 trans
@@ -124,13 +131,16 @@ BEGIN
  	WHERE subs.SubscriberID IS NULL;
 	
 	UPDATE Temp_Trans07 AS trans
-	INNER JOIN DCS_DataCenter.DeviceFingerprint AS df ON df.DeviceFingerprintID = trans.DeviceFingerprintID AND df.DeviceID = trans.DeviceID
+		INNER JOIN DCS_DataCenter.DeviceFingerprint AS df ON df.DeviceFingerprintID = trans.DeviceFingerprintID AND df.DeviceID = trans.DeviceID
 	SET trans.FingerprintCode = df.FingerprintCode;
     
     UPDATE Temp_Trans07 AS trans
+		INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
+	SET trans.UserAgent = dc.UserAgent;
+    
+	UPDATE Temp_Trans07 AS trans
 		INNER JOIN DCS_DataCenter.DeviceCode AS dc ON dc.DeviceCodeID = trans.DeviceCodeID
 	SET trans.DeviceCode = dc.DeviceCode;
-    
 	SELECT 	    trans.TransID
 			,   trans.TransTime
             ,	trans.AccountID
@@ -147,6 +157,7 @@ BEGIN
 			,   trans.DeviceFingerprintID
 			,	trans.FingerprintCode
 			,   trans.UserAgentKey
+            ,	trans.UserAgent
 			,   trans.IP
 			,   trans.IPID
 			,   trans.ActionResultID
