@@ -1,0 +1,185 @@
+/*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DT_OpenSearch_Transaction_Get`;
+
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_OpenSearch_Transaction_Get`(
+		IN ip_BatchSize INT UNSIGNED
+)
+SQL SECURITY INVOKER
+BEGIN
+	/*
+	Created: 20250213@Lando.Vu
+	Task : Optimize and Enhance OpenSearch
+	DB: DCS_DataTrace
+	Original:
+
+	Revisions:
+		- 20250213@Lando.Vu: Created [Redmine ID: 217768]
+		
+	Param's Explanation (filtered by):
+
+	Example:
+        CALL DCS_DataTrace.DCS_DT_OpenSearch_Transaction_Get(100);
+	*/
+    DECLARE CONST_OPENSEARCH_LISTSUBID 				INT 		DEFAULT 200;
+	DECLARE CONST_OPENSEARCH_TRANSACTION07_TRANSID 	INT 		DEFAULT 201;
+
+	DECLARE lv_MaxTransID  			BIGINT UNSIGNED;
+	DECLARE lv_ListSubID			VARCHAR(500);
+	DECLARE lv_CurrentDatetime 		DATETIME DEFAULT CURRENT_TIMESTAMP();
+
+	SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_OPENSEARCH_TRANSACTION07_TRANSID);
+    SET lv_ListSubID = (SELECT VValue FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_OPENSEARCH_LISTSUBID);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
+	DROP TEMPORARY TABLE IF EXISTS Temp_SubscriberID;
+    
+	CREATE TEMPORARY TABLE Temp_Trans07(
+			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY
+		,	TransTime 					TIMESTAMP(4)
+		,	AccountID 					BIGINT UNSIGNED
+        ,	LoginName 					VARCHAR(100)
+        ,	SubscriberID 				INT
+		,	URLID 						BIGINT UNSIGNED
+		,	DeviceCodeID 				BIGINT UNSIGNED
+		, 	DeviceID					BIGINT UNSIGNED
+        ,	FirstDeviceCode 			VARCHAR(64)
+        ,	DeviceStatus 				TINYINT
+        ,	DeviceFingerprintID 		BIGINT UNSIGNED
+        ,	UserAgentKey 				VARCHAR(32)
+        ,	IP 							VARCHAR(50)
+        ,	IPID 						DECIMAL(50,0)
+        , 	ActionResultID 				BIGINT
+        ,	Flagged 					SMALLINT
+        ,	PluginID 					BIGINT
+        ,	TransStatus 				BIT(16)
+        ,	CreatedDate 				DATETIME
+        , 	InsertTime 					TIMESTAMP(4)
+        ,	RawTransID 					BIGINT UNSIGNED
+        , 	BotDetectionValue 			BIT(32)
+        ,	BotComponentID 				BIGINT UNSIGNED
+        ,	FakeIP 						VARCHAR(100)
+        , 	IsIncognitoMode 			TINYINT(1)
+        ,	JSChallengeInfoID			BIGINT UNSIGNED
+        ,	FP_UserAgentID 				BIGINT UNSIGNED
+        ,	FP_DeviceMappingID			BIGINT UNSIGNED
+        , 	FP_DeviceID 				BIGINT UNSIGNED
+        , 	FP_DeviceStatus 			TINYINT
+        ,	FingerprintCode 			VARCHAR(620)
+        ,	DeviceCode					VARCHAR(32)
+	);
+
+	CREATE TEMPORARY TABLE Temp_SubscriberID(
+			SubscriberID				INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
+	);
+    
+    SET @sql = CONCAT("INSERT IGNORE INTO Temp_SubscriberID (SubscriberID) VALUES ('", REPLACE(lv_ListSubID, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
+
+	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, RawTransID, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FP_UserAgentID, FP_DeviceMappingID, FP_DeviceID, FP_DeviceStatus)
+    SELECT 	    TransID
+			,   TransTime
+            , 	AccountID
+            , 	LoginName
+            , 	SubscriberID
+			,   URLID
+			,   DeviceCodeID
+			,   DeviceID
+			,   FirstDeviceCode
+			,   DeviceStatus
+			,   DeviceFingerprintID
+			,   UserAgentKey
+			,   IP
+			,   IPID
+			,   ActionResultID
+			,   Flagged
+			,   PluginID
+			,   TransStatus
+			,   CreatedDate
+			,   InsertTime
+			,   RawTransID
+			,   BotDetectionValue
+			,   BotComponentID
+			,   FakeIP
+			,   IsIncognitoMode
+			,   JSChallengeInfoID
+			,   FP_UserAgentID
+			,   FP_DeviceMappingID
+			,   FP_DeviceID
+			,   FP_DeviceStatus
+    FROM DCS_DataCenter.Transaction07
+    WHERE TransID > lv_MaxTransID
+    ORDER BY TransID ASC
+    LIMIT ip_BatchSize;
+    
+ 	SET lv_MaxTransID = (SELECT MAX(TransID) FROM Temp_Trans07);
+    
+    ALTER TABLE Temp_Trans07
+    ADD KEY IX_Temp_Trans07_TransID_SubscriberID (TransID, SubscriberID);
+    
+	DELETE trans
+ 	FROM Temp_Trans07 trans
+ 	LEFT JOIN Temp_SubscriberID subs ON trans.SubscriberID = subs.SubscriberID
+ 	WHERE subs.SubscriberID IS NULL;
+	
+	UPDATE Temp_Trans07 AS trans
+	INNER JOIN DCS_DataCenter.DeviceFingerprint AS df ON df.DeviceFingerprintID = trans.DeviceFingerprintID AND df.DeviceID = trans.DeviceID
+	SET trans.FingerprintCode = df.FingerprintCode;
+    
+    UPDATE Temp_Trans07 AS trans
+		INNER JOIN DCS_DataCenter.DeviceCode AS dc ON dc.DeviceCodeID = trans.DeviceCodeID
+	SET trans.DeviceCode = dc.DeviceCode;
+    
+	SELECT 	    trans.TransID
+			,   trans.TransTime
+            ,	trans.AccountID
+			,	trans.LoginName
+			,	trans.SubscriberID
+			,	sub.SubscriberName
+			,	trans.URLID
+			,	url.URLDetails
+			,   trans.DeviceCodeID
+			,   trans.DeviceID
+			,	trans.DeviceCode
+			,   trans.FirstDeviceCode
+			,   trans.DeviceStatus
+			,   trans.DeviceFingerprintID
+			,	trans.FingerprintCode
+			,   trans.UserAgentKey
+			,   trans.IP
+			,   trans.IPID
+			,   trans.ActionResultID
+			,	ar.Action
+			,	ar.ActionResult
+            ,	trans.Flagged
+			,	sl.ItemName AS RobotTracking
+			,   trans.PluginID
+			,   trans.TransStatus
+			,   trans.CreatedDate
+			,   trans.InsertTime
+			,   trans.RawTransID
+			,   trans.BotDetectionValue
+			,   trans.BotComponentID
+			,   trans.FakeIP
+			,   trans.IsIncognitoMode
+			,   trans.JSChallengeInfoID
+			,   trans.FP_UserAgentID
+			,   trans.FP_DeviceMappingID
+			,   trans.FP_DeviceID
+			,   trans.FP_DeviceStatus
+	FROM Temp_Trans07 trans
+		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
+		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND sl.ItemID = trans.Flagged
+		LEFT JOIN DCS_DataCenter.URL AS url ON url.URLID = trans.URLID
+		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID;
+	
+	/* == Update SystemSetting == */
+    IF(lv_MaxTransID IS NOT NULL AND lv_MaxTransID > 0) THEN
+        UPDATE DCS_DataTrace.SystemSetting
+        SET VValue = lv_MaxTransID,
+			UpdatedTime = lv_CurrentDatetime
+        WHERE ID = CONST_OPENSEARCH_TRANSACTION07_TRANSID;
+    END IF;
+END$$
+DELIMITER ;
