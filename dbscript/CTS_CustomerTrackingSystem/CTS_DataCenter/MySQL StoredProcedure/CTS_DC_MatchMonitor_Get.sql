@@ -39,7 +39,8 @@ BEGIN
 			-	20240201@Thomas.Nguyen:	Remove column LeagueName [Redmine ID: #197706]
 			-	20240530@Casey.Huynh:	Saba Group Betting [Redmine ID: #191972]
             - 	20240829@Casey.Huynh:	Handle TicketType (Single or Parlay) [Redmine ID: #152883]
-            
+            - 	20250218@Thomas.Nguyen:	Fix issue not filter by Bettype in Scan Date mode [Redmine ID: #217782]
+
 		Param's Explanation (filtered by):
 			- ip_Market: 		0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
             - ip_Reason: 		0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
@@ -226,7 +227,7 @@ BEGIN
 			,	mm.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game , 58: Irrigition
             ,	mm.TicketType
 		FROM   CTS_DataCenter.MatchMonitor AS mm
-			LEFT JOIN Temp_Bettype AS tmpBt ON mm.BettypeID = tmpBt.BettypeID AND mm.BetID =  IFNULL(tmpBt.BetID,mm.BetID)
+			INNER JOIN Temp_Bettype AS tmpBt ON mm.BettypeID = tmpBt.BettypeID AND mm.BetID =  IFNULL(tmpBt.BetID,mm.BetID)
 			INNER JOIN Temp_Sporttype AS tmpSt ON mm.Sporttype = tmpSt.SportTypeID AND IFNULL(mm.LeagueGroupID,0) = tmpSt.LeagueGroupID
 			INNER JOIN Temp_Reason AS r ON r.ReasonID = mm.Reason
 		WHERE mm.InsertDate BETWEEN ip_FromDate AND ip_ToDate
