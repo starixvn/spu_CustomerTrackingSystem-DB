@@ -13,13 +13,13 @@ USE CTS_DataCenter;
 
 #=======================INITIAL SportBettypeSetting==========================
 INSERT INTO CTS_DataCenter.SportBettypeSetting
-(FunctionID,LeagueGroupID,SportTypeID,BetTypeID,SportName,BetTypeName,BetTypeNameDetailsX,BettypeNameDisplay,BetChoicePattern,BetChoiceType,BetIDPattern,IsMMDetection,IsMMParlayDetection,MMReason,IsDefaultSelected,PriorityOrder,Status)
-VALUES (1,0,50,501,'Cricket','Match Winner',NULL,'Match Winner','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,NULL,1,0,'0',0,9,1)
-, (1,0,50,9404,'Cricket','Home Inns Runs',NULL,'Home Inns Runs','{"BetChoiceAway": "o", "BetChoiceHome": "u", "BetChoiceAwayDisplay": "o", "BetChoiceHomeDisplay": "u"}',2,NULL,1,0,'0',0,9,1)
-, (1,0,50,9405,'Cricket','Away Inns Runs',NULL,'Away Inns Runs','{"BetChoiceAway": "o", "BetChoiceHome": "u", "BetChoiceAwayDisplay": "o", "BetChoiceHomeDisplay": "u"}',2,NULL,1,0,'0',0,9,1)
+(FunctionID,LeagueGroupID,SportTypeID,BetTypeID,SportName,BetTypeName,BetTypeNameDetailsX,BettypeNameDisplay,BetChoicePattern,BetChoiceType,BetIDPattern,IsMMDetection,IsMMParlayDetection,MMReason,IsDefaultSelected,Status)
+VALUES (1,0,50,501,'Cricket','Match Winner',NULL,'Match Winner','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,NULL,1,0,'0',0,1)
+, (1,0,50,9404,'Cricket','Home Inns Runs',NULL,'Home Inns Runs','{"BetChoiceAway": "u", "BetChoiceHome": "o", "BetChoiceAwayDisplay": "u", "BetChoiceHomeDisplay": "o"}',2,NULL,1,0,'0',0,1)
+, (1,0,50,9405,'Cricket','Away Inns Runs',NULL,'Away Inns Runs','{"BetChoiceAway": "u", "BetChoiceHome": "o", "BetChoiceAwayDisplay": "u", "BetChoiceHomeDisplay": "o"}',2,NULL,1,0,'0',0,1)
 ;
 
-SELECT s.PriorityOrder, s.*
+SELECT s.*
 FROM CTS_DataCenter.SportBettypeSetting s
 WHERE BetTypeID IN (20,21,501,9404,9405);
 
