@@ -155,8 +155,8 @@ sp: BEGIN
 			,	js.KickOffTime
 			,	js.LeagueID
 			,	js.EventDate
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
+			,	(CASE WHEN js.SportType IN (2, 50) THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
+			,	(CASE WHEN js.SportType IN (2, 50) THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
 			,	(CASE WHEN js.SportType IN (2, 50) THEN 0 ELSE (js.LiveHomeScore*10000) + js.LiveAwayScore END) AS ScoreDiff
 			,	js.BettypeID
             ,	CASE WHEN js.SportType = 50 THEN 0 ELSE IFNULL(js.BetID,0) END
