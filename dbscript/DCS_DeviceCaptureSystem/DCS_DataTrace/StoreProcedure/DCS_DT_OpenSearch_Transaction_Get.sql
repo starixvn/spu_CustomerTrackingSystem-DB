@@ -38,6 +38,7 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
 	DROP TEMPORARY TABLE IF EXISTS Temp_SubscriberID;
+	DROP TEMPORARY TABLE IF EXISTS Temp_BotDetection;
     
 	CREATE TEMPORARY TABLE Temp_Trans07(
 			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY
@@ -73,10 +74,16 @@ BEGIN
         ,	FingerprintCode 			VARCHAR(620)
         ,	DeviceCode					VARCHAR(32)
         ,	UserAgent					VARCHAR(1000)
+        ,	BotDetection				LONGTEXT
 	);
 
 	CREATE TEMPORARY TABLE Temp_SubscriberID(
 			SubscriberID				INT NOT NULL AUTO_INCREMENT PRIMARY KEY
+	);
+    
+    CREATE TEMPORARY TABLE Temp_BotDetection(
+			TransID						BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
+		,	BotDetection				LONGTEXT
 	);
     
     SET @sql = CONCAT("INSERT IGNORE INTO Temp_SubscriberID (SubscriberID) VALUES ('", REPLACE(lv_ListSubID, ",", "'),('"),"');");
@@ -123,62 +130,65 @@ BEGIN
  	SET lv_MaxTransID = (SELECT MAX(TransID) FROM Temp_Trans07);
     
     ALTER TABLE Temp_Trans07
-    ADD KEY IX_Temp_Trans07_TransID_SubscriberID (SubscriberID);
+    ADD KEY IX_Temp_Trans07_SubscriberID (SubscriberID);
     
 	DELETE trans
  	FROM Temp_Trans07 trans
  	LEFT JOIN Temp_SubscriberID subs ON trans.SubscriberID = subs.SubscriberID
  	WHERE subs.SubscriberID IS NULL;
 	
+    INSERT IGNORE INTO Temp_BotDetection(TransID, BotDetection)
+    SELECT trans.TransID AS TransID
+		,	GROUP_CONCAT(bd.Name ORDER BY bd.Value) AS BotDetection
+	FROM Temp_Trans07 trans
+		JOIN DCS_DataCenter.BotDetection bd ON (trans.BotDetectionValue & bd.Value) = bd.Value
+	GROUP BY trans.TransID;
+    
+    ALTER TABLE Temp_BotDetection
+    ADD KEY IX_Temp_BotDetection_TransID (TransID);
+    
 	UPDATE Temp_Trans07 AS trans
 		INNER JOIN DCS_DataCenter.DeviceFingerprint AS df ON df.DeviceFingerprintID = trans.DeviceFingerprintID AND df.DeviceID = trans.DeviceID
 	SET trans.FingerprintCode = df.FingerprintCode;
     
     UPDATE Temp_Trans07 AS trans
 		INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
-	SET trans.UserAgent = dc.UserAgent;
+	SET trans.UserAgent = ua.UserAgent;
     
 	UPDATE Temp_Trans07 AS trans
 		INNER JOIN DCS_DataCenter.DeviceCode AS dc ON dc.DeviceCodeID = trans.DeviceCodeID
 	SET trans.DeviceCode = dc.DeviceCode;
+    
+    UPDATE Temp_Trans07 AS trans
+		INNER JOIN Temp_BotDetection AS bd ON bd.TransID = trans.TransID
+	SET trans.BotDetection = bd.BotDetection;
+    
 	SELECT 	    trans.TransID
 			,   trans.TransTime
             ,	trans.AccountID
 			,	trans.LoginName
-			,	trans.SubscriberID
 			,	sub.SubscriberName
-			,	trans.URLID
-			,	url.URLDetails
-			,   trans.DeviceCodeID
+			,	url.URLDetails 				AS 	URL
 			,   trans.DeviceID
 			,	trans.DeviceCode
 			,   trans.FirstDeviceCode
 			,   trans.DeviceStatus
-			,   trans.DeviceFingerprintID
 			,	trans.FingerprintCode
-			,   trans.UserAgentKey
             ,	trans.UserAgent
 			,   trans.IP
 			,   trans.IPID
-			,   trans.ActionResultID
 			,	ar.Action
 			,	ar.ActionResult
             ,	trans.Flagged
-			,	sl.ItemName AS RobotTracking
+			,	sl.ItemName 				AS RobotTracking
 			,   trans.PluginID
 			,   trans.TransStatus
 			,   trans.CreatedDate
 			,   trans.InsertTime
 			,   trans.RawTransID
-			,   trans.BotDetectionValue
-			,   trans.BotComponentID
+            , 	trans.BotDetection
 			,   trans.FakeIP
 			,   trans.IsIncognitoMode
-			,   trans.JSChallengeInfoID
-			,   trans.FP_UserAgentID
-			,   trans.FP_DeviceMappingID
-			,   trans.FP_DeviceID
-			,   trans.FP_DeviceStatus
 	FROM Temp_Trans07 trans
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND sl.ItemID = trans.Flagged
