@@ -38,7 +38,7 @@ sp: BEGIN
             -	20240417@Casey.Huynh: Renovate Arbitrage Rule [Redmine ID: #203639]
             -	20240417@Casey.Huynh: Renovate GroupBetting Rule [Redmine ID: #203319]
 			-	20240704@Casey.Huynh: Saba Group Betting - Add Basketball and enhance Soccer [Redmine ID: #207523]
-            
+            -	20250213@Thomas.Nguyen: Set ScoreDiff = 0, BetID = 0 to only group by Match, bettype, bet team, live indicator for Cricket [Redmine ID: #217745]
            
 		Param's Explanation (filtered by):		
 			ip_PoolType: 
@@ -70,7 +70,9 @@ sp: BEGIN
     DECLARE CONST_RULE_GROUPID_IRRIGATION	INT DEFAULT 4;
     DECLARE CONST_RULE_GROUPID_ARBITRAGE	INT DEFAULT 5;
     DECLARE CONST_RULE_GROUPID_GROUPBETTINGSABA	INT DEFAULT 6;
-    
+    DECLARE CONST_SPORTTYPE_BASKETBALL			INT DEFAULT 2;
+	DECLARE CONST_SPORTTYPE_CRICKET				INT DEFAULT 50;
+
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Staging_Insert';
     IF CONST_LOG = 1 THEN     
@@ -155,11 +157,11 @@ sp: BEGIN
 			,	js.KickOffTime
 			,	js.LeagueID
 			,	js.EventDate
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
-			,	(CASE WHEN js.SportType = 2 THEN 0 ELSE (js.LiveHomeScore*10000) + js.LiveAwayScore END) AS ScoreDiff
+			,	(CASE WHEN js.SportType IN (CONST_SPORTTYPE_BASKETBALL, CONST_SPORTTYPE_CRICKET) THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
+			,	(CASE WHEN js.SportType IN (CONST_SPORTTYPE_BASKETBALL, CONST_SPORTTYPE_CRICKET) THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
+			,	(CASE WHEN js.SportType IN (CONST_SPORTTYPE_BASKETBALL, CONST_SPORTTYPE_CRICKET) THEN 0 ELSE (js.LiveHomeScore*10000) + js.LiveAwayScore END) AS ScoreDiff
 			,	js.BettypeID
-            ,	IFNULL(js.BetID,0)
+            ,	CASE WHEN js.SportType = CONST_SPORTTYPE_CRICKET THEN 0 ELSE IFNULL(js.BetID,0) END
 			,	js.CustID
 			,	js.Stake
             ,	js.Betteam

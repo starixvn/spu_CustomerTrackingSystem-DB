@@ -7,6 +7,7 @@ GO
 
 ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
 		@MatchIds			VARCHAR(MAX) = ''
+	,	@SportList			VARCHAR(100) = ''
 	,	@FromDateTime		DATETIME
 	,	@ToDateTime			DATETIME
 	,	@MatchSection		VARCHAR(20)
@@ -22,6 +23,7 @@ AS
 		- 20230601@Victoria.Le:		Return IsGetDataFromOrigin [Redmine ID: #185793]
 		- 20231116@Long.Luu: 		Return match's datasource [Redmine ID: 195042]
 		- 20240826@Casey.Huynh: 	Add Fitler Event and return LeagueName, HomeName, ScoreName	[Redmine ID: 152883]
+		- 20250211@Tony.Nguyen:		Add SportList [Redmine ID: 217782]
 
 	Params Explaination:
 		- @MatchIds:
@@ -31,6 +33,7 @@ AS
 	Filter by ScanDate:
 		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo]
 				@MatchIds = '83677751,83677753,83677755'
+			,	@SportList = ''
 			,	@FromDateTime = ''
 			,	@ToDateTime = ''
 			,	@MatchSection = '1,2,3,4'
@@ -38,6 +41,7 @@ AS
 	Filter by EventDate:
 		EXECUTE [dbo].[CTS_Rpt_MatchMonitor_MatchInfo] 
 				@MatchIds = ''
+			,	@SportList = '1,2,43,50'
 			,	@FromDateTime = '2024-08-30'
 			,	@ToDateTime = '2024-08-30'
 			,	@MatchSection = '1,2,3,4'
@@ -84,9 +88,9 @@ BEGIN
 	INSERT INTO #tmpMatchSection (MatchSection)
 	SELECT ms.value FROM STRING_SPLIT (@MatchSection, ',') ms
 
-	IF ISNULL(@MatchIds,'') = ''
+	IF ISNULL(@MatchIds,'') = '' AND ISNULL(@SportList,'') <> ''
 	BEGIN
-
+		
 		DECLARE @BalanceUpDay			SMALLDATETIME
 			,	@MoveBetsDay			SMALLDATETIME
 
@@ -110,6 +114,18 @@ BEGIN
 				BUDay	SMALLDATETIME
 			,	MBDay	SMALLDATETIME
 		)
+
+		IF	OBJECT_ID('tempdb..#tmpSportList') IS NOT NULL
+		BEGIN
+			DROP TABLE #tmpSportList
+		END
+
+		CREATE TABLE #tmpSportList (
+				SportType			TINYINT
+		)
+
+		INSERT INTO #tmpSportList (SportType)
+		SELECT st.value FROM STRING_SPLIT (@SportList, ',') st
 
 		INSERT INTO #BUMBData(BUDay,MBDay)
 		EXECUTE bodb02.dbo.Age_SelBalanceUpDay
@@ -219,8 +235,8 @@ BEGIN
 				,	0 AS IsGetDataFromOrigin
 				,	2 AS DataSource
 			FROM bodb_Archive.dbo.match_bk AS m WITH(NOLOCK)
+			INNER JOIN #tmpSportList AS tsl ON m.sporttype = tsl.SportType
 			WHERE m.EventDate BETWEEN @FromDateBK AND @ToDateBK
-				AND m.sporttype IN (1,2,43) --1: Soccer; 2: Baseketball, 43: ESport
 
 		END
 
@@ -244,8 +260,9 @@ BEGIN
 				,	0 AS IsGetDataFromOrigin
 				,	1 AS DataSource
 			FROM bodb02.dbo.match14 AS m WITH(NOLOCK)
+			INNER JOIN #tmpSportList AS tsl ON m.sporttype = tsl.SportType
 			WHERE m.EventDate BETWEEN @FromDate14 AND @ToDate14
-				AND m.sporttype IN (1,2,43) --1: Soccer; 2: Baseketball, 43: ESport
+
 		END
 
 		IF	@IsGetDataFromOrigin = 1
@@ -268,14 +285,16 @@ BEGIN
 				,	@IsGetDataFromOrigin AS IsGetDataFromOrigin
 				,	0 AS DataSource
 			FROM bodb02.dbo.Match AS m WITH(NOLOCK)
+			INNER JOIN #tmpSportList AS tsl ON m.sporttype = tsl.SportType
 			WHERE m.EventDate BETWEEN @FromDateOrigin AND @ToDateOrigin
-				AND m.sporttype IN (1,2,43) --1: Soccer; 2: Baseketball, 43: ESport
 
 		END
 	
 		DROP TABLE #BUMBData
+		DROP TABLE #tmpSportList
 	END
 	ELSE
+	IF ISNULL(@MatchIds,'') <> ''
 	BEGIN
 
 		IF	OBJECT_ID('tempdb..#tmpMatches') IS NOT NULL
@@ -381,10 +400,9 @@ BEGIN
 	WHERE	h.TeamName LIKE '%'+@Event+'%'
 		OR	a.TeamName LIKE '%'+@Event+'%'
 		OR	l.LeagueName LIKE '%'+@Event+'%'
-		
+	
 	DROP TABLE #tmpMatchesInfo
 	DROP TABLE #tmpMatchSection
-
 END
 
 GO

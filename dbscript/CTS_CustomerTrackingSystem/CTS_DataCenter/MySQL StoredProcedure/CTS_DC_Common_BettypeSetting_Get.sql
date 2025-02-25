@@ -23,6 +23,7 @@ BEGIN
 			- 	20231122@Casey.Huynh: Created [Redmine ID: #196396]
             -	20240530@Casey.Huynh: Saba Group Betting [Redmine ID: #191972]
             -	20240822@Casey.Huynh: Seperate BettypeSetting to New Table [Redmine ID: #207397]
+            -	20250214@Casey.Huynh: Update Bettype Order for MM [Redmine ID: #217782]
             
 		Param's Explanation (filtered by):
         	ip_FunctionID: 1, 2
@@ -120,7 +121,7 @@ BEGIN
 				,	bs.BetIDPattern
 				,	sbs.IsMMDetection
 				,	sbs.IsDefaultSelected
-				,	sbs.PriorityOrder
+				,	bs.BettypeOrder
 				,	js.NameDetailsX
 				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceHome
 				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceHomeDisplay
@@ -143,13 +144,13 @@ BEGIN
 				,	sbs.SportName                   
 				,	sbs.IsMMDetection
 				,	sbs.IsDefaultSelected
-				,	sbs.PriorityOrder
+				,	bs.BettypeOrder
 				,	sbs.BetTypeID     
 				,	bs.BetChoiceType
 				,	bs.BetIDPattern
 				,	js.NameDetailsX
 				,	bs.BettypeNameDisplay
-			ORDER BY LeagueGroupID, sbs.PriorityOrder, js.NameDetailsX; 
+			ORDER BY LeagueGroupID, bs.BettypeOrder, js.NameDetailsX; 
 		ELSE	
 		
 			SELECT  (CASE WHEN sbs.LeagueGroupID = 0 THEN NULL ELSE LeagueGroupID END) AS LeagueGroupID
@@ -161,7 +162,7 @@ BEGIN
 				,	bs.BetIDPattern
 				,	sbs.IsMMDetection
 				,	sbs.IsDefaultSelected
-				,	sbs.PriorityOrder
+				,	bs.BettypeOrder
 				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceHome
 				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceHomeDisplay
 				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceHomeFullName
@@ -181,12 +182,12 @@ BEGIN
 				,	sbs.SportName                   
 				,	sbs.IsMMDetection
 				,	sbs.IsDefaultSelected
-				,	sbs.PriorityOrder
+				,	bs.BettypeOrder
 				,	sbs.BetTypeID     
 				,	bs.BetChoiceType
 				,	bs.BetIDPattern
 				,	bs.BettypeNameDisplay
-			ORDER BY LeagueGroupID, PriorityOrder; 
+			ORDER BY LeagueGroupID, bs.BettypeOrder; 
 			
 		END IF;
 	END IF;
