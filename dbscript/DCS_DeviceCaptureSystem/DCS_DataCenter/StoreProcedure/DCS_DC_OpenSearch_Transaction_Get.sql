@@ -60,8 +60,6 @@ BEGIN
         ,	IPID 						DECIMAL(50,0)
         , 	ActionResultID 				BIGINT
         ,	Flagged 					SMALLINT
-        ,	PluginID 					BIGINT
-        ,	TransStatus 				BIT(16)
         ,	CreatedDate 				DATETIME
         , 	InsertTime 					TIMESTAMP(4)
         ,	RawTransID 					BIGINT UNSIGNED
@@ -88,7 +86,7 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 
-	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode)
+	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode)
     SELECT 	trans.TransID
 		,   trans.TransTime
 		, 	trans.AccountID
@@ -105,8 +103,6 @@ BEGIN
 		,   trans.IPID
 		,   trans.ActionResultID
 		,   trans.Flagged
-		,   trans.PluginID
-		,   trans.TransStatus
 		,   trans.CreatedDate
 		,   trans.InsertTime
 		,   trans.RawTransID
@@ -164,8 +160,6 @@ BEGIN
 		,   trans.IPID
 		,	ar.Action
 		,	sl.ItemName 				AS Flagged
-		,   trans.PluginID
-		,   trans.TransStatus
 		,   trans.CreatedDate
 		,   trans.InsertTime
 		,   trans.RawTransID
