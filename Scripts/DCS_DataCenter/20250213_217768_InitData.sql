@@ -9,6 +9,6 @@ USE DCS_DataCenter;
 
 INSERT INTO `DCS_DataCenter`.`SystemSetting`(`ID`, `VGroup`, `VName`, `VValue`, `UpdatedTime`)
 VALUES 	(100, 'OpenSearch', 'ListSubID', '2', NOW())
-	,	(101, 'OpenSearch', 'Transaction07.TransID', '1', NOW())
+	,	(101, 'OpenSearch', 'Transaction07.TransID', '0', NOW())
     , 	(102, 'OpenSearch', 'CutoffMinutes', 5, NOW())
 

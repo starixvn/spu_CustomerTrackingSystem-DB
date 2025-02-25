@@ -142,10 +142,7 @@ BEGIN
 	FROM Temp_Trans07 AS trans
 		INNER JOIN DCS_DataCenter.BotDetection AS bd ON (trans.BotDetectionValue & bd.Value) = bd.Value
 	GROUP BY trans.TransID;
-    
-    ALTER TABLE Temp_BotDetection
-    ADD KEY IX_Temp_BotDetection_TransID (TransID);
-    
+
     UPDATE Temp_Trans07 AS trans
 		INNER JOIN Temp_BotDetection AS bd ON bd.TransID = trans.TransID
 	SET trans.BotDetection = bd.BotDetection;
