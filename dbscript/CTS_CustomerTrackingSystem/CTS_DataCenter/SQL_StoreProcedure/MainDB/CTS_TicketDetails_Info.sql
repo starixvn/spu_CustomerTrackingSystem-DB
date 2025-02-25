@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[CTS_TicketDetails_Info]
+ALTER PROCEDURE [dbo].[CTS_TicketDetails_Info]
 		@MatchID					INT = 0
 	,	@EventDate					DATETIME = '1900-09-22'
 	,	@ListSportBettype			VARCHAR(MAX)
@@ -44,6 +44,7 @@ AS
 		- 20240904@Casey.Huynh:		Rename @TicketType To @ViewMode [Redmine ID: #207397]
 		- 20241226@Thomas.Nguyen: 	Add Username Filter [Redmine ID: #210128]
 		- 20241217@Victoria.Le: 	Super/Master Direct Member [Redmine ID: #214585]
+		- 20250225@Casey.Huynh:		Handle @ListSportBetType (Criket BetID IS NULL) [Redmine ID: #218383]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
@@ -232,6 +233,7 @@ BEGIN
 			,	BetID				BIGINT			'$.BetID'
 			) AS j;
 
+
 	END;
 	
 	--========================================================================================
@@ -288,7 +290,7 @@ BEGIN
 			FROM #tmpSuspiciousDistinctTrans AS tmpTs WITH(NOLOCK)
 				INNER JOIN bodb02.dbo.bettrans AS b WITH(NOLOCK) ON tmpTs.TransId = b.TransId
 				INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
+				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID)
 				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 			WHERE b.matchid = @MatchID
 				AND b.liveindicator = @IsLive
@@ -329,7 +331,7 @@ BEGIN
 			FROM #tmpSuspiciousDistinctTrans AS tmpTs WITH(NOLOCK)
 				INNER JOIN bodb02.dbo.bettrans14 AS b WITH(NOLOCK) ON tmpTs.TransId = b.TransId
 				INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
+				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID)
 				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 			WHERE b.matchid = @MatchID
 				AND b.liveindicator = @IsLive
@@ -370,7 +372,7 @@ BEGIN
 			FROM #tmpSuspiciousDistinctTrans AS tmpTs WITH(NOLOCK)
 				INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON tmpTs.TransId = b.TransId
 				INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
-				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
+				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID)
 				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 			WHERE b.matchid = @MatchID
 				AND b.liveindicator = @IsLive
@@ -414,7 +416,7 @@ BEGIN
 			,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 		FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-			INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
+			INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID)
 			INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 		WHERE b.matchid = @MatchID
 			AND b.liveindicator = @IsLive
@@ -459,7 +461,7 @@ BEGIN
 			FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 				INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
-				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
+				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID)
 				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 			WHERE b.matchid = @MatchID
 				AND b.liveindicator = @IsLive
@@ -505,7 +507,7 @@ BEGIN
 			FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 				INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 				INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
-				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = st.BetID
+				INNER JOIN #tmpSportBettype AS st WITH(NOLOCK) ON m.sporttype = st.SportTypeID AND b.bettype = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID)
 				INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 			WHERE b.matchid = @MatchID
 				AND b.liveindicator = @IsLive
