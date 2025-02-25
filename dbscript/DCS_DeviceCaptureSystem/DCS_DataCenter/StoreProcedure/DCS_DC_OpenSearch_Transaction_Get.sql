@@ -1,8 +1,8 @@
-/*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DT_OpenSearch_Transaction_Get`;
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DC_OpenSearch_Transaction_Get`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DT_OpenSearch_Transaction_Get`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_OpenSearch_Transaction_Get`(
 		IN ip_BatchSize INT UNSIGNED
 )
 SQL SECURITY INVOKER
@@ -10,7 +10,7 @@ BEGIN
 	/*
 	Created: 20250213@Lando.Vu
 	Task : Optimize and Enhance OpenSearch
-	DB: DCS_DataTrace
+	DB: DCS_DataCenter
 	Original:
 
 	Revisions:
@@ -19,11 +19,11 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
-        CALL DCS_DataTrace.DCS_DT_OpenSearch_Transaction_Get(100);
+        CALL DCS_DataCenter.DCS_DC_OpenSearch_Transaction_Get(100);
 	*/
-    DECLARE CONST_OPENSEARCH_LISTSUBID 				INT 		DEFAULT 20;
-	DECLARE CONST_OPENSEARCH_TRANSACTION07_TRANSID 	INT 		DEFAULT 21;
-	DECLARE CONST_OPENSEARCH_CUTOFF_MINUTES 	INT 		DEFAULT 22;
+    DECLARE CONST_OPENSEARCH_LISTSUBID 				INT 		DEFAULT 100;
+	DECLARE CONST_OPENSEARCH_TRANSACTION07_TRANSID 	INT 		DEFAULT 101;
+	DECLARE CONST_OPENSEARCH_CUTOFF_MINUTES 	INT 		DEFAULT 102;
     
 	DECLARE lv_MaxTransID  			BIGINT UNSIGNED;
 	DECLARE lv_ListSubID			VARCHAR(500);
@@ -31,9 +31,9 @@ BEGIN
     DECLARE lv_CutoffMinute			INT;
 	DECLARE lv_MaxInsertTime 		DATETIME;
     
-	SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_OPENSEARCH_TRANSACTION07_TRANSID);
-    SET lv_ListSubID = (SELECT VValue FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_OPENSEARCH_LISTSUBID);
-    SET lv_CutoffMinute = (SELECT VValue FROM DCS_DataTrace.SystemSetting WHERE ID = CONST_OPENSEARCH_CUTOFF_MINUTES);
+	SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_TRANSACTION07_TRANSID);
+    SET lv_ListSubID = (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_LISTSUBID);
+    SET lv_CutoffMinute = (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_CUTOFF_MINUTES);
     SET lv_MaxInsertTime = (SELECT DATE_SUB(NOW(), INTERVAL lv_CutoffMinute MINUTE));
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
@@ -115,21 +115,19 @@ BEGIN
     ORDER BY TransID ASC
     LIMIT ip_BatchSize;
     
- 	SET lv_MaxTransID = (SELECT MAX(TransID) FROM Temp_Trans07);
-    
     ALTER TABLE Temp_Trans07
     ADD KEY IX_Temp_Trans07_SubscriberID (SubscriberID);
     
 	DELETE trans
  	FROM Temp_Trans07 trans
- 	LEFT JOIN Temp_SubscriberID subs ON trans.SubscriberID = subs.SubscriberID
+		LEFT JOIN Temp_SubscriberID subs ON trans.SubscriberID = subs.SubscriberID
  	WHERE subs.SubscriberID IS NULL;
 	
     INSERT IGNORE INTO Temp_BotDetection(TransID, BotDetection)
     SELECT trans.TransID AS TransID
 		,	GROUP_CONCAT(bd.Name ORDER BY bd.Value) AS BotDetection
 	FROM Temp_Trans07 trans
-		JOIN DCS_DataCenter.BotDetection bd ON (trans.BotDetectionValue & bd.Value) = bd.Value
+		INNER JOIN DCS_DataCenter.BotDetection bd ON (trans.BotDetectionValue & bd.Value) = bd.Value
 	GROUP BY trans.TransID;
     
     ALTER TABLE Temp_BotDetection
@@ -180,13 +178,5 @@ BEGIN
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND sl.ItemID = trans.Flagged
 		LEFT JOIN DCS_DataCenter.URL AS url ON url.URLID = trans.URLID
 		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID;
-	
-	/* == Update SystemSetting == */
-    IF(lv_MaxTransID IS NOT NULL AND lv_MaxTransID > 0) THEN
-        UPDATE DCS_DataTrace.SystemSetting
-        SET VValue = lv_MaxTransID,
-			UpdatedTime = lv_CurrentDatetime
-        WHERE ID = CONST_OPENSEARCH_TRANSACTION07_TRANSID;
-    END IF;
 END$$
 DELIMITER ;
