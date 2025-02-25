@@ -63,14 +63,8 @@ BEGIN
         , 	InsertTime 					TIMESTAMP(4)
         ,	RawTransID 					BIGINT UNSIGNED
         , 	BotDetectionValue 			BIT(32)
-        ,	BotComponentID 				BIGINT UNSIGNED
         ,	FakeIP 						VARCHAR(100)
         , 	IsIncognitoMode 			TINYINT(1)
-        ,	JSChallengeInfoID			BIGINT UNSIGNED
-        ,	FP_UserAgentID 				BIGINT UNSIGNED
-        ,	FP_DeviceMappingID			BIGINT UNSIGNED
-        , 	FP_DeviceID 				BIGINT UNSIGNED
-        , 	FP_DeviceStatus 			TINYINT
         ,	FingerprintCode 			VARCHAR(620)
         ,	DeviceCode					VARCHAR(32)
         ,	UserAgent					VARCHAR(1000)
@@ -90,7 +84,7 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 
-	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, RawTransID, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FP_UserAgentID, FP_DeviceMappingID, FP_DeviceID, FP_DeviceStatus)
+	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode)
     SELECT 	    TransID
 			,   TransTime
             , 	AccountID
@@ -113,14 +107,8 @@ BEGIN
 			,   InsertTime
 			,   RawTransID
 			,   BotDetectionValue
-			,   BotComponentID
 			,   FakeIP
 			,   IsIncognitoMode
-			,   JSChallengeInfoID
-			,   FP_UserAgentID
-			,   FP_DeviceMappingID
-			,   FP_DeviceID
-			,   FP_DeviceStatus
     FROM DCS_DataCenter.Transaction07
     WHERE TransID > lv_MaxTransID
 		AND InsertTime < lv_MaxInsertTime
@@ -178,9 +166,7 @@ BEGIN
 			,   trans.IP
 			,   trans.IPID
 			,	ar.Action
-			,	ar.ActionResult
-            ,	trans.Flagged
-			,	sl.ItemName 				AS RobotTracking
+			,	sl.ItemName 				AS Flagged
 			,   trans.PluginID
 			,   trans.TransStatus
 			,   trans.CreatedDate
