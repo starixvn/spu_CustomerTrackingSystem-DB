@@ -47,29 +47,29 @@ BEGIN
 			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	TransTime 					TIMESTAMP(4)
 		,	AccountID 					BIGINT UNSIGNED
-        ,	LoginName 					VARCHAR(100)
-        ,	SubscriberID 				INT
+		,	LoginName 					VARCHAR(100)
+		,	SubscriberID 				INT
 		,	URLID 						BIGINT UNSIGNED
 		,	DeviceCodeID 				BIGINT UNSIGNED
 		, 	DeviceID					BIGINT UNSIGNED
-        ,	FirstDeviceCode 			VARCHAR(64)
-        ,	DeviceStatus 				TINYINT
-        ,	DeviceFingerprintID 		BIGINT UNSIGNED
-        ,	UserAgentKey 				VARCHAR(32)
-        ,	IP 							VARCHAR(50)
-        ,	IPID 						DECIMAL(50,0)
-        , 	ActionResultID 				BIGINT
-        ,	Flagged 					SMALLINT
-        ,	CreatedDate 				DATETIME
-        , 	InsertTime 					TIMESTAMP(4)
-        ,	RawTransID 					BIGINT UNSIGNED
-        , 	BotDetectionValue 			BIT(32)
-        ,	FakeIP 						VARCHAR(100)
-        , 	IsIncognitoMode 			TINYINT(1)
-        ,	FingerprintCode 			VARCHAR(620)
-        ,	DeviceCode					VARCHAR(32)
-        ,	UserAgent					VARCHAR(1000)
-        ,	BotDetection				LONGTEXT
+		,	FirstDeviceCode 			VARCHAR(64)
+		,	DeviceStatus 				TINYINT
+		,	DeviceFingerprintID 		BIGINT UNSIGNED
+		,	UserAgentKey 				VARCHAR(32)
+		,	IP 							VARCHAR(50)
+		,	IPID 						DECIMAL(50,0)
+		, 	ActionResultID 				BIGINT
+		,	Flagged 					SMALLINT
+		,	CreatedDate 				DATETIME
+		, 	InsertTime 					TIMESTAMP(4)
+		,	RawTransID 					BIGINT UNSIGNED
+		, 	BotDetectionValue 			BIT(32)
+		,	FakeIP 						VARCHAR(100)
+		, 	IsIncognitoMode 			TINYINT(1)
+		,	FingerprintCode 			VARCHAR(620)
+		,	DeviceCode					VARCHAR(32)
+		,	UserAgent					VARCHAR(1000)
+		,	BotDetection				LONGTEXT
 	);
 
 	CREATE TEMPORARY TABLE Temp_SubscriberID(
@@ -87,36 +87,36 @@ BEGIN
 	EXECUTE stmt1;
 
 	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode)
-    SELECT 	trans.TransID
-		,   trans.TransTime
-		, 	trans.AccountID
-		, 	trans.LoginName
-		, 	trans.SubscriberID
-		,   trans.URLID
-		,   trans.DeviceCodeID
-		,   trans.DeviceID
-		,   trans.FirstDeviceCode
-		,   trans.DeviceStatus
-		,   trans.DeviceFingerprintID
-		,   trans.UserAgentKey
-		,   trans.IP
-		,   trans.IPID
-		,   trans.ActionResultID
-		,   trans.Flagged
-		,   trans.CreatedDate
-		,   trans.InsertTime
-		,   trans.RawTransID
-		,   trans.BotDetectionValue
-		,   trans.FakeIP
-		,   trans.IsIncognitoMode
-    FROM DCS_DataCenter.Transaction07 AS trans
+		SELECT 	trans.TransID
+		,	trans.TransTime
+		,	trans.AccountID
+		,	trans.LoginName
+		,	trans.SubscriberID
+		,	trans.URLID
+		,	trans.DeviceCodeID
+		,	trans.DeviceID
+		,	trans.FirstDeviceCode
+		,	trans.DeviceStatus
+		,	trans.DeviceFingerprintID
+		,	trans.UserAgentKey
+		,	trans.IP
+		,	trans.IPID
+		,	trans.ActionResultID
+		,	trans.Flagged
+		,	trans.CreatedDate
+		,	trans.InsertTime
+		,	trans.RawTransID
+		,	trans.BotDetectionValue
+		,	trans.FakeIP
+		,	trans.IsIncognitoMode
+	FROM DCS_DataCenter.Transaction07 AS trans
 		INNER JOIN Temp_SubscriberID AS subs ON trans.SubscriberID = subs.SubscriberID
-    WHERE trans.TransID > lv_MaxTransID
+	WHERE trans.TransID > lv_MaxTransID
 		AND trans.InsertTime < lv_MaxInsertTime
-    ORDER BY trans.TransID ASC
-    LIMIT ip_BatchSize;
-    
-    /******* Add index ********************/
+	ORDER BY trans.TransID ASC
+	LIMIT ip_BatchSize;
+	
+	/******* Add index ********************/
 	ALTER TABLE Temp_Trans07
 	ADD INDEX IX_Temp_Trans07_DeviceFingerprintID_DeviceID (DeviceFingerprintID, DeviceID),
 	ADD INDEX IX_Temp_Trans07_UserAgentKey (UserAgentKey);
@@ -125,53 +125,53 @@ BEGIN
 	UPDATE Temp_Trans07 AS trans
 		INNER JOIN DCS_DataCenter.DeviceFingerprint AS df ON df.DeviceFingerprintID = trans.DeviceFingerprintID AND df.DeviceID = trans.DeviceID
 	SET trans.FingerprintCode = df.FingerprintCode;
-    
-    #========Useragent===========================
-    UPDATE Temp_Trans07 AS trans
+	
+	#========Useragent===========================
+	UPDATE Temp_Trans07 AS trans
 		INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
 	SET trans.UserAgent = ua.UserAgent;
     
 	#========Bot Detection===========================
 	INSERT IGNORE INTO Temp_BotDetection(TransID, BotDetection)
-    SELECT 	trans.TransID AS TransID
+	SELECT 	trans.TransID AS TransID
 		,	GROUP_CONCAT(bd.Name ORDER BY bd.Value) AS BotDetection
 	FROM Temp_Trans07 AS trans
 		INNER JOIN DCS_DataCenter.BotDetection AS bd ON (trans.BotDetectionValue & bd.Value) = bd.Value
 	GROUP BY trans.TransID;
 
-    UPDATE Temp_Trans07 AS trans
+	UPDATE Temp_Trans07 AS trans
 		INNER JOIN Temp_BotDetection AS bd ON bd.TransID = trans.TransID
 	SET trans.BotDetection = bd.BotDetection;
-    
-    #========Return===========================
+	
+	#========Return===========================
 	SELECT	trans.TransID
-		,   trans.TransTime
+		,	trans.TransTime
 		,	trans.AccountID
-        , 	acc.IsCTSTransformed		AS 	IsTransformed
+		,	acc.IsCTSTransformed		AS	IsTransformed
 		,	trans.LoginName
 		,	sub.SubscriberName
-		,	url.URLDetails 				AS 	URL
-		,   trans.DeviceID
-		,   trans.DeviceCodeID
-		,   trans.FirstDeviceCode
-		,   trans.DeviceStatus
+		,	url.URLDetails 				AS	URL
+		,	trans.DeviceID
+		,	trans.DeviceCodeID
+		,	trans.FirstDeviceCode
+		,	trans.DeviceStatus
 		,	trans.FingerprintCode
 		,	trans.UserAgent
-		,   trans.IP
-		,   trans.IPID
+		,	trans.IP
+		,	trans.IPID
 		,	ar.Action
-		,	sl.ItemName 				AS Flagged
-		,   trans.CreatedDate
-		,   trans.InsertTime
-		,   trans.RawTransID
-		, 	trans.BotDetection
-		,   trans.FakeIP
-		,   trans.IsIncognitoMode
+		,	sl.ItemName 				AS	Flagged
+		,	trans.CreatedDate
+		,	trans.InsertTime
+		,	trans.RawTransID
+		,	trans.BotDetection
+		,	trans.FakeIP
+		,	trans.IsIncognitoMode
 	FROM Temp_Trans07 AS trans
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND sl.ItemID = trans.Flagged
 		LEFT JOIN DCS_DataCenter.URL AS url ON url.URLID = trans.URLID
 		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID
-        LEFT JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = trans.AccountID;
+		LEFT JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = trans.AccountID;
 END$$
 DELIMITER ;
