@@ -147,6 +147,7 @@ BEGIN
 	SELECT	trans.TransID
 		,   trans.TransTime
 		,	trans.AccountID
+        , 	acc.IsCTSTransformed		AS 	IsTransformed
 		,	trans.LoginName
 		,	sub.SubscriberName
 		,	url.URLDetails 				AS 	URL
@@ -170,6 +171,7 @@ BEGIN
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND sl.ItemID = trans.Flagged
 		LEFT JOIN DCS_DataCenter.URL AS url ON url.URLID = trans.URLID
-		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID;
+		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID
+        LEFT JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = trans.AccountID;
 END$$
 DELIMITER ;
