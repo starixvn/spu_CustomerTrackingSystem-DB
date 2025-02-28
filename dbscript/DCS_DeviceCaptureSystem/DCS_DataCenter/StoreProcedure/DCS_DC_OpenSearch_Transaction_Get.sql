@@ -70,6 +70,7 @@ BEGIN
 		,	DeviceCode					VARCHAR(32)
 		,	UserAgent					VARCHAR(1000)
 		,	BotDetection				LONGTEXT
+        ,	DeviceType 					VARCHAR(20)
 	);
 
 	CREATE TEMPORARY TABLE Temp_SubscriberID(
@@ -129,7 +130,9 @@ BEGIN
 	#========Useragent===========================
 	UPDATE Temp_Trans07 AS trans
 		INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
-	SET trans.UserAgent = ua.UserAgent;
+		LEFT JOIN DCS_DataCenter.DeviceType AS dt ON dt.DeviceTypeID = ua.DeviceTypeID
+	SET trans.UserAgent = ua.UserAgent,
+		trans.DeviceType = dt.DeviceTypeName;
     
 	#========Bot Detection===========================
 	INSERT IGNORE INTO Temp_BotDetection(TransID, BotDetection)
@@ -157,6 +160,7 @@ BEGIN
 		,	trans.DeviceStatus
 		,	trans.FingerprintCode
 		,	trans.UserAgent
+        ,	trans.DeviceType
 		,	trans.IP
 		,	trans.IPID
 		,	ar.Action
