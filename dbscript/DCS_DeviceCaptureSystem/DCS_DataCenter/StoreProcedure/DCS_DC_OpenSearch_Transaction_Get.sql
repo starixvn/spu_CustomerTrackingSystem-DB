@@ -70,7 +70,7 @@ BEGIN
 		,	DeviceCode					VARCHAR(32)
 		,	UserAgent					VARCHAR(1000)
 		,	BotDetection				LONGTEXT
-        ,	DeviceType 					VARCHAR(20)
+		,	DeviceType 					VARCHAR(20)
 	);
 
 	CREATE TEMPORARY TABLE Temp_SubscriberID(
@@ -152,6 +152,7 @@ BEGIN
 		,	trans.AccountID
 		,	acc.IsCTSTransformed		AS	IsTransformed
 		,	trans.LoginName
+		,	trans.SubscriberID
 		,	sub.SubscriberName
 		,	url.URLDetails 				AS	URL
 		,	trans.DeviceID
@@ -160,7 +161,7 @@ BEGIN
 		,	trans.DeviceStatus
 		,	trans.FingerprintCode
 		,	trans.UserAgent
-        ,	trans.DeviceType
+		,	trans.DeviceType
 		,	trans.IP
 		,	trans.IPID
 		,	ar.Action
