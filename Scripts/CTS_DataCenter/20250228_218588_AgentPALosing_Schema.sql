@@ -30,4 +30,4 @@ WHERE ParentID = 120000;
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) 
 VALUES(186,'DailyScan_PA_Agency_BatchSize','DailyScan_PA_Agency_BatchSize','BIGINT','500')
-,(187,'DailyScan_PA_Agency_LastScannedTime','DailyScan_PA_Agency_LastScannedTime','DATETIME','');
+,(187,'DailyScan_PA_Agency_LastScannedTime','Last Scanned Time Daily ScanPA Agency','DATETIME','');

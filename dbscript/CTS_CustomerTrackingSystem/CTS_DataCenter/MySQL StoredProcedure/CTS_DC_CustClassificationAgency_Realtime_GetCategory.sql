@@ -14,6 +14,7 @@ BEGIN
 		Original:
 		Revisions:
 			- 20241003@Jonas.Huynh: Created [Redmine ID: #185799]
+			- 20250228@Thomas.Nguyen: Agent PA Losing [Redmine ID: #218588]
             
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_CustClassificationAgency_Realtime_GetCategory('761925')
@@ -66,5 +67,12 @@ BEGIN
 		LEFT JOIN Temp_CustomerCategory AS cate ON cate.CustID = temp.CustID
 	WHERE cate.CategoryID IS NULL 
 		OR (cate.CategoryID IS NOT NULL AND cate.ParentID = CONST_AGENCY_PARENTID_NORMAL);	
+
+	-- #3: Return customer with problem category for PA daily scan
+	SELECT DISTINCT tmp.CustID
+    FROM Temp_CustomerCategory AS tmp
+		INNER JOIN CTS_DataCenter.CustomerCategorySettingsAgency AS cs ON cs.CategoryID = tmp.CategoryID
+    WHERE cs.FlowPADailyScan = 1;
+
 END$$
 DELIMITER ;
