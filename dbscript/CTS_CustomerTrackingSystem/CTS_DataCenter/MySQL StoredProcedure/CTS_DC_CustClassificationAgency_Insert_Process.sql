@@ -19,7 +19,8 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_Process(1009);
 			
 		Revisions: 
-			-	20240927@Thomas.Nguyen:			Created [Redmine ID: #185799]
+			-	20240927@Thomas.Nguyen:	Created [Redmine ID: #185799]
+			-	20250303@Thomas.Nguyen:	Handle WinlossStatus [Redmine ID: #218588]
 */
 
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL		INT;
@@ -210,16 +211,16 @@ BEGIN
 			SET lv_IsRescan = 1;
 		END IF;
         
-		IF lv_IsRescan = 0 THEN 
-			INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
-			SELECT DISTINCT 
-					temp.CustID
-				,	CASE WHEN cc.IsPAProbation = 1 THEN 0 ELSE 2 END AS WinlossStatus
-			FROM Temp_NewClassification AS temp
-				INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cls ON temp.CustID = cls.CustID
-				INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cls.CategoryID = cc.CategoryID
-			WHERE cls.ParentID = CONST_AGENCY_PARENTID_PA;
-		
+		/*IF lv_IsRescan = 0 THEN */
+		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
+		SELECT DISTINCT 
+				temp.CustID
+			,	CASE WHEN cc.IsPAProbation = 1 THEN 0 ELSE 2 END AS WinlossStatus
+		FROM Temp_NewClassification AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cls ON temp.CustID = cls.CustID
+			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cls.CategoryID = cc.CategoryID
+		WHERE cls.ParentID = CONST_AGENCY_PARENTID_PA;
+	/*	
 		ELSE
 			INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
 			SELECT DISTINCT 
@@ -239,7 +240,7 @@ BEGIN
 			INNER JOIN Temp_PAWinlossStatus AS r ON temp.CustID = r.CustID
 		SET temp.WinlossStatus 		= r.WinlossStatus,
 			temp.IsPAProbation 		= (CASE WHEN r.WinlossStatus = 0 THEN 1 ELSE 0 END)
-		WHERE temp.WinlossStatus 	= 1;
+		WHERE temp.WinlossStatus 	= 1;*/
 			
 		UPDATE Temp_NewClassification AS temp
             ,	LATERAL(SELECT 	cat.CategoryGroupID
