@@ -20,21 +20,21 @@ BEGIN
 				CALL CTS_DC_CustClassificationAgency_DailyScanPA_InsertToQueue ('123,455');
 	*/
     
-	SET @lv_CurrentDateTime	= NOW(); 
+	DECLARE lv_CurrentDateTime			DATETIME DEFAULT NOW();
     
-	DROP TEMPORARY TABLE IF EXISTS Temp_CustIDs;    
-	CREATE TEMPORARY TABLE Temp_CustIDs( 	  
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustID;    
+	CREATE TEMPORARY TABLE Temp_CustID( 	  
 		CustID		BIGINT UNSIGNED PRIMARY KEY
 	);
 
-    SET @sql = CONCAT("INSERT INTO Temp_CustIDs (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
+    SET @sql = CONCAT("INSERT INTO Temp_CustID (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
     INSERT INTO CTS_DataCenter.CTSCustomerClassificationAgency_DailyPAQueue(CustID, CreatedTime)
 	SELECT  CustID
-        ,	@lv_CurrentDateTime
-	FROM Temp_CustIDs;
+        ,	lv_CurrentDateTime
+	FROM Temp_CustID;
     
 END$$
 DELIMITER ;
