@@ -1,4 +1,4 @@
-/*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[CTS_ProblemAccountsClassificationAgency_Daily]
 	@ListCustIds			VARCHAR(MAX),
 	@FunctionId				SMALLINT = 12
