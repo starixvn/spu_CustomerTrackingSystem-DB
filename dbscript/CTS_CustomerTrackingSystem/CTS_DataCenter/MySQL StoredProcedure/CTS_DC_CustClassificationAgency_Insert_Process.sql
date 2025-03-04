@@ -188,12 +188,6 @@ BEGIN
 		WHERE 	temp.IsDataChanged  = 1;
 	
 	ELSE
-	
-		DROP TEMPORARY TABLE IF EXISTS Temp_PAWinlossStatus;    
-		CREATE TEMPORARY TABLE Temp_PAWinlossStatus(	
-				CustID					BIGINT UNSIGNED PRIMARY KEY
-			, 	WinlossStatus			SMALLINT /*LOSING  = 0 (PROBATION), WINNING = 2 (NOT PROBATION);*/
-		);
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_CustProbationStatus ;
 		CREATE TEMPORARY TABLE Temp_CustProbationStatus(
@@ -210,37 +204,6 @@ BEGIN
 		IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY THEN
 			SET lv_IsRescan = 1;
 		END IF;
-        
-		/*IF lv_IsRescan = 0 THEN */
-		INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
-		SELECT DISTINCT 
-				temp.CustID
-			,	CASE WHEN cc.IsPAProbation = 1 THEN 0 ELSE 2 END AS WinlossStatus
-		FROM Temp_NewClassification AS temp
-			INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cls ON temp.CustID = cls.CustID
-			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cls.CategoryID = cc.CategoryID
-		WHERE cls.ParentID = CONST_AGENCY_PARENTID_PA;
-	/*	
-		ELSE
-			INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
-			SELECT DISTINCT 
-					temp.CustID
-				,	CASE WHEN cc.IsPAProbation = 1 THEN 0 ELSE 2 END AS WinlossStatus
-			FROM Temp_NewClassification AS temp
-				INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cls ON temp.CustID = cls.CustID
-				INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON temp.DWCategoryID = cc.CategoryID 
-																		AND (temp.RelevantCategoryID = cls.CategoryID OR temp.DWCategoryID = cls.CategoryID)
-			WHERE cls.ParentID = CONST_AGENCY_PARENTID_PA 
-				AND temp.ParentID = CONST_AGENCY_PARENTID_PA
-				AND temp.WinlossStatus 	= 1;
-			
-		END IF;
-        		
-		UPDATE Temp_NewClassification AS temp
-			INNER JOIN Temp_PAWinlossStatus AS r ON temp.CustID = r.CustID
-		SET temp.WinlossStatus 		= r.WinlossStatus,
-			temp.IsPAProbation 		= (CASE WHEN r.WinlossStatus = 0 THEN 1 ELSE 0 END)
-		WHERE temp.WinlossStatus 	= 1;*/
 			
 		UPDATE Temp_NewClassification AS temp
             ,	LATERAL(SELECT 	cat.CategoryGroupID
