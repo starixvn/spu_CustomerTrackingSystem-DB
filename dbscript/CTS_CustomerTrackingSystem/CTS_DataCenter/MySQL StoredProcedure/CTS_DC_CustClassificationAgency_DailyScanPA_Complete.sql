@@ -9,14 +9,15 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_DailySc
 BEGIN
 	/*
 		Created: 20250303@Casey.Huynh
-		Task:  Return PA category for daily scan PA
+		Task:  Daily Scan PA Complete
 		DB: CTS_DataCenter
 		Original:
 		Revisions:
-            - 20250303@Casey.Huynh: Get PA category for daily scan PA [Redmine ID: #185799]
+            - 20250303@Casey.Huynh: Daily Scan PA Complete [Redmine ID: #185799]
 
-		Param's Explanation (filtered by):      
-			 CALL CTS_DC_CustClassificationAgency_DailyScanPA_Complete ('123,455');
+		Param's Explanation (filtered by):  
+        
+			 CALL CTS_DC_CustClassificationAgency_DailyScanPA_Complete(ip_CustIDs:='123,455');
 	*/
     DECLARE CONST_SYTEMPARAM_LASTSCANNEDTIME DATETIME DEFAULT 187 ;
     
