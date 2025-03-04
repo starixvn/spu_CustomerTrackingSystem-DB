@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassificationAgency_DailyScanPA_Complete`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassificationAgency_DailyScanPA_Complete_xtest`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_DailyScanPA_Complete`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_DailyScanPA_Complete_xtest`(
 		IN ip_CustIDs      			TEXT
 )
     SQL SECURITY INVOKER
@@ -19,7 +19,7 @@ BEGIN
         
 			 CALL CTS_DC_CustClassificationAgency_DailyScanPA_Complete(ip_CustIDs:='123,455');
 	*/
-    DECLARE CONST_SYTEMPARAM_LASTSCANNEDTIME DATETIME DEFAULT 187 ;
+    DECLARE CONST_SYSTEMPARAM_LASTSCANNEDTIME INT DEFAULT 187 ;
     
 	DECLARE lv_LastScannedTime		DATETIME;
         
@@ -38,7 +38,7 @@ BEGIN
 	SELECT ParameterValue 
 	INTO lv_LastScannedTime 
 	FROM CTS_DataCenter.SystemParameter 
-	WHERE ParameterID = CONST_SYTEMPARAM_LASTSCANNEDTIME;
+	WHERE ParameterID = CONST_SYSTEMPARAM_LASTSCANNEDTIME;
 	
 	SET lv_LastScannedTime = DATE_ADD(lv_LastScannedTime, INTERVAL 24 HOUR);
         
@@ -50,7 +50,7 @@ BEGIN
     ELSE
 		UPDATE CTS_DataCenter.SystemParameter
         SET ParameterValue = lv_LastScannedTime
-        WHERE ParameterID = CONST_SYTEMPARAM_LASTSCANNEDTIME;
+        WHERE ParameterID = CONST_SYSTEMPARAM_LASTSCANNEDTIME;
     END IF;
     
 END$$
