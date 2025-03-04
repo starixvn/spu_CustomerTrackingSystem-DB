@@ -14,7 +14,7 @@ BEGIN
         
 		Original:
 		Revisions:
-			- 20250228@Casey.Huynh: Created [Redmine ID: #185799]
+			- 20250228@Casey.Huynh: Created [Redmine ID: #218588]
 
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassificationAgency_DailyScanPA_Insert ('[

@@ -13,7 +13,7 @@ BEGIN
 		DB: CTS_DataCenter
 		Original:
 		Revisions:
-            - 20250303@Casey.Huynh: Daily Scan PA Complete [Redmine ID: #185799]
+            - 20250303@Casey.Huynh: Daily Scan PA Complete [Redmine ID: #218588]
 
 		Param's Explanation (filtered by):  
         
