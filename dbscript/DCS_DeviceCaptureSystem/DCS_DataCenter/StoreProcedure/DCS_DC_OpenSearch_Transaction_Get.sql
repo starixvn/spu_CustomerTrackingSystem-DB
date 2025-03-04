@@ -165,7 +165,7 @@ BEGIN
 		,	trans.IP
 		,	trans.IPID
 		,	ar.Action
-		,	sl.ItemName 				AS	Flagged
+		,	sl.ItemCode 				AS	Flagged
 		,	trans.CreatedDate
 		,	trans.InsertTime
 		,	trans.RawTransID
