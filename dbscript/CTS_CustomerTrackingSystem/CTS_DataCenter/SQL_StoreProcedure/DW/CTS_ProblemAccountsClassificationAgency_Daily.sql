@@ -72,7 +72,7 @@ BEGIN
 
 	-- #0: Distinct custid
 	INSERT INTO #tmpCustomers(CustId)
-	SELECT val FROM dbo.SPU_StrSplit(@ListCustIds, ',');
+	SELECT [value] FROM STRING_SPLIT(@ListCustIds, ',');
 
 	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), t.CustId) 
 								FROM (SELECT DISTINCT CustId FROM #tmpCustomers WITH (NOLOCK)) AS t
