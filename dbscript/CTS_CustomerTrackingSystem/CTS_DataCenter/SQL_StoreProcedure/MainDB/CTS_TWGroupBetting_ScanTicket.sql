@@ -36,6 +36,7 @@ AS
 		- 20240130@Victoria.Le:	  Change tables - TWGB Migrate data from bodb02 to WASAVerse [Redmine ID: #191955]
 		- 20240416@Victoria.Le:	  Remove the statement which calling SP from DW - Exclude EC2024 - Adjustment rules [Redmine ID: #203848] [Redmine ID: #202847]
 		- 20240405@Victoria.Le:	  Edit SP to improve performance [Redmine ID: #200842]
+		- 20250303@John.Ngo:	  TWGB - Exclude TGXI and CC 2301, 2302, 2400, 2401, 2402 [Redmine ID: #217748]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_TWGroupBetting_ScanTicket] '2022-02-15 23:10:15.983','2022-02-16 02:15:20.983',10900
@@ -141,9 +142,11 @@ BEGIN
 		AND b.currency <> 20
 		AND b.bettype IN (1,3,7,8,609,610)
 		AND m.sporttype IN (1,2)
-		AND EXISTS (SELECT 1 FROM bodb02.dbo.Dep_CustSuper AS dCust WITH (NOLOCK) WHERE dCust.custid = cust.srecommend)
+		AND EXISTS (SELECT 1 FROM bodb02.dbo.Dep_CustSuper AS dCust WITH (NOLOCK) 
+						WHERE dCust.custid = cust.srecommend 
+						  AND dCust.site NOT IN ('TGXI','TGXICV','TGXICVSW','TGXISW'))
 		AND 1 = (CASE WHEN m.LeagueId IN (SELECT LeagueId FROM @TmpSpecialEventLeague) THEN 0 ELSE 1 END)
-	ORDER BY b.sequenceid ASC;		
+	ORDER BY b.sequenceid ASC;
 
 	CREATE CLUSTERED INDEX #CIX_TmpRawTicket_Transdate1 ON #TmpRawTicket (TransdateSec,TransdateSecStep);
 
@@ -216,7 +219,7 @@ BEGIN
 					 ELSE 0 END AS 'IsViolateCC'
 		FROM #TmpSuspectTicket AS tfs
 			INNER JOIN dbo.TWGroupBettingRule AS gbr WITH (NOLOCK) ON tfs.RuleId = gbr.RuleId
-		WHERE tfs.CustomerClass NOT IN (201,2101,2201,2001,202,2102,2202,2002,4000)
+		WHERE tfs.CustomerClass NOT IN (201,2101,2201,2001,202,2102,2202,2002,4000,2301,2302,2400,2401,2402)
 		GROUP BY tfs.RuleId,tfs.GroupId,tfs.MatchId,tfs.Bettype,tfs.Betteam,tfs.TicketCount,gbr.CustClassLimitPercent
 	)
 	UPDATE tfs
