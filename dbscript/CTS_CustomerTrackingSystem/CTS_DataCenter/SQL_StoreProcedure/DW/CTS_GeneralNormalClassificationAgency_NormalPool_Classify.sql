@@ -16,6 +16,7 @@ AS
 
 	Revisions:
 		- 20241003@Jonas.Huynh: Created [Redmine ID: #185799]
+		- 20250304@Casey.Huynh: Remove harcode force MaxRangeSmallint 32767 for LastXYDaysWinlossRatio [Redmine ID: #185799]
 
 	Param's Explanation:
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
@@ -260,7 +261,7 @@ BEGIN
 			,	a.LastYDaysTurnoverRM
 			,	a.LastYDaysWinlossRM
 			,	a.LastYDaysBetCount
-			,	CASE WHEN a.LastXYDaysWinlossRatio > 32767 THEN 32767 ELSE a.LastXYDaysWinlossRatio END
+			,	a.LastXYDaysWinlossRatio
 			,	ISNULL(a.PerformanceTime, @CurrentDateTime)
 		FROM #tmpCustomerAccummulatedInfo AS a WITH(NOLOCK);
 
