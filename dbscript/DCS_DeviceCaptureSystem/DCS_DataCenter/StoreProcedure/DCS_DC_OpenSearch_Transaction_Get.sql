@@ -166,7 +166,7 @@ BEGIN
 		,	trans.UserAgent
 		,	trans.DeviceType
 		,	trans.IP
-		,	trans.IPID
+		,	CAST(trans.IPID AS CHAR) AS IPID
 		,	ar.Action
 		,	sl.ItemCode 				AS	Flagged
 		,	trans.CreatedDate
