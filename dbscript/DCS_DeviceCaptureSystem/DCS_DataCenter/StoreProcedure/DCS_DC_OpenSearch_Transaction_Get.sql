@@ -15,30 +15,31 @@ BEGIN
 
 	Revisions:
 		- 20250213@Lando.Vu: Created [Redmine ID: 217768]
+		- 20250312@Lando.Vu: Ignored Subscribers [Redmine ID: 217768]
 		
 	Param's Explanation (filtered by):
 
 	Example:
         CALL DCS_DataCenter.DCS_DC_OpenSearch_Transaction_Get(100);
 	*/
-    DECLARE CONST_OPENSEARCH_LISTSUBID 				INT 		DEFAULT 100;
-	DECLARE CONST_OPENSEARCH_TRANSACTION07_TRANSID 	INT 		DEFAULT 101;
-	DECLARE CONST_OPENSEARCH_CUTOFF_MINUTES 		INT 		DEFAULT 102;
+    DECLARE CONST_OPENSEARCH_LISTIGNOREDSUBID 				INT 		DEFAULT 100;
+	DECLARE CONST_OPENSEARCH_TRANSACTION07_TRANSID 			INT 		DEFAULT 101;
+	DECLARE CONST_OPENSEARCH_CUTOFF_MINUTES 				INT 		DEFAULT 102;
     
-	DECLARE lv_MaxTransID  			BIGINT UNSIGNED;
-	DECLARE lv_ListSubID			VARCHAR(500);
-	DECLARE lv_CurrentDatetime 		DATETIME DEFAULT CURRENT_TIMESTAMP();
-    DECLARE lv_CutoffMinute			INT;
-	DECLARE lv_MaxInsertTime 		DATETIME;
+	DECLARE lv_MaxTransID  				BIGINT UNSIGNED;
+	DECLARE lv_ListIgnoredSubID			VARCHAR(500);
+	DECLARE lv_CurrentDatetime 			DATETIME DEFAULT CURRENT_TIMESTAMP();
+    DECLARE lv_CutoffMinute				INT;
+	DECLARE lv_MaxInsertTime 			DATETIME;
     
 	SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_TRANSACTION07_TRANSID);
-    SET lv_ListSubID = (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_LISTSUBID);
+    SET lv_ListIgnoredSubID = (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_LISTIGNOREDSUBID);
     SET lv_CutoffMinute = (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_CUTOFF_MINUTES);
     SET lv_MaxInsertTime = (SELECT DATE_SUB(NOW(), INTERVAL lv_CutoffMinute MINUTE));
     
     #============================================
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
-	DROP TEMPORARY TABLE IF EXISTS Temp_SubscriberID;
+	DROP TEMPORARY TABLE IF EXISTS Temp_IgnoredSubscriberID;
 	DROP TEMPORARY TABLE IF EXISTS Temp_BotDetection;
     #============================================
     
@@ -73,7 +74,7 @@ BEGIN
 		,	DeviceType 					VARCHAR(20)
 	);
 
-	CREATE TEMPORARY TABLE Temp_SubscriberID(
+	CREATE TEMPORARY TABLE Temp_IgnoredSubscriberID(
 			SubscriberID				INT NOT NULL PRIMARY KEY
 	);
     
@@ -81,9 +82,9 @@ BEGIN
 			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	BotDetection				LONGTEXT
 	);
-    
-    #========GET INPUT DATA===========================
-    SET @sql = CONCAT("INSERT IGNORE INTO Temp_SubscriberID (SubscriberID) VALUES ('", REPLACE(lv_ListSubID, ",", "'),('"),"');");
+	
+	#========GET INPUT DATA===========================
+	SET @sql = CONCAT("INSERT IGNORE INTO Temp_IgnoredSubscriberID (SubscriberID) VALUES ('", REPLACE(lv_ListIgnoredSubID, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 
@@ -111,9 +112,11 @@ BEGIN
 		,	trans.FakeIP
 		,	trans.IsIncognitoMode
 	FROM DCS_DataCenter.Transaction07 AS trans
-		INNER JOIN Temp_SubscriberID AS subs ON trans.SubscriberID = subs.SubscriberID
 	WHERE trans.TransID > lv_MaxTransID
 		AND trans.InsertTime < lv_MaxInsertTime
+        AND NOT EXISTS (SELECT 1
+						FROM Temp_IgnoredSubscriberID AS subs 
+						WHERE subs.SubscriberID = trans.SubscriberID)
 	ORDER BY trans.TransID ASC
 	LIMIT ip_BatchSize;
 	
