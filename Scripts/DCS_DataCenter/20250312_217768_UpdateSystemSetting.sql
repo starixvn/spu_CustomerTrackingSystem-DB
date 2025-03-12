@@ -9,7 +9,7 @@ USE DCS_DataCenter;
 
 UPDATE `DCS_DataCenter`.`SystemSetting`
 SET
-`VName` = 'ListIgnoredSubID',
-`VValue` = '',
-`UpdatedTime` = CURRENT_TIMESTAMP()
+	`VName` = 'ListIgnoredSubID',
+	`VValue` = '',
+	`UpdatedTime` = CURRENT_TIMESTAMP()
 WHERE `ID` = 100;
