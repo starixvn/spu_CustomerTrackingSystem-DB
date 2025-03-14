@@ -39,7 +39,8 @@ sp: BEGIN
             -	20240417@Casey.Huynh: Renovate GroupBetting Rule [Redmine ID: #203319]
 			-	20240704@Casey.Huynh: Saba Group Betting - Add Basketball and enhance Soccer [Redmine ID: #207523]
             -	20250213@Thomas.Nguyen: Set ScoreDiff = 0, BetID = 0 to only group by Match, bettype, bet team, live indicator for Cricket [Redmine ID: #217745]
-           
+			-	20250314@Thomas.Nguyen: Set LiveHomeScore, LiveAwayScore, ScoreDiff = 0 to not group by ScoreDiff for Badminton and get only settings of MM [Redmine ID: #219681]
+
 		Param's Explanation (filtered by):		
 			ip_PoolType: 
             LIVE:
@@ -71,7 +72,9 @@ sp: BEGIN
     DECLARE CONST_RULE_GROUPID_ARBITRAGE	INT DEFAULT 5;
     DECLARE CONST_RULE_GROUPID_GROUPBETTINGSABA	INT DEFAULT 6;
     DECLARE CONST_SPORTTYPE_BASKETBALL			INT DEFAULT 2;
+	DECLARE CONST_SPORTTYPE_BADMINTON			INT DEFAULT 9;
 	DECLARE CONST_SPORTTYPE_CRICKET				INT DEFAULT 50;
+	DECLARE CONST_FUNCTIONID_MATCHMONITOR		INT DEFAULT 1;
 
     #==================LOG=======================================================
     DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Staging_Insert';
@@ -141,7 +144,8 @@ sp: BEGIN
     FROM (	SELECT sbs.SportTypeID, sbs.BetTypeID, sbs.LeagueGroupID, js.Reason
 			FROM CTS_DataCenter.SportBettypeSetting AS sbs
 			, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(MMReason,''), ',', '","'), '"]'),
-								  '$[*]' COLUMNS (Reason VARCHAR(2) PATH '$')) js) AS tmp
+								  '$[*]' COLUMNS (Reason VARCHAR(2) PATH '$')) js
+			WHERE sbs.FunctionID = CONST_FUNCTIONID_MATCHMONITOR) AS tmp
 		 INNER JOIN CTS_DataCenter.MatchMonitorRuleSetting AS mst ON mst.SportType = tmp.SportTypeID AND mst.Reason = tmp.Reason AND tmp.LeagueGroupID = IFNULL(mst.LeagueGroupID,0); 
 
     INSERT IGNORE INTO Temp_Staging(SequenceID, TransID, TransDate, LeagueName, SportType, MatchID, HomeID, AwayID, EventStatus, KickOffTime, LeagueID, EventDate, LiveHomeScore, LiveAwayScore, ScoreDiff, BettypeID, BetID, CustID, Stake, Betteam, Odds, IsMajorLeague, HDP, Hdp1, Hdp2, LeagueGroupID)
@@ -157,9 +161,9 @@ sp: BEGIN
 			,	js.KickOffTime
 			,	js.LeagueID
 			,	js.EventDate
-			,	(CASE WHEN js.SportType IN (CONST_SPORTTYPE_BASKETBALL, CONST_SPORTTYPE_CRICKET) THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
-			,	(CASE WHEN js.SportType IN (CONST_SPORTTYPE_BASKETBALL, CONST_SPORTTYPE_CRICKET) THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
-			,	(CASE WHEN js.SportType IN (CONST_SPORTTYPE_BASKETBALL, CONST_SPORTTYPE_CRICKET) THEN 0 ELSE (js.LiveHomeScore*10000) + js.LiveAwayScore END) AS ScoreDiff
+			,	(CASE WHEN js.SportType IN (CONST_SPORTTYPE_BASKETBALL, CONST_SPORTTYPE_CRICKET, CONST_SPORTTYPE_BADMINTON) THEN 0 ELSE js.LiveHomeScore END) AS LiveHomeScore
+			,	(CASE WHEN js.SportType IN (CONST_SPORTTYPE_BASKETBALL, CONST_SPORTTYPE_CRICKET, CONST_SPORTTYPE_BADMINTON) THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
+			,	(CASE WHEN js.SportType IN (CONST_SPORTTYPE_BASKETBALL, CONST_SPORTTYPE_CRICKET, CONST_SPORTTYPE_BADMINTON) THEN 0 ELSE (js.LiveHomeScore*10000) + js.LiveAwayScore END) AS ScoreDiff
 			,	js.BettypeID
             ,	CASE WHEN js.SportType = CONST_SPORTTYPE_CRICKET THEN 0 ELSE IFNULL(js.BetID,0) END
 			,	js.CustID
