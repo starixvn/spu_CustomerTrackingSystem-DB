@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_GetTicketInfo]
+CREATE PROCEDURE [dbo].[CTS_MatchMonitor_GetNewTicket]
 		@QueryType					TINYINT = 1
 	,	@LastScannedSequenceID		BIGINT = 0
 	,	@IsLive						BIT = 1
