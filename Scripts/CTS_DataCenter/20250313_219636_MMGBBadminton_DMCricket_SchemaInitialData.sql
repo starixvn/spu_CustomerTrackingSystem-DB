@@ -46,4 +46,6 @@ SELECT * FROM MatchMonitorRuleSetting;
 
 #=================DROP USED PROCEDURES============================================
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_GetScore`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_GetScore_xtest`;
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_GetReasonGroup`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_GetReasonGroup_xtest`;
