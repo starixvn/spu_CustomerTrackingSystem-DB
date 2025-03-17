@@ -149,7 +149,8 @@ BEGIN
 			AND b.BetFrom NOT IN ('p','m','w','0','3','6')
 			AND b.srecommend NOT IN (41430709) 
 			AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)AND b.statusID <> 101 -- Reject		
+			AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND b.statusID <> 101 -- Reject		
 			AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 			AND c.Username NOT LIKE '%Cashout%'
 			AND (l.LeagueGroupID NOT IN (42,74,108,113,122,151)
