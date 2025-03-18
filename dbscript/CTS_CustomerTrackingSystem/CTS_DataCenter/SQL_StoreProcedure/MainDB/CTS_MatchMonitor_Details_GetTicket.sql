@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_TicketDetails]
+CREATE PROCEDURE [dbo].[CTS_MatchMonitor_Details_GetTicket]
 		@QueryType					TINYINT = 1
 	,	@LastScannedSequenceID		BIGINT = 0
 	,	@LastTransDate				DATETIME = NULL
@@ -80,11 +80,10 @@ AS
 		- 20240521@Thomas.Nguyen: Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
 		- 20240802@Casey.Huynh:	Enhance Filter Amount Sum by all Selected BetChoice  [Redmine ID: #207528]
 		- 20240904@Casey.Huynh: Rename @ViewMode To @ViewMode [Redmine ID: #207397]
-<<<<<<< HEAD
 		- 20241226@Thomas.Nguyen: Add Username Filter [Redmine ID: #210128]
-=======
 		- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
->>>>>>> 12353df7 (214585-EditSP-MatchMonitorandDangerMonitor)
+		- 20250225@Casey.Huynh: Handle @ListSportBetType (Criket BetID IS NULL) [Redmine ID: #218383]
+		- 20250318@Casey.Huynh: Match Monitor Badminton [Redmine ID: #219681]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize) >> refer to new SP CTS_Rpt_MatchMonitor_GetTicketInfo
@@ -111,7 +110,7 @@ AS
 		DECLARE @MinSequenceId BIGINT
 		DECLARE @TotalTicket INT;
 
-		exec CTS_Rpt_MatchMonitor_TicketDetails_xtest 
+		exec CTS_MatchMonitor_Details_GetTicket 
 			@QueryType=3
 		,	@LastScannedSequenceID=119785603800
 		,	@IsLive=1
@@ -301,7 +300,7 @@ BEGIN
 				) AS j;
 				
 			CREATE NONCLUSTERED INDEX IX_tmpSportBetType_Group ON #tmpSportBetType(SportTypeID, BetTypeID);
-			
+
 		END;
 	
 	IF @ListTransId <> ''
@@ -522,7 +521,7 @@ BEGIN
 								,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID
+								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID)
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.sequenceid < @LastScannedSequenceID								
@@ -576,7 +575,7 @@ BEGIN
 								,	CASE WHEN b.betdaqid = -2 THEN 1 ELSE 0 END AS IsCashout
 							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
-								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID
+								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID)
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.sequenceid < @LastScannedSequenceID							
@@ -628,7 +627,7 @@ BEGIN
 							FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
-								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID 
+								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID) 
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.sequenceid < @LastScannedSequenceID
@@ -766,7 +765,7 @@ BEGIN
 							FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 								INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 								INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
-								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID
+								INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID)
 								INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 								LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							WHERE	b.matchid = @MatchID								
@@ -824,7 +823,7 @@ BEGIN
 							INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
 							INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
-							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID 
+							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID)
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						WHERE	b.matchid = @MatchID
@@ -880,7 +879,7 @@ BEGIN
 						FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK)
 							INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
-							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID 
+							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID)
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 							LEFT JOIN #tmpTickets AS tmpTk WITH(NOLOCK) ON tmpTk.TransID = b.TransID
@@ -992,7 +991,7 @@ BEGIN
 						FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 							INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
-							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID
+							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID)
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency	
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						WHERE	b.sequenceid < @LastScannedSequenceID							
@@ -1051,7 +1050,7 @@ BEGIN
 							INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 							INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON b.custid = c.custid
 							INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON l.leagueid = m.leagueid
-							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = st.BetID 
+							INNER JOIN #tmpSportBetType AS st WITH(NOLOCK) ON m.SportType = st.SportTypeID AND b.BetType = st.BetTypeID AND b.BetID = ISNULL(st.BetID,b.BetID) 
 							INNER JOIN bodb02.dbo.Exchange AS e WITH (NOLOCK) ON e.ExchangeId = b.currency
 							LEFT JOIN #tmpTransIds AS tmpTs WITH(NOLOCK) ON b.TransId = tmpTs.TransId
 						WHERE	b.sequenceid < @LastScannedSequenceID
