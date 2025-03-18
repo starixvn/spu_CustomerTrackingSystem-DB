@@ -50,7 +50,7 @@ BEGIN
         ,	mmd.ToTransInfo
     FROM CTS_DataCenter.MatchMonitorUserComment AS mm
 		INNER JOIN CTS_DataCenter.MatchMonitorUserCommentDetails AS mmd ON mmd.MMUserCommentID = mm.MMUserCommentID
-        INNER JOIN Temp_BetID AS tmpbet ON tmpBet.BetID = mm.BetID
+        INNER JOIN Temp_BetID AS tmpBet ON tmpBet.BetID = mm.BetID
         LEFT JOIN CTS_Admin.CTSUser AS us ON us.UserID = mm.ModifiedBy
         LEFT JOIN CTS_DataCenter.StaticList AS st ON st.ListID = CONST_STATICLIST_MMREASON AND st.ItemValue = mmd.Reason
     WHERE	mm.MatchID	= ip_MatchID
