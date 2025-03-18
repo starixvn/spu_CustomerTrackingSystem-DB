@@ -49,3 +49,5 @@ DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_GetScore`;
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_GetScore_xtest`;
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_GetReasonGroup`;
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_GetReasonGroup_xtest`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_GetStaticList`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_GetStaticList_xtest`;
