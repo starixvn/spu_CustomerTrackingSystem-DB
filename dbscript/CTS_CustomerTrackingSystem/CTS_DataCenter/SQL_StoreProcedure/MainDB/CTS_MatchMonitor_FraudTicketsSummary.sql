@@ -1,10 +1,10 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_FraudTicketsSummary]
+ALTER PROCEDURE [dbo].[CTS_MatchMonitor_FraudTicketsSummary]
 		@FraudTickets				VARCHAR(MAX) = NULL
 AS
 /*
@@ -15,13 +15,14 @@ AS
 	Revisions:
 		- 20231116@Long.Luu: 	Initialize [Redmine ID: 195042]
 		- 20231212@Long.Luu: 	Remove duplicate tickets catched by many reasons [Redmine ID: 196396]
+		- 20250318@Thomas.Nguyen: 	Rename SP [Redmine ID: #219681]
 
 	Params Explaination:
 		-	@FraudTickets is in Json format
 			'[{"MatchID":10,"DataSource":0,"IsLive":1,"Bettype":1,"BetID":0,"FraudTrans":"1,2,3"},etc]'
 			
 	Example:
-		EXEC [dbo].[CTS_Rpt_MatchMonitor_FraudTicketsSummary] @FraudTickets = '[{"MatchID":10,"DataSource":0,"IsLive":1,"Bettype":1,"BetID":0,"FraudTrans":"1,2,3"}]';
+		EXEC [dbo].[CTS_MatchMonitor_FraudTicketsSummary] @FraudTickets = '[{"MatchID":10,"DataSource":0,"IsLive":1,"Bettype":1,"BetID":0,"FraudTrans":"1,2,3"}]';
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -169,4 +170,3 @@ BEGIN
 END;
 
 GO
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
