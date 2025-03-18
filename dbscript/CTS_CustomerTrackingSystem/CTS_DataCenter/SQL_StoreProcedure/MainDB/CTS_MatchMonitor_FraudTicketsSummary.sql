@@ -146,7 +146,7 @@ BEGIN
 						,	SUM(b.stake * b.actualrate) AS Turnover
 						,	COUNT(DISTINCT b.transid) AS BetCount
 					FROM #tmpParsedFraudInfo AS t WITH(NOLOCK)
-						INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = t.TransId
+						INNER JOIN bodb02.dbo.bettrans14 AS b WITH(NOLOCK) ON b.TransId = t.TransId
 					WHERE t.DataSource = @CONST_DATASOURCE_14
 					GROUP BY t.MatchId, t.IsLive, t.Bettype, t.BetId, b.Betteam
 					UNION
@@ -158,7 +158,7 @@ BEGIN
 						,	SUM(b.stake * b.actualrate) AS Turnover
 						,	COUNT(DISTINCT b.transid) AS BetCount
 					FROM #tmpParsedFraudInfo AS t WITH(NOLOCK)
-						INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = t.TransId
+						INNER JOIN bodb02.dbo.bettrans AS b WITH(NOLOCK) ON b.TransId = t.TransId
 					WHERE t.DataSource = @CONST_DATASOURCE_ORIGIN
 					GROUP BY t.MatchId, t.IsLive, t.Bettype, t.BetId, b.Betteam
 				) AS t;
