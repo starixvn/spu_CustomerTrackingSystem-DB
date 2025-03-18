@@ -6,7 +6,7 @@ GO
 
 ALTER PROCEDURE [dbo].[CTS_SportBettype_Get]
 		@ProductId INT
-	,	@BettypeList VARCHAR(MAX) = NULL
+	,	@SportBettypeList  VARCHAR(MAX) = NULL
 
 AS
 /*
@@ -17,6 +17,7 @@ AS
 	Revisions:
 		- 20231226@Casey.Huynh:	Create [Redmine ID: #196361]		
 		- 20240322@Vitoria.Le:	Danger Page Main - Get List SportType,Bettype which they ared seperated by LeagueGroupID [Redmine ID: #201380]		
+		- 20250318@Jonas.Huynh: Danger Monitor - Change datatype of parameter [Redmine ID: #217765]		
 
 	Params Explaination:		
 		- LeagueGroupID	|	LeagueGroupName 		|	SportType
@@ -38,7 +39,7 @@ AS
 			....
 			
 	Example:
-		EXEC CTS_SportBettype_Get @ProductID=1, @BettypeList='1,2,3,6,7,8,12,126,413,414,20,609,610,612'
+		EXEC CTS_SportBettype_Get @ProductID=1, @SportBettypeList= '[1,2,3,6,7,8,12,126,413,414,20,609,610,612,501,9404,9405]'
 		EXEC CTS_SportBettype_Get @ProductID=1
 */
 BEGIN
@@ -53,13 +54,13 @@ BEGIN
 			SporttypeId		INT
 		,	BettypeId		INT
 	);
-	
+
 	INSERT INTO #tmpSportBettype (SporttypeId,BettypeId)
 	SELECT DISTINCT sb.SportType, sb.BetType 
 	FROM bodb02.dbo.SportBettypeMatrix AS sb WITH(NOLOCK)
 	WHERE sb.ProductID = @ProductID
-		AND (CASE WHEN @BettypeList IS NULL THEN 1
-				  WHEN @BettypeList IS NOT NULL AND sb.BetType IN (SELECT value FROM STRING_SPLIT(@BettypeList, ',')) THEN 1
+		AND (CASE WHEN @SportBettypeList IS NULL THEN 1
+				  WHEN @SportBettypeList IS NOT NULL AND sb.BetType IN (SELECT CAST(value AS INT) FROM OPENJSON(@SportBettypeList)) THEN 1
 				  ELSE 0 END = 1)
 		AND sb.IsTest = 0
 		AND sb.SportType NOT IN (27, 154) --Exclude Cricket and Horse Racing Fixed Odds
