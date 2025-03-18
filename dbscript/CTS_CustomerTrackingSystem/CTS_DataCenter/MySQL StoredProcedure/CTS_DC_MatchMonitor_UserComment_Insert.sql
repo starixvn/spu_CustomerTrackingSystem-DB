@@ -8,7 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_UserComment_Insert`
 	,	IN ip_SportType			INT
 	,	IN ip_LiveIndicator		BOOLEAN   
     ,	IN ip_BettypeID			INT UNSIGNED
-    ,	IN ip_BetID				BIGINT    
+    ,	IN ip_BetIDList			TEXT    
     ,	IN ip_UserComment		VARCHAR(1000)
     ,	IN ip_CorrectReason		INT #-1: Others, Else MM Reason
     ,	IN ip_IncorrectReason	JSON       
@@ -24,6 +24,7 @@ BEGIN
 		Revisions:
 			-	20231023@Casey.Huynh: Created [Redmine ID: #195043]
             - 	20240205@Casey.Huynh: Exclude Lopsided Bet [Redmine ID: #197706]
+            -	20250318@Casey.Huynh: Match Monitor Badminton [Redmine ID: #219681]
             
 		Param's Explanation (filtered by):
 		
@@ -46,7 +47,16 @@ BEGIN
     DECLARE lv_NewMMUserCommentID	BIGINT UNSIGNED;
     DECLARE lv_LogInfo				TEXT;
     
-    #========INSERT MatchMonitor UserComment===============================  
+    #========INSERT MatchMonitor UserComment=============================== 
+	DROP TEMPORARY TABLE IF EXISTS Temp_BetID;    
+	CREATE TEMPORARY TABLE Temp_BetID( 	  
+		BetID		BIGINT PRIMARY KEY
+	);
+
+    SET @sql = CONCAT("INSERT INTO Temp_BetID (BetID) VALUES ('", REPLACE(ip_BetIDList, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
+    
 	SELECT IFNULL(MAX(mm.MMUserCommentID),0)
     INTO lv_MaxMMUserCommentID
     FROM CTS_DataCenter.MatchMonitorUserComment AS mm;
@@ -56,23 +66,25 @@ BEGIN
 		,	ip_SportType
         ,	ip_LiveIndicator
 		,	ip_BettypeID
-        ,	ip_BetID
+        ,	tmpBet.BetID
 		,	ip_UserComment
 		,	lv_CurrentDateTime AS CreatedDate
 		,	ip_UserId AS CreatedBy
 		,	lv_CurrentDateTime AS ModifiedDate
-		,	ip_UserId AS ModifiedBy;
+		,	ip_UserId AS ModifiedBy
+	FROM Temp_BetID AS tmpBet;
 
     #========INSERT MatchMonitor UserComment Details - Incorrect Reason=======================
    
     SELECT MAX(mm.MMUserCommentID)
     INTO lv_NewMMUserCommentID
     FROM CTS_DataCenter.MatchMonitorUserComment AS mm
+		INNER JOIN Temp_BetID AS tmpbet ON tmpBet.BetID = mm.BetID
     WHERE	mm.MatchID	= ip_MatchID
 		AND	mm.SportType = ip_SportType
         AND	mm.LiveIndicator = ip_LiveIndicator
         AND	mm.BettypeID = ip_BettypeID
-        AND	mm.BetID = ip_BetID
+        AND	mm.BetID = tmpBet.BetID
         AND	mm.CreatedBy = ip_UserID
 		AND	mm.MMUserCommentID > lv_MaxMMUserCommentID;
     
@@ -96,7 +108,7 @@ BEGIN
 		,	ip_CorrectReason
 	;
     #========INSERT User Log=======================
-	SET lv_LogInfo = CONCAT('ip_MatchID:',ip_MatchID,',ip_SportType:',ip_SportType,',ip_LiveIndicator:',ip_LiveIndicator,',ip_BettypeID:',ip_BettypeID,',ip_BetID:',ip_BetID
+	SET lv_LogInfo = CONCAT('ip_MatchID:',ip_MatchID,',ip_SportType:',ip_SportType,',ip_LiveIndicator:',ip_LiveIndicator,',ip_BettypeID:',ip_BettypeID,',ip_BetIDList:',ip_BetIDList
 							,',ip_UserComment:',ip_UserComment,',ip_CorrectReason:',ip_CorrectReason,',ip_IncorrectReason:',ip_IncorrectReason);
                                     
     INSERT IGNORE INTO CTS_Admin.UserLog(LogTypeID, SPName, LogInfo, CreatedDate, CreatedBy)
