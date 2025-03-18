@@ -1,3 +1,17 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*
+Creator:	20250318@Logan.Nguyen
+Task:	 	script init data
+Server:  	Master
+DBName:		CTS_DataCenter
+
+Revisions: 
+		- 20250318@Logan.Nguyen: Created [Redmine ID: #220539]
+
+Reviewer:
+*/
+
+
 /*script get data*/
 SELECT cls.CustID
 FROM CTS_DataCenter.CTSCustomerClassification AS cls  
