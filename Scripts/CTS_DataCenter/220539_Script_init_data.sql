@@ -13,12 +13,17 @@ Reviewer:
 
 
 /*script get data*/
+
+
 SELECT cls.CustID
 FROM CTS_DataCenter.CTSCustomerClassification AS cls  
 JOIN CTS_DataCenter.CTSCustomer AS cus
 ON cls.CustID = cus.CustID
 WHERE CategoryID IN (40500, 40600, 40701, 10200) 
 AND cus.IsLicenseeVIP = 1
+AND cls.CustID NOT IN (SELECT sub_cls.CustID  
+                        FROM CTS_DataCenter.CTSCustomerClassification AS sub_cls  
+                        WHERE sub_cls.ParentID = 20000)
 GROUP BY cls.CustID
 HAVING COUNT(DISTINCT ParentID) > 1;
 
@@ -47,8 +52,13 @@ SELECT cls.CustID
 	ON cls.CustID = cus.CustID
 	WHERE CategoryID IN (40500, 40600, 40701, 10200) 
 	AND cus.IsLicenseeVIP = 1
+	AND cls.CustID NOT IN (SELECT sub_cls.CustID  
+                        FROM CTS_DataCenter.CTSCustomerClassification AS sub_cls  
+                        WHERE sub_cls.ParentID = 20000)
 	GROUP BY cls.CustID
 	HAVING COUNT(DISTINCT ParentID) > 1;
+
+SELECT * FROM Adhoc_CC400_CC400_CustomerClassification_BeforeRelease;
 
 /*run before release*/
 INSERT INTO Adhoc_CC400_CC400_CustomerClassification_InRelease (CustID)
@@ -58,16 +68,20 @@ SELECT cls.CustID
 	ON cls.CustID = cus.CustID
 	WHERE CategoryID IN (40500, 40600, 40701, 10200) 
 	AND cus.IsLicenseeVIP = 1
+	AND cls.CustID NOT IN (SELECT sub_cls.CustID  
+                        FROM CTS_DataCenter.CTSCustomerClassification AS sub_cls  
+                        WHERE sub_cls.ParentID = 20000)
 	GROUP BY cls.CustID
 	HAVING COUNT(DISTINCT ParentID) > 1;
 
-SELECT * FROM Adhoc_CC400_CC400_CustomerClassification_BeforeRelease;
 SELECT * FROM Adhoc_CC400_CC400_CustomerClassification_InRelease;
+
+/*Release UPDATE*/
 
 /*List cust before release and inrelease*/
 SELECT CustID, InsertedDate
 FROM Adhoc_CC400_CC400_CustomerClassification_BeforeRelease
-UNION ALL
+UNION 
 SELECT CustID, InsertedDate
 FROM Adhoc_CC400_CC400_CustomerClassification_InRelease
 ORDER BY CustID, InsertedDate;
@@ -79,7 +93,7 @@ SELECT *
 	ON cls.CustID = cus.CustID
 WHERE cls.CustID IN (SELECT CustID
 						FROM Adhoc_CC400_CC400_CustomerClassification_BeforeRelease
-						UNION ALL
+						UNION 
 						SELECT CustID
 						FROM Adhoc_CC400_CC400_CustomerClassification_InRelease
 					);
