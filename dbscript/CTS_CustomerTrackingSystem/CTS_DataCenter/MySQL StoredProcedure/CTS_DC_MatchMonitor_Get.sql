@@ -292,10 +292,9 @@ BEGIN
         ,	mdv.MatchID
         ,	mdv.LiveIndicator
         ,	mdv.BettypeID
-        ,	(CASE WHEN tmpMm.SportTypeID =CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mdv.BetID END) AS BetID
+        ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mdv.BetID END) AS BetID
         ,	mdv.TicketType
-    FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
-		
+    FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv		
 		LEFT JOIN CTS_Admin.CTSUser AS us ON us.UserID = mdv.VerifiedBy
 		INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator 
 														AND mdv.BettypeID = tmpMm.BettypeID 
@@ -410,9 +409,7 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE WHEN tmMg.SportType = 9 THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
-			#,	(CASE WHEN tmMg.SportType = 9 THEN sbs.BettypeNameDisplay ELSE  bs.BettypeNameDisplay END) AS BettypeNameDisplay
-			
+            ,	(CASE WHEN tmpMm.SportTypeID = 9 THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
