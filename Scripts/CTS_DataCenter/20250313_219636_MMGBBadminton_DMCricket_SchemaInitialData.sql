@@ -15,20 +15,30 @@ USE CTS_DataCenter;
 
 /*******************************SCRIPT FOR #219681*********************************/
 #=======================INITIAL SportBettypeSetting==========================
-INSERT INTO CTS_DataCenter.SportBettypeSetting
-(FunctionID,SportTypeID,LeagueGroupID,BetTypeID,SportName,BetTypeName,BetTypeNameDetailsX,BettypeNameDisplay,BetChoicePattern,BetChoiceType,BetIDPattern,IsMMDetection,IsMMParlayDetection,MMReason,IsDefaultSelected,Status)
-VALUES (1,9,0,20,'Badminton','Moneyline',null,'ML','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,null,1,0,'0',0,1) 
-, (1,9,0,704,'Badminton','Match Points Handicap',null,'Match Points HDP','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,null,1,0,'0',0,1)
-, (1,9,0,707,'Badminton','Game X Winner',null,'Game X Winner','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,'80X',1,0,'0',0,1)
-, (1,9,0,708,'Badminton','Game X Points Handicap',null,'Game X Points HDP','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,'80X',1,0,'0',0,1)
+ALTER TABLE SportBettypeSetting
+ADD COLUMN SportOrder INT;
+
+UPDATE SportBettypeSetting
+SET SportOrder =  CASE SportTypeID WHEN 1 THEN 1
+								   WHEN 2 THEN 100
+								   WHEN 43 THEN 200
+								   WHEN 50 THEN 300 ELSE NULL END
+WHERE FunctionID = 1;
+
+INSERT INTO SportBettypeSetting
+(FunctionID,SportTypeID,LeagueGroupID,BetTypeID,SportName,BetTypeName,BetTypeNameDetailsX,BettypeNameDisplay,BetChoicePattern,BetChoiceType,BetIDPattern,IsMMDetection,IsMMParlayDetection,MMReason,IsDefaultSelected,Status,SportOrder)
+VALUES (1,9,0,20,'Badminton','Moneyline',null,'ML','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,null,1,0,'0',0,1,400) 
+, (1,9,0,704,'Badminton','Match Points Handicap',null,'Match Points HDP','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,null,1,0,'0',0,1,400)
+, (1,9,0,707,'Badminton','Game X Winner',null,'Game X Winner','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,'80X',1,0,'0',0,1,400)
+, (1,9,0,708,'Badminton','Game X Points Handicap',null,'Game X Points HDP','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,'80X',1,0,'0',0,1,400)
 ;
 
 SELECT s.*
-FROM CTS_DataCenter.SportBettypeSetting s
+FROM SportBettypeSetting s
 WHERE SportTypeID = 9 AND BetTypeID IN (20,704,707,708);
 
 #=======================INITIAL BettypeSetting==========================
-INSERT INTO CTS_DataCenter.BettypeSetting(BetTypeID,BetteamOrder,BetteamName,BetChoiceType,BetTypeName,BetTypeNameDetailsX,BetTypeNameDisplay,BetIDPattern,BetTeamDB,BetteamShortName,Status,BettypeOrder)
+INSERT INTO BettypeSetting(BetTypeID,BetteamOrder,BetteamName,BetChoiceType,BetTypeName,BetTypeNameDetailsX,BetTypeNameDisplay,BetIDPattern,BetTeamDB,BetteamShortName,Status,BettypeOrder)
 VALUES	(704,1,'Home',2,'Match Points Handicap',NULL,'Match Points HDP',NULL,'h','h',1,17250)
 ,	(704,2,'Away',2,'Match Points Handicap',NULL,'Match Points HDP',NULL,'a','a',1,17250)
 ,	(707,1,'Home',2,'Game X Winner',NULL,'Game X Winner',NULL,'h','h',1,17500)
