@@ -6,16 +6,15 @@
 */
 USE WASAVerse;
 
---==================================================================
+--===========CTS_Rpt_MatchMonitor_GetTicketInfo Change to  CTS_MatchMonitor_GetNewTicket============
+DROP PROCEDURE IF EXISTS CTS_Rpt_MatchMonitor_GetTicketInfo;
 DROP PROCEDURE IF EXISTS CTS_Rpt_MatchMonitor_GetTicketInfo_xtest;
-EXEC sp_rename 'CTS_Rpt_MatchMonitor_GetTicketInfo', 'CTS_MatchMonitor_GetNewTicket';
 
---==================================================================
+--===========CTS_TicketDetails_Info Change to  CTS_MatchMonitor_Details_GetFilter============
+DROP PROCEDURE IF EXISTS CTS_MatchMonitor_Details_GetFilter;
 DROP PROCEDURE IF EXISTS CTS_MatchMonitor_Details_GetFilter_xtest;
-EXEC sp_rename 'CTS_TicketDetails_Info', 'CTS_MatchMonitor_Details_GetFilter';
 
---==================================================================
+--===========CTS_Rpt_MatchMonitor_TicketDetails Change to  CTS_MatchMonitor_Details_GetTicket============
+DROP PROCEDURE IF EXISTS CTS_Rpt_MatchMonitor_TicketDetails;
 DROP PROCEDURE IF EXISTS CTS_Rpt_MatchMonitor_TicketDetails_xtest;
-EXEC sp_rename 'CTS_Rpt_MatchMonitor_TicketDetails', 'CTS_MatchMonitor_Details_GetTicket';
-
 

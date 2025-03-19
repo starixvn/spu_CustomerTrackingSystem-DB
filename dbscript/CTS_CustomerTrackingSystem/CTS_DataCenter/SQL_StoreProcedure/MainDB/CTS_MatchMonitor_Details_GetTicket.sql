@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[CTS_MatchMonitor_Details_GetTicket]
+CREATE PROCEDURE [dbo].[CTS_MatchMonitor_Details_GetTicket]
 		@QueryType					TINYINT = 1
 	,	@LastScannedSequenceID		BIGINT = 0
 	,	@LastTransDate				DATETIME = NULL
@@ -83,7 +83,7 @@ AS
 		- 20241226@Thomas.Nguyen: Add Username Filter [Redmine ID: #210128]
 		- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
 		- 20250225@Casey.Huynh: Handle @ListSportBetType (Criket BetID IS NULL) [Redmine ID: #218383]
-		- 20250318@Casey.Huynh: Match Monitor Badminton [Redmine ID: #219681]
+		- 20250318@Casey.Huynh: Match Monitor Badminton, Rename From CTS_Rpt_MatchMonitor_TicketDetails [Redmine ID: #219681]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize) >> refer to new SP CTS_Rpt_MatchMonitor_GetTicketInfo

@@ -23,6 +23,7 @@ AS
 		- 20240607@CaseyHuynh:	Return Saba Scocer Ticket [Redmine ID: #191972]
         - 20240704@Casey.Huynh: Saba Group Betting - Add Basketball and enhance Soccer [Redmine ID: #207523]
 		- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
+		- 20250317@Casey.Huynh: Match Monitor Badminton - Rename from CTS_Rpt_MatchMonitor_GetTicketInfo [Redmine ID: #219681]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service MM Staging (get tickets by @LastScannedTransID, @IsLive & @BatchSize & @ListSportBettype)
