@@ -41,10 +41,10 @@ WHERE SportTypeID = 9 AND BetTypeID IN (20,704,707,708);
 INSERT INTO BettypeSetting(BetTypeID,BetteamOrder,BetteamName,BetChoiceType,BetTypeName,BetTypeNameDetailsX,BetTypeNameDisplay,BetIDPattern,BetTeamDB,BetteamShortName,Status,BettypeOrder)
 VALUES	(704,1,'Home',2,'Match Points Handicap',NULL,'Match Points HDP',NULL,'h','h',1,17250)
 ,	(704,2,'Away',2,'Match Points Handicap',NULL,'Match Points HDP',NULL,'a','a',1,17250)
-,	(707,1,'Home',2,'Game X Winner',NULL,'Game X Winner',NULL,'h','h',1,17500)
-,	(707,2,'Away',2,'Game X Winner',NULL,'Game X Winner',NULL,'a','a',1,17500)
-,	(708,1,'Home',2,'Game X Points Handicap',NULL,'Game X Points HDP',NULL,'h','h',1,17750)
-,	(708,2,'Away',2,'Game X Points Handicap',NULL,'Game X Points HDP',NULL,'a','a',1,17750);
+,	(707,1,'Home',2,'Game X Winner',NULL,'Game X Winner','80X','h','h',1,17500)
+,	(707,2,'Away',2,'Game X Winner',NULL,'Game X Winner','80X','a','a',1,17500)
+,	(708,1,'Home',2,'Game X Points Handicap',NULL,'Game X Points HDP','80X','h','h',1,17750)
+,	(708,2,'Away',2,'Game X Points Handicap',NULL,'Game X Points HDP','80X','a','a',1,17750);
 
 SELECT * From BettypeSetting WHERE BetTypeID IN (20,704,707,708);
 
@@ -54,7 +54,7 @@ VALUES	(1, 1,'Group Betting Detect', 0, 9, 0,2, 'Group Betting', 'Badminton', 18
 
 SELECT * FROM MatchMonitorRuleSetting;
 
-#=================DROP USED PROCEDURES============================================
+#=================DROP UNUSED PROCEDURES============================================
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_GetScore`;
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_GetScore_xtest`;
 DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Details_GetReasonGroup`;
