@@ -237,7 +237,7 @@ BEGIN
 			AND mm.LiveIndicator = IFNULL(ip_Market, mm.LiveIndicator); 
             
     ELSE #ip_MatchInfos <> '' THEN # Search by Event Date		
-                                
+                              
 		INSERT IGNORE INTO Temp_MatchInfo (MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, SporttypeID,LeagueGroupID, BettypeID, BetID, Reason, MatchSection, KickOffTime, TicketType)
 		SELECT  DISTINCT js.MatchId
 			,	js.EventDate
@@ -262,10 +262,11 @@ BEGIN
 											,	MatchSection	TINYINT		PATH "$.MatchSection"
 										)
 								) AS js ON js.MatchId = mm.MatchId
-			INNER JOIN Temp_Bettype AS tmpBt ON mm.BettypeID = tmpBt.BettypeID AND mm.BetID = IFNULL(tmpBt.BetID,mm.BetID)
+			INNER JOIN Temp_Bettype AS tmpBt ON mm.BettypeID = tmpBt.BettypeID 
+				AND (CASE WHEN mm.SportType = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mm.BetID END) = IFNULL(tmpBt.BetID,mm.BetID)
 			INNER JOIN Temp_Reason AS r ON r.ReasonID = mm.Reason
 		WHERE	mm.LiveIndicator = IFNULL(ip_Market, mm.LiveIndicator);
-        
+    
 		INSERT INTO Temp_MatchMonitor(MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, SportTypeID, BettypeID, BetID, Reason, MatchSection, KickOffTime, TicketType)    
 		SELECT 	DISTINCT tmpMi.MatchID
 			,	tmpMi.EventDate
@@ -294,9 +295,11 @@ BEGIN
         ,	(CASE WHEN tmpMm.SportTypeID =CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mdv.BetID END) AS BetID
         ,	mdv.TicketType
     FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
+		
 		LEFT JOIN CTS_Admin.CTSUser AS us ON us.UserID = mdv.VerifiedBy
 		INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator 
-														AND mdv.BettypeID = tmpMm.BettypeID AND mdv.BetID = tmpMm.BetID AND mdv.TicketType = tmpMm.TicketType
+														AND mdv.BettypeID = tmpMm.BettypeID 
+                                                        AND (CASE WHEN tmpMm.SportTypeID =CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mdv.BetID END) = tmpMm.BetID AND mdv.TicketType = tmpMm.TicketType
 			JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js;
