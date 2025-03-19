@@ -230,7 +230,8 @@ BEGIN
 			,	mm.Reason	# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game , 58: Irrigition
             ,	mm.TicketType
 		FROM   CTS_DataCenter.MatchMonitor AS mm
-			INNER JOIN Temp_Bettype AS tmpBt ON mm.BettypeID = tmpBt.BettypeID AND mm.BetID =  IFNULL(tmpBt.BetID, mm.BetID)
+			INNER JOIN Temp_Bettype AS tmpBt ON mm.BettypeID = tmpBt.BettypeID 
+							AND (CASE WHEN mm.SportType = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mm.BetID END) =  IFNULL(tmpBt.BetID, mm.BetID)
 			INNER JOIN Temp_Sporttype AS tmpSt ON mm.Sporttype = tmpSt.SportTypeID AND IFNULL(mm.LeagueGroupID,0) = tmpSt.LeagueGroupID
 			INNER JOIN Temp_Reason AS r ON r.ReasonID = mm.Reason
 		WHERE mm.InsertDate BETWEEN ip_FromDate AND ip_ToDate
