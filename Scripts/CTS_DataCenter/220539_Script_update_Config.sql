@@ -13,4 +13,10 @@ Reviewer:
 
 UPDATE CTS_DataCenter.CustomerCategory 
 SET IsDangerProbation = 0 
-WHERE CategoryID = 10200;
+WHERE CategoryID = 40500;
+UPDATE CTS_DataCenter.CustomerCategory 
+SET IsDangerProbation = 0 
+WHERE CategoryID = 40600;
+UPDATE CTS_DataCenter.CustomerCategory 
+SET IsDangerProbation = 0 
+WHERE CategoryID = 40701;
