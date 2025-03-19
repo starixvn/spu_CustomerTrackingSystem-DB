@@ -79,7 +79,7 @@ BEGIN
     SELECT MAX(mm.MMUserCommentID)
     INTO lv_NewMMUserCommentID
     FROM CTS_DataCenter.MatchMonitorUserComment AS mm
-		INNER JOIN Temp_BetID AS tmpbet ON tmpBet.BetID = mm.BetID
+		INNER JOIN Temp_BetID AS tmpBet ON tmpBet.BetID = mm.BetID
     WHERE	mm.MatchID	= ip_MatchID
 		AND	mm.SportType = ip_SportType
         AND	mm.LiveIndicator = ip_LiveIndicator
@@ -87,7 +87,7 @@ BEGIN
         AND	mm.BetID = tmpBet.BetID
         AND	mm.CreatedBy = ip_UserID
 		AND	mm.MMUserCommentID > lv_MaxMMUserCommentID;
-    
+
     INSERT INTO CTS_DataCenter.MatchMonitorUserCommentDetails(MMUserCommentID, CommentType, Reason, FromTransInfo, ToTransInfo)
     SELECT	lv_NewMMUserCommentID AS MMUserCommentID
 		,	CONST_COMMENTTYPE_INCORRECT AS CommentType
