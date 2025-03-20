@@ -330,9 +330,7 @@ BEGIN
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
 				AND cust.RoleId = 1
-				AND cust.danger > 0 AND cust.danger = @Danger
-			
-				;
+				AND cust.danger > 0 AND cust.danger = @Danger;
 		END;
 		IF @DangerType = 2
 		BEGIN
@@ -349,10 +347,7 @@ BEGIN
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
 				AND cust.RoleId = 1
-				AND cust.danger2 > 0 AND cust.danger2 = @Danger
-
-				
-				;
+				AND cust.danger2 > 0 AND cust.danger2 = @Danger;
 		END;
 		IF @DangerType = 3
 		BEGIN
@@ -369,8 +364,7 @@ BEGIN
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
 				AND cust.RoleId = 1
-				AND cust.danger3 > 0 AND cust.danger3 = @Danger
-				;
+				AND cust.danger3 > 0 AND cust.danger3 = @Danger;
 		END;
 		IF @DangerType = 4
 		BEGIN
@@ -387,8 +381,7 @@ BEGIN
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
 				AND cust.RoleId = 1
-				AND cust.danger4 > 0 AND cust.danger4 = @Danger
-				;
+				AND cust.danger4 > 0 AND cust.danger4 = @Danger;
 		END;
 		IF @DangerType = 5
 		BEGIN
@@ -405,8 +398,7 @@ BEGIN
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
 				AND cust.RoleId = 1
-				AND cust.danger5 > 0 AND cust.danger5 = @Danger
-				;
+				AND cust.danger5 > 0 AND cust.danger5 = @Danger;
 		END;
 	END;
 
