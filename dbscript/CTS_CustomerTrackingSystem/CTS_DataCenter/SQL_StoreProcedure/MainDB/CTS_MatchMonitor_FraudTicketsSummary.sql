@@ -15,7 +15,7 @@ AS
 	Revisions:
 		- 20231116@Long.Luu: 	Initialize [Redmine ID: 195042]
 		- 20231212@Long.Luu: 	Remove duplicate tickets catched by many reasons [Redmine ID: 196396]
-		- 20250318@Thomas.Nguyen: 	Rename SP [Redmine ID: #219681]
+		- 20250318@Thomas.Nguyen: 	Rename SP from CTS_Rpt_MatchMonitor_FraudTicketsSummary [Redmine ID: #219681]
 
 	Params Explaination:
 		-	@FraudTickets is in Json format
