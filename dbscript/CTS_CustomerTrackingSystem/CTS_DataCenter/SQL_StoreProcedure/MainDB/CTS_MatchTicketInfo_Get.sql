@@ -35,6 +35,7 @@ AS
 		- 20240802@Casey.Huynh:	Add Filter by User Amount and Total Amount  [Redmine ID: #207528]	
 		- 20241227@Casey.Huynh:	Tunning Phase 1, USE(Max Dop,Force Index) [Redmine ID: #214663]	
 		- 20250103@Casey.Huynh:	Tunning Phase 2, REMOVE(Max Dop,Force Index) enhance logic get data, switch sp to WASAVerse [Redmine ID: #214663]	
+		- 20250320@Jonas.Huynh:	Danger Monitor - Handle BetID for Cricket [Redmine ID: #214663]
 
 	Params Explaination:
 		,@BettypeList='[	{"BetType":1, "BetChoiceType":2}
@@ -86,6 +87,8 @@ BEGIN
 		,	@IsExcludeSabaGroup		BIT = 1
 		,	@IsFromActive14			TINYINT = 0
 		;
+
+	DECLARE @SPORTTYPE_CRICKET		SMALLINT = 50;
 
 	--===============================================================================================
 	DECLARE @tmpBUMBData AS TABLE (BUDay DATETIME,	MBDay DATETIME);
@@ -462,10 +465,10 @@ BEGIN
 		BEGIN
 
 			;WITH CTE_CustTrans AS(			
-			SELECT	b.MatchId
+						SELECT	b.MatchId
 							,	b.liveindicator
 							,	b.bettype
-							,	b.BetId
+							,	CASE WHEN m.SportType = @SPORTTYPE_CRICKET THEN 0 ELSE b.BetId END AS BetID
 							,	b.betteam
 							,	b.stake
 							,	b.actualrate
@@ -475,12 +478,13 @@ BEGIN
 							,	t.BetChoiceAway
 						FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 							INNER JOIN #tmpCustomer AS c WITH(NOLOCK) ON b.custid = c.custid
+							INNER JOIN #tmpMatchInfo AS m WITH(NOLOCK) ON m.MatchId = b.matchid
 							CROSS APPLY (
 								SELECT bt.BetID, bt.BetChoiceType,bt.BetChoiceHome,bt.BetChoiceAway
 								FROM #tmpBetType AS bt WITH(NOLOCK)
 								WHERE b.Bettype = bt.Bettype 
 							) AS t
-						WHERE b.BetID = t.BetID)
+						WHERE b.BetID = CASE WHEN m.SportType = @SPORTTYPE_CRICKET THEN b.BetID ELSE t.BetId END)
 			INSERT INTO #tmpMatchSum(MatchId, LiveIndicator,BetChoiceType, Bettype,BetID, TotalAmountHome, TotalAmountAway, TotalTicketHome, TotalTicketAway)
 			SELECT 	tmpCust.MatchId
 				,	tmpCust.LiveIndicator
@@ -602,7 +606,7 @@ BEGIN
 		SELECT	b.MatchId
 			,	b.Liveindicator
 			,	b.Bettype
-			,	b.BetId
+			,	CASE WHEN m.SportType = @SPORTTYPE_CRICKET THEN 0 ELSE b.BetId END AS BetID
 			,	b.Betteam
 			,	b.Stake
 			,	b.Actualrate
@@ -647,7 +651,7 @@ BEGIN
 								WHERE tmp.Bettype = bt.Bettype 
 							) AS t
 				
-					WHERE tmp.BetID = t.BetID 
+					WHERE tmp.BetID = t.BetID
 						AND (CASE WHEN @MarketList = '' THEN 1
 								  WHEN @MarketList <> '' AND tmp.LiveIndicator IN (SELECT ssk.value FROM STRING_SPLIT (@MarketList, ',') AS ssk) THEN 1
 								  ELSE 0 END = 1)
