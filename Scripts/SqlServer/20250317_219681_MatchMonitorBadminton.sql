@@ -11,8 +11,8 @@ DROP PROCEDURE IF EXISTS CTS_Rpt_MatchMonitor_GetTicketInfo;
 DROP PROCEDURE IF EXISTS CTS_Rpt_MatchMonitor_GetTicketInfo_xtest;
 
 --===========CTS_TicketDetails_Info Change to  CTS_MatchMonitor_Details_GetFilter============
-DROP PROCEDURE IF EXISTS CTS_MatchMonitor_Details_GetFilter;
-DROP PROCEDURE IF EXISTS CTS_MatchMonitor_Details_GetFilter_xtest;
+DROP PROCEDURE IF EXISTS CTS_TicketDetails_Info;
+DROP PROCEDURE IF EXISTS CTS_TicketDetails_Info_xtest;
 
 --===========CTS_Rpt_MatchMonitor_TicketDetails Change to  CTS_MatchMonitor_Details_GetTicket============
 DROP PROCEDURE IF EXISTS CTS_Rpt_MatchMonitor_TicketDetails;
