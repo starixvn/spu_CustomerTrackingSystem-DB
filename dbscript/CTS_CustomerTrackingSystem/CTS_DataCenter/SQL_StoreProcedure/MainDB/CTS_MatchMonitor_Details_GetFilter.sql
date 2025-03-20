@@ -61,7 +61,7 @@ AS
 
 	Example:
 		DECLARE @MaxSequenceId BIGINT,@TotalTicketAll BIGINT,@TotalTicketLicensee BIGINT,@TotalTicketCredit BIGINT;
-		EXEC [dbo].[CTS_TicketDetails_Info] 
+		EXEC [dbo].[CTS_MatchMonitor_Details_GetFilter] 
 			72186342 -- @MatchID
 		,	NULL -- @EventDate
 		,	'[		{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}
