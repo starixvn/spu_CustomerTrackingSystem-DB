@@ -30,7 +30,7 @@ AS
 					 
 	Example:
 
-		EXEC CTS_Rpt_MatchMonitor_GetTicketInfo @QueryType=1
+		EXEC CTS_MatchMonitor_GetNewTicket @QueryType=1
 			,@LastScannedSequenceID=119779209696
 			,@IsLive=1
 			,@BatchSize=500

@@ -1,5 +1,5 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DC_MatchMonitor_Get_Casey`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Get`(
@@ -277,7 +277,7 @@ BEGIN
 			,	tmpMi.LeagueID
 			,	tmpMi.SportTypeID
 			,	tmpMi.BettypeID
-			,	(CASE WHEN tmpMi.SportTypeID =CONST_SPORTTYPE_BADMINTON THEN 0 ELSE tmpMi.BetID END) AS BetID
+			,	(CASE WHEN tmpMi.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE tmpMi.BetID END) AS BetID
 			,	tmpMi.Reason		# Refer table StaticList(ListID=16)
 			,	tmpMi.MatchSection
 			, 	tmpMi.KickOffTime
@@ -361,7 +361,7 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE WHEN tmpMm.SportTypeID = 9 THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
            ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY		
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
@@ -410,7 +410,7 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE WHEN tmpMm.SportTypeID = 9 THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
@@ -457,8 +457,8 @@ BEGIN
             ,	tmpMm.SporttypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-             ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END)) AS BettypeNameDisplay
-			,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
+            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+            ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	1 AS IsVerified
@@ -468,7 +468,7 @@ BEGIN
             ,	t.FraudTransm
             ,	tmpMm.TicketType
 		FROM Temp_MatchMonitor AS tmpMm        
-			INNER JOIN CTS_DataCenter.SportBettypeSetting AS sbs ON sbs.SportTypeID = tmpMm.SporttypeID AND sbs.BetTypeID = tmpMm.BettypeID AND sbs.FunctionID = 1
+			INNER JOIN CTS_DataCenter.BettypeSetting AS sbs ON sbs.BetTypeID = tmpMm.BettypeID
 			INNER JOIN Temp_MatchFraudTrans AS t ON tmpMm.MatchID = t.MatchID AND tmpMm.LiveIndicator = t.LiveIndicator 
 					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID AND tmpMm.TicketType = t.TicketType
 			INNER JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
@@ -492,3 +492,30 @@ BEGIN
                    
 END$$
 DELIMITER ;
+CALL CTS_DC_MatchMonitor_Get_Casey('[{"MatchId":83741491,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"China Open Super Series Men Singles Semifinal (Points Handicap)","HomeName":"Kenneth Jonassen (DEN)","AwayName":"Sung Hwan Park (KOR)"}
+		,{"MatchId":83741870,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T10:20:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"SABA NBA Playoffs Virtual NBA 2K20 Game 7","HomeName":"Germany","AwayName":"Hungary"}
+		,{"MatchId":83741873,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T10:20:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"China Open Super Series Men Singles Semifinal (Points Handicap)","HomeName":"Germany","AwayName":"Hungary"}
+		,{"MatchId":83741962,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"Thailand Masters Women Doubles","HomeName":"Jae Sung Jung (KOR)/Baek Cheol Shin (KOR)","AwayName":"Zahra Mahria Rossedy Permata (INA)"}
+		,{"MatchId":83741963,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"Olympics Tokyo 2020 - Badminton Men Singles Gold Medal Winner.","HomeName":"Vioni Florencya (INA)","AwayName":"Seung Jae Seo (KOR)/Ha Na Kim (KOR)"}
+		,{"MatchId":83741964,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"HYLO Open Men Singles","HomeName":"Yehezkiel Fritz Mainaky (INA)/Lyanny Alessandra Mainaky (INA)","AwayName":"Jardon Ou (TPE)/Po-Hsuan Yang (TPE)"}
+		,{"MatchId":83741965,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"Odisha Open Women Singles","HomeName":"Ruohan Guo (CHN)/Binbin Zheng (CHN)","AwayName":"Agnes Korosi (HUN)"}
+		,{"MatchId":83741966,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"Denmark Masters Women Singles","HomeName":"Tang Jie Chen (MAS)/Jia Jia Tew (MAS)","AwayName":"Choirunnisa Choirunnisa (INA)"}
+		,{"MatchId":83741967,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"Korea Masters Men Doubles","HomeName":"Lara Kaepplein (GER)/Jennifer Karnott (GER)","AwayName":"Chien Hui Yu (TPE)"}
+		,{"MatchId":83741968,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"Uber Cup Women Singles","HomeName":"Gal Hiram (ISR)/Dana Kugel (ISR)","AwayName":"Bing Jiao He"}
+		,{"MatchId":83742327,"EventDate":"2025-03-20T00:00:00","KickOffTime":"2025-03-20T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"All England Super Series Mixed Doubles Semifinal (Set Handicap)","HomeName":"Boonsak Ponsana (THA)","AwayName":"Yu Chen (CHN)"}
+		,{"MatchId":83742328,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"All England Super Series Women Singles Semifinal (Set Handicap)","HomeName":"Jin Chen (CHN)","AwayName":"Lee Chong Wei (MAS)"}
+		,{"MatchId":83741972,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"Iceland International Women Singles","HomeName":"Allan Yao-Zhong Ng (CAN)/Bryan Ng (CAN)","AwayName":"Ye Ji Kim (KOR)"}
+		,{"MatchId":83741971,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":4,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"Iran Fajr International Challenge Men Doubles","HomeName":"Blagovest Kisyov (BUL)/Luka Zdenjak (CRO)","AwayName":"Viorel Joan Fernando (INA)/Ferdian Mahardika Ranialdy (INA)"}
+		,{"MatchId":83741973,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"Commonwealth Games 2022 (in England) - Badminton Men Singles Gold Medal Winner","HomeName":"Abhyansh Singh (IND)","AwayName":"Aik Quan Tan (MAS)/Hui Lin Ng (MAS)"}
+		,{"MatchId":83741969,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"Badminton - BWF World Championships Men Singles Winner","HomeName":"Halla Bouksani (ALG)/Linda Mazri (ALG)","AwayName":"V Shem Goh (MAS)/Saina Nehwal (IND)"}
+		,{"MatchId":83741970,"EventDate":"2025-03-19T00:00:00","KickOffTime":"2025-03-19T00:00:00","MatchSection":1,"IsGetDataFromOrigin":1,"DataSource":0,"LeagueName":"National Games of China 2021 (in Shaanxi) - Badminton Men Team - Singles","HomeName":"Chi-Lin Wang (TPE)/Hsin Tien Chang (TPE)","AwayName":"Khek Wei Chua (MAS)/Man Chun Woon (MAS)"}]'
+		, timestamp('2025-03-19 00:00:00.000000')
+		, timestamp('2025-03-20 00:00:00.000000')
+		, '[{"LeagueGroupID":null,"SportTypeID":9}]'
+		, NULL
+		, @ip_IsVerified:= 1
+		, '[{"BettypeID":20,"BetID":0}
+		,{"BettypeID":704,"BetID":0}
+		,{"BettypeID":707,"BetID":0}
+		,{"BettypeID":708,"BetID":0}]', '2,3,0,1,58,5');
+
