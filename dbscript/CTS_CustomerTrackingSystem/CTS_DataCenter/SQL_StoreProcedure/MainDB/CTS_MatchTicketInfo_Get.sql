@@ -35,7 +35,7 @@ AS
 		- 20240802@Casey.Huynh:	Add Filter by User Amount and Total Amount  [Redmine ID: #207528]	
 		- 20241227@Casey.Huynh:	Tunning Phase 1, USE(Max Dop,Force Index) [Redmine ID: #214663]	
 		- 20250103@Casey.Huynh:	Tunning Phase 2, REMOVE(Max Dop,Force Index) enhance logic get data, switch sp to WASAVerse [Redmine ID: #214663]	
-		- 20250320@Jonas.Huynh:	Danger Monitor - Handle BetID for Cricket [Redmine ID: #214663]
+		- 20250320@Jonas.Huynh:	Danger Monitor - Handle BetID for Cricket [Redmine ID: #217765]
 
 	Params Explaination:
 		,@BettypeList='[	{"BetType":1, "BetChoiceType":2}
