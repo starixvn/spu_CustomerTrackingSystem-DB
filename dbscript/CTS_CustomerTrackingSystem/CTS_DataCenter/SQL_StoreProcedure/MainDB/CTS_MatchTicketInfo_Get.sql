@@ -303,15 +303,7 @@ BEGIN
 		INSERT INTO #tmpCustomer(CustId)
 		SELECT cs.custid
 		FROM bodb02.dbo.Customer AS cs WITH (NOLOCK) 
-			INNER JOIN #tmpUsername AS un WITH(NOLOCK) ON un.username = cs.username
-		WHERE cs.site NOT IN ('Nextbet','9wickets','9wsports')
-				AND cs.username NOT LIKE '%Cashout%'
-				AND cs.mrecommend NOT IN (27899314,11656504,12146012) 
-				AND cs.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
-				AND (CASE WHEN @IsExclTestCurr = 0 THEN 1 
-						  WHEN @IsExclTestCurr = 1 AND cs.currency NOT IN (20,27,28) THEN 1 
-						  ELSE 0 END = 1)
-				AND cs.srecommend NOT IN (41430709);
+			INNER JOIN #tmpUsername AS un WITH(NOLOCK) ON un.username = cs.username;
 	END
 	ELSE
 	BEGIN
