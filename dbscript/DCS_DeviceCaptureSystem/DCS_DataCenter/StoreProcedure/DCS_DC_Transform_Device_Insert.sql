@@ -28,6 +28,7 @@ BEGIN
 			- 20231123@Jonathan.Doan: Integrate FPSjs Phrase 2 [Redmine: 196656]
 			- 20240326@Jonathan.Doan: Enhance for EC24 [Redmine: 202878] 
 			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
+			- 20250324@Jonathan.Doan: Use CURRENT_TIMESTAMP for InsertTime [Redmine ID: #217768]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -428,7 +429,7 @@ BEGIN
 		,	ts.PluginID
 		,	ts.TransStatus
 		,	ts.CreatedDate
-		,	ts.InsertTime
+		,	lv_InsertionTime AS InsertTime
 		,	ts.BotDetectionValue
 		,	ts.BotComponentID
 		,	ts.FakeIP
