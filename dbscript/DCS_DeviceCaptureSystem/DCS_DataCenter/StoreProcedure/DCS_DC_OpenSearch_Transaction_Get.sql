@@ -24,18 +24,16 @@ BEGIN
 	*/
     DECLARE CONST_OPENSEARCH_LISTIGNOREDSUBID 				INT 		DEFAULT 100;
 	DECLARE CONST_OPENSEARCH_TRANSACTION07_TRANSID 			INT 		DEFAULT 101;
-	DECLARE CONST_OPENSEARCH_CUTOFF_MINUTES 				INT 		DEFAULT 102;
+    DECLARE CONST_OPENSEARCH_MAXTRANSACTION07IDCOMPLETED	INT			DEFAULT 103;
     
 	DECLARE lv_MaxTransID  				BIGINT UNSIGNED;
+	DECLARE lv_MaxTransIDCompleted		BIGINT UNSIGNED;
 	DECLARE lv_ListIgnoredSubID			VARCHAR(500);
 	DECLARE lv_CurrentDatetime 			DATETIME DEFAULT CURRENT_TIMESTAMP();
-    DECLARE lv_CutoffMinute				INT;
-	DECLARE lv_MaxInsertTime 			DATETIME;
     
-	SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_TRANSACTION07_TRANSID);
-    SET lv_ListIgnoredSubID = (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_LISTIGNOREDSUBID);
-    SET lv_CutoffMinute = (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_CUTOFF_MINUTES);
-    SET lv_MaxInsertTime = (SELECT DATE_SUB(NOW(), INTERVAL lv_CutoffMinute MINUTE));
+	SET lv_MaxTransID			= (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_TRANSACTION07_TRANSID);
+	SET lv_MaxTransIDCompleted	= (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_MAXTRANSACTION07IDCOMPLETED);
+    SET lv_ListIgnoredSubID		= (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_LISTIGNOREDSUBID);
     
     #============================================
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
@@ -113,7 +111,7 @@ BEGIN
 		,	trans.IsIncognitoMode
 	FROM DCS_DataCenter.Transaction07 AS trans
 	WHERE trans.TransID > lv_MaxTransID
-		AND trans.InsertTime < lv_MaxInsertTime
+		AND trans.TransID <= lv_MaxTransIDCompleted
         AND NOT EXISTS (SELECT 1
 						FROM Temp_IgnoredSubscriberID AS subs 
 						WHERE subs.SubscriberID = trans.SubscriberID)
