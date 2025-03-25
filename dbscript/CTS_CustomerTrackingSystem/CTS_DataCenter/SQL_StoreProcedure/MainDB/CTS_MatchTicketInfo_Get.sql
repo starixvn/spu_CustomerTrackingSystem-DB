@@ -35,6 +35,7 @@ AS
 		- 20240802@Casey.Huynh:	Add Filter by User Amount and Total Amount  [Redmine ID: #207528]	
 		- 20241227@Casey.Huynh:	Tunning Phase 1, USE(Max Dop,Force Index) [Redmine ID: #214663]	
 		- 20250103@Casey.Huynh:	Tunning Phase 2, REMOVE(Max Dop,Force Index) enhance logic get data, switch sp to WASAVerse [Redmine ID: #214663]	
+		- 20250320@Jonas.Huynh:	Danger Monitor - Handle BetID for Cricket [Redmine ID: #217765]
 
 	Params Explaination:
 		,@BettypeList='[	{"BetType":1, "BetChoiceType":2}
@@ -86,6 +87,8 @@ BEGIN
 		,	@IsExcludeSabaGroup		BIT = 1
 		,	@IsFromActive14			TINYINT = 0
 		;
+
+	DECLARE @SPORTTYPE_CRICKET		SMALLINT = 50;
 
 	--===============================================================================================
 	DECLARE @tmpBUMBData AS TABLE (BUDay DATETIME,	MBDay DATETIME);
@@ -218,9 +221,12 @@ BEGIN
 	END
 	
 	SELECT 	@FDate = @FromDate, @TDate = @ToDate;
-	
-	INSERT INTO @tmpSport (SportType)
-	SELECT ssk.value FROM STRING_SPLIT (@SportList, ',') AS ssk;
+
+	IF @SportList <> ''
+	BEGIN
+		INSERT INTO @tmpSport (SportType)
+		SELECT ssk.value FROM STRING_SPLIT (@SportList, ',') AS ssk;
+	END;
 
 	IF @UserNameList <> '' AND @UserNameList IS NOT NULL
 	BEGIN
@@ -319,9 +325,7 @@ BEGIN
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
 				AND cust.RoleId = 1
-				AND cust.danger > 0 AND cust.danger = @Danger
-			
-				;
+				AND cust.danger > 0 AND cust.danger = @Danger;
 		END;
 		IF @DangerType = 2
 		BEGIN
@@ -338,10 +342,7 @@ BEGIN
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
 				AND cust.RoleId = 1
-				AND cust.danger2 > 0 AND cust.danger2 = @Danger
-
-				
-				;
+				AND cust.danger2 > 0 AND cust.danger2 = @Danger;
 		END;
 		IF @DangerType = 3
 		BEGIN
@@ -358,8 +359,7 @@ BEGIN
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
 				AND cust.RoleId = 1
-				AND cust.danger3 > 0 AND cust.danger3 = @Danger
-				;
+				AND cust.danger3 > 0 AND cust.danger3 = @Danger;
 		END;
 		IF @DangerType = 4
 		BEGIN
@@ -376,8 +376,7 @@ BEGIN
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
 				AND cust.RoleId = 1
-				AND cust.danger4 > 0 AND cust.danger4 = @Danger
-				;
+				AND cust.danger4 > 0 AND cust.danger4 = @Danger;
 		END;
 		IF @DangerType = 5
 		BEGIN
@@ -394,8 +393,7 @@ BEGIN
 						  ELSE 0 END = 1)
 				AND cs.srecommend NOT IN (41430709) 
 				AND cust.RoleId = 1
-				AND cust.danger5 > 0 AND cust.danger5 = @Danger
-				;
+				AND cust.danger5 > 0 AND cust.danger5 = @Danger;
 		END;
 	END;
 
@@ -408,64 +406,115 @@ BEGIN
 			SET @FDate = DATEADD(DD, 1, @MoveBetsDay);
 		END;
 
-		INSERT INTO #tmpMatchInfo(MatchID, HomeId, HomeName, AwayId, AwayName, EventDate, GlobalShowTime, EventStatus, SportType, LeagueId, LeagueName)
-		SELECT	tmp.MatchID
-			,	tmp.HomeId
-			,	tmp.HomeName
-			,	tmp.AwayId
-			,	tmp.AwayName
-			,	tmp.EventDate
-			,	tmp.GlobalShowTime
-			,	tmp.EventStatus
-			,	tmp.SportType
-			,	tmp.LeagueId
-			,	tmp.LeagueName
-		FROM (
-				SELECT DISTINCT 
-						m.MatchID
-					,	m.HomeId
-					,	h.TeamName AS HomeName
-					,	m.AwayId
-					,	a.TeamName AS AwayName
-					,	m.EventDate
-					,	m.GlobalShowTime
-					,	m.EventStatus
-					,	tmp.SportType
-					,	l.LeagueId
-					,	l.LeagueName
-				FROM bodb02.dbo.Match AS m
-					INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
-					INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
-					INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
-					INNER JOIN @tmpSport AS tmp ON m.Sporttype = tmp.SportType
-					INNER JOIN @tmpMatchSection AS ms ON ms.EventStatus = m.eventstatus
-				WHERE	m.EventDate >= @FDate 
-						AND m.EventDate <= @TDate 
-						AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
-						AND l.IsTest = 0 AND m.isTestMatch = 0
-						AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
-										AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
-								  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
-										AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
-								  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID IN (42,74,108,113,122,151)
-										AND EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup AS sl 
-																WHERE m.SportType = sl.SportType AND l.LeagueGroupID = sl.LeagueGroupID) THEN 1
-								  ELSE 0 END = 1)
-				) AS tmp
-			WHERE (tmp.LeagueName LIKE '%' + @LeagueEvent + '%'
-								OR tmp.HomeName LIKE '%' + @LeagueEvent + '%'
-								OR tmp.AwayName LIKE '%' + @LeagueEvent + '%')
-			;
+		IF EXISTS (SELECT 1 FROM @tmpSport)
+		BEGIN
+			INSERT INTO #tmpMatchInfo(MatchID, HomeId, HomeName, AwayId, AwayName, EventDate, GlobalShowTime, EventStatus, SportType, LeagueId, LeagueName)
+			SELECT	tmp.MatchID
+				,	tmp.HomeId
+				,	tmp.HomeName
+				,	tmp.AwayId
+				,	tmp.AwayName
+				,	tmp.EventDate
+				,	tmp.GlobalShowTime
+				,	tmp.EventStatus
+				,	tmp.SportType
+				,	tmp.LeagueId
+				,	tmp.LeagueName
+			FROM (
+					SELECT DISTINCT 
+							m.MatchID
+						,	m.HomeId
+						,	h.TeamName AS HomeName
+						,	m.AwayId
+						,	a.TeamName AS AwayName
+						,	m.EventDate
+						,	m.GlobalShowTime
+						,	m.EventStatus
+						,	tmp.SportType
+						,	l.LeagueId
+						,	l.LeagueName
+					FROM bodb02.dbo.Match AS m
+						INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
+						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
+						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
+						INNER JOIN @tmpSport AS tmp ON m.Sporttype = tmp.SportType
+						INNER JOIN @tmpMatchSection AS ms ON ms.EventStatus = m.eventstatus
+					WHERE	m.EventDate >= @FDate 
+							AND m.EventDate <= @TDate 
+							AND l.IsTest = 0 AND m.isTestMatch = 0
+							AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
+											AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
+									  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
+											AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
+									  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID IN (42,74,108,113,122,151)
+											AND EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup AS sl 
+																	WHERE m.SportType = sl.SportType AND l.LeagueGroupID = sl.LeagueGroupID) THEN 1
+									  ELSE 0 END = 1)
+					) AS tmp
+				WHERE (tmp.LeagueName LIKE '%' + @LeagueEvent + '%'
+									OR tmp.HomeName LIKE '%' + @LeagueEvent + '%'
+									OR tmp.AwayName LIKE '%' + @LeagueEvent + '%')
+				;
 
-
+		END;
+		ELSE IF EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup)
+		BEGIN
+			INSERT INTO #tmpMatchInfo(MatchID, HomeId, HomeName, AwayId, AwayName, EventDate, GlobalShowTime, EventStatus, SportType, LeagueId, LeagueName)
+			SELECT	tmp.MatchID
+				,	tmp.HomeId
+				,	tmp.HomeName
+				,	tmp.AwayId
+				,	tmp.AwayName
+				,	tmp.EventDate
+				,	tmp.GlobalShowTime
+				,	tmp.EventStatus
+				,	tmp.SportType
+				,	tmp.LeagueId
+				,	tmp.LeagueName
+			FROM (
+					SELECT DISTINCT 
+							m.MatchID
+						,	m.HomeId
+						,	h.TeamName AS HomeName
+						,	m.AwayId
+						,	a.TeamName AS AwayName
+						,	m.EventDate
+						,	m.GlobalShowTime
+						,	m.EventStatus
+						,	tmp.SportType
+						,	l.LeagueId
+						,	l.LeagueName
+					FROM bodb02.dbo.Match AS m
+						INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
+						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
+						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
+						INNER JOIN @tmpSportSabaLeagueGroup AS tmp ON m.Sporttype = tmp.SportType
+						INNER JOIN @tmpMatchSection AS ms ON ms.EventStatus = m.eventstatus
+					WHERE	m.EventDate >= @FDate 
+							AND m.EventDate <= @TDate 
+							AND l.IsTest = 0 AND m.isTestMatch = 0
+							AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
+											AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
+									  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
+											AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
+									  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID IN (42,74,108,113,122,151)
+											AND EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup AS sl 
+																	WHERE m.SportType = sl.SportType AND l.LeagueGroupID = sl.LeagueGroupID) THEN 1
+									  ELSE 0 END = 1)
+					) AS tmp
+				WHERE (tmp.LeagueName LIKE '%' + @LeagueEvent + '%'
+									OR tmp.HomeName LIKE '%' + @LeagueEvent + '%'
+									OR tmp.AwayName LIKE '%' + @LeagueEvent + '%')
+				;
+		END;
 		IF EXISTS (SELECT 1 FROM #tmpMatchInfo)
 		BEGIN
 
 			;WITH CTE_CustTrans AS(			
-			SELECT	b.MatchId
+						SELECT	b.MatchId
 							,	b.liveindicator
 							,	b.bettype
-							,	b.BetId
+							,	CASE WHEN m.SportType = @SPORTTYPE_CRICKET THEN 0 ELSE b.BetId END AS BetID
 							,	b.betteam
 							,	b.stake
 							,	b.actualrate
@@ -475,12 +524,13 @@ BEGIN
 							,	t.BetChoiceAway
 						FROM bodb02.dbo.bettrans AS b WITH(NOLOCK)
 							INNER JOIN #tmpCustomer AS c WITH(NOLOCK) ON b.custid = c.custid
+							INNER JOIN #tmpMatchInfo AS m WITH(NOLOCK) ON m.MatchId = b.matchid
 							CROSS APPLY (
 								SELECT bt.BetID, bt.BetChoiceType,bt.BetChoiceHome,bt.BetChoiceAway
 								FROM #tmpBetType AS bt WITH(NOLOCK)
 								WHERE b.Bettype = bt.Bettype 
 							) AS t
-						WHERE b.BetID = t.BetID)
+						WHERE b.BetID = CASE WHEN m.SportType = @SPORTTYPE_CRICKET THEN b.BetID ELSE t.BetId END)
 			INSERT INTO #tmpMatchSum(MatchId, LiveIndicator,BetChoiceType, Bettype,BetID, TotalAmountHome, TotalAmountAway, TotalTicketHome, TotalTicketAway)
 			SELECT 	tmpCust.MatchId
 				,	tmpCust.LiveIndicator
@@ -546,54 +596,106 @@ BEGIN
 			SET @TDate = @MoveBetsDay;
 		END;
 
-		INSERT INTO #tmpMatchInfo14(MatchID, HomeId, HomeName, AwayId, AwayName, EventDate, GlobalShowTime, EventStatus, SportType, LeagueId, LeagueName)
-		SELECT	tmp.MatchID
-			,	tmp.HomeId
-			,	tmp.HomeName
-			,	tmp.AwayId
-			,	tmp.AwayName
-			,	tmp.EventDate
-			,	tmp.GlobalShowTime
-			,	tmp.EventStatus
-			,	tmp.SportType
-			,	tmp.LeagueId
-			,	tmp.LeagueName
-		FROM (
-				SELECT DISTINCT 
-						m.MatchID
-					,	m.HomeId
-					,	h.TeamName AS HomeName
-					,	m.AwayId
-					,	a.TeamName AS AwayName
-					,	m.EventDate
-					,	m.GlobalShowTime
-					,	m.EventStatus
-					,	tmp.SportType
-					,	l.LeagueId
-					,	l.LeagueName
-				FROM bodb02.dbo.Match14 AS m
-					INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
-					INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
-					INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
-					INNER JOIN @tmpSport AS tmp ON m.Sporttype = tmp.SportType
-					INNER JOIN @tmpMatchSection AS ms ON ms.EventStatus = m.eventstatus
-				WHERE	m.EventDate >= @FDate 
-						AND m.EventDate <= @TDate 
-						AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
-						AND l.IsTest = 0 AND m.isTestMatch = 0
-						AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
-										AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
-								  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
-										AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
-								  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID IN (42,74,108,113,122,151)
-										AND EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup AS sl 
-																WHERE m.SportType = sl.SportType AND l.LeagueGroupID = sl.LeagueGroupID) THEN 1
-								  ELSE 0 END = 1)
-				) AS tmp
-			WHERE (tmp.LeagueName LIKE '%' + @LeagueEvent + '%'
-								OR tmp.HomeName LIKE '%' + @LeagueEvent + '%'
-								OR tmp.AwayName LIKE '%' + @LeagueEvent + '%')
-			;
+		IF EXISTS (SELECT 1 FROM @tmpSport)
+		BEGIN
+			INSERT INTO #tmpMatchInfo14(MatchID, HomeId, HomeName, AwayId, AwayName, EventDate, GlobalShowTime, EventStatus, SportType, LeagueId, LeagueName)
+			SELECT	tmp.MatchID
+				,	tmp.HomeId
+				,	tmp.HomeName
+				,	tmp.AwayId
+				,	tmp.AwayName
+				,	tmp.EventDate
+				,	tmp.GlobalShowTime
+				,	tmp.EventStatus
+				,	tmp.SportType
+				,	tmp.LeagueId
+				,	tmp.LeagueName
+			FROM (
+					SELECT DISTINCT 
+							m.MatchID
+						,	m.HomeId
+						,	h.TeamName AS HomeName
+						,	m.AwayId
+						,	a.TeamName AS AwayName
+						,	m.EventDate
+						,	m.GlobalShowTime
+						,	m.EventStatus
+						,	tmp.SportType
+						,	l.LeagueId
+						,	l.LeagueName
+					FROM bodb02.dbo.Match14 AS m
+						INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
+						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
+						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
+						INNER JOIN @tmpSport AS tmp ON m.Sporttype = tmp.SportType
+						INNER JOIN @tmpMatchSection AS ms ON ms.EventStatus = m.eventstatus
+					WHERE	m.EventDate >= @FDate 
+							AND m.EventDate <= @TDate 							
+							AND l.IsTest = 0 AND m.isTestMatch = 0
+							AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
+											AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
+									  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
+											AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
+									  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID IN (42,74,108,113,122,151)
+											AND EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup AS sl 
+																	WHERE m.SportType = sl.SportType AND l.LeagueGroupID = sl.LeagueGroupID) THEN 1
+									  ELSE 0 END = 1)
+					) AS tmp
+				WHERE (tmp.LeagueName LIKE '%' + @LeagueEvent + '%'
+									OR tmp.HomeName LIKE '%' + @LeagueEvent + '%'
+									OR tmp.AwayName LIKE '%' + @LeagueEvent + '%')
+				;
+			END;
+			ELSE IF EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup)				
+			BEGIN
+				INSERT INTO #tmpMatchInfo14(MatchID, HomeId, HomeName, AwayId, AwayName, EventDate, GlobalShowTime, EventStatus, SportType, LeagueId, LeagueName)
+			SELECT	tmp.MatchID
+				,	tmp.HomeId
+				,	tmp.HomeName
+				,	tmp.AwayId
+				,	tmp.AwayName
+				,	tmp.EventDate
+				,	tmp.GlobalShowTime
+				,	tmp.EventStatus
+				,	tmp.SportType
+				,	tmp.LeagueId
+				,	tmp.LeagueName
+			FROM (
+					SELECT DISTINCT 
+							m.MatchID
+						,	m.HomeId
+						,	h.TeamName AS HomeName
+						,	m.AwayId
+						,	a.TeamName AS AwayName
+						,	m.EventDate
+						,	m.GlobalShowTime
+						,	m.EventStatus
+						,	tmp.SportType
+						,	l.LeagueId
+						,	l.LeagueName
+					FROM bodb02.dbo.Match14 AS m
+						INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
+						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
+						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
+						INNER JOIN @tmpSportSabaLeagueGroup AS tmp ON m.Sporttype = tmp.SportType
+						INNER JOIN @tmpMatchSection AS ms ON ms.EventStatus = m.eventstatus
+					WHERE	m.EventDate >= @FDate 
+							AND m.EventDate <= @TDate 							
+							AND l.IsTest = 0 AND m.isTestMatch = 0
+							AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
+											AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
+									  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
+											AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
+									  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID IN (42,74,108,113,122,151)
+											AND EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup AS sl 
+																	WHERE m.SportType = sl.SportType AND l.LeagueGroupID = sl.LeagueGroupID) THEN 1
+									  ELSE 0 END = 1)
+					) AS tmp
+				WHERE (tmp.LeagueName LIKE '%' + @LeagueEvent + '%'
+									OR tmp.HomeName LIKE '%' + @LeagueEvent + '%'
+									OR tmp.AwayName LIKE '%' + @LeagueEvent + '%')
+				;
+			END
   
   IF Exists (SELECT 1 FROM #tmpMatchInfo14) 
   BEGIN
@@ -602,7 +704,7 @@ BEGIN
 		SELECT	b.MatchId
 			,	b.Liveindicator
 			,	b.Bettype
-			,	b.BetId
+			,	CASE WHEN m.SportType = @SPORTTYPE_CRICKET THEN 0 ELSE b.BetId END AS BetID
 			,	b.Betteam
 			,	b.Stake
 			,	b.Actualrate
@@ -647,7 +749,7 @@ BEGIN
 								WHERE tmp.Bettype = bt.Bettype 
 							) AS t
 				
-					WHERE tmp.BetID = t.BetID 
+					WHERE tmp.BetID = t.BetID
 						AND (CASE WHEN @MarketList = '' THEN 1
 								  WHEN @MarketList <> '' AND tmp.LiveIndicator IN (SELECT ssk.value FROM STRING_SPLIT (@MarketList, ',') AS ssk) THEN 1
 								  ELSE 0 END = 1)

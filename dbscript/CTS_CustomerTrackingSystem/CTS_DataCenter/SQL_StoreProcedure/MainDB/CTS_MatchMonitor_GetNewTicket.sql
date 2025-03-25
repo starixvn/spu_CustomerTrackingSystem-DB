@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[CTS_Rpt_MatchMonitor_GetTicketInfo]
+CREATE PROCEDURE [dbo].[CTS_MatchMonitor_GetNewTicket]
 		@QueryType					TINYINT = 1
 	,	@LastScannedSequenceID		BIGINT = 0
 	,	@IsLive						BIT = 1
@@ -23,13 +23,14 @@ AS
 		- 20240607@CaseyHuynh:	Return Saba Scocer Ticket [Redmine ID: #191972]
         - 20240704@Casey.Huynh: Saba Group Betting - Add Basketball and enhance Soccer [Redmine ID: #207523]
 		- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
+		- 20250317@Casey.Huynh: Match Monitor Badminton - Rename from CTS_Rpt_MatchMonitor_GetTicketInfo [Redmine ID: #219681]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service MM Staging (get tickets by @LastScannedTransID, @IsLive & @BatchSize & @ListSportBettype)
 					 
 	Example:
 
-		EXEC CTS_Rpt_MatchMonitor_GetTicketInfo @QueryType=1
+		EXEC CTS_MatchMonitor_GetNewTicket @QueryType=1
 			,@LastScannedSequenceID=119779209696
 			,@IsLive=1
 			,@BatchSize=500
@@ -149,7 +150,8 @@ BEGIN
 			AND b.BetFrom NOT IN ('p','m','w','0','3','6')
 			AND b.srecommend NOT IN (41430709) 
 			AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)AND b.statusID <> 101 -- Reject		
+			AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND b.statusID <> 101 -- Reject		
 			AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 			AND c.Username NOT LIKE '%Cashout%'
 			AND (l.LeagueGroupID NOT IN (42,74,108,113,122,151)

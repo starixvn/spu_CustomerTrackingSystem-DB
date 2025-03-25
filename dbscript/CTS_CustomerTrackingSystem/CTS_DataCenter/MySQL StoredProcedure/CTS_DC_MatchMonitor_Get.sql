@@ -40,6 +40,7 @@ BEGIN
 			-	20240530@Casey.Huynh:	Saba Group Betting [Redmine ID: #191972]
             - 	20240829@Casey.Huynh:	Handle TicketType (Single or Parlay) [Redmine ID: #152883]
             - 	20250218@Thomas.Nguyen:	Fix issue not filter by Bettype in Scan Date mode [Redmine ID: #217782]
+            -	20250317@Casey.Huynh: 	Match Monitor Badminton [Redmine ID: #219681]
 
 		Param's Explanation (filtered by):
 			- ip_Market: 		0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
@@ -58,7 +59,8 @@ BEGIN
 				,@ip_Market:=0,@ip_IsVerified:=NULL
 				,@ip_Bettypes:='[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]',@ip_Reason:='0,5');
     */
-
+	DECLARE CONST_SPORTTYPE_BADMINTON	INT DEFAULT 9;
+    
 	DECLARE lv_IsLog TINYINT DEFAULT 0;    
 	DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Get';
     DECLARE lv_LogInfo TEXT;
@@ -133,6 +135,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchGroup;
     CREATE TEMPORARY TABLE Temp_MatchGroup(
 			MatchID 		INT
+		, 	SportTypeID		INT
         ,	LiveIndicator	TINYINT
 		,	BettypeID		INT
         ,	BetID			INT
@@ -165,7 +168,7 @@ BEGIN
         ,	VerifiedBy 		VARCHAR(50)
         ,	TicketType		SMALLINT
         ,	INDEX IX_Temp_VerfiedTrans(TransID,Reason)
-        ,	INDEX IX_Temp_MatchGroup(MatchID,LiveIndicator,BettypeID, BetID, Reason,TicketType)
+        ,	INDEX IX_Temp_VerfiedTrans_MatchGroup(MatchID,LiveIndicator,BettypeID, BetID, Reason,TicketType)
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MatchInfo;
@@ -223,18 +226,19 @@ BEGIN
 			,	mm.LeagueID
 			,	mm.Sporttype
 			,	mm.BettypeID
-			,	mm.BetID
-			,	mm.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game , 58: Irrigition
+			,	(CASE WHEN mm.SportType = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mm.BetID END) AS BetID
+			,	mm.Reason	# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game , 58: Irrigition
             ,	mm.TicketType
 		FROM   CTS_DataCenter.MatchMonitor AS mm
-			INNER JOIN Temp_Bettype AS tmpBt ON mm.BettypeID = tmpBt.BettypeID AND mm.BetID =  IFNULL(tmpBt.BetID,mm.BetID)
+			INNER JOIN Temp_Bettype AS tmpBt ON mm.BettypeID = tmpBt.BettypeID 
+							AND (CASE WHEN mm.SportType = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mm.BetID END) =  IFNULL(tmpBt.BetID, mm.BetID)
 			INNER JOIN Temp_Sporttype AS tmpSt ON mm.Sporttype = tmpSt.SportTypeID AND IFNULL(mm.LeagueGroupID,0) = tmpSt.LeagueGroupID
 			INNER JOIN Temp_Reason AS r ON r.ReasonID = mm.Reason
 		WHERE mm.InsertDate BETWEEN ip_FromDate AND ip_ToDate
 			AND mm.LiveIndicator = IFNULL(ip_Market, mm.LiveIndicator); 
             
     ELSE #ip_MatchInfos <> '' THEN # Search by Event Date		
-                                
+                              
 		INSERT IGNORE INTO Temp_MatchInfo (MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, SporttypeID,LeagueGroupID, BettypeID, BetID, Reason, MatchSection, KickOffTime, TicketType)
 		SELECT  DISTINCT js.MatchId
 			,	js.EventDate
@@ -245,7 +249,7 @@ BEGIN
 			,	mm.Sporttype
             ,	IFNULL(mm.LeagueGroupID,0)
 			,	mm.BettypeID
-			,	mm.BetID
+			,	(CASE WHEN mm.SportType = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mm.BetID END) AS BetID
 			,	mm.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
 			,	js.MatchSection
 			, 	js.KickOffTime
@@ -259,10 +263,11 @@ BEGIN
 											,	MatchSection	TINYINT		PATH "$.MatchSection"
 										)
 								) AS js ON js.MatchId = mm.MatchId
-			INNER JOIN Temp_Bettype AS tmpBt ON mm.BettypeID = tmpBt.BettypeID AND mm.BetID = IFNULL(tmpBt.BetID,mm.BetID)
+			INNER JOIN Temp_Bettype AS tmpBt ON mm.BettypeID = tmpBt.BettypeID 
+				AND (CASE WHEN mm.SportType = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mm.BetID END) = IFNULL(tmpBt.BetID,mm.BetID)
 			INNER JOIN Temp_Reason AS r ON r.ReasonID = mm.Reason
 		WHERE	mm.LiveIndicator = IFNULL(ip_Market, mm.LiveIndicator);
-	
+    
 		INSERT INTO Temp_MatchMonitor(MatchID, EventDate, LiveIndicator, HomeID, AwayID, LeagueID, SportTypeID, BettypeID, BetID, Reason, MatchSection, KickOffTime, TicketType)    
 		SELECT 	DISTINCT tmpMi.MatchID
 			,	tmpMi.EventDate
@@ -272,7 +277,7 @@ BEGIN
 			,	tmpMi.LeagueID
 			,	tmpMi.SportTypeID
 			,	tmpMi.BettypeID
-			,	tmpMi.BetID
+			,	(CASE WHEN tmpMi.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE tmpMi.BetID END) AS BetID
 			,	tmpMi.Reason		# Refer table StaticList(ListID=16)
 			,	tmpMi.MatchSection
 			, 	tmpMi.KickOffTime
@@ -280,7 +285,7 @@ BEGIN
 		FROM   Temp_MatchInfo AS tmpMi 
 			INNER JOIN Temp_Sporttype AS tmpSt ON tmpMi.SporttypeID = tmpSt.SportTypeID AND tmpMi.LeagueGroupID= tmpSt.LeagueGroupID;
     END IF;
-    
+
     INSERT IGNORE INTO Temp_VerfiedTrans(TransID, Reason, VerifiedBy, MatchID,LiveIndicator,BettypeID, BetID, TicketType)
     SELECT	js.TransID
 		,	mdv.Reason
@@ -288,18 +293,20 @@ BEGIN
         ,	mdv.MatchID
         ,	mdv.LiveIndicator
         ,	mdv.BettypeID
-        ,	mdv.BetID
+        ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mdv.BetID END) AS BetID
         ,	mdv.TicketType
-    FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
+    FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv		
 		LEFT JOIN CTS_Admin.CTSUser AS us ON us.UserID = mdv.VerifiedBy
 		INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator 
-														AND mdv.BettypeID = tmpMm.BettypeID AND mdv.BetID = tmpMm.BetID AND mdv.TicketType = tmpMm.TicketType
+														AND mdv.BettypeID = tmpMm.BettypeID 
+                                                        AND (CASE WHEN tmpMm.SportTypeID =CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mdv.BetID END) = tmpMm.BetID AND mdv.TicketType = tmpMm.TicketType
 			JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js;
 
-    INSERT INTO Temp_MatchGroup(MatchID, LiveIndicator, BettypeID, BetID, TicketType, Reason, VerifiedBy)
+    INSERT INTO Temp_MatchGroup(MatchID, SportTypeID, LiveIndicator, BettypeID, BetID, TicketType, Reason, VerifiedBy)
     SELECT	tmpMm.MatchID
+			,	tmpMm.SportTypeID
 			,	tmpMm.LiveIndicator
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
@@ -319,7 +326,9 @@ BEGIN
         ,	tmpMg.TicketType
     FROM Temp_MatchGroup AS tmpMg
 		INNER JOIN CTS_DataCenter.MatchMonitorDetails AS mmd ON tmpMg.MatchID = mmd.MatchID AND tmpMg.LiveIndicator = mmd.LiveIndicator
-																AND tmpMg.BettypeID = mmd.BettypeID AND tmpMg.BetID = mmd.BetID AND tmpMg.TicketType = mmd.TicketType
+																AND tmpMg.BettypeID = mmd.BettypeID 
+                                                                AND tmpMg.BetID = (CASE WHEN tmpMg.SportTypeID =CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mmd.BetID END) 
+                                                                AND tmpMg.TicketType = mmd.TicketType
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js
@@ -332,10 +341,12 @@ BEGIN
         ,	GROUP_CONCAT(DISTINCT d.ListTransIDm) AS FraudTransm
     FROM Temp_MatchMonitor AS t
 		INNER JOIN CTS_DataCenter.MatchMonitorDetails AS d ON t.MatchID = d.MatchID 
-			AND t.LiveIndicator = d.LiveIndicator AND t.BettypeID = d.BettypeID AND t.BetID = d.BetID AND  t.TicketType = d.TicketType 
+			AND t.LiveIndicator = d.LiveIndicator AND t.BettypeID = d.BettypeID 
+									AND t.BetID = (CASE WHEN t.SportTypeID =CONST_SPORTTYPE_BADMINTON THEN 0 ELSE d.BetID END) 
+									AND  t.TicketType = d.TicketType 
 		INNER JOIN Temp_Reason AS r ON d.Reason = r.ReasonID
 	GROUP BY t.MatchID, t.LiveIndicator, t.BettypeID, t.BetID, t.TicketType;
-   
+
     IF (ip_IsVerified IS NULL)
     THEN 
 
@@ -350,8 +361,8 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END)) AS BettypeNameDisplay
-			,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
+            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+           ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY		
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	NOT EXISTS(SELECT 1 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
@@ -399,8 +410,8 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-             ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END)) AS BettypeNameDisplay
-			,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
+            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+            ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	0 AS IsVerified
@@ -434,6 +445,7 @@ BEGIN
     
     IF (ip_IsVerified = 1)
     THEN
+		
 		SELECT	tmpMm.MatchID
             ,	tmpMm.MatchSection
 			,	tmpMm.EventDate
@@ -445,8 +457,8 @@ BEGIN
             ,	tmpMm.SporttypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-             ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END)) AS BettypeNameDisplay
-			,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
+            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+            ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	1 AS IsVerified
@@ -455,8 +467,8 @@ BEGIN
             ,	t.FraudRefno
             ,	t.FraudTransm
             ,	tmpMm.TicketType
-		FROM Temp_MatchMonitor AS tmpMm
-			INNER JOIN CTS_DataCenter.SportBettypeSetting AS sbs ON sbs.SportTypeID = tmpMm.SporttypeID AND sbs.BetTypeID = tmpMm.BettypeID
+		FROM Temp_MatchMonitor AS tmpMm        
+			INNER JOIN CTS_DataCenter.BettypeSetting AS sbs ON sbs.BetTypeID = tmpMm.BettypeID
 			INNER JOIN Temp_MatchFraudTrans AS t ON tmpMm.MatchID = t.MatchID AND tmpMm.LiveIndicator = t.LiveIndicator 
 					AND tmpMm.BettypeID = t.BettypeID AND tmpMm.BetID = t.BetID AND tmpMm.TicketType = t.TicketType
 			INNER JOIN Temp_MatchGroup AS tmpMg ON tmpMm.MatchID = tmpMg.MatchID AND tmpMm.LiveIndicator = tmpMg.LiveIndicator 
@@ -480,3 +492,4 @@ BEGIN
                    
 END$$
 DELIMITER ;
+

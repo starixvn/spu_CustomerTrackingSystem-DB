@@ -24,7 +24,8 @@ BEGIN
             -	20240530@Casey.Huynh: Saba Group Betting [Redmine ID: #191972]
             -	20240822@Casey.Huynh: Seperate BettypeSetting to New Table [Redmine ID: #207397]
             -	20250214@Casey.Huynh: Update Bettype Order for MM [Redmine ID: #217782]
-            
+            -	20250319@Thomas.Nguyen: Return SportOrder [Redmine ID: #219681]
+
 		Param's Explanation (filtered by):
         	ip_FunctionID: 1, 2
 		,	ip_SportTypeIDList: NULL-Gett ALL Bettype, else '1,2,43..'
@@ -129,6 +130,7 @@ BEGIN
 				,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceAway
 				,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceAwayDisplay
 				,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceAwayFullName
+				,	sbs.SportOrder
 			FROM CTS_DataCenter.SportBettypeSetting AS sbs
 				INNER JOIN CTS_DataCenter.BettypeSetting AS bs ON bs.BettypeID = sbs.BetTypeID
 				INNER JOIN Temp_SportTypeID AS tmpSt ON IFNULL(tmpSt.SportTypeID,sbs.SportTypeID) = sbs.SportTypeID
@@ -150,6 +152,7 @@ BEGIN
 				,	bs.BetIDPattern
 				,	js.NameDetailsX
 				,	bs.BettypeNameDisplay
+				,	sbs.SportOrder
 			ORDER BY LeagueGroupID, bs.BettypeOrder, js.NameDetailsX; 
 		ELSE	
 		
@@ -169,6 +172,7 @@ BEGIN
 				,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceAway
 				,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceAwayDisplay
 				,	MAX(CASE WHEN bs.BetteamOrder = 2 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceAwayFullName
+				,	sbs.SportOrder
 			FROM CTS_DataCenter.SportBettypeSetting AS sbs
 				INNER JOIN CTS_DataCenter.BettypeSetting AS bs ON bs.BettypeID = sbs.BetTypeID
 				INNER JOIN Temp_SportTypeID AS tmpSt ON IFNULL(tmpSt.SportTypeID,sbs.SportTypeID) = sbs.SportTypeID
@@ -187,6 +191,7 @@ BEGIN
 				,	bs.BetChoiceType
 				,	bs.BetIDPattern
 				,	bs.BettypeNameDisplay
+				,	sbs.SportOrder
 			ORDER BY LeagueGroupID, bs.BettypeOrder; 
 			
 		END IF;

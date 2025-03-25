@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[CTS_TicketDetails_Info]
+CREATE PROCEDURE [dbo].[CTS_MatchMonitor_Details_GetFilter]
 		@MatchID					INT = 0
 	,	@EventDate					DATETIME = '1900-09-22'
 	,	@ListSportBettype			VARCHAR(MAX)
@@ -45,6 +45,7 @@ AS
 		- 20241226@Thomas.Nguyen: 	Add Username Filter [Redmine ID: #210128]
 		- 20241217@Victoria.Le: 	Super/Master Direct Member [Redmine ID: #214585]
 		- 20250225@Casey.Huynh:		Handle @ListSportBetType (Criket BetID IS NULL) [Redmine ID: #218383]
+		- 20250318@Casey.Huynh:		Match Monitor Badminton, Rename from CTS_TicketDetails_Info [Redmine ID: #219681]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
@@ -60,7 +61,7 @@ AS
 
 	Example:
 		DECLARE @MaxSequenceId BIGINT,@TotalTicketAll BIGINT,@TotalTicketLicensee BIGINT,@TotalTicketCredit BIGINT;
-		EXEC [dbo].[CTS_TicketDetails_Info] 
+		EXEC [dbo].[CTS_MatchMonitor_Details_GetFilter] 
 			72186342 -- @MatchID
 		,	NULL -- @EventDate
 		,	'[		{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":2}

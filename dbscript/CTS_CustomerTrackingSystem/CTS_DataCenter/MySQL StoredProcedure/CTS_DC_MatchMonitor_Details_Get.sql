@@ -6,7 +6,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_MatchMonitor_Details_Get`(
 		IN ip_MatchID 			BIGINT UNSIGNED   
 	,	IN ip_LiveIndicator		BOOLEAN   
     ,	IN ip_BettypeID			INT UNSIGNED
-    ,	IN ip_BetID				BIGINT
+    ,	IN ip_BetIDList			TEXT
        
 )
     SQL SECURITY INVOKER
@@ -27,7 +27,8 @@ BEGIN
 			-	20230105@Casey.Huynh: Enhance Report, Seperate CustID List and TransID List [Redmine ID: #181995]
             - 	20230222@Casey.Huynh: For Merge Reason Group, Return All Trans [Redmine ID: 181995]
             - 	20240829@Casey.Huynh: Handle TicketType Single [Redmine ID: #152883]
-            
+            -	20250317@Thomas.Nguyen: Handle list ip_BetID [Redmine ID: #219681]
+
 		Param's Explanation (filtered by):
 		
 		Example:
@@ -37,15 +38,24 @@ BEGIN
     
     DECLARE CONST_TICKETTYPE_SINGLE SMALLINT DEFAULT 1;
     
+	DROP TEMPORARY TABLE IF EXISTS Temp_BetID;    
+	CREATE TEMPORARY TABLE Temp_BetID( 	  
+		BetID		BIGINT PRIMARY KEY
+	);
+
+    SET @sql = CONCAT("INSERT INTO Temp_BetID (BetID) VALUES ('", REPLACE(ip_BetIDList, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
+
 	SELECT 	DISTINCT cus.CTSCustID
         ,	cus.CustID
 	FROM   CTS_DataCenter.MatchMonitorDetails AS mmd
-		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListCustID), ',', '","'), 
+		INNER JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListCustID), ',', '","'), 
 						'$[*]' COLUMNS (CustID BIGINT UNSIGNED PATH '$')
 						) js
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON js.CustID = cus.CustID
+		INNER JOIN Temp_BetID AS tmpbet ON tmpbet.BetID = mmd.BetID
 	WHERE 	mmd.BettypeID = ip_BettypeID
-		AND mmd.BetID = ip_BetID
 		AND mmd.MatchID = ip_MatchID
 		AND mmd.LiveIndicator = ip_LiveIndicator
         AND mmd.TicketType = CONST_TICKETTYPE_SINGLE
@@ -56,24 +66,24 @@ BEGIN
         ,	mmd.ID AS GroupID
         ,	mmd.ScoreDiff
 	FROM   CTS_DataCenter.MatchMonitorDetails AS mmd
-		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListTransID), ',', '","'), 
+		INNER JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js
+		INNER JOIN Temp_BetID AS tmpbet ON tmpbet.BetID = mmd.BetID
 	WHERE 	mmd.BettypeID = ip_BettypeID
-		AND mmd.BetID = ip_BetID
 		AND mmd.MatchID = ip_MatchID
 		AND mmd.LiveIndicator = ip_LiveIndicator
         AND mmd.TicketType = CONST_TICKETTYPE_SINGLE;
     
 	SELECT	js.TransID AS VerifiedTransID
 	FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv
-		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
+		INNER JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js
+		INNER JOIN Temp_BetID AS tmpbet ON tmpbet.BetID = mdv.BetID
 	WHERE  	mdv.MatchID = ip_MatchID
 		AND mdv.LiveIndicator = ip_LiveIndicator
         AND	mdv.BettypeID = ip_BettypeID
-        AND	mdv.BetID = ip_BetID
         AND mdv.TicketType = CONST_TICKETTYPE_SINGLE;          
 	
 END$$
