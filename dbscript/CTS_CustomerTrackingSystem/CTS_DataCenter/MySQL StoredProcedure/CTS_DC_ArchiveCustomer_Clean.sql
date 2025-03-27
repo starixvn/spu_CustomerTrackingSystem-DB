@@ -24,6 +24,7 @@ sp: BEGIN
 			-	20240321@Thomas.Nguyen:	Clean data for Special CC BySport/History and history of special CC general [Redmine ID: #201360]
 			-	20240628@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
 			- 	20241018@Thomas.Nguyen: CC Agent [Redmine ID: #185799]
+			-	20250327@Casey.Huynh: 	Clean Table Customer_FirstTWTaggingCC [Redmine ID #221508]
 
 		Param's Explanation (filtered by):	
         
@@ -1776,10 +1777,45 @@ sp: BEGIN
             SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
-        SET lv_Table = 'CTS_DataCenter.CTSCustomer';
+        SET lv_Table = 'CTS_DataCenter.Customer_FirstTWTaggingCC';
 	 END IF; 
+	/*************************************** 41. CTS_DataCenter.TaggingExclusion ******************************/
+    IF (lv_Table = 'CTS_DataCenter.Customer_FirstTWTaggingCC') THEN
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.Customer_FirstTWTaggingCC AS tag WHERE tag.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_Customer_FirstTWTaggingCC_Clean;
+			CREATE TEMPORARY TABLE Temp_Customer_FirstTWTaggingCC_Clean(
+					CustID   	BIGINT UNSIGNED PRIMARY KEY 
+			);
+            
+            INSERT IGNORE INTO Temp_Customer_FirstTWTaggingCC_Clean(CustID)
+            SELECT 	tag.CustID
+			FROM CTS_DataCenter.Customer_FirstTWTaggingCC AS tag
+			WHERE  tag.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
+			LIMIT lv_CleanTableBatchSize;
+            
+            DELETE tag
+			FROM CTS_DataCenter.Customer_FirstTWTaggingCC AS tag
+			WHERE  tag.CustID IN (SELECT tmp.CustID FROM Temp_Customer_FirstTWTaggingCC_Clean AS tmp);
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_DataCenter.Customer_FirstTWTaggingCC'
+			WHERE ParameterID = 46;
 
-    /*************************************** 41. CTS_DataCenter.CTSCustomer ************************************/
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_Customer_FirstTWTaggingCC_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+
+
+		SET lv_Table = 'CTS_DataCenter.CTSCustomer';
+	 END IF;   	
+    /*************************************** 42. CTS_DataCenter.CTSCustomer ************************************/
 	
     DELETE cus
 	FROM CTS_DataCenter.CTSCustomer AS cus

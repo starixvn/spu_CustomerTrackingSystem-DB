@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
 Creator:	20250327@Casey.Huynh
-Task:	 	Init Schema for Customer_FirstTWTaggingCC
+Task:	 	Customer Classification - TW - Adjust criteria for New_Good_Normal - GB_High Rejected
 Server:  	Master
 DBName:		CTS_DataCenter
 
