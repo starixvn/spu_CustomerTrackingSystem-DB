@@ -19,6 +19,8 @@ BEGIN
                 - 20240502@Jonas.Huynh: Handle duplicate categories [Redmine ID: #203323]
                 - 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode CategoryID, ParentID [Redmine ID: #205317]
 				- 20241023@Jonas.Huynh:	Remove columns: SportGroupID_arc,CategoryID_arc [Redmine ID: #212240]
+                - 20252703@Jonas.Huynh: Fixed duplicate new cateogry
+                
 		Param's Explanation (filtered by):
         
         Example:
