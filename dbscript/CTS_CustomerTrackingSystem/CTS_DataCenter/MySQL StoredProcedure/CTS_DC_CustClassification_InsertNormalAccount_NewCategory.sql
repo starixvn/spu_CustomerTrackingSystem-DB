@@ -119,7 +119,8 @@ BEGIN
 		,	lv_CurrentDateTime			AS LastModifiedDate
 		,	CONST_CREATEDBY				AS LastModifiedBy
 		,	DATE(lv_CurrentDateTime)	AS LastScannedDate
-	FROM Temp_Customer AS tmp;
+	FROM Temp_Customer AS tmp
+    WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS clss WHERE clss.CustID = tmp.CustID);
     
     /* 2: INSERT CTSCustomerClassification_History*/    
     INSERT INTO Temp_CustomerHistory(CustID, CustomerClass, CategoryID)
