@@ -23,6 +23,7 @@ BEGIN
 		Revisions: 
 			- 20240618@Victoria.Le:			Initial Writing [Redmine ID: #205317]
 			- 20240618@Victoria.Le:			Remove columns: SportGroupID_arc,CategoryID_arc [Redmine ID: #212240]
+			- 20250327@Thomas.Nguyen:		Add to source table for the first time classify TW GroupBetting or HighRejected [Redmine ID: #212240]
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -815,6 +816,19 @@ BEGIN
 			,	temp.PerformanceTime
 			,	temp.ActionType
 		FROM 	Temp_NewClassification AS temp;
+
+		/*Add to source table for first time classify TW GB or HighRejected*/	
+		IF NOT EXISTS (	SELECT 1 
+						FROM Temp_NewClassification AS temp
+							INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID
+						WHERE ccs.IsFirstTWTagging = 1) THEN
+			INSERT IGNORE INTO Customer_FirstTWTaggingCC (CustID, TWTaggingID, CreatedTime)
+			SELECT temp.CustID, temp.TaggingID, lv_CurrentDateTime
+			FROM Temp_NewClassification AS temp
+				INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID
+				LEFT JOIN CTS_DataCenter.Customer_FirstTWTaggingCC AS cus ON cus.CustID = temp.CustID AND cus.TWTaggingID = temp.TaggingID
+			WHERE ccs.IsFirstTWTagging = 1 AND cus.CustID IS NULL;
+		END IF;
 
 	ELSE
 		SET lv_InsertedCount = 0;
