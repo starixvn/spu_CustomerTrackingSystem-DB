@@ -13,6 +13,7 @@ BEGIN
 		 
 	    Revisions:
 			- 20250324@Jonathan.Doan: Created [Redmine ID: #217768]
+		    - 20250327@Jonathan.Doan: Updated WHERE clause to use correct constant [Redmine ID: #222043]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -21,7 +22,7 @@ BEGIN
             
             SELECT * FROM DCS_DataCenter.SystemSetting WHERE ID = 103;
 	*/
-    DECLARE CONST_OPENSEARCH_MAXTRANSACTION07IDCOMPLETED INT DEFAULT 103;
+    DECLARE CONST_DEVICETRANSFORM_MAXTRANSACTION07IDCOMPLETED INT DEFAULT 3;
     
     DECLARE lv_MaxTransID BIGINT UNSIGNED;
     
@@ -33,7 +34,7 @@ BEGIN
         UPDATE DCS_DataCenter.SystemSetting
         SET VValue = lv_MaxTransID,
 			UpdatedTime = NOW()
-        WHERE ID = CONST_OPENSEARCH_MAXTRANSACTION07IDCOMPLETED;
+        WHERE ID = CONST_DEVICETRANSFORM_MAXTRANSACTION07IDCOMPLETED;
     END IF;
     
 END$$
