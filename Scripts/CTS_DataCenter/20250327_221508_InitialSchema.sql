@@ -25,3 +25,8 @@ ALTER TABLE CustomerCategorySettings
 UPDATE CustomerCategorySettings AS s
 SET IsFirstTWTagging = 1
 WHERE CategoryID IN (SELECT CategoryID FROM CustomerCategory WHERE CustomerClass IN (2303, 2304, 2305, 2403, 2404, 2405));
+
+
+INSERT INTO StaticList (ListID, ItemID, ListName, ListNameDisplay, ItemName, ItemNameDisplay, ItemParentItemID, ItemDefaultValue, ItemValue, PriorityOrder, Status, Description, CreatedDate)
+VALUES (6,19,'Classification CategoryID','CATEGORYID','CONST_CATEID_NEW','CONST_CATEID_GOOD',3,40200,40200,NULL,1,NULL,@CURRENTDATE),
+(6,19,'Classification CategoryID','CATEGORYID','CONST_CATEID_NEW','CONST_CATEID_NORMAL',3,40300,40300,NULL,1,NULL,@CURRENTDATE);
