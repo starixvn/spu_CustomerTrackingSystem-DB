@@ -87,7 +87,7 @@ BEGIN
 		,	tc.CategoryID
 		,	tc.TaggingID
     FROM Temp_Cust AS tc
-    WHERE NOT EXISTS (SELECT 1 FROM Temp_Cust_Delete AS tcd WHERE tcd.CustID = tc.CustID);
+    WHERE NOT EXISTS (SELECT 1 FROM Temp_Cust_Exclude AS tcd WHERE tcd.CustID = tc.CustID);
 
 END$$
 
