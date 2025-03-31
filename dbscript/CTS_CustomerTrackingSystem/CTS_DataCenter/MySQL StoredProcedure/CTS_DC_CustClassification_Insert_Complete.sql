@@ -23,7 +23,7 @@ BEGIN
 		Revisions: 
 			- 20240618@Victoria.Le:			Initial Writing [Redmine ID: #205317]
 			- 20240618@Victoria.Le:			Remove columns: SportGroupID_arc,CategoryID_arc [Redmine ID: #212240]
-			- 20250327@Thomas.Nguyen:		Add to source table for the first time classify TW GroupBetting or HighRejected [Redmine ID: #212240]
+			- 20250327@Thomas.Nguyen:		Add to source table for the first time classify TW GroupBetting or HighRejected [Redmine ID: #221508]
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
