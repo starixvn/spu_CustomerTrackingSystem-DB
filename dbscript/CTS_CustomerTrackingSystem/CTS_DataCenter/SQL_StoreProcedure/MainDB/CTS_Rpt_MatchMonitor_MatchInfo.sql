@@ -24,6 +24,7 @@ AS
 		- 20231116@Long.Luu: 		Return match's datasource [Redmine ID: 195042]
 		- 20240826@Casey.Huynh: 	Add Fitler Event and return LeagueName, HomeName, ScoreName	[Redmine ID: 152883]
 		- 20250211@Tony.Nguyen:		Add SportList [Redmine ID: 217782]
+		- 20250401@Logan.Nguyen:	Handle duplicate primary key temporary table [Redmine ID: #219106]
 
 	Params Explaination:
 		- @MatchIds:
