@@ -74,7 +74,7 @@ BEGIN
 	END
 
 	CREATE TABLE #tmpMatchesInfo (
-			MatchId				INT NOT NULL PRIMARY KEY
+			MatchId				INT NOT NULL 
 		,	HomeId				INT
 		,	AwayId				INT
 		,	LeagueId			INT
@@ -381,8 +381,21 @@ BEGIN
 			INNER JOIN bodb02.dbo.Match AS m WITH(NOLOCK) ON tm.MatchId = m.matchid
 
 		DROP TABLE #tmpMatches
-	END
+	END ;
+	
+	WITH CTE
+		AS
+			(
+			SELECT	*
+					, ROW_NUMBER() OVER (PARTITION BY MatchId ORDER BY DataSource ASC) AS rn
+			FROM	#tmpMatchesInfo
+			)
+	DELETE	FROM CTE
+	WHERE	rn > 1 ;
 
+	ALTER TABLE #tmpMatchesInfo
+	ADD CONSTRAINT PK_tmpMatchesInfo_MatchId PRIMARY KEY (MatchId) ;
+		
 	SELECT	tmi.MatchId
 		,	tmi.EventDate
 		,	tmi.KickOffTime
