@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="1"></info>*/
 /*
 Creator:    20250328@Logan.Nguyen
 Task:       Customer Classification - TW - Adjust criteria for New_Good_Normal - GB_High Rejected [Redmine ID: 202503]
@@ -25,10 +25,10 @@ BEGIN
         DB:         CTS_DataCenter
 
         Revisions:
-            - 20250328@Logan.Nguyen: Initial create
+            - 20250328@Logan.Nguyen: Initial create [Redmine ID: 202503]
 
         Param's Explanation:
-            ip_json : JSON array include CustID, CategoryID, TaggingID
+            ip_CustInfo : JSON array include CustID, CategoryID, TaggingID
 
         Sample Call:
             CALL CTS_DataCenter.CTS_DC_CustClassification_TWTagging_Exclude(
@@ -38,6 +38,7 @@ BEGIN
 	DECLARE CONST_CATEID_NEW 								INT;
 	DECLARE CONST_CATEID_GOOD 								INT;
 	DECLARE CONST_CATEID_NORMAL 							INT;
+	
 	SET CONST_CATEID_NEW 									= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_NEW');
 	SET CONST_CATEID_GOOD 									= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_GOOD');
 	SET CONST_CATEID_NORMAL 								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_NORMAL');
