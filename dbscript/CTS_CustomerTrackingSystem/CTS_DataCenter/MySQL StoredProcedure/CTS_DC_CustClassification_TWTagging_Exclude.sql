@@ -1,15 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="1"></info>*/
-/*
-Creator:    20250328@Logan.Nguyen
-Task:       Customer Classification - TW - Adjust criteria for New_Good_Normal - GB_High Rejected [Redmine ID: 221508]
-Server:     Master
-DBName:     CTS_DataCenter
-
-Revisions: 
-    - 20250328@Logan.Nguyen: Created [Redmine ID: #221508]
-
-Reviewer:
-*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 
 DELIMITER $$
 
@@ -21,11 +10,11 @@ BEGIN
     /*
         Created:    20250328@Logan.Nguyen
 
-        Task:       Customer Classification - TW - Adjust criteria for New_Good_Normal - GB_High Rejected [Redmine ID: 221508]
+        Task:       Customer Classification - TW - Adjust criteria for New_Good_Normal - GB_High Rejected [Redmine ID: #221508]
         DB:         CTS_DataCenter
 
         Revisions:
-            - 20250328@Logan.Nguyen: Initial create [Redmine ID: 221508]
+            - 20250328@Logan.Nguyen: Initial create [Redmine ID: #221508]
 
         Param's Explanation:
             ip_CustInfo : JSON array include CustID, CategoryID, TaggingID
@@ -65,14 +54,12 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Cust_Exclude;
     CREATE TEMPORARY TABLE Temp_Cust_Exclude(
 			CustID      INT
-        ,	CategoryID  INT
         ,	TaggingID   INT
         ,	PRIMARY KEY (CustID, TaggingID)
     );	
 	
-	INSERT INTO Temp_Cust_Exclude(CustID, CategoryID, TaggingID)
+	INSERT INTO Temp_Cust_Exclude(CustID, TaggingID)
     SELECT	ti.CustID
-		,	CategoryID
 		,	ti.TaggingID
     FROM Temp_Cust AS ti
     WHERE ti.CategoryID IS NOT NULL
@@ -88,7 +75,7 @@ BEGIN
 		,	tc.CategoryID
 		,	tc.TaggingID
     FROM Temp_Cust AS tc
-    WHERE NOT EXISTS (SELECT 1 FROM Temp_Cust_Exclude AS tcd WHERE tcd.CustID = tc.CustID);
+    WHERE NOT EXISTS (SELECT 1 FROM Temp_Cust_Exclude AS tcd WHERE tcd.CustID = tc.CustID AND tcd.TaggingID = tc.TaggingID);
 
 END$$
 
