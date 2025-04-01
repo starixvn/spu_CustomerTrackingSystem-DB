@@ -384,14 +384,14 @@ BEGIN
 		DROP TABLE #tmpMatches
 	END ;
 	
-	WITH CTE
+	WITH CTE_MatchesInfo
 		AS
 			(
 			SELECT	*
 					, ROW_NUMBER() OVER (PARTITION BY MatchId ORDER BY DataSource ASC) AS rn
 			FROM	#tmpMatchesInfo
 			)
-	DELETE	FROM CTE
+	DELETE	FROM CTE_MatchesInfo
 	WHERE	rn > 1 ;
 
 	ALTER TABLE #tmpMatchesInfo
