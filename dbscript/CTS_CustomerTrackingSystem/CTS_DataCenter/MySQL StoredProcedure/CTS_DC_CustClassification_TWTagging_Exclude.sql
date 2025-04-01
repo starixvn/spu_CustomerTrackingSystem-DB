@@ -1,12 +1,12 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="1"></info>*/
 /*
 Creator:    20250328@Logan.Nguyen
-Task:       Customer Classification - TW - Adjust criteria for New_Good_Normal - GB_High Rejected [Redmine ID: 202503]
+Task:       Customer Classification - TW - Adjust criteria for New_Good_Normal - GB_High Rejected [Redmine ID: 221508]
 Server:     Master
 DBName:     CTS_DataCenter
 
 Revisions: 
-    - 20250328@Logan.Nguyen: Created [Redmine ID: #202503]
+    - 20250328@Logan.Nguyen: Created [Redmine ID: #221508]
 
 Reviewer:
 */
@@ -21,11 +21,11 @@ BEGIN
     /*
         Created:    20250328@Logan.Nguyen
 
-        Task:       Customer Classification - TW - Adjust criteria for New_Good_Normal - GB_High Rejected [Redmine ID: 202503]
+        Task:       Customer Classification - TW - Adjust criteria for New_Good_Normal - GB_High Rejected [Redmine ID: 221508]
         DB:         CTS_DataCenter
 
         Revisions:
-            - 20250328@Logan.Nguyen: Initial create [Redmine ID: 202503]
+            - 20250328@Logan.Nguyen: Initial create [Redmine ID: 221508]
 
         Param's Explanation:
             ip_CustInfo : JSON array include CustID, CategoryID, TaggingID
