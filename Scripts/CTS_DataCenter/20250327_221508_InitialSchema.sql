@@ -13,10 +13,12 @@ Reviewer:
 
 USE CTS_DataCenter;
 
-CREATE TABLE Customer_FirstTWTaggingCC (	
-		CustID			INT PRIMARY KEY	NOT NULL
+CREATE TABLE Customer_FirstTWTaggingCC(	
+		CustID			INT NOT NULL
 	,	TWTaggingID 	INT NOT NULL COMMENT 'TWTaggingID IN (ex:7,8)'
 	,	CreatedTime 	DATETIME NOT NULL
+    
+    ,	PRIMARY KEY PK_Customer_FirstTWTaggingCC(CustID,TWTaggingID)
 );
 
 ALTER TABLE CustomerCategorySettings
