@@ -16,15 +16,16 @@ BEGIN
 	Revisions:
 		- 20250213@Lando.Vu: Created [Redmine ID: 217768]
 		- 20250312@Lando.Vu: Ignored Subscribers [Redmine ID: 217768]
+		- 20250327@Jonathan.Doan: HF - Missing transaction data when retrieving from table Transaction07 [Redmine ID: #222043]
 		
 	Param's Explanation (filtered by):
 
 	Example:
         CALL DCS_DataCenter.DCS_DC_OpenSearch_Transaction_Get(100);
 	*/
-    DECLARE CONST_OPENSEARCH_LISTIGNOREDSUBID 				INT 		DEFAULT 100;
-	DECLARE CONST_OPENSEARCH_TRANSACTION07_TRANSID 			INT 		DEFAULT 101;
-    DECLARE CONST_OPENSEARCH_MAXTRANSACTION07IDCOMPLETED	INT			DEFAULT 103;
+    DECLARE CONST_DEVICETRANSFORM_MAXTRANSACTION07IDCOMPLETED	INT			DEFAULT 3;
+    DECLARE CONST_OPENSEARCH_LISTIGNOREDSUBID 					INT 		DEFAULT 100;
+	DECLARE CONST_OPENSEARCH_TRANSACTION07_TRANSID 				INT 		DEFAULT 101;
     
 	DECLARE lv_MaxTransID  				BIGINT UNSIGNED;
 	DECLARE lv_MaxTransIDCompleted		BIGINT UNSIGNED;
@@ -32,7 +33,7 @@ BEGIN
 	DECLARE lv_CurrentDatetime 			DATETIME DEFAULT CURRENT_TIMESTAMP();
     
 	SET lv_MaxTransID			= (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_TRANSACTION07_TRANSID);
-	SET lv_MaxTransIDCompleted	= (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_MAXTRANSACTION07IDCOMPLETED);
+	SET lv_MaxTransIDCompleted	= (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_DEVICETRANSFORM_MAXTRANSACTION07IDCOMPLETED);
     SET lv_ListIgnoredSubID		= (SELECT VValue FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_OPENSEARCH_LISTIGNOREDSUBID);
     
     #============================================
@@ -175,7 +176,7 @@ BEGIN
 		,	trans.IsIncognitoMode
 	FROM Temp_Trans07 AS trans
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
-		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND sl.ItemID = trans.Flagged
+		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND CAST(sl.ItemID AS UNSIGNED) = trans.Flagged
 		LEFT JOIN DCS_DataCenter.URL AS url ON url.URLID = trans.URLID
 		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID
 		LEFT JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = trans.AccountID;

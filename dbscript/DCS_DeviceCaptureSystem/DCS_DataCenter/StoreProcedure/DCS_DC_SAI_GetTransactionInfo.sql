@@ -17,15 +17,18 @@ BEGIN
 	Revisions:
 		- 20241122@Jonathan.Doan: Get Data [Redmine ID: 214111]
 		- 20241206@Jonathan.Doan: Change the data source [Redmine ID: 214111]
+		- 20250327@Jonathan.Doan: HF - Missing transaction data when retrieving from table Transaction07 [Redmine ID: #222043]
 		
 	Param's Explanation (filtered by):
 
 	Example:
 		CALL DCS_DataCenter.DCS_DC_SAI_GetTransactionInfo(0, 10);
 	*/
-    DECLARE lv_MaxInsertTime DATETIME;
-    
-    SET lv_MaxInsertTime = (SELECT DATE_SUB(NOW(), INTERVAL 5 MINUTE));
+    DECLARE CONST_DEVICETRANSFORM_MAXTRANSACTION07IDCOMPLETED	INT	DEFAULT 3;
+
+	DECLARE lv_MaxTransIDCompleted	BIGINT UNSIGNED;
+
+	SET lv_MaxTransIDCompleted	= (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_DEVICETRANSFORM_MAXTRANSACTION07IDCOMPLETED);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     
@@ -86,7 +89,7 @@ BEGIN
 		,	DeviceFingerprintID
     FROM DCS_DataCenter.Transaction07
     WHERE TransID > ip_LastTransID
-		AND InsertTime < lv_MaxInsertTime
+		AND TransID <= lv_MaxTransIDCompleted
     ORDER BY TransID ASC
     LIMIT ip_BatchSize;
     
