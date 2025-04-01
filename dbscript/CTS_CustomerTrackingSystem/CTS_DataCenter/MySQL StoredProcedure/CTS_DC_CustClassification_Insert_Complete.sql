@@ -829,7 +829,7 @@ BEGIN
 			FROM Temp_NewClassification AS temp
 				INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID
 				LEFT JOIN CTS_DataCenter.Customer_FirstTWTaggingCC AS cus ON cus.CustID = temp.CustID AND cus.TWTaggingID = temp.TaggingID
-			WHERE ccs.IsFirstTWTagging = 1 AND cus.CustID IS NULL;
+			WHERE ccs.IsFirstTWTagging = 1 AND cus.CustID IS NULL AND temp.TaggingID IN (CONST_TWTAGGINGID_GROUPBETTING, CONST_TWTAGGINGID_HIGHREJECTED);
 		END IF;
 
 	ELSE
