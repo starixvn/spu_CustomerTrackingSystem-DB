@@ -384,6 +384,8 @@ BEGIN
 		DROP TABLE #tmpMatches
 	END ;
 	
+	CREATE INDEX IX_tmpMatchesInfo_MatchId ON #tmpMatchesInfo(MatchId);
+
 	WITH CTE_MatchesInfo
 		AS
 			(
@@ -393,9 +395,6 @@ BEGIN
 			)
 	DELETE	FROM CTE_MatchesInfo
 	WHERE	rn > 1 ;
-
-	ALTER TABLE #tmpMatchesInfo
-	ADD CONSTRAINT PK_tmpMatchesInfo_MatchId PRIMARY KEY (MatchId) ;
 		
 	SELECT	tmi.MatchId
 		,	tmi.EventDate
