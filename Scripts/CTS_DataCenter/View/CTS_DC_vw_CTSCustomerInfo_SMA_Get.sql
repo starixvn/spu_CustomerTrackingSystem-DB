@@ -47,8 +47,8 @@ SELECT cust.CTSCustID
 ,	cate.CategoryName AS CategoryNames
 ,	cate.CategoryID AS CategoryIDs
 FROM CTS_DataCenter.CTSCustomer AS cust
-	STRAIGHT_JOIN CTS_DataCenter.MappingSubscriberSite AS mss ON mss.SubscriberID = cust.SubscriberID AND mss.SiteID = cust.SiteID
-	STRAIGHT_JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cust.CustStatusID
+	INNER JOIN CTS_DataCenter.MappingSubscriberSite AS mss ON mss.SubscriberID = cust.SubscriberID AND mss.SiteID = cust.SiteID
+	INNER JOIN CTS_DataCenter.StaticList AS sta ON sta.ListID = 1 AND sta.ItemID = cust.CustStatusID
 	LEFT JOIN CTS_Archive.CTSCustomerAssociationStatus AS lt ON lt.CustID = cust.CustID AND lt.CTSCustID = cust.CTSCustID
 	LEFT JOIN CTS_DataCenter.CustDCSAccount AS dcs ON dcs.CTSCustID = cust.CTSCustID AND dcs.SubscriberID = cust.SubscriberID
     , LATERAL (
@@ -84,4 +84,5 @@ FROM CTS_DataCenter.CTSCustomer AS cust
 							) AS subca ON ca.CategoryID = subca.CategoryID
     ) AS cate
 WHERE cust.CustSubID = 0
+	AND cust.RoleID IN (2,3,4)
 ;
