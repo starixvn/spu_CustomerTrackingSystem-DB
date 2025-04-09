@@ -87,7 +87,7 @@ BEGIN
 	)
 
 	INSERT INTO #tmpMatchSection (MatchSection)
-	SELECT ms.value FROM STRING_SPLIT (@MatchSection, ',') ms
+	SELECT DISTINCT ms.value FROM STRING_SPLIT (@MatchSection, ',') ms
 
 	IF ISNULL(@MatchIds,'') = '' AND ISNULL(@SportList,'') <> ''
 	BEGIN
