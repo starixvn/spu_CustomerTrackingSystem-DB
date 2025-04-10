@@ -1,3 +1,4 @@
+/*<info serverAlias="DBCUST-CustDB" executers="" isFunction="0"></info>*/
 /*
     Created: 20250404@Thomas.Nguyen
 	Task: Correct ABI for customers
