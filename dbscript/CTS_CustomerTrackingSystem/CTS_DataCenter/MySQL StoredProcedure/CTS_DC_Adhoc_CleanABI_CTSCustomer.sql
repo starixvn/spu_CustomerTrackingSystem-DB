@@ -32,7 +32,7 @@ CREATE TEMPORARY TABLE Tmp_CustNeedToUpdateABI(
 
 INSERT INTO Tmp_CustNeedToUpdateABI (CustID)
 SELECT CustID
-FROM CustNeedToUpdateABI;
+FROM Adhoc_CustNeedToUpdateABI;
 
 CREATE INDEX IX_CustNeedToUpdateABI_CustID ON Tmp_CustNeedToUpdateABI (CustID);
 		
@@ -50,7 +50,7 @@ SET lv_StopRow = lv_Threshold;
 WHILE (lv_MaxRow IS NOT NULL) DO
 		SET lv_UpdatedCount = 0;
 
-		UPDATE CTS_DataCenter.CTSCustomer_thomas AS cus 
+		UPDATE CTS_DataCenter.CTSCustomer AS cus 
 			INNER JOIN Tmp_CustNeedToUpdateABI AS tmp ON cus.CustID = tmp.CustID
 		SET cus.Danger2 = 0
 		WHERE tmp.ID BETWEEN lv_StartRow AND lv_StopRow;
