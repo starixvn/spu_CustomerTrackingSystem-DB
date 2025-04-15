@@ -5,7 +5,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[CTS_MatchMonitor_GetNewTicket]
+ALTER PROCEDURE [dbo].[CTS_MatchMonitor_GetNewTicket]
 		@QueryType					TINYINT = 1
 	,	@LastScannedSequenceID		BIGINT = 0
 	,	@IsLive						BIT = 1
@@ -24,22 +24,79 @@ AS
         - 20240704@Casey.Huynh: Saba Group Betting - Add Basketball and enhance Soccer [Redmine ID: #207523]
 		- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
 		- 20250317@Casey.Huynh: Match Monitor Badminton - Rename from CTS_Rpt_MatchMonitor_GetTicketInfo [Redmine ID: #219681]
+		- 20250414@Casey.Huynh: Match Monitor Table Tennis Child Match [Redmine ID: #221510]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service MM Staging (get tickets by @LastScannedTransID, @IsLive & @BatchSize & @ListSportBettype)
 					 
 	Example:
-
-		EXEC CTS_MatchMonitor_GetNewTicket @QueryType=1
-			,@LastScannedSequenceID=119779209696
-			,@IsLive=1
-			,@BatchSize=500
-			,@ListSportBettype='[		{"SportTypeID":1, "BetTypeID":1, "BetChoiceType":1}
-									,	{"SportTypeID":1, "BetTypeID":3, "BetChoiceType":1}
-									,	{"SportTypeID":1, "BetTypeID":7, "BetChoiceType":1}
-									,	{"SportTypeID":1, "BetTypeID":8, "BetChoiceType":1}
-									,	{"SportTypeID":43, "BetTypeID":9001, "BetChoiceType":1}
-									,	{"SportTypeID":43, "BetTypeID":9003, "BetChoiceType":1}]';
+		exec CTS_MatchMonitor_GetNewTicket_xtest @QueryType=1,@LastScannedSequenceID=119783696528
+		,@BatchSize=5000,@ListSportBettype='[
+		 {"SportTypeID":1,"BetTypeID":1,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":43,"BetTypeID":1,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":2,"BetTypeID":1,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":18,"BetTypeID":1,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":1,"BetTypeID":3,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":43,"BetTypeID":3,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":18,"BetTypeID":3,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":2,"BetTypeID":3,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":2,"BetTypeID":20,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":43,"BetTypeID":20,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":18,"BetTypeID":20,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":9,"BetTypeID":20,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":1,"BetTypeID":7,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":2,"BetTypeID":7,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":2,"BetTypeID":8,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":1,"BetTypeID":8,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":2,"BetTypeID":21,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":2,"BetTypeID":609,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":2,"BetTypeID":610,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":2,"BetTypeID":612,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":9,"BetTypeID":704,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":9,"BetTypeID":707,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":9,"BetTypeID":708,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":50,"BetTypeID":501,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":50,"BetTypeID":9404,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":50,"BetTypeID":9405,"BetChoiceType":2,"BetIDPattern":null}
+		,{"SportTypeID":43,"BetTypeID":9001,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9068,"BetChoiceType":2,"BetIDPattern":"80XYY"}
+		,{"SportTypeID":43,"BetTypeID":9115,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9002,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9003,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9005,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9006,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9007,"BetChoiceType":2,"BetIDPattern":"80XYY"}
+		,{"SportTypeID":43,"BetTypeID":9070,"BetChoiceType":2,"BetIDPattern":"80XYY"}
+		,{"SportTypeID":43,"BetTypeID":9071,"BetChoiceType":2,"BetIDPattern":"80XYY"}
+		,{"SportTypeID":43,"BetTypeID":9072,"BetChoiceType":2,"BetIDPattern":"80XYY"}
+		,{"SportTypeID":43,"BetTypeID":9077,"BetChoiceType":2,"BetIDPattern":"80XYY"}
+		,{"SportTypeID":43,"BetTypeID":9089,"BetChoiceType":2,"BetIDPattern":"80XYY"}
+		,{"SportTypeID":43,"BetTypeID":9090,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9091,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9092,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9093,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9094,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9095,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9096,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9097,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9098,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9099,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9100,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9101,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9102,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9103,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9104,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9105,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9106,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9107,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9108,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9109,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9110,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9111,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9112,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9124,"BetChoiceType":2,"BetIDPattern":"80X"}
+		,{"SportTypeID":43,"BetTypeID":9132,"BetChoiceType":2,"BetIDPattern":"80X"}]'
+		,@IsLive=1
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -82,7 +139,7 @@ BEGIN
 				
 			CREATE INDEX IX_tmpSportBettype_SportTypeIDBetTypeID ON #tmpSportBettype(SportTypeID, BetTypeID);
 		END;
-	
+	SELECT * FROM #tmpSportBettype;
 	--==========================================================================================
 	IF (@QueryType = 1)
 	BEGIN --Get ticket for MM Detection
@@ -157,6 +214,7 @@ BEGIN
 			AND (l.LeagueGroupID NOT IN (42,74,108,113,122,151)
 				 OR (l.LeagueGroupID = 42 AND m.Sporttype IN (1,2)))-- SABA leagues
 			AND ISNULL(b.oddstype,0) <> 0
+			AND (m.sporttype <> 18 OR (m.sporttype = 18 AND ParentID > 0)) -- Get Child Match Only for Table Tennis
 		ORDER BY b.sequenceid ASC;
 		
 	END;
