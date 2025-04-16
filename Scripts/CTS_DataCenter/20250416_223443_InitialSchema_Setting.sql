@@ -16,7 +16,7 @@ CREATE TABLE CTSCustomerLatencyQueue
 (
 	ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 	CustID BIGINT UNSIGNED NOT NULL,
-    LatencyType TINYINT NULL COMMENT '2: New Customer - Missing Customer, 3: New Customer - Missing CustInfo, Reactivated Customer - Missing',
+    LatencyType SMALLINT NULL COMMENT '2: New Customer - Missing Customer, 3: New Customer - Missing CustInfo, Reactivated Customer - Missing',
 	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
 	PRIMARY KEY (ID),
 	KEY IX_CTSCustomerLatencyQueue_CustID (CustID)
@@ -26,7 +26,7 @@ CREATE TABLE CTSCustomerLatencyQueue_Archive
 (
 	ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 	CustID BIGINT UNSIGNED NOT NULL,
-    LatencyType TINYINT NULL COMMENT '2: New Customer - Missing Customer, 3: New Customer - Missing CustInfo, Reactivated Customer - Missing',
+    LatencyType SMALLINT NULL COMMENT '2: New Customer - Missing Customer, 3: New Customer - Missing CustInfo, Reactivated Customer - Missing',
 	InsertedTime DATETIME(3),
 	ArchivedDate DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
 	PRIMARY KEY (ID),

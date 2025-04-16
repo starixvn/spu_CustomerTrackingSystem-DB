@@ -182,7 +182,6 @@ BEGIN;
 	--============================================
 	IF (@sourceType = 0)
 	BEGIN
-		--==============RETURN CUST MISSING INFO====================
 		INSERT INTO #Tmp_CustMissingInfo(CustID)
 		SELECT tmp.CustId
 		FROM #tmpCustomers AS tmp WITH(NOLOCK)
@@ -214,6 +213,7 @@ BEGIN;
 		FROM #tmpCustomers AS a WITH(NOLOCK)
 		WHERE NOT EXISTS (SELECT TOP 1 1 FROM #Tmp_CustMissingInfo AS tmp WITH(NOLOCK) WHERE a.CustId = tmp.CustID);
 
+		--==============RETURN CUST MISSING INFO====================
 		SELECT CustID
 		FROM #Tmp_CustMissingInfo WITH(NOLOCK);
 	END;
