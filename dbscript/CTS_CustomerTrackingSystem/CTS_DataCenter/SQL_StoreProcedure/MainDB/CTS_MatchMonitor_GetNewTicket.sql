@@ -139,7 +139,7 @@ BEGIN
 				
 			CREATE INDEX IX_tmpSportBettype_SportTypeIDBetTypeID ON #tmpSportBettype(SportTypeID, BetTypeID);
 		END;
-	SELECT * FROM #tmpSportBettype;
+
 	--==========================================================================================
 	IF (@QueryType = 1)
 	BEGIN --Get ticket for MM Detection
