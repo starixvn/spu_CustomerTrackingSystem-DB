@@ -48,3 +48,7 @@ INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDe
 
 INSERT INTO StaticList (ListID, ItemID, ListName, ListNameDisplay, ItemName, ItemNameDisplay, ItemParentItemID, ItemDefaultValue, ItemValue, PriorityOrder, Status, Description, CreatedDate)
 VALUES (20,300,'Job Monitoring IssueType','Job Monitoring IssueType','Customer Latency Scan - Excessive Pool','Customer Latency Scan - Excessive Pool',NULL,NULL,NULL,NULL,1,NULL,NOW());
+
+#=================DROP UNUSED PROCEDURES============================================
+DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_MissingCustomer_Check`;
+DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_MissingCustomer_Check_xtest`;
