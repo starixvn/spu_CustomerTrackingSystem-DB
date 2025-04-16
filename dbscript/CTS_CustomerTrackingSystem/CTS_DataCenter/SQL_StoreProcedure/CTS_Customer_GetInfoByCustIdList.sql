@@ -30,6 +30,7 @@ AS
 		- 20221205@Victoria.Le:	Return more data: DangerSabaSc (Saba Soccer) and DangerSabaBkb (Saba Baseketball) [Redmine ID: #181208]
 		- 20240318@Casey.Huynh: Return empty if not existing CustInfo, CustProductStatus , CustInfo, Dep_CustSuper [Redmine ID: #198000]
 		- 20241216@Tony.Nguyen: Change the process so that it retrieves SiteID/Site for the member directly (Redmine ID: #214585)
+		- 20250416@Thomas.Nguyen: Return more Customer missing info [Redmine ID: #223443]
 
 	Developer's Notes:
 		- @sourceType: 0- GET New Customer Info, 1- Get Info Customer table, 2-Get CustInfo table, 3 GET Info CustProductStatus table
@@ -81,6 +82,10 @@ BEGIN;
 
 	INSERT INTO #tmpCustomers (CustId)
 	SELECT ssk.value FROM STRING_SPLIT (@custIdList, ',') ssk;
+
+	CREATE TABLE #Tmp_CustMissingInfo(
+		CustID			INT NOT NULL PRIMARY KEY
+	);
 
 	--=========================================================
 
@@ -174,84 +179,85 @@ BEGIN;
 			INNER JOIN bodb02.dbo.CustProductStatus AS s WITH(NOLOCK) ON a.custid = s.custid;
 	END;
 
-	--==============CHECK EXISTING====================
-	IF EXISTS (SELECT 1 FROM #tmpCustomers AS tmp WITH(NOLOCK) WHERE (tmp.IsLicensee IS NULL OR tmp.SiteId IS NULL) AND tmp.CurrencyId NOT IN (20,27,28))
+	--============================================
+	IF (@sourceType = 0)
 	BEGIN
-		SELECT TOP(1) *
+		--==============RETURN CUST MISSING INFO====================
+		INSERT INTO #Tmp_CustMissingInfo(CustID)
+		SELECT tmp.CustId
 		FROM #tmpCustomers AS tmp WITH(NOLOCK)
-		WHERE tmp.CustID < 0;
-	END
-	ELSE
-	BEGIN
-		--============================================
-		IF (@sourceType = 0)
-		BEGIN
-			SELECT	a.CustId		AS CustID
-				,	a.Username		AS UserName
-				,	a.Username2		AS UserName2
-				,	a.SiteId		AS SiteID
-				,	a.[Site]		AS 'Site'
-				,	a.RoleId		AS RoleID
-				,	a.CurrencyId	AS CurrencyID
-				,	a.Currency		AS Currency
-				,	a.Srecommend	AS SRecommend
-				,	a.Mrecommend	AS MRecommend
-				,	a.Recommend		AS Recommend
-				,	a.CreatedDate	AS CreatedDate
-				,	a.CustStatusID	AS CustStatusID
-				,	a.Danger1		AS Danger1
-				,	a.Danger2		AS Danger2
-				,	a.Danger3		AS Danger3			
-				,	a.Danger4		AS Danger4
-				,	a.Danger5		AS Danger5
-				,	a.DangerSabaSc	AS DangerSabaSc
-				,	a.DangerSabaBkb	AS DangerSabaBkb
-				,	a.IsLicensee	AS IsLicensee
-				,	a.IsLicenseeVIP	AS IsLicenseeVIP
-				,	a.IsLicenseeBA	AS IsLicenseeBA
-			FROM #tmpCustomers AS a WITH(NOLOCK);
-		END;
+		WHERE (tmp.IsLicensee IS NULL OR tmp.SiteId IS NULL) AND tmp.CurrencyId NOT IN (20,27,28);
 
-		IF (@sourceType = 1)
-		BEGIN
-			SELECT	a.CustId		AS CustID
-				,	a.Username		AS UserName
-				,	a.Username2		AS UserName2
-				,	a.SiteId		AS SiteID
-				,	a.[Site]		AS 'Site'
-				,	a.RoleId		AS RoleID
-				,	a.CurrencyId	AS CurrencyID
-				,	a.Currency		AS Currency
-				,	a.Srecommend	AS SRecommend
-				,	a.Mrecommend	AS MRecommend
-				,	a.Recommend		AS Recommend
-				,	a.CreatedDate	AS CreatedDate
-				,	a.IsLicensee	AS IsLicensee
-				,	a.IsLicenseeVIP	AS IsLicenseeVIP
-				,	a.IsLicenseeBA	AS IsLicenseeBA
-			FROM #tmpCustomers AS a WITH(NOLOCK)
-		END;
+		SELECT	a.CustId		AS CustID
+			,	a.Username		AS UserName
+			,	a.Username2		AS UserName2
+			,	a.SiteId		AS SiteID
+			,	a.[Site]		AS 'Site'
+			,	a.RoleId		AS RoleID
+			,	a.CurrencyId	AS CurrencyID
+			,	a.Currency		AS Currency
+			,	a.Srecommend	AS SRecommend
+			,	a.Mrecommend	AS MRecommend
+			,	a.Recommend		AS Recommend
+			,	a.CreatedDate	AS CreatedDate
+			,	a.CustStatusID	AS CustStatusID
+			,	a.Danger1		AS Danger1
+			,	a.Danger2		AS Danger2
+			,	a.Danger3		AS Danger3			
+			,	a.Danger4		AS Danger4
+			,	a.Danger5		AS Danger5
+			,	a.DangerSabaSc	AS DangerSabaSc
+			,	a.DangerSabaBkb	AS DangerSabaBkb
+			,	a.IsLicensee	AS IsLicensee
+			,	a.IsLicenseeVIP	AS IsLicenseeVIP
+			,	a.IsLicenseeBA	AS IsLicenseeBA
+		FROM #tmpCustomers AS a WITH(NOLOCK)
+		WHERE NOT EXISTS (SELECT TOP 1 1 FROM #Tmp_CustMissingInfo AS tmp WITH(NOLOCK) WHERE a.CustId = tmp.CustID);
 
-		IF (@sourceType = 2)
-		BEGIN
-			SELECT	a.CustID		AS CustID
-				,	a.CustStatusID	AS CustStatusID
-				,	a.Danger1		AS Danger1
-				,	a.Danger2		AS Danger2
-				,	a.Danger3		AS Danger3		
-				,	a.Danger4		AS Danger4
-				,	a.Danger5		AS Danger5
-				,	a.DangerSabaSc	AS DangerSabaSc
-				,	a.DangerSabaBkb	AS DangerSabaBkb
-			FROM #tmpCustomers AS a WITH(NOLOCK);
-		END;
-	
-		IF (@sourceType = 3)
-		BEGIN
-			SELECT	a.CustID		AS CustID
-				,	a.CustStatusID	AS CustStatusID
-			FROM #tmpCustomers AS a WITH(NOLOCK);
-		END;
+		SELECT CustID
+		FROM #Tmp_CustMissingInfo WITH(NOLOCK);
 	END;
+
+	IF (@sourceType = 1)
+	BEGIN
+		SELECT	a.CustId		AS CustID
+			,	a.Username		AS UserName
+			,	a.Username2		AS UserName2
+			,	a.SiteId		AS SiteID
+			,	a.[Site]		AS 'Site'
+			,	a.RoleId		AS RoleID
+			,	a.CurrencyId	AS CurrencyID
+			,	a.Currency		AS Currency
+			,	a.Srecommend	AS SRecommend
+			,	a.Mrecommend	AS MRecommend
+			,	a.Recommend		AS Recommend
+			,	a.CreatedDate	AS CreatedDate
+			,	a.IsLicensee	AS IsLicensee
+			,	a.IsLicenseeVIP	AS IsLicenseeVIP
+			,	a.IsLicenseeBA	AS IsLicenseeBA
+		FROM #tmpCustomers AS a WITH(NOLOCK)
+	END;
+
+	IF (@sourceType = 2)
+	BEGIN
+		SELECT	a.CustID		AS CustID
+			,	a.CustStatusID	AS CustStatusID
+			,	a.Danger1		AS Danger1
+			,	a.Danger2		AS Danger2
+			,	a.Danger3		AS Danger3		
+			,	a.Danger4		AS Danger4
+			,	a.Danger5		AS Danger5
+			,	a.DangerSabaSc	AS DangerSabaSc
+			,	a.DangerSabaBkb	AS DangerSabaBkb
+		FROM #tmpCustomers AS a WITH(NOLOCK);
+	END;
+
+	IF (@sourceType = 3)
+	BEGIN
+		SELECT	a.CustID		AS CustID
+			,	a.CustStatusID	AS CustStatusID
+		FROM #tmpCustomers AS a WITH(NOLOCK);
+	END;
+
 END;
 
