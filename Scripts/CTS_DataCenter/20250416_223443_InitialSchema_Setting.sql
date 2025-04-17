@@ -14,12 +14,9 @@ USE CTS_DataCenter;
 
 CREATE TABLE CTSCustomerLatencyQueue
 (
-	ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-	CustID BIGINT UNSIGNED NOT NULL,
+	CustID BIGINT UNSIGNED NOT NULL PRIMARY KEY,
     LatencyType SMALLINT NULL COMMENT '2: New Customer - Missing Customer, 3: New Customer - Missing CustInfo, Reactivated Customer - Missing',
-	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
-	PRIMARY KEY (ID),
-	KEY IX_CTSCustomerLatencyQueue_CustID (CustID)
+	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)
 );
 
 CREATE TABLE CTSCustomerLatencyQueue_Archive
@@ -30,7 +27,7 @@ CREATE TABLE CTSCustomerLatencyQueue_Archive
 	InsertedTime DATETIME(3),
 	ArchivedDate DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
 	PRIMARY KEY (ID),
-	KEY IX_CTSCustomerLatencyQueue_CustID (CustID)
+	KEY IX_CTSCustomerLatencyQueue_Archive_CustID (CustID)
 );
 
 SELECT ParameterValue

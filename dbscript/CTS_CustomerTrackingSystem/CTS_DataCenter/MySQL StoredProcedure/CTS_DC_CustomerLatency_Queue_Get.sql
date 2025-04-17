@@ -20,9 +20,9 @@ BEGIN
 			CALL CTS_DC_CustomerLatency_Queue_Get (1000);
 	*/ 
    
-	SELECT clq.CustID
+	SELECT clq.CustID, clq.LatencyType
 	FROM CTS_DataCenter.CTSCustomerLatencyQueue AS clq
-	ORDER BY clq.ID ASC
+	ORDER BY clq.CustID ASC
 	LIMIT ip_BatchSize;
 
 END$$

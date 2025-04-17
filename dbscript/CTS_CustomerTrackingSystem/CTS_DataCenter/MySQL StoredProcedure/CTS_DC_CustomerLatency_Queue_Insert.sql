@@ -31,10 +31,7 @@ BEGIN
 
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerLatencyQueue (CustID, LatencyType)
 	SELECT tmp.CustID, ip_LatencyType
-	FROM Temp_CustID AS tmp
-		LEFT JOIN CTS_DataCenter.CTSCustomerLatencyQueue AS clq ON tmp.CustID = clq.CustID
-		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID
-	WHERE clq.CustID IS NULL AND cus.CustID IS NULL;
+	FROM Temp_CustID AS tmp;
 
 END$$
 DELIMITER ;
