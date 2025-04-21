@@ -8,7 +8,7 @@ SQL SECURITY INVOKER
 BEGIN
 	/*
 		Creator:	20250416@Thomas.Nguyen
-		Task:	 	
+		Task:	 	Clean up Customer from Latency Queue for Customer Latency Insert and move to Archive
 		Server:  	CTSMain
 		DBName:		CTS_DataCenter
 
@@ -29,7 +29,9 @@ BEGIN
 	EXECUTE stmt1;
 
 	INSERT INTO CTS_DataCenter.CTSCustomerLatencyQueue_Archive (CustID, LatencyType, InsertedTime)
-	SELECT clq.CustID, clq.LatencyType, clq.InsertedTime
+	SELECT	clq.CustID
+		,	clq.LatencyType
+		,	clq.InsertedTime
 	FROM Temp_CustID AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomerLatencyQueue AS clq ON clq.CustID = tmp.CustID;
 

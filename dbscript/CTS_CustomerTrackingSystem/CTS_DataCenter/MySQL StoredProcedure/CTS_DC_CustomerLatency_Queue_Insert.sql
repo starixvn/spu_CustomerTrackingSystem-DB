@@ -9,7 +9,7 @@ SQL SECURITY INVOKER
 BEGIN
 	/*
 		Creator:	20250416@Thomas.Nguyen
-		Task:	 	
+		Task:	 	Insert Customer into Latency Queue for Customer Latency Insert
 		Server:  	CTSMain
 		DBName:		CTS_DataCenter
 
@@ -30,7 +30,8 @@ BEGIN
 	EXECUTE stmt1;
 
 	INSERT IGNORE INTO CTS_DataCenter.CTSCustomerLatencyQueue (CustID, LatencyType)
-	SELECT tmp.CustID, ip_LatencyType
+	SELECT	tmp.CustID
+		,	ip_LatencyType
 	FROM Temp_CustID AS tmp;
 
 END$$
