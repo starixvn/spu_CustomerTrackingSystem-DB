@@ -12,7 +12,9 @@ Reviewer:
 /***********************************************************************************************
 ************************ListA-CTS_DataCenter: Thomas Run ***************************************
 *************************************************************************************************/
-SET @FromCTSCustID = 301977224; # GET This Value when Deploy Time (service Stop)
+SELECT @MaxCustID = (SELECT MAX(CustID) FROM SystemParameter WHERE Parameter = 7); # GET This Value IN Deployment Time (service Stop)
+
+SET @FromCTSCustID = xxxxx; # xxxxx = @MaxCustID
 SET @DiffCheckSecond = 120;
 SET @FromDate = '2025-04-16'; #yyyy-mm-dd"
 SET @ToDate = '2025-04-16'; #yyyy-mm-dd"
