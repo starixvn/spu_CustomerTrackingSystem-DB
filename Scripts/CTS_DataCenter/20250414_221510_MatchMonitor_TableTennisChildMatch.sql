@@ -21,7 +21,7 @@ WHERE FunctionID = 1 AND BettypeID IN (1,3,20) AND SportTypeID = 2 AND LeagueGro
 INSERT INTO CTS_DataCenter.SportBettypeSetting
 (FunctionID,LeagueGroupID,SportTypeID,BetTypeID,SportName,BetTypeName,BetTypeNameDetailsX,BettypeNameDisplay,BetChoicePattern,BetChoiceType,BetIDPattern,IsMMDetection,IsMMParlayDetection,MMReason,IsDefaultSelected,Status)
 VALUES 
-(1,0,18,1,'Table Tennis','Hadicap',NULL,'HDP','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,NULL,1,0,0,0,1),
+(1,0,18,1,'Table Tennis','Handicap',NULL,'HDP','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,NULL,1,0,0,0,1),
 (1,0,18,3,'Table Tennis','Over/Under',NULL,'O/U','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "u", "BetChoiceHomeDisplay": "o"}',2,NULL,1,0,0,0,1),
 (1,0,18,20,'Table Tennis','Moneyline',NULL,'ML','{"BetChoiceAway": "a", "BetChoiceHome": "h", "BetChoiceAwayDisplay": "a", "BetChoiceHomeDisplay": "h"}',2,NULL,1,0,0,0,1)
 ;

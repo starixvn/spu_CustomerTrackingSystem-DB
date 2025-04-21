@@ -214,7 +214,7 @@ BEGIN
 			AND (l.LeagueGroupID NOT IN (42,74,108,113,122,151)
 				 OR (l.LeagueGroupID = 42 AND m.Sporttype IN (1,2)))-- SABA leagues
 			AND ISNULL(b.oddstype,0) <> 0
-			AND (m.sporttype <> 18 OR (m.sporttype = 18 AND ParentID > 0)) -- Get Child Match Only for Table Tennis
+			AND (m.sporttype <> 18 OR (m.sporttype = 18 AND m.ParentID > 0)) -- Get Child Match Only for Table Tennis
 		ORDER BY b.sequenceid ASC;
 		
 	END;
