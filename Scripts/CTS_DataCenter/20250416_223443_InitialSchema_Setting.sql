@@ -14,20 +14,30 @@ USE CTS_DataCenter;
 
 CREATE TABLE CTSCustomerLatencyQueue
 (
-	CustID BIGINT UNSIGNED NOT NULL PRIMARY KEY,
-    LatencyType SMALLINT NULL COMMENT '2: New Customer - Missing Customer, 3: New Customer - Missing CustInfo, Reactivated Customer - Missing',
-	InsertedTime DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)
+		CustID 					BIGINT UNSIGNED NOT NULL PRIMARY KEY	
+    ,	LatencyType				SMALLINT NULL COMMENT '2: New Customer - Missing Customer, 3: New Customer - Missing CustInfo, Reactivated Customer - Missing'
+	,	InsertedTime 			DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)
+    ,	CustomerRepUpdateTime 	DATETIME(7)
+    
+
 );
 
 CREATE TABLE CTSCustomerLatencyQueue_Archive
 (
-	ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-	CustID BIGINT UNSIGNED NOT NULL,
-    LatencyType SMALLINT NULL COMMENT '2: New Customer - Missing Customer, 3: New Customer - Missing CustInfo, Reactivated Customer - Missing',
-	InsertedTime DATETIME(3),
-	ArchivedDate DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
-	PRIMARY KEY (ID),
-	KEY IX_CTSCustomerLatencyQueue_Archive_CustID (CustID)
+		ID 				BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
+	,	CustID 			BIGINT UNSIGNED NOT NULL
+    ,	LatencyType 	SMALLINT NULL COMMENT '2: New Customer - Missing Customer, 3: New Customer - Missing CustInfo, Reactivated Customer - Missing'
+	,	InsertedTime	DATETIME(3)
+	,	ArchivedDate 	DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)    
+    ,	CustomerRepUpdateTime			DATETIME(7)
+    ,	CustInfoRepUpdateTime			DATETIME(7)
+	,	SiteRepUpdateTime				DATETIME(7)
+	,	DepCustSuperRepUpdateTime		DATETIME(7)
+	,	CustProductStatusRepUpdateTime	DATETIME(7)
+    
+	,	PRIMARY KEY (ID)
+	,	KEY IX_CTSCustomerLatencyQueue_Archive_CustID (CustID)
+    , 	KEY IX_CTSCustomerLatencyQueue_Archive_ArchivedDate(ArchivedDate)
 );
 
 SELECT ParameterValue

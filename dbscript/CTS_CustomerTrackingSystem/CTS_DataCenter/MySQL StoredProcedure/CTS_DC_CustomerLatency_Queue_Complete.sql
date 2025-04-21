@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_CustomerLatency_Queue_Complete`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustomerLatency_Queue_Complete`(
-		IN 	ip_CustIDs	LONGTEXT
+		IN 	ip_Customer		JSON
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -21,17 +21,38 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustID;    
 	CREATE TEMPORARY TABLE Temp_CustID( 	  
-		CustID		BIGINT UNSIGNED PRIMARY KEY
+			CustID							BIGINT UNSIGNED PRIMARY KEY
+		,	CustInfoRepUpdateTime			DATETIME(7)
+		,	SiteRepUpdateTime				DATETIME(7)
+		,	DepCustSuperRepUpdateTime		DATETIME(7)
+		,	CustProductStatusRepUpdateTime	DATETIME(7)
 	);
 
-    SET @sql = CONCAT("INSERT INTO Temp_CustID (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
-
+	INSERT IGNORE INTO Temp_CustID(CustID, CustomerRepUpdateTime, CustInfoRepUpdateTime, SiteRepUpdateTime, DepCustSuperRepUpdateTime, CustProductStatusRepUpdateTime)
+	SELECT 	js.CustID
+		,	js.CustInfoRepUpdateTime
+        ,	js.SiteRepUpdateTime
+        ,	js.DepCustSuperRepUpdateTime
+        ,	js.CustProductStatusRepUpdateTime
+    FROM JSON_TABLE(ip_Sporttype,
+					 "$[*]" COLUMNS(
+								CustID							INT	PATH "$.CustID"
+							,	CustInfoRepUpdateTime			INT	PATH "$.CustInfoRepUpdateTime"
+                            ,	SiteRepUpdateTime				INT	PATH "$.SiteRepUpdateTime"
+                            ,	DepCustSuperRepUpdateTime		INT	PATH "$.DepCustSuperRepUpdateTime"
+                            ,	CustProductStatusRepUpdateTime	INT	PATH "$.CustomerRepUpdateTime"
+						)
+				) AS js;
+                
 	INSERT INTO CTS_DataCenter.CTSCustomerLatencyQueue_Archive (CustID, LatencyType, InsertedTime)
 	SELECT	clq.CustID
 		,	clq.LatencyType
 		,	clq.InsertedTime
+        ,	clq.CustomerRepUpdateTime
+        ,	tmp.CustInfoRepUpdateTime
+        ,	tmp.SiteRepUpdateTime
+        ,	tmp.DepCustSuperRepUpdateTime
+        ,	tmp.CustProductStatusRepUpdateTime
 	FROM Temp_CustID AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomerLatencyQueue AS clq ON clq.CustID = tmp.CustID;
 

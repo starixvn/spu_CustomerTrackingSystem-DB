@@ -26,7 +26,9 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 	
-	SELECT TOP(@BatchSize) c.CustID
+	SELECT TOP(@BatchSize) 
+			c.CustID
+		,	c.RepUpdateTime
 	FROM bodb02.dbo.Customer AS c WITH(NOLOCK)
 	WHERE RoleID BETWEEN 1 AND 4
 		AND c.CustID > @FromCustID

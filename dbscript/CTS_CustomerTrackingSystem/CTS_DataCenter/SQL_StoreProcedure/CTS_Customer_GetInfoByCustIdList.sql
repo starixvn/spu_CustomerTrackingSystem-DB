@@ -33,7 +33,10 @@ AS
 		- 20250416@Thomas.Nguyen: Return more Customer missing info [Redmine ID: #223443]
 
 	Developer's Notes:
-		- @sourceType: 0- GET New Customer Info, 1- Get Info Customer table, 2-Get CustInfo table, 3 GET Info CustProductStatus table
+		- @sourceType: 0- GET New Customer Info
+		, 1- Get Info Customer table
+		, 2-Get CustInfo table
+		, 3 GET Info CustProductStatus table
 
 	EXEC CTS_Customer_GetInfoByCustIdList '1,2,3,95396080', 0	
 
@@ -77,7 +80,12 @@ BEGIN;
 		,	CreatedDate		DATETIME	
 		,	IsLicensee		BIT		
 		,	IsLicenseeVIP	BIT DEFAULT 0		
-		,	IsLicenseeBA	BIT DEFAULT 0		
+		,	IsLicenseeBA	BIT DEFAULT 0
+
+		,	CustInfoRepUpdateTime			DATETIME2
+		,	SiteRepUpdateTime				DATETIME2
+		,	DepCustSuperRepUpdateTime		DATETIME2
+		,	CustProductStatusRepUpdateTime	DATETIME2
 	);
 
 	INSERT INTO #tmpCustomers (CustId)
@@ -102,7 +110,8 @@ BEGIN;
 			,	Srecommend = cust.srecommend
 			,	Mrecommend = cust.mrecommend 
 			,	Recommend = cust.recommend	
-			,	CreatedDate = cust.creatdate	
+			,	CreatedDate = cust.creatdate
+			,	SiteRepUpdateTime = st2.SiteRepUpdateTime
 		FROM bodb02.dbo.Customer AS cust WITH (NOLOCK)
 			INNER JOIN #tmpCustomers AS tmpCust WITH (NOLOCK) ON cust.custid = tmpCust.CustId
 			INNER JOIN bodb02.dbo.Exchange AS ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
@@ -126,6 +135,8 @@ BEGIN;
 									WHEN DangerLevel IS NOT NULL THEN (DangerLevel&240)/16
 									ELSE 0 END)
 			,	a.IsLicensee = 1
+			,	a.CustInfoRepUpdateTime = c.RepUpdateTime
+			,	a.DepCustSuperRepUpdateTime = cs.RepUpdateTime
 		FROM #tmpCustomers AS a
 			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
 			INNER JOIN bodb02.dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON a.Srecommend = cs.custid;
@@ -148,6 +159,8 @@ BEGIN;
 									WHEN DangerLevel IS NOT NULL THEN (DangerLevel&240)/16
 									ELSE 0 END)
 			,	a.IsLicensee = 0
+			,	a.CustInfoRepUpdateTime = ISNULL(a.CustInfoRepUpdateTime,c.RepUpdateTime)
+			,	a.CustProductStatusRepUpdateTime = s.RepUpdateTime
 		FROM #tmpCustomers AS a
 			INNER JOIN bodb02.dbo.custInfo AS c WITH(NOLOCK) ON a.custid = c.custid
 			INNER JOIN bodb02.dbo.CustProductStatus AS s WITH(NOLOCK) ON a.custid = s.custid
@@ -210,8 +223,13 @@ BEGIN;
 			,	a.IsLicensee	AS IsLicensee
 			,	a.IsLicenseeVIP	AS IsLicenseeVIP
 			,	a.IsLicenseeBA	AS IsLicenseeBA
+
+			,	a.CustInfoRepUpdateTime				AS CustInfoRepUpdateTime
+			,	a.DepCustSuperRepUpdateTime			AS DepCustSuperRepUpdateTime
+			,	a.SiteRepUpdateTime					AS SiteRepUpdateTime
+			,	a.CustProductStatusRepUpdateTime	AS CustProductStatusRepUpdateTime
 		FROM #tmpCustomers AS a WITH(NOLOCK)
-		WHERE NOT EXISTS (SELECT TOP 1 1 FROM #Tmp_CustMissingInfo AS tmp WITH(NOLOCK) WHERE a.CustId = tmp.CustID);
+		WHERE NOT EXISTS (SELECT TOP(1) 1 FROM #Tmp_CustMissingInfo AS tmp WITH(NOLOCK) WHERE a.CustId = tmp.CustID);
 
 		--==============RETURN CUST MISSING INFO====================
 		SELECT CustID
