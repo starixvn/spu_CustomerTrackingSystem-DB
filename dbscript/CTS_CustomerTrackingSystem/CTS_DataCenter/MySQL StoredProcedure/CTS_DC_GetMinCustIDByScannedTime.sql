@@ -39,9 +39,9 @@ BEGIN
 	FROM CTS_DataCenter.CTSCustomer AS cus
 	WHERE cus.CustID > ip_FromCustID
 		AND cus.CustID < ip_ToCustID
-		AND cus.CreatedDate < lv_MinCreatedDate
-	ORDER BY cus.CreatedDate DESC
+		AND cus.CreatedDate <= lv_MinCreatedDate
+	ORDER BY cus.CreatedDate DESC, cus.CustID DESC
     LIMIT 1;
-    
+
 END$$
 DELIMITER ;
