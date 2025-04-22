@@ -16,6 +16,8 @@ BEGIN
 		Revisions: 
 				- 20250416@Thomas.Nguyen: 	Created [Redmine ID: #223443]
 
+		Param's Explanation (filtered by): 
+
 		Example:
 			CALL CTS_DC_CustomerLatency_Queue_Get (1000);
 	*/ 
