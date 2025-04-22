@@ -16,8 +16,7 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 20250416@Casey.Huynh: [Redmine ID: #223443]
-            
+			- 20250416@Casey.Huynh: [Redmine ID: #223443]            
             
 		Param's Explanation (filtered by):
         

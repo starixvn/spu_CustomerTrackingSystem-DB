@@ -32,11 +32,11 @@ AS
 		- 20241216@Tony.Nguyen: Change the process so that it retrieves SiteID/Site for the member directly (Redmine ID: #214585)
 		- 20250416@Thomas.Nguyen: Return more Customer missing info [Redmine ID: #223443]
 
-	Developer's Notes:
+	Param's Explanation (filtered by):
 		- @sourceType: 0- GET New Customer Info
 		, 1- Get Info Customer table
-		, 2-Get CustInfo table
-		, 3 GET Info CustProductStatus table
+		, 2- Get CustInfo table
+		, 3- GET Info CustProductStatus table
 
 	EXEC CTS_Customer_GetInfoByCustIdList '1,2,3,95396080', 0	
 

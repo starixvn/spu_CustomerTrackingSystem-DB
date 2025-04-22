@@ -14,6 +14,8 @@ BEGIN
 
 		Revisions: 
 				- 20241203@Thomas.Nguyen: 	Created [Redmine ID: #223443]
+                
+        Param's Explanation (filtered by): 
 
 		Example:
 			CALL CTS_DC_CustomerLatency_Queue_Complete (@ip_Customer:= 

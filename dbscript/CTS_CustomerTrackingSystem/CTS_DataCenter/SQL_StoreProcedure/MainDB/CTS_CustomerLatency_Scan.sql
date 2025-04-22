@@ -18,7 +18,7 @@ AS
 	Revisions:
 		- 20250416@Casey.Huynh: Created [Redmine ID: #223443]
 
-	Params Explaination:		
+	Param's Explanation (filtered by):		
 					 
 	Example:
 		exec CTS_CustomerLatency_Scan @FromCustID = 1000, @ToCustID = 12000, @BatchSize=1000

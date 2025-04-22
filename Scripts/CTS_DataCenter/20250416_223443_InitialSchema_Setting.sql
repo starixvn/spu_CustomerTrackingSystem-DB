@@ -56,7 +56,14 @@ INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDe
 VALUES(189,'ReactivatedCustLatencyScan_LastScannedTime','ReactivatedCustLatencyScan_LastScannedTime','DATETIME',@lv_JobMonitoring_ReactivatedCustLastScannedTime);
 
 INSERT INTO StaticList (ListID, ItemID, ListName, ListNameDisplay, ItemName, ItemNameDisplay, ItemParentItemID, ItemDefaultValue, ItemValue, PriorityOrder, Status, Description, CreatedDate)
-VALUES (20,300,'Job Monitoring IssueType','Job Monitoring IssueType','Customer Latency - Excessive Pool','Customer Latency - Excessive Pool',NULL,NULL,NULL,NULL,1,NULL,NOW());
+VALUES (20,51,'Job Monitoring IssueType','Job Monitoring IssueType','Reactivated Customer - Missing CustInfo','Reactivated Customer - Missing CustInfo',NULL,NULL,NULL,NULL,1,NULL,NOW())
+	, (20,300,'Job Monitoring IssueType','Job Monitoring IssueType','Customer Latency - Excessive Pool','Customer Latency - Excessive Pool',NULL,NULL,NULL,NULL,1,NULL,NOW())
+;
+
+UPDATE StaticList 
+SET ItemName = 'Reactivated Customer - Missing Customer'
+	, ItemNameDisplay = 'Reactivated Customer - Missing Customer'
+WHERE ListID = 20 AND ItemID = 50;
 
 #=================DROP UNUSED PROCEDURES============================================
 DROP PROCEDURE IF EXISTS `CTS_DC_Monitoring_MissingCustomer_Check`;
