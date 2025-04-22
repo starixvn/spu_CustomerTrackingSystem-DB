@@ -16,38 +16,45 @@ BEGIN
 				- 20241203@Thomas.Nguyen: 	Created [Redmine ID: #223443]
 
 		Example:
-			CALL CTS_DC_CustomerLatency_Queue_Complete ('28941539,30401421,31787544');
+			CALL CTS_DC_CustomerLatency_Queue_Complete (@ip_Customer:= 
+            '[	{"CustID":1,"CustInfoRepUpdateTime": "2025-04-22 01:02:03.123456","SiteRepUpdateTime": "2025-04-22 01:02:03.223456","CustProductStatusRepUpdateTime": "2025-04-22 01:02:03.323456","DepCustSuperRepUpdateTime": "2025-04-22 01:02:03.423456"}
+			,	{"CustID":2,"CustInfoRepUpdateTime": "2025-04-22 01:02:03.123456","SiteRepUpdateTime": "2025-04-22 01:02:03.223456","CustProductStatusRepUpdateTime": "2025-04-22 01:02:03.323456","DepCustSuperRepUpdateTime": "2025-04-22 01:02:03.423456"}
+			,	{"CustID":3,"CustInfoRepUpdateTime": "2025-04-22 01:02:03.123456","SiteRepUpdateTime": "2025-04-22 01:02:03.223456","CustProductStatusRepUpdateTime": "2025-04-22 01:02:03.323456","DepCustSuperRepUpdateTime": "2025-04-22 01:02:03.423456"}
+			]');
 	*/
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustID;    
 	CREATE TEMPORARY TABLE Temp_CustID( 	  
 			CustID							BIGINT UNSIGNED PRIMARY KEY
-		,	CustInfoRepUpdateTime			DATETIME(7)
-		,	SiteRepUpdateTime				DATETIME(7)
-		,	DepCustSuperRepUpdateTime		DATETIME(7)
-		,	CustProductStatusRepUpdateTime	DATETIME(7)
+		,	CustInfoRepUpdateTime			DATETIME(4)
+		,	SiteRepUpdateTime				DATETIME(4)
+		,	DepCustSuperRepUpdateTime		DATETIME(4)
+		,	CustProductStatusRepUpdateTime	DATETIME(4)
 	);
 
-	INSERT IGNORE INTO Temp_CustID(CustID, CustomerRepUpdateTime, CustInfoRepUpdateTime, SiteRepUpdateTime, DepCustSuperRepUpdateTime, CustProductStatusRepUpdateTime)
+	INSERT IGNORE INTO Temp_CustID(CustID, CustInfoRepUpdateTime, SiteRepUpdateTime, DepCustSuperRepUpdateTime, CustProductStatusRepUpdateTime)
 	SELECT 	js.CustID
 		,	js.CustInfoRepUpdateTime
         ,	js.SiteRepUpdateTime
         ,	js.DepCustSuperRepUpdateTime
         ,	js.CustProductStatusRepUpdateTime
-    FROM JSON_TABLE(ip_Sporttype,
+    FROM JSON_TABLE(ip_Customer,
 					 "$[*]" COLUMNS(
 								CustID							INT	PATH "$.CustID"
-							,	CustInfoRepUpdateTime			INT	PATH "$.CustInfoRepUpdateTime"
-                            ,	SiteRepUpdateTime				INT	PATH "$.SiteRepUpdateTime"
-                            ,	DepCustSuperRepUpdateTime		INT	PATH "$.DepCustSuperRepUpdateTime"
-                            ,	CustProductStatusRepUpdateTime	INT	PATH "$.CustomerRepUpdateTime"
+							,	CustInfoRepUpdateTime			DATETIME(6)	PATH "$.CustInfoRepUpdateTime"
+                            ,	SiteRepUpdateTime				DATETIME(6)	PATH "$.SiteRepUpdateTime"
+                            ,	DepCustSuperRepUpdateTime		DATETIME(6)	PATH "$.DepCustSuperRepUpdateTime"
+                            ,	CustProductStatusRepUpdateTime	DATETIME(6)	PATH "$.CustProductStatusRepUpdateTime"
 						)
 				) AS js;
                 
-	INSERT INTO CTS_DataCenter.CTSCustomerLatencyQueue_Archive (CustID, LatencyType, InsertedTime)
+	INSERT INTO CTS_DataCenter.CTSCustomerLatencyQueue_Archive (CustID, LatencyType, QueueInsertedTime, InsertedTime, ArchivedDate
+				, CustomerRepUpdateTime, CustInfoRepUpdateTime, SiteRepUpdateTime, DepCustSuperRepUpdateTime, CustProductStatusRepUpdateTime)
 	SELECT	clq.CustID
 		,	clq.LatencyType
-		,	clq.InsertedTime
+		,	clq.InsertedTime AS QueueInsertedTime        
+        ,	CURRENT_TIMESTAMP(3) AS InsertedTime
+        ,	DATE(CURRENT_TIMESTAMP(3)) AS ArchivedDate
         ,	clq.CustomerRepUpdateTime
         ,	tmp.CustInfoRepUpdateTime
         ,	tmp.SiteRepUpdateTime
