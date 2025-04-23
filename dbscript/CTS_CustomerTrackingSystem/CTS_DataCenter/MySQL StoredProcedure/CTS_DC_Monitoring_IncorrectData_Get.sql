@@ -25,19 +25,19 @@ BEGIN
 				select @op_IsContinue;
 
 	*/
+    DECLARE CONST_JOBMONITORING_ISSUETYPEID             TINYINT DEFAULT 20;
     DECLARE CONST_BATCHSIZE							    SMALLINT DEFAULT 5000;
-    DECLARE CONST_CUSTOMERLATENCYQUEUE_THRESHOLD        SMALLINT DEFAULT 5000;
 
     DECLARE CONST_MISSING_NEWCUSTOMER				    TINYINT DEFAULT 2;
-    DECLARE CONST_MISSING_REACTIVATEDCUSTOMER		    TINYINT DEFAULT 50;
-    
+    DECLARE CONST_MISSING_REACTIVATEDCUSTOMER		    TINYINT DEFAULT 50; 
     DECLARE CONST_ISSUETYPEID_CUSTOMERLATENCYQUEUE		SMALLINT DEFAULT 300;
     
-    DECLARE lv_LastScanID 			    BIGINT UNSIGNED;
-    DECLARE lv_MaxScanID	 		    BIGINT UNSIGNED;
-    DECLARE lv_CurrentNextScanID 	    BIGINT UNSIGNED;
-    DECLARE lv_Count_CustLatencyQueue	INT UNSIGNED;
-       
+    DECLARE lv_LastScanID 			                    BIGINT UNSIGNED;
+    DECLARE lv_MaxScanID	 		                    BIGINT UNSIGNED;
+    DECLARE lv_CurrentNextScanID 	                    BIGINT UNSIGNED;
+    DECLARE lv_Count_CustLatencyQueue	                INT UNSIGNED;
+    DECLARE lv_Threshold_CustLatencyQueue               SMALLINT UNSIGNED;
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_IncorrectData;    
 	CREATE TEMPORARY TABLE Temp_IncorrectData(
 			ID					BIGINT UNSIGNED
@@ -50,7 +50,12 @@ BEGIN
         ,	IsIssueTypeValid	BIT(1) DEFAULT(1)
         ,	KEY IX_Temp_IncorrectData_ID(ID)	
 	);
-       
+
+    SELECT ItemValue
+    INTO lv_Threshold_CustLatencyQueue
+    FROM CTS_DataCenter.StaticList
+    WHERE ListID = CONST_JOBMONITORING_ISSUETYPEID AND ItemID = CONST_ISSUETYPEID_CUSTOMERLATENCYQUEUE;
+
     SELECT ParameterValue
 	INTO lv_LastScanID
 	FROM CTS_DataCenter.SystemParameter 
@@ -66,7 +71,7 @@ BEGIN
             ,	a.IssueTypeID
             ,	CASE WHEN s.ItemID IS NOT NULL THEN TRUE ELSE FALSE END AS IsIssueTypeValid
     FROM CTS_DataCenter.JobMonitoring_IncorrectData AS a
-		LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 20 AND s.ItemID = a.IssueTypeID
+		LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = CONST_JOBMONITORING_ISSUETYPEID AND s.ItemID = a.IssueTypeID
 	WHERE ID > lv_LastScanID
     ORDER BY ID ASC
     LIMIT CONST_BATCHSIZE;   
@@ -78,7 +83,7 @@ BEGIN
     SELECT COUNT(1) INTO lv_Count_CustLatencyQueue
     FROM CTS_DataCenter.CTSCustomerLatencyQueue AS clq;
 
-    IF lv_Count_CustLatencyQueue > CONST_CUSTOMERLATENCYQUEUE_THRESHOLD THEN
+    IF lv_Count_CustLatencyQueue > lv_Threshold_CustLatencyQueue THEN
         INSERT INTO Temp_IncorrectData(ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID, IsIssueTypeValid)
         SELECT  0 AS ID
             ,	NULL AS CustID

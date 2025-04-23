@@ -57,7 +57,7 @@ VALUES(189,'ReactivatedCustLatencyScan_LastScannedTime','ReactivatedCustLatencyS
 
 INSERT INTO StaticList (ListID, ItemID, ListName, ListNameDisplay, ItemName, ItemNameDisplay, ItemParentItemID, ItemDefaultValue, ItemValue, PriorityOrder, Status, Description, CreatedDate)
 VALUES (20,51,'Job Monitoring IssueType','Job Monitoring IssueType','Reactivated Customer - Missing CustInfo','Reactivated Customer - Missing CustInfo',NULL,NULL,NULL,NULL,1,NULL,NOW())
-	, (20,300,'Job Monitoring IssueType','Job Monitoring IssueType','Customer Latency - Excessive Pool','Customer Latency - Excessive Pool',NULL,NULL,NULL,NULL,1,NULL,NOW())
+	, (20,300,'Job Monitoring IssueType','Job Monitoring IssueType','Customer Latency - Excessive Pool','Customer Latency - Excessive Pool',NULL,NULL,5000,NULL,1,NULL,NOW())
 ;
 
 UPDATE StaticList 
