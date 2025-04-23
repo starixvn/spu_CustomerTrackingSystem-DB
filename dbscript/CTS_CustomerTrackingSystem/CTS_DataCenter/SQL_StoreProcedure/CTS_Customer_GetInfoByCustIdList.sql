@@ -111,7 +111,7 @@ BEGIN;
 			,	Mrecommend = cust.mrecommend 
 			,	Recommend = cust.recommend	
 			,	CreatedDate = cust.creatdate
-			,	SiteRepUpdateTime = st2.SiteRepUpdateTime
+			,	SiteRepUpdateTime = st2.RepUpdateTime
 		FROM bodb02.dbo.Customer AS cust WITH (NOLOCK)
 			INNER JOIN #tmpCustomers AS tmpCust WITH (NOLOCK) ON cust.custid = tmpCust.CustId
 			INNER JOIN bodb02.dbo.Exchange AS ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
