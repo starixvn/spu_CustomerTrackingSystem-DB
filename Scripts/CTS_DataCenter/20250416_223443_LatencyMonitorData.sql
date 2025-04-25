@@ -12,12 +12,12 @@ Reviewer:
 /***********************************************************************************************
 ************************ListA-CTS_DataCenter: Thomas Run ***************************************
 *************************************************************************************************/
-SELECT @MaxCustID = (SELECT MAX(CustID) FROM SystemParameter WHERE Parameter = 7); # GET This Value IN Deployment Time (service Stop)
+SELECT @MaxCustID = (SELECT ParameterValue FROM SystemParameter WHERE ParameterID = 7); # GET This Value IN Deployment Time (service Stop)
 
 SET @FromCTSCustID = xxxxx; # xxxxx = @MaxCustID
 SET @DiffCheckSecond = 120;
-SET @FromDate = '2025-04-16'; #yyyy-mm-dd"
-SET @ToDate = '2025-04-16'; #yyyy-mm-dd"
+SET @FromDate = '2025-04-29'; #yyyy-mm-dd"
+SET @ToDate = '2025-04-29'; #yyyy-mm-dd"
 
 SET @NextToDate = DATE_ADD(@ToDate, INTERVAL 1 DAY);
 
@@ -31,46 +31,64 @@ LIMIT 1;
 SELECT @FromDate CheckFromDate, @ToDate, NOW() AS GetTime, @FromCTSCustID AS FromCTSCustID, @ToCTSCustID AS ToCTSCustID;
 
 SELECT  'InsertNewCust' AS Flow
-	,	TIMESTAMPDIFF(SECOND, cus.CreatedDate, cls.CreatedDate) AS DiffTimeCusMainVsClass
+	/*,	TIMESTAMPDIFF(SECOND, cus.CreatedDate, cls.CreatedDate) AS DiffTimeCusMainVsClass*/
     ,	TIMESTAMPDIFF(SECOND, cus.CreatedDate, cus.InsertedTime) AS DiffTimeCustMainVsCTS
-	,	TIMESTAMPDIFF(SECOND, cus.InsertedTime, cls.CreatedDate) AS DiffTimeCusCTSVsClass	
+	/*,	TIMESTAMPDIFF(SECOND, cus.InsertedTime, cls.CreatedDate) AS DiffTimeCusCTSVsClass	*/
     ,	'----' AS 'Table_CTSCustomer', cus.CTSCustID, cus.CustID, cus.Username, cus.UserName2, cus.Site, cus.IsLicensee, cus.CreatedDate , cus.InsertedTime , cus.Currency , CurrencyID
-    ,	'----' AS 'Table_CTSCustomerClassification', cls.CreatedDate 
+    ,	'----' AS 'Table_CTSCustomerClassification'/*, cls.CreatedDate */
     ,   '----' AS 'Table_ArchiveCustomer_CTSCustomer',arc.ReactivateDate
     ,	'----' AS 'Table_CTSCustomerLatencyQueue_Archive', lat.LatencyType, lat.InsertedTime, lat.ArchivedDate    
     ,	'----' AS 'Table_Subscriber', sub.SubscriberID, sub.SubscriberName, sub.SubscriberType, sub.SubscriberPrefix
 FROM CTS_DataCenter.CTSCustomer AS cus	
-	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID AND CategoryID = 40100
+	/*INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID AND CategoryID = 40100*/
     LEFT JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc ON arc.CustID = cus.CustiD AND arc.IsReactivated = 1
     LEFT JOIN CTS_DataCenter.CTSCustomerLatencyQueue_Archive AS lat ON lat.CustID = cus.CustID
     LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = cus.SubscriberID
 WHERE cus.CTSCustID > @FromCTSCustID AND cus.CTSCustID < @NextToCTSCustID 
 	AND cus.CustSubID = 0
-    AND TIMESTAMPDIFF(SECOND, cus.CreatedDate,cls.CreatedDate) > @DiffCheckSecond
+    /*AND TIMESTAMPDIFF(SECOND, cus.CreatedDate,cls.CreatedDate) > @DiffCheckSecond*/
+	AND TIMESTAMPDIFF(SECOND, cus.CreatedDate, cus.InsertedTime) > @DiffCheckSecond
     AND arc.CustID IS NULL
 UNION
 SELECT	'InsertReactiveCust' AS Flow
-	,	TIMESTAMPDIFF(SECOND, arc.ReactivateDate, cls.CreatedDate) AS DiffTimeCusMainVsClass
+	/*,	TIMESTAMPDIFF(SECOND, arc.ReactivateDate, cls.CreatedDate) AS DiffTimeCusMainVsClass*/
     ,	TIMESTAMPDIFF(SECOND, arc.ReactivateDate, cus.InsertedTime) AS DiffTimeCustMainVsCTS
-	,	TIMESTAMPDIFF(SECOND, cus.InsertedTime, cls.CreatedDate) AS DiffTimeCusCTSVsClass	
+	/*,	TIMESTAMPDIFF(SECOND, cus.InsertedTime, cls.CreatedDate) AS DiffTimeCusCTSVsClass	*/
     ,	'----' AS 'Table_CTSCustomer', cus.CTSCustID, cus.CustID, cus.Username, cus.UserName2, cus.Site, cus.IsLicensee, cus.CreatedDate , cus.InsertedTime , cus.Currency , CurrencyID
-    ,	'----' AS 'Table_CTSCustomerClassification', cls.CreatedDate 
+    ,	'----' AS 'Table_CTSCustomerClassification'/*, cls.CreatedDate */
     ,   '----' AS 'Table_ArchiveCustomer_CTSCustomer',arc.ReactivateDate
     ,	'----' AS 'Table_CTSCustomerLatencyQueue_Archive', lat.LatencyType, lat.InsertedTime, lat.ArchivedDate    
     ,	'----' AS 'Table_Subscriber', sub.SubscriberID, sub.SubscriberName, sub.SubscriberType, sub.SubscriberPrefix
 FROM CTS_DataCenter.CTSCustomer AS cus
-	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID AND CategoryID = 40100
+	/*INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID AND CategoryID = 40100*/
     INNER JOIN ArchiveCustomer_CTSCustomer AS arc ON arc.CustID = cus.CustiD AND arc.IsReactivated = 1
     LEFT JOIN CTS_DataCenter.CTSCustomerLatencyQueue_Archive AS lat ON lat.CustID = cus.CustID
     LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = cus.SubscriberID
 WHERE cus.CTSCustID > @FromCTSCustID AND cus.CTSCustID < @NextToCTSCustID
 	AND cus.CustSubID = 0
-    AND TIMESTAMPDIFF(SECOND, cus.CreatedDate,cls.CreatedDate) > @DiffCheckSecond;
-    
+	AND TIMESTAMPDIFF(SECOND, arc.ReactivateDate, cus.InsertedTime) > @DiffCheckSecond;
+    /*AND TIMESTAMPDIFF(SECOND, cus.CreatedDate,cls.CreatedDate) > @DiffCheckSecond;*/
+
+/***********************************************************************************************
+************************Check data by @ListA****************************
+*************************************************************************************************/
+SELECT	CustID
+    ,	LatencyType
+	,	QueueInsertedTime
+	,	InsertedTime 
+    ,	ArchivedDate
+    ,	CustomerRepUpdateTime
+    ,	CustInfoRepUpdateTime
+	,	SiteRepUpdateTime
+	,	DepCustSuperRepUpdateTime
+	,	CustProductStatusRepUpdateTime
+FROM CTS_DataCenter.CTSCustomerLatencyQueue_Archive
+WHERE CustID IN (@ListA);
+
 /***********************************************************************************************
 ************************ListB-MAIN DB: nhờ anh Long chạy trên remote server by @ListA****************************
 *************************************************************************************************/
-SELECT cust.Custid, cust.username, cust.creatdate, cust.RepUpdateTime
+/*SELECT cust.Custid, cust.username, cust.creatdate, cust.RepUpdateTime
 , '--CustInfo--', ci.RepUpdateTime AS CustInfo_RepUpdateTime
 , '--Site--', st.RepUpdateTime AS Site_RepUpdateTime
 , '--Dep_CustSuper--', cs.CustId, cs.RepUpdateTime AS Dep_CustSuper_RepUpdateTime
@@ -80,4 +98,5 @@ FROM bodb02.dbo.Customer AS cust
 	LEFT JOIN bodb02.dbo.[Site] AS st WITH (NOLOCK) ON st.[site] = cust.[site]
 	LEFT JOIN bodb02.dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON cs.custid = cust.Srecommend 
 	LEFT JOIN bodb02.dbo.CustProductStatus AS ps WITH(NOLOCK) ON ps.custid = cust.custid
-WHERE cust.CustID IN (@ListA);
+WHERE cust.CustID IN (@ListA);*/
+
