@@ -15,9 +15,10 @@ BEGIN
 
 	    Revisions:
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
+		    - 20250425@Jonathan.Doan: Add field CreatedDate, CreatedTime [Redmine ID: #221973]
 	    Param's Explanation (filtered by):
 		Example:
-			CALL DCS_DC_Transform_MBDeviceCodeTagging_Insert('');
+			CALL DCS_DC_Transform_MBDeviceCodeTagging_Insert('123');
             SELECT * FROM DCS_DataCenter.MBDeviceCodeTagging ORDER BY ID DESC;
     */
     DECLARE lv_CurrentDatetime DATETIME DEFAULT NOW();
@@ -39,10 +40,11 @@ BEGIN
 		INNER JOIN DCS_DataCenter.MBDeviceCodeTagging AS tg ON tg.Code = tmp.Code
     SET tmp.IsNewRecord = 0;
 	
-	INSERT INTO DCS_DataCenter.MBDeviceCodeTagging(Code, InsertedTime, LastAccessedDate)
+	INSERT INTO DCS_DataCenter.MBDeviceCodeTagging(Code, InsertedTime, LastAccessedDate, CreatedDate)
 	SELECT	Code
 		,	lv_CurrentDatetime AS InsertedTime
 		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
+		,	DATE(lv_CurrentDatetime) AS CreatedDate
 	FROM Temp_MBDeviceCodeTaggingInsert
     WHERE IsNewRecord = 1;
 END$$

@@ -15,10 +15,11 @@ BEGIN
 		 
 	    Revisions:
 		    - 20241205@Jonathan.Doan: Created [RedmineID: #213401]
+		    - 20250425@Jonathan.Doan: Add field CreatedDate, CreatedTime [Redmine ID: #221973]
 	    Param's Explanation (filtered by):
         
         Example:
-			CALL DCS_DC_Transform_MBAssociation_Insert('[{"MBDeviceID": 101, "MBAccountID": 3, "SubscriberID": 2}, {"MBDeviceID": 102, "MBAccountID": 3, "SubscriberID": 2}]');
+			CALL DCS_DC_Transform_MBAssociation_Insert('[{"MBDeviceID": 105, "MBAccountID": 3, "SubscriberID": 2, "TransTime": "2025-04-25"}, {"MBDeviceID": 106, "MBAccountID": 3, "SubscriberID": 2, "TransTime": "2025-04-25 12:05:06"}]');
 			select * from MBAssociation;
 	*/
     DECLARE lv_CurrentDatetime DATETIME DEFAULT NOW();
@@ -29,19 +30,22 @@ BEGIN
         ,	MBAccountID			BIGINT UNSIGNED		NOT NULL
         ,	MBDeviceID			BIGINT UNSIGNED		NOT NULL
         ,	SubscriberID		INT
+		,	TransTime			DATETIME(4)
 		,	IsNewRecord			TINYINT		 		DEFAULT 1
     );
     
-    INSERT INTO Temp_MBAssociationInsert(MBAccountID, MBDeviceID, SubscriberID)
+    INSERT INTO Temp_MBAssociationInsert(MBAccountID, MBDeviceID, SubscriberID, TransTime)
 	SELECT 	tmp.MBAccountID
 		,	tmp.MBDeviceID
 		,	MIN(tmp.SubscriberID) AS SubscriberID
+		,	MIN(tmp.TransTime) AS TransTime
     FROM JSON_TABLE(
 			ip_AssociationJson,
 			 "$[*]" COLUMNS(
 							MBAccountID			BIGINT UNSIGNED	PATH "$.MBAccountID"
 						,	MBDeviceID			BIGINT UNSIGNED PATH "$.MBDeviceID"
 						,	SubscriberID		INT 			PATH "$.SubscriberID"
+						,	TransTime			DATETIME(4) 	PATH "$.TransTime"
 					)
 		) AS tmp
 	WHERE tmp.MBAccountID > 0
@@ -53,11 +57,13 @@ BEGIN
 														AND ass.MBDeviceID = tmp.MBDeviceID
     SET tmp.IsNewRecord = 0;
     
-	INSERT INTO DCS_DataCenter.MBAssociation(MBAccountID, MBDeviceID, SubscriberID, InsertedTime)
+	INSERT INTO DCS_DataCenter.MBAssociation(MBAccountID, MBDeviceID, SubscriberID, InsertedTime, CreatedDate, CreatedTime)
 	SELECT	MBAccountID
 		,	MBDeviceID
 		,	SubscriberID
 		,	lv_CurrentDatetime AS InsertedTime
+		,	DATE(lv_CurrentDatetime) AS CreatedDate
+		,	TransTime AS CreatedTime
 	FROM Temp_MBAssociationInsert
     WHERE IsNewRecord = 1;
 END$$

@@ -15,6 +15,7 @@ BEGIN
 
 	    Revisions:
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
+		    - 20250425@Jonathan.Doan: Add field CreatedDate, CreatedTime [Redmine ID: #221973]
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_MBUserSetting_Insert('[{"CountryName":"CountryName1","TimeZone":"TimeZone1","LanguageName":"LanguageName1"},{"TimeZone":"TimeZone2","LanguageName":"LanguageName2"},{}]');
@@ -53,12 +54,13 @@ BEGIN
 													AND us.LanguageName = tmp.LanguageName
     SET tmp.IsNewRecord = 0;
 	
-	INSERT INTO DCS_DataCenter.MBUserSetting(CountryName, TimeZone, LanguageName, InsertedTime, LastAccessedDate)
+	INSERT INTO DCS_DataCenter.MBUserSetting(CountryName, TimeZone, LanguageName, InsertedTime, LastAccessedDate, CreatedDate)
 	SELECT	CountryName
 		,	TimeZone
 		,	LanguageName
 		,	lv_CurrentDatetime AS InsertedTime
 		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
+		,	DATE(lv_CurrentDatetime) AS CreatedDate
 	FROM Temp_MBUserSettingInsert
     WHERE IsNewRecord = 1;
 END$$

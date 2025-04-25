@@ -15,6 +15,7 @@ BEGIN
 		 
 	    Revisions:
 		    - 20241205@Jonathan.Doan: Created [RedmineID: #213401]
+		    - 20250425@Jonathan.Doan: Add field CreatedDate, CreatedTime [Redmine ID: #221973]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -78,6 +79,7 @@ BEGIN
 		SELECT	DISTINCT
 				MBAccountID
 			,	MBDeviceID
+			,	TransTime
 			,	SubscriberID
 		FROM Temp_DeviceMappingInfo
 		WHERE MBAccountID > 0
@@ -87,6 +89,7 @@ BEGIN
 			JSON_OBJECT(
 					'MBAccountID'	, MBAccountID
 				,	'MBDeviceID'	, MBDeviceID
+				,	'TransTime'		, TransTime
 				,	'SubscriberID'	, SubscriberID
 			)
 		) AS json_data

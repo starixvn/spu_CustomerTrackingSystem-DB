@@ -15,6 +15,7 @@ BEGIN
 
 	    Revisions:
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
+		    - 20250425@Jonathan.Doan: Add field CreatedDate, CreatedTime [Redmine ID: #221973]
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_MBDeviceCodeMachine_Insert('[{"Code":"Code4","MachineOS":"Android"},{"Code":"Code2"},{"Code":"Code3","MachineOS":""}]');
@@ -48,11 +49,12 @@ BEGIN
 		INNER JOIN DCS_DataCenter.MBDeviceCodeMachine AS ar ON ar.Code = tmp.Code AND ar.MachineOSType = tmp.MachineOSType
     SET tmp.IsNewRecord = 0;
 	
-	INSERT INTO DCS_DataCenter.MBDeviceCodeMachine(Code, MachineOSType, InsertedTime, LastAccessedDate)
+	INSERT INTO DCS_DataCenter.MBDeviceCodeMachine(Code, MachineOSType, InsertedTime, LastAccessedDate, CreatedDate)
 	SELECT	Code
 		,	MachineOSType
 		,	lv_CurrentDatetime AS InsertedTime
 		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
+		,	DATE(lv_CurrentDatetime) AS CreatedDate
 	FROM Temp_MBDeviceCodeMachineInsert
     WHERE IsNewRecord = 1;
 END$$

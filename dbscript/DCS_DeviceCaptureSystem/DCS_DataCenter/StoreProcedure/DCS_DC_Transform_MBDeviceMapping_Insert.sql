@@ -16,6 +16,7 @@ BEGIN
 	    Revisions:
 		    - 20241205@Jonathan.Doan: Created [RedmineID: #213401]
 		    - 20250108@Jonathan.Doan: HotFix when duplicate  [RedmineID: #213401]
+		    - 20250425@Jonathan.Doan: Add field CreatedDate, CreatedTime [Redmine ID: #221973]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -24,7 +25,7 @@ BEGIN
 					TransID						INT NOT NULL AUTO_INCREMENT PRIMARY KEY 
 				,	MBRawTransactionID			INT DEFAULT 0
 				,	SameDeviceID				BIGINT UNSIGNED
-				,	RecoverType					SMALLINT UNSIGNED
+				,	RecoverType					SMALLINT
 
 				,	MBDeviceCodeMediaDRMID		BIGINT UNSIGNED
 				,	MBDeviceCodeMachineID		BIGINT UNSIGNED
@@ -35,13 +36,14 @@ BEGIN
 			);
             
 			INSERT INTO Temp_NewDevice(MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID, SameDeviceID, RecoverType)
-			VALUES(1, 1, 1, 1, 0), (2, 1, 1, 1, 1), (3, 2, 2, 3, 0), (4, 2, 3, 3, 1);
+			VALUES(1, 1, 1, 1, 0), (2, 1, 1, 1, 1), (3, 2, 2, 3, 0), (4, 2, 3, 3, 1); 
             
             UPDATE Temp_NewDevice
             SET MBRawTransactionID = TransID;
             
 			CALL DCS_DC_Transform_MBDeviceMapping_Insert('Temp_NewDevice');
             select * from Temp_NewDevice;
+            select * from MBDeviceMapping;
 	*/
     
     /********************** Constants ***********************************/    
@@ -70,6 +72,7 @@ BEGIN
 		,	MBDeviceCodeTaggingID			BIGINT UNSIGNED
 		,	MBDeviceMappingID				BIGINT UNSIGNED DEFAULT 0
 		,	MBDeviceID						BIGINT UNSIGNED DEFAULT 0
+		,	TransTime						DATETIME(4)
 		,	SameDeviceID					BIGINT UNSIGNED DEFAULT 0
         ,	RecoverType						SMALLINT DEFAULT 0 /* SELECT * FROM DCS_DataCenter.StaticList WHERE ListID = 6; */
 	);
@@ -112,9 +115,10 @@ BEGIN
         , 	PRIMARY KEY (MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID)
     );
     
-	SET @sql = CONCAT('INSERT INTO Temp_DeviceMapping(TransID, MBRawTransactionID, SameDeviceID, RecoverType, MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID) 
+	SET @sql = CONCAT('INSERT INTO Temp_DeviceMapping(TransID, MBRawTransactionID, TransTime, SameDeviceID, RecoverType, MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID) 
 						SELECT 	tmp.TransID
 							,	trans.MBRawTransactionID
+							,	trans.TransTime
 							,	tmp.SameDeviceID
 							,	tmp.RecoverType
 							,	IFNULL(trans.MBDeviceCodeMediaDRMID, 0) AS MBDeviceCodeMediaDRMID
@@ -166,7 +170,6 @@ BEGIN
 		ORDER BY dm.ID DESC
         LIMIT 1
 	), 0);
-    
     
     /********************** Update after Check Rule 1 ***********************************/
     UPDATE Temp_DeviceMapping AS tmp
@@ -257,11 +260,14 @@ BEGIN
 	SET tmp.MBDeviceID = tmpED.MBDeviceID
 	WHERE tmp.MBDeviceID = 0;
     
+    
     /********************** INSERT New device ***********************************/
-    INSERT IGNORE INTO DCS_DataCenter.MBDevice(FirstMBRawTransactionID, LastAccessedDate)
+    INSERT IGNORE INTO DCS_DataCenter.MBDevice(FirstMBRawTransactionID, LastAccessedDate, CreatedDate, CreatedTime)
     SELECT 	DISTINCT 
 			SameDeviceID
 		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
+		,	DATE(lv_CurrentDatetime) AS CreatedDate
+		,	DATE(TransTime) AS CreatedTime
     FROM Temp_DeviceMapping
     WHERE MBDeviceID = 0
 		AND SameDeviceID > 0;
@@ -284,7 +290,7 @@ BEGIN
 														AND dm.MBDeviceCodeTaggingID = tmp.MBDeviceCodeTaggingID
     SET tmp.IsNewRecord = 0;
     
-    INSERT INTO DCS_DataCenter.MBDeviceMapping(MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID, MBDeviceID, FirstMBRawTransactionID, RecoverType, InsertedTime)
+    INSERT INTO DCS_DataCenter.MBDeviceMapping(MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID, MBDeviceID, FirstMBRawTransactionID, RecoverType, InsertedTime, CreatedDate)
     SELECT 	tmp.MBDeviceCodeMediaDRMID
 		,	tmp.MBDeviceCodeMachineID
         ,	tmp.MBDeviceCodeTaggingID
@@ -292,6 +298,7 @@ BEGIN
         ,	MIN(tmp.MBRawTransactionID) AS FirstMBRawTransactionID
         ,	MIN(tmp.RecoverType) AS RecoverType
         ,	lv_CurrentDatetime AS InsertedTime
+        ,	DATE(lv_CurrentDatetime) AS CreatedDate
     FROM Temp_DeviceMapping AS tmp
 		INNER JOIN Temp_DeviceMappingInsert AS tmpI ON tmp.MBDeviceCodeMediaDRMID = tmpI.MBDeviceCodeMediaDRMID
 													AND tmp.MBDeviceCodeMachineID = tmpI.MBDeviceCodeMachineID

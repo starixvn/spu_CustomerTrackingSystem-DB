@@ -15,6 +15,7 @@ BEGIN
 
 	    Revisions:
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
+		    - 20250425@Jonathan.Doan: Add field CreatedDate, CreatedTime [Redmine ID: #221973]
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_MBAccount_Insert('[{"SubscriberID":2,"LoginName":"qatest002","TransTime":"2024-11-21 05:06:07"}]');
@@ -51,11 +52,13 @@ BEGIN
 		INNER JOIN DCS_DataCenter.MBAccount AS acc ON acc.SubscriberID = tmp.SubscriberID AND acc.LoginName = tmp.LoginName
     SET tmp.IsNewRecord = 0;
 	
-	INSERT INTO DCS_DataCenter.MBAccount(SubscriberID, LoginName, LastLoginTime, InsertedTime)
+	INSERT INTO DCS_DataCenter.MBAccount(SubscriberID, LoginName, LastLoginTime, InsertedTime, CreatedDate, CreatedTime)
 	SELECT	SubscriberID
 		,	LoginName
 		,	TransTime
-		,	lv_CurrentDatetime
+		,	lv_CurrentDatetime AS InsertedTime
+		,	DATE(lv_CurrentDatetime) AS CreatedDate
+		,	TransTime AS CreatedTime
 	FROM Temp_AccountInsert
     WHERE IsNewRecord = 1;
 END$$

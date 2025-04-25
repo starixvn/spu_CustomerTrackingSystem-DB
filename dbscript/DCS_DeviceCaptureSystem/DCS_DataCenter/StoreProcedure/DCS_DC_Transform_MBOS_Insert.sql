@@ -47,11 +47,12 @@ BEGIN
 											AND os.Version = tmp.Version
     SET tmp.IsNewRecord = 0;
 	
-	INSERT INTO DCS_DataCenter.MBOS(OSName, Version, InsertedTime, LastAccessedDate)
+	INSERT INTO DCS_DataCenter.MBOS(OSName, Version, InsertedTime, LastAccessedDate, CreatedDate)
 	SELECT	OSName
 		,	Version
 		,	lv_CurrentDatetime AS InsertedTime
 		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
+		,	DATE(lv_CurrentDatetime) AS CreatedDate
 	FROM Temp_MBOSInsert
     WHERE IsNewRecord = 1;
 END$$
