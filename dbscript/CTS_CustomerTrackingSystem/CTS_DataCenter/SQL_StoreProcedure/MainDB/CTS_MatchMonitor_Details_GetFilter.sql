@@ -46,6 +46,7 @@ AS
 		- 20241217@Victoria.Le: 	Super/Master Direct Member [Redmine ID: #214585]
 		- 20250225@Casey.Huynh:		Handle @ListSportBetType (Criket BetID IS NULL) [Redmine ID: #218383]
 		- 20250318@Casey.Huynh:		Match Monitor Badminton, Rename from CTS_TicketDetails_Info [Redmine ID: #219681]
+		- 20250428@Thomas.Nguyen:	Upgrade CurrencyID datatype [Redmine ID: #225335]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
@@ -108,7 +109,7 @@ BEGIN
 		,	LiveHomeScore		SMALLINT
 		,	LiveAwayScore		SMALLINT
 		,	BetTeam				NVARCHAR(10)
-		,	CurrencyId			TINYINT
+		,	CurrencyId			SMALLINT
 		,	CurrencyName		NVARCHAR(100)
 		,	Hdp					SMALLMONEY DEFAULT 0
 		,	IsLicensee			BIT DEFAULT NULL

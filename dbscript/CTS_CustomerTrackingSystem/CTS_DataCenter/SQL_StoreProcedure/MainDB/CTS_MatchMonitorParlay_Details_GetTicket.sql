@@ -45,6 +45,7 @@ AS
 
 	Revisions:
 		- 20240822@Casey.Huynh: Created [Redmine ID: 152883]
+		- 20250428@Thomas.Nguyen: Upgrade CurrencyID datatype [Redmine ID: #225335]
 
 	Params Explaination:
 
@@ -194,7 +195,7 @@ BEGIN
 		,	UserName		NVARCHAR(50)
 		,	IsLicensee		BIT
 		,	CurrencyName	NVARCHAR(100)
-		,	CurrencyID		TINYINT		
+		,	CurrencyID		SMALLINT		
 		,	Danger1			TINYINT
 		,	Danger2			TINYINT
 		,	Danger3			TINYINT

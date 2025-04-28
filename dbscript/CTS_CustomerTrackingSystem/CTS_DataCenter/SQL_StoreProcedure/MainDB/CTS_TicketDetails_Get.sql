@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 GO
 SET ANSI_NULLS ON
 GO
@@ -13,11 +13,12 @@ AS
 /*
 	Created: @Victoria.Le
 	Task : DBCTS-AssociatedAccount-Get Fraud Tickets
-	DB	 : bodb02
+	DB	 : WASAVerse
 
 	Revisions:
 		- 20230116@Victoria.Le: Initial Writing [Redmine ID: #181994]
 		- 20230328@Victoria.Le: Add New Param, Modify SP to split 5G3S And OTGB [Redmine ID: #181994]
+		- 20250428@Thomas.Nguyen: Upgrade CurrencyID datatype, switch SP to WASAVerse [Redmine ID: #225335]
 
 	Params Explaination:
 		
@@ -63,7 +64,7 @@ BEGIN
 		,	LiveAwayScore		SMALLINT
 		,	LiveIndicator		BIT
 		,	TicketStatus		SMALLINT
-		,	Currency			TINYINT
+		,	Currency			SMALLINT
 		,	IP					VARCHAR(45)
 		,	ActualRate			FLOAT
 	);	
@@ -133,8 +134,8 @@ BEGIN
 			,	b.ip
 			,	b.actualrate
 		FROM #tmpTransIds AS t WITH(NOLOCK)
-			INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON t.TransId = b.transid
-			INNER JOIN dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
+			INNER JOIN bodb02.dbo.bettrans AS b WITH(NOLOCK) ON t.TransId = b.transid
+			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON b.matchid = m.matchid
 		;
 
 		DELETE t WITH(ROWLOCK)
@@ -191,8 +192,8 @@ BEGIN
 			,	b.ip
 			,	b.actualrate
 		FROM #tmpTransIds AS t WITH(NOLOCK)
-			INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON t.TransId = b.transid
-			INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
+			INNER JOIN bodb02.dbo.bettrans14 AS b WITH(NOLOCK) ON t.TransId = b.transid
+			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON b.matchid = m.matchid
 		;
 
 		DELETE t WITH(ROWLOCK)
@@ -250,7 +251,7 @@ BEGIN
 			,	b.actualrate
 		FROM #tmpTransIds AS t WITH(NOLOCK)
 			INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON t.TransId = b.transid
-			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
+			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.ip) AS dp
 			INNER JOIN bodb_Archive.dbo.match_bk AS m WITH(NOLOCK) ON b.matchid = m.matchid
 		;
 	END
@@ -307,7 +308,7 @@ BEGIN
 			,	AwayId		= m.awayid
 			,	LeagueId	= m.leagueid
 		FROM #tmpTransMatch AS t
-			INNER JOIN dbo.match AS m WITH(NOLOCK) ON t.MatchId = m.matchid;
+			INNER JOIN bodb02.dbo.match AS m WITH(NOLOCK) ON t.MatchId = m.matchid;
 
 		UPDATE t WITH (UPDLOCK)
 		SET		EventDate	= m.eventdate
@@ -317,7 +318,7 @@ BEGIN
 			,	AwayId		= m.awayid
 			,	LeagueId	= m.leagueid
 		FROM #tmpTransMatch AS t
-			INNER JOIN dbo.match14 AS m WITH(NOLOCK) ON t.MatchId = m.matchid
+			INNER JOIN bodb02.dbo.match14 AS m WITH(NOLOCK) ON t.MatchId = m.matchid
 		WHERE t.EventDate IS NULL;
 
 		UPDATE t WITH (UPDLOCK)
@@ -414,7 +415,7 @@ BEGIN
 			,	b.ip
 			,	b.actualrate
 		FROM #tmpTransMatch AS t WITH(NOLOCK)
-			INNER JOIN dbo.bettrans AS b WITH(NOLOCK) ON t.TransId = b.transid
+			INNER JOIN bodb02.dbo.bettrans AS b WITH(NOLOCK) ON t.TransId = b.transid
 		ORDER BY t.EventDate DESC, b.matchid DESC, b.transdate DESC
 		;
 
@@ -484,7 +485,7 @@ BEGIN
 			,	b.ip
 			,	b.actualrate
 		FROM #tmpTransMatch AS t WITH(NOLOCK)
-			INNER JOIN dbo.bettrans14 AS b WITH(NOLOCK) ON t.TransId = b.transid
+			INNER JOIN bodb02.dbo.bettrans14 AS b WITH(NOLOCK) ON t.TransId = b.transid
 		WHERE @IsExit = 0
 		ORDER BY t.EventDate DESC, b.matchid DESC, b.transdate DESC
 		;
@@ -557,7 +558,7 @@ BEGIN
 			,	b.actualrate
 		FROM #tmpTransMatch AS t WITH(NOLOCK)
 			INNER JOIN bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK) ON t.TransId = b.transid
-			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
+			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.ip) AS dp
 		WHERE @IsExit = 0
 		ORDER BY t.EventDate DESC, b.matchid DESC, b.transdate DESC
 		;

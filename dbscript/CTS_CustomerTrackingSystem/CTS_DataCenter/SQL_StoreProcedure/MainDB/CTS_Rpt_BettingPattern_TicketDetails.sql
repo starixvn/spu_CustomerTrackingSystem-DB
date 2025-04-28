@@ -1,4 +1,11 @@
-ALTER PROCEDURE [dbo].[CTS_Rpt_BettingPattern_TicketDetails]
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[CTS_Rpt_BettingPattern_TicketDetails]
 		@EventDate			DATETIME
 	,	@MatchId			INT
 	,	@CustIds			VARCHAR(2000) = ''
@@ -8,12 +15,13 @@ AS
 /*
 	Created: 20210304@John.Ngo
 	Task : Match List Betting Pattern - Match Details
-	DB	 : bodb02
+	DB	 : WASAVerse
 
 	Revisions:
 		- 20210304@John.Ngo: Display betting pattern details [Redmine ID: #151156]
 		- 20220408@Long.Luu: Get more data from AssociationGroupByAI [Redmine ID: #171222]
 		- 20230111@John.Ngo: Get more data for Association betting pattern details [Redmine ID: #181994]
+		- 20250428@Thomas.Nguyen: Upgrade CurrencyID datatype, switch SP to WASAVerse [Redmine ID: #225335]
 
 	Params Explaination:
 		EXECUTE [dbo].[CTS_Rpt_BettingPattern_TicketDetails] @EventDate = '2021-02-23 00:00:00.000', @MatchId = 40391219, @CustId1 = 46777100, @CustId2 = 47717138, @Bettypes = '1,3'
@@ -95,7 +103,7 @@ BEGIN
 		,	Odds				SMALLMONEY
 		,	LiveHomeScore		SMALLINT
 		,	LiveAwayScore		SMALLINT
-		,	Currency			TINYINT
+		,	Currency			SMALLINT
 		,	IP					VARCHAR(45)
 		,	ActualRate			FLOAT
 	);	
@@ -149,7 +157,7 @@ BEGIN
 			,	dp.ip
 			,	b.actualrate
 		FROM bodb_Archive.dbo.bettrans_bk AS b WITH(NOLOCK)
-			CROSS APPLY dbo.f_IP_Decompress(b.ip) AS dp
+			CROSS APPLY bodb02.dbo.f_IP_Decompress(b.ip) AS dp
 			INNER JOIN #tmpCustIds AS c WITH(NOLOCK) ON b.custid = c.CustId
 			LEFT JOIN #tmpBettypes AS tbt WITH(NOLOCK) ON tbt.BettypeId = b.bettype
 		WHERE	b.winlostdate = @EventDate
@@ -260,4 +268,3 @@ BEGIN
 END;
 
 GO
-/*<info serverAlias="DBCTS-bodb02" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/

@@ -31,6 +31,7 @@ AS
 		- 20240318@Casey.Huynh: Return empty if not existing CustInfo, CustProductStatus , CustInfo, Dep_CustSuper [Redmine ID: #198000]
 		- 20241216@Tony.Nguyen: Change the process so that it retrieves SiteID/Site for the member directly (Redmine ID: #214585)
 		- 20250416@Thomas.Nguyen: Return more Customer missing info [Redmine ID: #223443]
+		- 20250428@Thomas.Nguyen: Upgrade CurrencyID datatype [Redmine ID: #225335]
 
 	Param's Explanation (filtered by):
 		- @sourceType: 0- GET New Customer Info
@@ -72,7 +73,7 @@ BEGIN;
 		,	SiteId			INT
 		,	[Site]			VARCHAR(10)
 		,	RoleId			TINYINT
-		,	CurrencyId		TINYINT
+		,	CurrencyId		SMALLINT
 		,	Currency		VARCHAR(50)
 		,	Srecommend		INT
 		,	Mrecommend		INT
