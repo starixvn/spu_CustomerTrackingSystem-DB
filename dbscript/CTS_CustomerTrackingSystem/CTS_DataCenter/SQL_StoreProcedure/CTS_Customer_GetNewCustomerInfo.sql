@@ -22,6 +22,7 @@ AS
 		-20240318@Casey.Huynh: Move logic check existing CustInfo to sp get CustInfo by CustList([Redmine ID: 198000]
 		-20241024@Victoria.Le: Missing new customer due to replication inhouse ([Redmine ID: #212655]
 		-20241111@John.Ngo:    Missing new customer due to replication inhouse ([Redmine ID: #212655]
+		-20250416@Thomas.Nguyen: Remove logic for MaxRepUpdateTime [Redmine ID: #223443]
 
 	Developer's Notes:
 		
@@ -33,7 +34,6 @@ BEGIN;
 	SET NOCOUNT ON;
 
 	DECLARE @custIDList	VARCHAR(MAX);
-	DECLARE @MaxRepUpdateTime	DATETIME2 =  DATEADD(SECOND, -5, GETDATE());
 
 	IF	OBJECT_ID('tempdb..#tmpNewCust') IS NOT NULL
 		DROP TABLE	#tmpNewCust;
@@ -57,10 +57,6 @@ BEGIN;
 	FROM	bodb02.dbo.Customer AS c WITH(NOLOCK)
 	WHERE	c.CustId > @LastCustId
 	ORDER BY c.CustId ASC;	
-	
-	DELETE t WITH (ROWLOCK)
-	FROM #tmpNewCust AS t
-	WHERE t.RepUpdateTime > @MaxRepUpdateTime;
 
 	SELECT  @custIDList = COALESCE(@custIDList + ',', '') +  CONVERT(VARCHAR(10),tmpCus.CustID)
 	FROM	#tmpNewCust AS tmpCus WITH(NOLOCK)

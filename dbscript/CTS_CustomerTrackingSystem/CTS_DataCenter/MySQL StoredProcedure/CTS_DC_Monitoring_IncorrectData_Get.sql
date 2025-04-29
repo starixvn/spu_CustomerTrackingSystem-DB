@@ -16,7 +16,8 @@ BEGIN
 		Revisions:
             - 20240102@Jonas.Huynh: Creator [Redmine ID: 197999]
             - 20241213@Jonas.Huynh: Missing Customer [Redmine ID: 214157]
-            
+            - 20250417@Thomas.Nguyen: Monitor Customer Latency pool and Remove logic Total Missing Customer[Redmine ID: #223443]
+
 		Param's Explanation (filtered by):
 		Example:
 				set @op_IsContinue = 0;
@@ -24,17 +25,17 @@ BEGIN
 				select @op_IsContinue;
 
 	*/
-    DECLARE CONST_BATCHSIZE							SMALLINT DEFAULT 5000;
+    DECLARE CONST_JOBMONITORING_ISSUETYPEID             TINYINT DEFAULT 20;
+    DECLARE CONST_BATCHSIZE							    SMALLINT DEFAULT 5000;
+
+    DECLARE CONST_ISSUETYPEID_CUSTOMERLATENCYQUEUE		SMALLINT DEFAULT 300;
     
-    DECLARE CONST_MISSING_NEWCUSTOMER				TINYINT DEFAULT 2;
-    DECLARE CONST_MISSING_REACTIVATEDCUSTOMER		TINYINT DEFAULT 50;
-    
-    DECLARE CONST_ISSUETYPEID_TOTALMISSINGCUST		TINYINT DEFAULT 4;
-    
-    DECLARE lv_LastScanID 			BIGINT UNSIGNED;
-    DECLARE lv_MaxScanID	 		BIGINT UNSIGNED;
-    DECLARE lv_CurrentNextScanID 	BIGINT UNSIGNED;
-       
+    DECLARE lv_LastScanID 			                    BIGINT UNSIGNED;
+    DECLARE lv_MaxScanID	 		                    BIGINT UNSIGNED;
+    DECLARE lv_CurrentNextScanID 	                    BIGINT UNSIGNED;
+    DECLARE lv_Count_CustLatencyQueue	                INT UNSIGNED;
+    DECLARE lv_Threshold_CustLatencyQueue               SMALLINT UNSIGNED;
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_IncorrectData;    
 	CREATE TEMPORARY TABLE Temp_IncorrectData(
 			ID					BIGINT UNSIGNED
@@ -47,7 +48,12 @@ BEGIN
         ,	IsIssueTypeValid	BIT(1) DEFAULT(1)
         ,	KEY IX_Temp_IncorrectData_ID(ID)	
 	);
-       
+
+    SELECT ItemValue
+    INTO lv_Threshold_CustLatencyQueue
+    FROM CTS_DataCenter.StaticList
+    WHERE ListID = CONST_JOBMONITORING_ISSUETYPEID AND ItemID = CONST_ISSUETYPEID_CUSTOMERLATENCYQUEUE;
+
     SELECT ParameterValue
 	INTO lv_LastScanID
 	FROM CTS_DataCenter.SystemParameter 
@@ -63,7 +69,7 @@ BEGIN
             ,	a.IssueTypeID
             ,	CASE WHEN s.ItemID IS NOT NULL THEN TRUE ELSE FALSE END AS IsIssueTypeValid
     FROM CTS_DataCenter.JobMonitoring_IncorrectData AS a
-		LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 20 AND s.ItemID = a.IssueTypeID
+		LEFT JOIN CTS_DataCenter.StaticList AS s ON s.ListID = CONST_JOBMONITORING_ISSUETYPEID AND s.ItemID = a.IssueTypeID
 	WHERE ID > lv_LastScanID
     ORDER BY ID ASC
     LIMIT CONST_BATCHSIZE;   
@@ -72,30 +78,21 @@ BEGIN
     SELECT MAX(ID) INTO lv_CurrentNextScanID FROM Temp_IncorrectData;
     SET op_IsContinue = CASE WHEN lv_CurrentNextScanID < lv_MaxScanID AND lv_CurrentNextScanID IS NOT NULL THEN 1 ELSE 0 END;
     
-    DROP TEMPORARY TABLE IF EXISTS Temp_IncorrectData2;    
-    CREATE TEMPORARY TABLE Temp_IncorrectData2 LIKE Temp_IncorrectData;
-        
-	INSERT INTO Temp_IncorrectData2(ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID,  IsIssueTypeValid)
-    SELECT 		0
-			,	NULL
-            ,	COUNT(DISTINCT a.CustID)
-            ,	NULL
-            ,	CURRENT_TIMESTAMP()
-            ,	0
-            ,	CASE WHEN COUNT(1) > 0 THEN CONST_ISSUETYPEID_TOTALMISSINGCUST ELSE NULL END	
-            ,	1
-    FROM CTS_DataCenter.JobMonitoring_IncorrectData AS a
-		INNER JOIN CTS_DataCenter.StaticList AS s ON s.ListID = 20 
-					AND s.ItemID = a.IssueTypeID
-					AND s.ItemID IN (CONST_MISSING_NEWCUSTOMER, CONST_MISSING_REACTIVATEDCUSTOMER)
-	WHERE a.IsResolved = 0;
-       
-	IF EXISTS (SELECT 1 FROM Temp_IncorrectData2 WHERE IssueTypeID IS NOT NULL) THEN
-		INSERT INTO Temp_IncorrectData(ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID, IsIssueTypeValid)
-		SELECT ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID, IsIssueTypeValid
-		FROM Temp_IncorrectData2;
-	END IF;
-    
+    SELECT COUNT(1) INTO lv_Count_CustLatencyQueue
+    FROM CTS_DataCenter.CTSCustomerLatencyQueue AS clq;
+
+    IF lv_Count_CustLatencyQueue > lv_Threshold_CustLatencyQueue THEN
+        INSERT INTO Temp_IncorrectData(ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID, IsIssueTypeValid)
+        SELECT  0 AS ID
+            ,	NULL AS CustID
+            ,	lv_Count_CustLatencyQueue AS `Value`
+            ,	NULL AS TrackingInfo
+            ,	CURRENT_TIMESTAMP() AS CreatedTime
+            ,	0 AS IsResolved
+            ,	CONST_ISSUETYPEID_CUSTOMERLATENCYQUEUE AS IssueTypeID
+            ,	1 AS IsIssueTypeValid;
+    END IF;
+
     SELECT ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID,  IsIssueTypeValid
     FROM Temp_IncorrectData;
     
