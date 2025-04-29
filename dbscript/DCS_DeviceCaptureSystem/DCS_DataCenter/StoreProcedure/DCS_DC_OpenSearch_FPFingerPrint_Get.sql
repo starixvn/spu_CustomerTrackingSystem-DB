@@ -28,23 +28,45 @@ BEGIN
     
     DECLARE lv_MinID BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxID BIGINT UNSIGNED DEFAULT 0;
+    DECLARE lv_FromDate DATETIME;
+	DECLARE lv_ToDate DATETIME;
+
+	SET lv_FromDate := DATE(ip_FromDate);
+	SET lv_ToDate := DATE(ip_ToDate);
     
-    SELECT	MIN(MinID)
-		,	MAX(MaxID)
-    INTO lv_MinID, lv_MaxID
+    SELECT MIN(MinID)
+    INTO lv_MinID
     FROM DCS_DataCenter.TableIDRange
     WHERE DatabaseName = CONST_DATABASE_NAME
 		AND TableName = CONST_TABLE_NAME
-        AND CreatedDate BETWEEN ip_FromDate AND ip_ToDate;
+        AND CreatedDate = lv_FromDate;
     
-	IF lv_MinID = 0 THEN
-		SELECT MaxID
+    SELECT	MAX(MaxID)
+    INTO lv_MaxID
+    FROM DCS_DataCenter.TableIDRange
+    WHERE DatabaseName = CONST_DATABASE_NAME
+		AND TableName = CONST_TABLE_NAME
+        AND CreatedDate = lv_ToDate;
+    
+	IF IFNULL(lv_MinID, 0) = 0 THEN
+		SELECT MinID
 		INTO lv_MinID
 		FROM DCS_DataCenter.TableIDRange
 		WHERE DatabaseName = CONST_DATABASE_NAME
 			AND TableName = CONST_TABLE_NAME
-			AND CreatedDate < ip_FromDate
+			AND CreatedDate < lv_FromDate
 		ORDER BY CreatedDate DESC
+        LIMIT 1;
+    END IF;
+    
+	IF IFNULL(lv_MaxID, 0) = 0 THEN
+		SELECT MaxID
+		INTO lv_MaxID
+		FROM DCS_DataCenter.TableIDRange
+		WHERE DatabaseName = CONST_DATABASE_NAME
+			AND TableName = CONST_TABLE_NAME
+			AND CreatedDate > lv_ToDate
+		ORDER BY CreatedDate ASC
         LIMIT 1;
     END IF;
     
@@ -56,10 +78,10 @@ BEGIN
         ,	Attribute
         ,	InsertedTime
     FROM DCS_DataCenter.FP_FingerPrint
-    WHERE ID > LEAST(lv_MinID, ip_LastID)
+    WHERE ID >= GREATEST(lv_MinID, ip_LastID + 1)
 		AND ID <= IF(lv_MaxID > 0, lv_MaxID, ID)
-		AND InsertedTime >= ip_FromDate
-		AND InsertedTime < DATE_ADD(ip_ToDate, INTERVAL 1 DAY)
+		AND InsertedTime >= lv_FromDate
+		AND InsertedTime < DATE_ADD(lv_ToDate, INTERVAL 1 DAY)
 	ORDER BY ID ASC
     LIMIT ip_BatchSize;
     
