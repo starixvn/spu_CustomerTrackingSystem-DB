@@ -64,7 +64,7 @@ BEGIN
 		SET tmpAcc.CTSCustID = cus.CTSCustID;
         
 		UPDATE Temp_MBAccount AS tmpAcc
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.UserName = tmpAcc.LoginName
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.UserName = tmpAcc.LoginName AND cus.SubscriberID = tmpAcc.SubscriberID
 		SET tmpAcc.CTSCustID = cus.CTSCustID
         WHERE tmpAcc.CTSCustID IS NULL;
         
