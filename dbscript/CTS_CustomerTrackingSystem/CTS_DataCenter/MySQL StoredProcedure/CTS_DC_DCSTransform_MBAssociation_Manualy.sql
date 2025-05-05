@@ -43,8 +43,11 @@ BEGIN
     FROM DCS_DataCenter.MBAssociation AS ass;
     
     WHILE (lv_LastAssID <  lv_MaxAssID) DO
-    
-		INSERT  INTO Temp_MBAssociation (MBAssID, MBAccountID, MBDeviceID, SubscriberID, CTSCustID, CreatedTime)        
+		
+        DELETE tmpAss 
+        FROM Temp_MBAssociation AS tmpAss;
+        
+		INSERT  INTO Temp_MBAssociation(MBAssID, MBAccountID, MBDeviceID, SubscriberID, CTSCustID, CreatedTime)        
 		SELECT	ass.ID
 			,	ass.MBAccountID
             ,	ass.MBDeviceID
@@ -79,14 +82,11 @@ BEGIN
         SET lv_LastAssID = (SELECT MAX(MBAssID) FROM Temp_MBAssociation);
         
 		UPDATE CTS_DataCenter.SystemParameter AS sys
-        SET sys.ParameterValue = lv_LastAssID
+        SET sys.ParameterValue = IFNULL(lv_LastAssID,0)
 		WHERE sys.ParameterID = CONST_SYSTEMPARAM_LASTASSID;        
         
 	END WHILE;
-    
-    UPDATE CTS_DataCenter.SystemParameter AS sys
-	SET sys.ParameterValue = 0
-	WHERE sys.ParameterID = CONST_SYSTEMPARAM_LASTASSID;
+
     
 END$$
 

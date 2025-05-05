@@ -44,7 +44,10 @@ BEGIN
     FROM DCS_DataCenter.MBAccount AS acc;
     
     WHILE (lv_LastAccountID <  lv_MaxAccountID) DO	
-		
+    
+		DELETE tmpAcc 
+        FROM Temp_MBAccount AS tmpAcc;
+        
 		INSERT INTO Temp_MBAccount (MBAccountID, SubscriberID, LoginName)        
 		SELECT	acc.ID
 			,	acc.SubscriberID
@@ -63,7 +66,7 @@ BEGIN
 		UPDATE Temp_MBAccount AS tmpAcc
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.UserName = tmpAcc.LoginName
 		SET tmpAcc.CTSCustID = cus.CTSCustID
-        WHERE cus.CTSCustID IS NULL;
+        WHERE tmpAcc.CTSCustID IS NULL;
         
         INSERT IGNORE INTO CTS_DataCenter.CustDCSMBAccount(CTSCustID, MBAccountID, SubscriberID, InsertedTime)
         SELECT	tmpAcc.CTSCustID
@@ -81,14 +84,10 @@ BEGIN
         SET lv_LastAccountID = (SELECT MAX(MBAccountID) FROM Temp_MBAccount);
         
 		UPDATE CTS_DataCenter.SystemParameter AS sys
-        SET sys.ParameterValue = lv_LastAccountID
+        SET sys.ParameterValue = IFNULL(lv_LastAccountID,0)
 		WHERE sys.ParameterID = CONST_SYSTEMPARAM_LASTACCOUNTID;
         
-	END WHILE;
-		
-	UPDATE CTS_DataCenter.SystemParameter AS sys
-	SET sys.ParameterValue = 0
-	WHERE sys.ParameterID = CONST_SYSTEMPARAM_LASTACCOUNTID;
+	END WHILE;   
         
 END$$
 
