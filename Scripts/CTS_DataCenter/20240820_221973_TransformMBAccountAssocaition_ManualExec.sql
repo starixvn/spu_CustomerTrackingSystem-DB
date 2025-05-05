@@ -11,7 +11,6 @@ Reviewer:
 */
 USE CTS_Adhoc;
 
-
 SELECT NOW() AS StartTransformAccount;
 
 CALL CTS_Adhoc.CTS_DC_DCSTransform_MBAccount_Manualy(1000);

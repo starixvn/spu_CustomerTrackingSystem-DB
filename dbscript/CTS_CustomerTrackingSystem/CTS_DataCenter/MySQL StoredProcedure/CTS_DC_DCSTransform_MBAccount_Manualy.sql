@@ -8,7 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_DCSTransform_MBAccount_Manualy`(
   SQL SECURITY INVOKER
 BEGIN
 /*
-		Created:	20250409@Casey.Huynh
+	Created:	20250409@Casey.Huynh
 		Task:		Transform MBAccount to CTS
 		DB:			CTS_DataCenter
 		Original:
@@ -28,12 +28,12 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_MBAccount (	
 			MBAccountID		BIGINT UNSIGNED PRIMARY KEY
 		,	SubscriberID	INT NOT NULL
-		,	LoginName		VARCHAR(100)      
+		,	LoginName		VARCHAR(100) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'     
         ,	CTSCustID		BIGINT UNSIGNED
         
         ,	INDEX IX_Temp_MBAccount_CTSCustID(CTSCustID)
 	);  
-    
+
     SELECT sys.ParameterValue 
     INTO lv_LastAccountID
     FROM CTS_DataCenter.SystemParameter AS sys	
@@ -67,7 +67,7 @@ BEGIN
         
         INSERT IGNORE INTO CTS_DataCenter.CustDCSMBAccount(CTSCustID, MBAccountID, SubscriberID, InsertedTime)
         SELECT	tmpAcc.CTSCustID
-			,	tmpAcc.MBAccount
+			,	tmpAcc.MBAccountID
             ,	tmpAcc.SubscriberID
             ,	CURRENT_TIMESTAMP(4) AS InsertedTime
         FROM Temp_MBAccount AS tmpAcc

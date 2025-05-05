@@ -49,6 +49,7 @@ BEGIN
 			,	ass.MBAccountID
             ,	ass.MBDeviceID
 			,	ass.SubscriberID
+            ,	cus.CTSCustID
             ,	ass.CreatedTime
 		FROM 	DCS_DataCenter.MBAssociation AS ass
 			LEFT JOIN CTS_DataCenter.CustDCSMBAccount AS cus ON ass.MBAccountID = cus.MBAccountID
@@ -58,10 +59,10 @@ BEGIN
 		ORDER BY ass.ID ASC
 		LIMIT	ip_BatchSize;
         
-        INSERT IGNORE INTO CTS_DataCenter.AssociationByMBDevice(CTSCustID, MBDeviceID, SubscriberID, CreatedTime, InsertTime)
+        INSERT IGNORE INTO CTS_DataCenter.AssociationByMBDevice(CTSCustID, MBDeviceID, SubscriberID, CreatedTime, InsertedTime)
         SELECT	tmpAss.CTSCustID
 			,	tmpAss.MBDeviceID
-            ,	tmpAss.MBDSubscriberID
+            ,	tmpAss.SubscriberID
             ,	MIN(tmpAss.CreatedTime)
             ,	CURRENT_TIMESTAMP(4) AS InsertedTime
         FROM Temp_MBAssociation AS tmpAss
@@ -73,7 +74,7 @@ BEGIN
         UPDATE DCS_DataCenter.MBAssociation AS ass
 			INNER JOIN Temp_MBAssociation AS tmpAss ON tmpAss.MBAssID = ass.ID 
 		SET ass.IsCTSTransformed = 1
-        WHERE tmpAcc.CTSCustID IS NOT NULL;
+        WHERE tmpAss.CTSCustID IS NOT NULL;
         
         SET lv_LastAssID = (SELECT MAX(MBAssID) FROM Temp_MBAssociation);
         

@@ -19,7 +19,7 @@ CREATE TABLE CustDCSMBAccount(
 		MBAccountID 	BIGINT UNSIGNED NOT NULL
 	,	CTSCustID 		BIGINT UNSIGNED NOT NULL	
 	,	SubscriberID 	INT NOT NULL
-	,	InsertTime 		DATETIME(4) NULL
+	,	InsertedTime 	DATETIME(4) NULL
     
 	,	PRIMARY KEY(MBAccountID)
 	,	INDEX IX_CustDCSMBAccount_CTSCustID(CTSCustID) 
@@ -32,7 +32,7 @@ CREATE TABLE AssociationByMBDevice(
 	,	MBDeviceID 		BIGINT NOT NULL
 	,	SubscriberID 	INT NOT NULL
 	,	CreatedTime 	DATETIME(4) NULL DEFAULT NULL
-	,	InsertTime 		DATETIME(4) NULL DEFAULT NULL
+	,	InsertedTime 	DATETIME(4) NULL DEFAULT NULL
     
 	,	PRIMARY KEY(AssID) 
 	,	UNIQUE KEY 	IX_AssociationByMBDevice_CTSCustID_MBDeviceID(CTSCustID, MBDeviceID) 
