@@ -12,9 +12,6 @@ Reviewer:
 USE CTS_DataCenter;
 
 #===================1. SCHEMA=================================
-DROP TABLE CustDCSMBAccount;
-DROP TABLE AssociationByMBDevice;
-
 CREATE TABLE CustDCSMBAccount(
 		MBAccountID 	BIGINT UNSIGNED NOT NULL
 	,	CTSCustID 		BIGINT UNSIGNED NOT NULL	
@@ -41,9 +38,9 @@ CREATE TABLE AssociationByMBDevice(
 ) ENGINE=InnoDB;
 
 #======================2. Initial Parameter=====================================
-SELECT * FROM SystemParameter;
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue) 
 VALUES(190,'Transform_DCSMBAccountToCTS','Keep the Last Transformed MBAccount.ID','BIGINT UNSIGNED','0')
 	, (191,'Transform_DCSMBAssociationToCTS','Keep the Last Transformed MBAssocaition.ID','BIGINT UNSIGNED','0');
 
+SELECT * FROM SystemParameter WHERE ParameterID IN (190,191);
