@@ -28,6 +28,7 @@ BEGIN
     
     DECLARE lv_MinID				BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_MaxID				BIGINT UNSIGNED DEFAULT 0;
+    DECLARE lv_EffectiveStartID		BIGINT UNSIGNED DEFAULT 0;
     DECLARE lv_FromDate				DATE;
 	DECLARE lv_ToDate				DATE;
 
@@ -52,16 +53,17 @@ BEGIN
 	ORDER BY CreatedDate ASC
     LIMIT 1;
     
-    SET lv_MinID = IFNULL(lv_MinID,0);
-    SET lv_MaxID = IFNULL(lv_MaxID,0);
+    SET lv_MinID			= IFNULL(lv_MinID,0);
+    SET lv_MaxID			= IFNULL(lv_MaxID,0);
+    SET lv_EffectiveStartID	= GREATEST(lv_MinID, ip_LastID + 1);
     
     SELECT	ID
 		,	Code
         ,	Attribute
         ,	InsertedTime
     FROM DCS_DataCenter.FP_FingerPrint
-    WHERE ID >= GREATEST(lv_MinID, ip_LastID + 1)
-		AND ID <= IF(lv_MaxID > 0, lv_MaxID, ID)
+    WHERE ID >= lv_EffectiveStartID
+		AND (lv_MaxID = 0 OR ID <= lv_MaxID)
 		AND InsertedTime >= lv_FromDate
 		AND InsertedTime < DATE_ADD(lv_ToDate, INTERVAL 1 DAY)
 	ORDER BY ID ASC
