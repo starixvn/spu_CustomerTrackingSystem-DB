@@ -3,11 +3,11 @@ DROP PROCEDURE IF EXISTS `DCS_DC_OpenSearch_TableIDRange_Update`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_OpenSearch_TableIDRange_Update`(
-	IN ip_DatabaseName	VARCHAR(255),
-	IN ip_TableName		VARCHAR(255),
-    IN ip_Date			DATE,
-    IN ip_MinID			BIGINT UNSIGNED,
-    IN ip_MaxID			BIGINT UNSIGNED
+		IN ip_DatabaseName	VARCHAR(255)
+	,	IN ip_TableName		VARCHAR(255)
+	,	IN ip_Date			DATE
+	,	IN ip_MinID			BIGINT UNSIGNED
+	,	IN ip_MaxID			BIGINT UNSIGNED
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -26,9 +26,9 @@ BEGIN
     
     IF ip_MinID > 0 AND ip_MaxID > 0 THEN
 		UPDATE DCS_DataCenter.TableIDRange
-		SET MinID = ip_MinID,
-			MaxID = ip_MaxID,
-			InsertedTime = NOW()
+		SET		MinID = ip_MinID
+			,	MaxID = ip_MaxID
+			,	InsertedTime = NOW()
 		WHERE DatabaseName = ip_DatabaseName
 			AND TableName = ip_TableName
 			AND CreatedDate = ip_Date;

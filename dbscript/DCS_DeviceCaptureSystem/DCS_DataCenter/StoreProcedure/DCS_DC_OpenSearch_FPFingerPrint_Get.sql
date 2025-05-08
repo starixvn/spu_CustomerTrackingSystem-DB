@@ -3,10 +3,10 @@ DROP PROCEDURE IF EXISTS `DCS_DC_OpenSearch_FPFingerPrint_Get`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_OpenSearch_FPFingerPrint_Get`(
-	IN ip_FromDate		DATETIME,
-	IN ip_ToDate		DATETIME,
-	IN ip_BatchSize		INT,
-	IN ip_LastID		BIGINT UNSIGNED
+		IN ip_FromDate		DATETIME
+	,	IN ip_ToDate		DATETIME
+	,	IN ip_BatchSize		INT
+	,	IN ip_LastID		BIGINT UNSIGNED
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -23,55 +23,37 @@ BEGIN
 			CALL DCS_DC_OpenSearch_FPFingerPrint_Get('2025-03-24', '2025-05-01', 100, 0);
     */
     
-    DECLARE CONST_DATABASE_NAME VARCHAR(255) DEFAULT 'DCS_DataCenter';
-    DECLARE CONST_TABLE_NAME VARCHAR(255) DEFAULT 'FP_FingerPrint';
+    DECLARE CONST_DATABASE_NAME		VARCHAR(255) DEFAULT 'DCS_DataCenter';
+    DECLARE CONST_TABLE_NAME		VARCHAR(255) DEFAULT 'FP_FingerPrint';
     
-    DECLARE lv_MinID BIGINT UNSIGNED DEFAULT 0;
-    DECLARE lv_MaxID BIGINT UNSIGNED DEFAULT 0;
-    DECLARE lv_FromDate DATETIME;
-	DECLARE lv_ToDate DATETIME;
+    DECLARE lv_MinID				BIGINT UNSIGNED DEFAULT 0;
+    DECLARE lv_MaxID				BIGINT UNSIGNED DEFAULT 0;
+    DECLARE lv_FromDate				DATE;
+	DECLARE lv_ToDate				DATE;
 
-	SET lv_FromDate := DATE(ip_FromDate);
-	SET lv_ToDate := DATE(ip_ToDate);
+	SET lv_FromDate	= DATE(ip_FromDate);
+	SET lv_ToDate	= DATE(ip_ToDate);
     
-    SELECT MIN(MinID)
+    SELECT MinID
     INTO lv_MinID
     FROM DCS_DataCenter.TableIDRange
     WHERE DatabaseName = CONST_DATABASE_NAME
 		AND TableName = CONST_TABLE_NAME
-        AND CreatedDate = lv_FromDate;
-    
-    SELECT	MAX(MaxID)
+        AND CreatedDate <= lv_FromDate
+	ORDER BY CreatedDate DESC
+    LIMIT 1;
+
+    SELECT MaxID
     INTO lv_MaxID
     FROM DCS_DataCenter.TableIDRange
     WHERE DatabaseName = CONST_DATABASE_NAME
 		AND TableName = CONST_TABLE_NAME
-        AND CreatedDate = lv_ToDate;
+        AND CreatedDate >= lv_ToDate
+	ORDER BY CreatedDate ASC
+    LIMIT 1;
     
-	IF IFNULL(lv_MinID, 0) = 0 THEN
-		SELECT MinID
-		INTO lv_MinID
-		FROM DCS_DataCenter.TableIDRange
-		WHERE DatabaseName = CONST_DATABASE_NAME
-			AND TableName = CONST_TABLE_NAME
-			AND CreatedDate < lv_FromDate
-		ORDER BY CreatedDate DESC
-        LIMIT 1;
-    END IF;
-    
-	IF IFNULL(lv_MaxID, 0) = 0 THEN
-		SELECT MaxID
-		INTO lv_MaxID
-		FROM DCS_DataCenter.TableIDRange
-		WHERE DatabaseName = CONST_DATABASE_NAME
-			AND TableName = CONST_TABLE_NAME
-			AND CreatedDate > lv_ToDate
-		ORDER BY CreatedDate ASC
-        LIMIT 1;
-    END IF;
-    
-    SET lv_MinID := IFNULL(lv_MinID,0);
-    SET lv_MaxID := IFNULL(lv_MaxID,0);
+    SET lv_MinID = IFNULL(lv_MinID,0);
+    SET lv_MaxID = IFNULL(lv_MaxID,0);
     
     SELECT	ID
 		,	Code

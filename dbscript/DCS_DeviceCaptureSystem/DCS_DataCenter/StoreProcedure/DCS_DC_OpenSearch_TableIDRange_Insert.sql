@@ -3,11 +3,11 @@ DROP PROCEDURE IF EXISTS `DCS_DC_OpenSearch_TableIDRange_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_OpenSearch_TableIDRange_Insert`(
-	IN ip_DatabaseName	VARCHAR(255),
-	IN ip_TableName		VARCHAR(255),
-	IN ip_DateField		VARCHAR(255),
-	IN ip_IDField		VARCHAR(255),
-    IN ip_Date			DATE
+		IN ip_DatabaseName	VARCHAR(255)
+	,	IN ip_TableName		VARCHAR(255)
+	,	IN ip_DateField		VARCHAR(255)
+	,	IN ip_IDField		VARCHAR(255)
+	,	IN ip_Date			DATE
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -28,20 +28,20 @@ BEGIN
     DECLARE lv_IsExists		TINYINT DEFAULT 0;
     
     SELECT	MinID
-		,	(CASE WHEN CreatedDate = ip_Date THEN 1 ELSE 0 END) AS IsExists
+		,	CASE WHEN CreatedDate = ip_Date THEN 1 ELSE 0 END AS IsExists
     INTO lv_PrevMinID, lv_IsExists
     FROM DCS_DataCenter.TableIDRange
     WHERE DatabaseName = ip_DatabaseName
 		AND TableName = ip_TableName
 		AND CreatedDate <= ip_Date
-	ORDER BY DatabaseName, TableName, CreatedDate DESC
+	ORDER BY CreatedDate DESC
     LIMIT 1;
     
     SET @sql = CONCAT(
 		'SELECT ',
 			'MIN(', ip_IDField, ') AS MinID, ',
 			'MAX(', ip_IDField, ') AS MaxID ',
-		'INTO @minID, @maxID ',
+		'INTO @lv_MinID, @lv_MaxID ',
 		'FROM ', ip_DatabaseName, '.', ip_TableName, ' ',
 		'WHERE ', ip_IDField, ' >= IFNULL(', lv_PrevMinID, ', 0) ',
 			'AND ', ip_DateField, ' >= \'', ip_Date, '\' ',
@@ -52,18 +52,23 @@ BEGIN
     
     IF lv_IsExists = 1 THEN
 		UPDATE DCS_DataCenter.TableIDRange
-		SET MinID = @minID,
-			MaxID = @maxID
+		SET 	MinID = @lv_MinID
+			,	MaxID = @lv_MaxID
 		WHERE DatabaseName = ip_DatabaseName
 			AND TableName = ip_TableName
 			AND CreatedDate = ip_Date;
-	ELSEIF (@minID > 0 AND @maxID > 0) THEN
+	ELSEIF (@lv_MinID > 0 AND @lv_MaxID > 0) THEN
 		INSERT INTO DCS_DataCenter.TableIDRange(DatabaseName, TableName, CreatedDate, MinID, MaxID, InsertedTime)
-        SELECT ip_DatabaseName, ip_TableName, ip_Date, @minID, @maxID, NOW();
+        SELECT	ip_DatabaseName
+			,	ip_TableName
+            ,	ip_Date
+            ,	@lv_MinID
+            ,	@lv_MaxID
+            ,	NOW();
     END IF;
     
-    SET @minID = NULL;
-	SET @maxID = NULL;
+    SET @lv_MinID = NULL;
+	SET @lv_MaxID = NULL;
 	SET @sql = NULL;
     
 END$$
