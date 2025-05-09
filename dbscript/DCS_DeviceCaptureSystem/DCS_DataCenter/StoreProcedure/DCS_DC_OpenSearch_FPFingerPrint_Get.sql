@@ -37,7 +37,7 @@ BEGIN
     
     SELECT MinID
     INTO lv_MinID
-    FROM DCS_DataCenter.TableIDRange
+    FROM DCS_DataCenter.TableDailyIDRange
     WHERE DatabaseName = CONST_DATABASE_NAME
 		AND TableName = CONST_TABLE_NAME
         AND CreatedDate <= lv_FromDate
@@ -46,7 +46,7 @@ BEGIN
 
     SELECT MaxID
     INTO lv_MaxID
-    FROM DCS_DataCenter.TableIDRange
+    FROM DCS_DataCenter.TableDailyIDRange
     WHERE DatabaseName = CONST_DATABASE_NAME
 		AND TableName = CONST_TABLE_NAME
         AND CreatedDate >= lv_ToDate

@@ -7,7 +7,7 @@
 
 USE DCS_DataCenter;
 
-CREATE TABLE TableIDRange (
+CREATE TABLE TableDailyIDRange (
     ID				INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT,
     DatabaseName	VARCHAR(255) NOT NULL,
     TableName   	VARCHAR(255) NOT NULL,
@@ -15,5 +15,5 @@ CREATE TABLE TableIDRange (
     MinID			BIGINT UNSIGNED,
     MaxID			BIGINT UNSIGNED,
     InsertedTime	DATETIME,
-    UNIQUE KEY `UX_TableIDRange_DatabaseNameTableNameCreatedDate` (`DatabaseName`, `TableName`, `CreatedDate`)
+    UNIQUE KEY `UX_TableDailyIDRange_DatabaseNameTableNameCreatedDate` (`DatabaseName`, `TableName`, `CreatedDate`)
 );
