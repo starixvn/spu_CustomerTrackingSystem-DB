@@ -84,6 +84,7 @@ AS
 		- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
 		- 20250225@Casey.Huynh: Handle @ListSportBetType (Criket BetID IS NULL) [Redmine ID: #218383]
 		- 20250318@Casey.Huynh: Match Monitor Badminton, Rename From CTS_Rpt_MatchMonitor_TicketDetails [Redmine ID: #219681]
+		- 20250428@Thomas.Nguyen: Upgrade CurrencyID datatype [Redmine ID: #225335]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize) >> refer to new SP CTS_Rpt_MatchMonitor_GetTicketInfo
@@ -190,7 +191,7 @@ BEGIN
 		,	Danger5				TINYINT
 		,	CustomerClass		SMALLINT
 		,	CurrencyName		NVARCHAR(100)
-		,	CurrencyId			TINYINT
+		,	CurrencyId			SMALLINT
 		,	Hdp					SMALLMONEY
 		,	IsLicensee			BIT
 		,	BetFrom				NVARCHAR(4)

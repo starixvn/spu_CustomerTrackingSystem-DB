@@ -31,6 +31,7 @@ AS
 	Revisions:
 		- 20240822@Casey.Huynh: Created [Redmine ID: 152883]
 		- 20241210@Thomas.Nguyen: HF not show data in MM detail for 14/BK [Redmine ID: #214867]
+		- 20250428@Thomas.Nguyen: Upgrade CurrencyID datatype [Redmine ID: #225335]
 
 	Params Explaination:
 
@@ -96,7 +97,7 @@ BEGIN
 		,	LiveHomeScore		SMALLINT
 		,	LiveAwayScore		SMALLINT
 		,	BetTeam				NVARCHAR(10)
-		,	CurrencyId			TINYINT
+		,	CurrencyId			SMALLINT
 		,	CurrencyName		NVARCHAR(100)
 		,	Hdp					SMALLMONEY DEFAULT 0
 		,	IsLicensee			BIT DEFAULT NULL

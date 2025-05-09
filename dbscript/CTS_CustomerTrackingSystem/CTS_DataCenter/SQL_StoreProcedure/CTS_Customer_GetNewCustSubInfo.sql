@@ -1,9 +1,11 @@
-/*<info serverAlias="DBCTS-bodb02" executers="wsv_cts" viewers="" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="DBCTS-WASAVerse" executers="wsv_cts" viewers="" isFunction="0" isNested="0"></info>*/
 
-SET QUOTED_IDENTIFIER ON;
-SET ANSI_NULLS ON;
+SET ANSI_NULLS ON
 GO
-ALTER PROCEDURE	CTS_Customer_GetNewCustSubInfo
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[CTS_Customer_GetNewCustSubInfo]
 		@QueryType		TINYINT = 1
 
 	,	@LastCustSubId	INT = 0
@@ -14,7 +16,7 @@ AS
 /*
 	Creator:	20210115@CaseyHuynh
 	Task:		Get customer - [Redmine: #148849]
-	Database:	DBCTS.bodb02
+	Database:	DBCTS.WASAVerse
 	
 	Revisions:
 		- 20210115@Casey.Huynh: Created [Redmine ID: 148849]
@@ -23,6 +25,7 @@ AS
 		- 20220707@Long.Luu:	Get Lic VIP & BA Info [Redmine ID: 174219]
 		- 20241024@Victoria.Le: Missing new customer due to replication inhouse ([Redmine ID: #212655]
 		- 20241111@John.Ngo: 	Missing new customer due to replication inhouse ([Redmine ID: #212655]
+		- 20250428@Thomas.Nguyen: Upgrade CurrencyID datatype, switch SP to WASAVerse [Redmine ID: #225335]
 
 	Param Explaination:
 		- @QueryType: 1 (default) get by range, 2 get by list CustId
@@ -58,7 +61,7 @@ BEGIN;
 		,	SiteID			INT
 		,	[Site]			VARCHAR(10)
 		,	RoleID			TINYINT
-		,	CurrencyID		TINYINT
+		,	CurrencyID		SMALLINT
 		,	Currency		VARCHAR(50)
 		,	SRecommend		INT
 		,	MRecommend		INT
@@ -90,11 +93,11 @@ BEGIN;
 				,	sub.createdate	AS CreatedDate				
 				,	CASE WHEN cs.custid IS NULL THEN 0 ELSE 1 END AS IsLicensee
 				,	sub.RepUpdateTime AS RepUpdateTime
-			FROM dbo.custSub sub WITH (NOLOCK)
-				INNER JOIN dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
-				INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
-				INNER JOIN dbo.Site st WITH (NOLOCK) ON cust.site = st.site
-				LEFT JOIN dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON cust.Srecommend = cs.custid
+			FROM bodb02.dbo.custSub sub WITH (NOLOCK)
+				INNER JOIN bodb02.dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
+				INNER JOIN bodb02.dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
+				INNER JOIN bodb02.dbo.Site st WITH (NOLOCK) ON cust.site = st.site
+				LEFT JOIN bodb02.dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON cust.Srecommend = cs.custid
 			WHERE sub.subaccid > @LastCustSubId
 			ORDER BY sub.subaccid;
 			
@@ -124,11 +127,11 @@ BEGIN;
 				,	sub.createdate	AS CreatedDate
 				,	CASE WHEN cs.custid IS NULL THEN 0 ELSE 1 END AS IsLicensee
 			FROM #tmpCustomer AS t WITH(NOLOCK)
-				INNER JOIN dbo.custSub sub WITH (NOLOCK) ON sub.custid = t.CustId
-				INNER JOIN dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
-				INNER JOIN dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
-				INNER JOIN dbo.Site st WITH (NOLOCK) ON cust.site = st.site
-				LEFT JOIN dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON cust.Srecommend = cs.custid
+				INNER JOIN bodb02.dbo.custSub sub WITH (NOLOCK) ON sub.custid = t.CustId
+				INNER JOIN bodb02.dbo.Customer cust WITH (NOLOCK) ON sub.custid = cust.custid
+				INNER JOIN bodb02.dbo.Exchange ex WITH (NOLOCK) ON cust.currency = ex.exchangeid
+				INNER JOIN bodb02.dbo.Site st WITH (NOLOCK) ON cust.site = st.site
+				LEFT JOIN bodb02.dbo.Dep_CustSuper AS cs WITH(NOLOCK) ON cust.Srecommend = cs.custid
 			ORDER BY sub.subaccid;
 		END;
 	UPDATE a WITH(ROWLOCK, UPDLOCK)
