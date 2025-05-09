@@ -1,13 +1,13 @@
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2"></info>*/
 /*
 	Created: 20250429@Jonathan.Doan [Redmine ID: #224502]
-	Task: New Table TableIDRange
+	Task: New Table TableDailyIDRange
 	DB: DCS_DataCenter
 */
 
 USE DCS_DataCenter;
 
-INSERT INTO DCS_DataCenter.TableIDRange(DatabaseName, TableName, CreatedDate, MinID, MaxID, InsertedTime)
+INSERT INTO DCS_DataCenter.TableDailyIDRange(DatabaseName, TableName, CreatedDate, MinID, MaxID, InsertedTime)
 VALUES ('DCS_DataCenter', 'FP_FingerPrint', '2025-01-01', 7593757, 7662432, NOW())
 , ('DCS_DataCenter', 'FP_FingerPrint', '2025-01-02', 7662433, 7745598, NOW())
 , ('DCS_DataCenter', 'FP_FingerPrint', '2025-01-03', 7745600, 7826792, NOW())
