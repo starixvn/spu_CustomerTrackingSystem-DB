@@ -62,7 +62,7 @@ BEGIN
 		,	MBDeviceID
 		,	SubscriberID
 		,	lv_CurrentDatetime AS InsertedTime
-		,	DATE(lv_CurrentDatetime) AS CreatedDate
+		,	DATE(TransTime) AS CreatedDate
 		,	TransTime AS CreatedTime
 	FROM Temp_MBAssociationInsert
     WHERE IsNewRecord = 1;

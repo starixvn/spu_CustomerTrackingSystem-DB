@@ -93,8 +93,7 @@ ADD INDEX `IX_MBDeviceCodeTagging_CreatedDate` (`CreatedDate`);
 
 # MBDeviceMapping
 ALTER TABLE DCS_DataCenter.MBDeviceMapping
-ADD CreatedDate DATETIME,
-ADD CreatedTime DATETIME(4);
+ADD CreatedDate DATETIME;
 
 UPDATE DCS_DataCenter.MBDeviceMapping
 SET CreatedDate = DATE(InsertedTime)

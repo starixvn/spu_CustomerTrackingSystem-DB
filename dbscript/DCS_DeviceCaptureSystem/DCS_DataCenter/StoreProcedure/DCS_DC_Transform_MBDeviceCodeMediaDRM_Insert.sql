@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transform_MBDeviceCodeMediaDRM_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_MBDeviceCodeMediaDRM_Insert`(
-	IN ip_MediaDRM	LONGTEXT
+	IN ip_MediaDRMJson	LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -26,15 +26,21 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeMediaDRMInsert;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeMediaDRMInsert(
 			Code			VARCHAR(32) 	NOT NULL PRIMARY KEY
+		,	TransTime		DATETIME(4)
 		,	IsNewRecord		TINYINT			DEFAULT 1
     );
     
-    SET @sql = CONCAT("INSERT IGNORE INTO Temp_MBDeviceCodeMediaDRMInsert (Code) VALUES ('", REPLACE(ip_MediaDRM, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
-    
-    DELETE FROM Temp_MBDeviceCodeMediaDRMInsert
-    WHERE IFNULL(Code,'') = '';
+	INSERT IGNORE INTO Temp_MBDeviceCodeMediaDRMInsert(Code, TransTime)
+    SELECT	js.Code
+		,	js.TransTime
+	FROM JSON_TABLE(
+			ip_MediaDRMJson,
+			 "$[*]" COLUMNS(
+						Code		VARCHAR(32) COLLATE utf8_unicode_ci PATH "$.Code"
+					,	TransTime	DATETIME(4)							PATH "$.TransTime"
+				)
+		   ) AS js
+	WHERE js.Code <> '';
     
     UPDATE Temp_MBDeviceCodeMediaDRMInsert AS tmp
 		INNER JOIN DCS_DataCenter.MBDeviceCodeMediaDRM AS drm ON drm.Code = tmp.Code
@@ -43,8 +49,8 @@ BEGIN
 	INSERT INTO DCS_DataCenter.MBDeviceCodeMediaDRM(Code, InsertedTime, LastAccessedDate, CreatedDate)
 	SELECT	Code
 		,	lv_CurrentDatetime AS InsertedTime
-		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
-		,	DATE(lv_CurrentDatetime) AS CreatedDate
+		,	DATE(TransTime) AS LastAccessedDate
+		,	DATE(TransTime) AS CreatedDate
 	FROM Temp_MBDeviceCodeMediaDRMInsert
     WHERE IsNewRecord = 1;
 END$$

@@ -28,20 +28,23 @@ BEGIN
 			ModelName			VARCHAR(32) NOT NULL
 		,	Manufacturer		VARCHAR(32) NOT NULL
 		,	Brand				VARCHAR(32) NOT NULL
+		,	TransTime			DATETIME(4)
 		,	IsNewRecord			TINYINT		DEFAULT 1
         ,	PRIMARY KEY (ModelName, Manufacturer, Brand)
     );
     
-    INSERT IGNORE INTO Temp_MBDeviceModelInsert(ModelName, Manufacturer, Brand)
+    INSERT IGNORE INTO Temp_MBDeviceModelInsert(ModelName, Manufacturer, Brand, TransTime)
     SELECT	js.ModelName
 		,	js.Manufacturer
 		,	js.Brand
+		,	js.TransTime
 	FROM JSON_TABLE(
 			ip_MBDeviceModelJson,
 			 "$[*]" COLUMNS(
 						ModelName			VARCHAR(32) 	PATH "$.ModelName"
 					,	Manufacturer		VARCHAR(32) 	PATH "$.Manufacturer"
 					,	Brand				VARCHAR(32) 	PATH "$.Brand"
+					,	TransTime			DATETIME(4)		PATH "$.TransTime"
 				)
 		   ) AS js
 	WHERE js.ModelName <> ''
@@ -59,8 +62,8 @@ BEGIN
 		,	Manufacturer
 		,	Brand
 		,	lv_CurrentDatetime AS InsertedTime
-		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
-		,	DATE(lv_CurrentDatetime) AS CreatedDate
+		,	DATE(TransTime) AS LastAccessedDate
+		,	DATE(TransTime) AS CreatedDate
 	FROM Temp_MBDeviceModelInsert
     WHERE IsNewRecord = 1;
 END$$

@@ -28,20 +28,23 @@ BEGIN
 			CountryName			VARCHAR(32) NOT NULL
 		,	TimeZone			VARCHAR(32) NOT NULL
 		,	LanguageName		VARCHAR(32) NOT NULL
+		,	TransTime			DATETIME(4)
 		,	IsNewRecord			TINYINT		DEFAULT 1
         ,	PRIMARY KEY (CountryName, TimeZone, LanguageName)
     );
     
-    INSERT IGNORE INTO Temp_MBUserSettingInsert(CountryName, TimeZone, LanguageName)
+    INSERT IGNORE INTO Temp_MBUserSettingInsert(CountryName, TimeZone, LanguageName, TransTime)
     SELECT	js.CountryName
 		,	js.TimeZone
 		,	js.LanguageName
+		,	js.TransTime
 	FROM JSON_TABLE(
 			ip_MBUserSettingJson,
 			 "$[*]" COLUMNS(
 						CountryName			VARCHAR(32) 	PATH "$.CountryName"
 					,	TimeZone			VARCHAR(32) 	PATH "$.TimeZone"
 					,	LanguageName		VARCHAR(32) 	PATH "$.LanguageName"
+					,	TransTime			DATETIME(4)		PATH "$.TransTime"
 				)
 		   ) AS js
 	WHERE js.CountryName <> ''
@@ -59,8 +62,8 @@ BEGIN
 		,	TimeZone
 		,	LanguageName
 		,	lv_CurrentDatetime AS InsertedTime
-		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
-		,	DATE(lv_CurrentDatetime) AS CreatedDate
+		,	DATE(TransTime) AS LastAccessedDate
+		,	DATE(TransTime) AS CreatedDate
 	FROM Temp_MBUserSettingInsert
     WHERE IsNewRecord = 1;
 END$$

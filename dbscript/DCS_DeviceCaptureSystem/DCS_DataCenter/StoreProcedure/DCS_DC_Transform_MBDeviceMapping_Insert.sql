@@ -266,8 +266,8 @@ BEGIN
     SELECT 	DISTINCT 
 			SameDeviceID
 		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
-		,	DATE(lv_CurrentDatetime) AS CreatedDate
-		,	DATE(TransTime) AS CreatedTime
+		,	DATE(TransTime) AS CreatedDate
+		,	TransTime AS CreatedTime
     FROM Temp_DeviceMapping
     WHERE MBDeviceID = 0
 		AND SameDeviceID > 0;
@@ -298,7 +298,7 @@ BEGIN
         ,	MIN(tmp.MBRawTransactionID) AS FirstMBRawTransactionID
         ,	MIN(tmp.RecoverType) AS RecoverType
         ,	lv_CurrentDatetime AS InsertedTime
-        ,	DATE(lv_CurrentDatetime) AS CreatedDate
+        ,	DATE(TransTime) AS CreatedDate
     FROM Temp_DeviceMapping AS tmp
 		INNER JOIN Temp_DeviceMappingInsert AS tmpI ON tmp.MBDeviceCodeMediaDRMID = tmpI.MBDeviceCodeMediaDRMID
 													AND tmp.MBDeviceCodeMachineID = tmpI.MBDeviceCodeMachineID

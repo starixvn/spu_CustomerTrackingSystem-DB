@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transform_MBDeviceCodeTagging_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_MBDeviceCodeTagging_Insert`(
-	IN ip_Tagging	LONGTEXT
+	IN ip_TaggingJson	LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -18,7 +18,7 @@ BEGIN
 		    - 20250425@Jonathan.Doan: Add field CreatedDate, CreatedTime [Redmine ID: #221973]
 	    Param's Explanation (filtered by):
 		Example:
-			CALL DCS_DC_Transform_MBDeviceCodeTagging_Insert('123');
+			CALL DCS_DC_Transform_MBDeviceCodeTagging_Insert('[{"Code":"Code4","TransTime":"2025-05-12 01:02:03"});
             SELECT * FROM DCS_DataCenter.MBDeviceCodeTagging ORDER BY ID DESC;
     */
     DECLARE lv_CurrentDatetime DATETIME DEFAULT NOW();
@@ -26,16 +26,22 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeTaggingInsert;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeTaggingInsert(
 			Code			VARCHAR(32) NOT NULL PRIMARY KEY
+		,	TransTime		DATETIME(4)
 		,	IsNewRecord		TINYINT	DEFAULT 1
     );
-    
-    SET @sql = CONCAT("INSERT IGNORE INTO Temp_MBDeviceCodeTaggingInsert (Code) VALUES ('", REPLACE(ip_Tagging, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1;
-    
-    DELETE FROM Temp_MBDeviceCodeTaggingInsert
-    WHERE IFNULL(Code,'') = '';
-    
+	
+	INSERT IGNORE INTO Temp_MBDeviceCodeTaggingInsert(Code, TransTime)
+    SELECT	js.Code
+		,	js.TransTime
+	FROM JSON_TABLE(
+			ip_TaggingJson,
+			 "$[*]" COLUMNS(
+						Code		VARCHAR(32) COLLATE utf8_unicode_ci PATH "$.Code"
+					,	TransTime	DATETIME(4)							PATH "$.TransTime"
+				)
+		   ) AS js
+	WHERE js.Code <> '';
+	
     UPDATE Temp_MBDeviceCodeTaggingInsert AS tmp
 		INNER JOIN DCS_DataCenter.MBDeviceCodeTagging AS tg ON tg.Code = tmp.Code
     SET tmp.IsNewRecord = 0;
@@ -43,8 +49,8 @@ BEGIN
 	INSERT INTO DCS_DataCenter.MBDeviceCodeTagging(Code, InsertedTime, LastAccessedDate, CreatedDate)
 	SELECT	Code
 		,	lv_CurrentDatetime AS InsertedTime
-		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
-		,	DATE(lv_CurrentDatetime) AS CreatedDate
+		,	DATE(TransTime) AS LastAccessedDate
+		,	DATE(TransTime) AS CreatedDate
 	FROM Temp_MBDeviceCodeTaggingInsert
     WHERE IsNewRecord = 1;
 END$$

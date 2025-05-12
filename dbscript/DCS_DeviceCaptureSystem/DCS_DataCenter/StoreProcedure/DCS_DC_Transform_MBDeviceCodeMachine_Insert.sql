@@ -18,7 +18,7 @@ BEGIN
 		    - 20250425@Jonathan.Doan: Add field CreatedDate, CreatedTime [Redmine ID: #221973]
 	    Param's Explanation (filtered by):
 		Example:
-			CALL DCS_DC_Transform_MBDeviceCodeMachine_Insert('[{"Code":"Code4","MachineOS":"Android"},{"Code":"Code2"},{"Code":"Code3","MachineOS":""}]');
+			CALL DCS_DC_Transform_MBDeviceCodeMachine_Insert('[{"Code":"Code4","MachineOS":"Android","TransTime":"2025-05-12 01:02:03"},{"Code":"Code2","TransTime":"2025-05-12 01:02:04"},{"Code":"Code3","MachineOS":""}]');
             SELECT * FROM DCS_DataCenter.MBDeviceCodeMachine ORDER BY ID DESC;
     */
     
@@ -28,18 +28,21 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeMachineInsert(
 			Code					VARCHAR(32) 	NOT NULL
 		,	MachineOSType	 		SMALLINT 		NOT NULL COMMENT 'DCS_DataCenter.StaticList.ListID = 5'
+		,	TransTime				DATETIME(4)
 		,	IsNewRecord				TINYINT			DEFAULT 1
         ,	PRIMARY KEY (Code, MachineOSType)
     );
     
-	INSERT IGNORE INTO Temp_MBDeviceCodeMachineInsert(Code, MachineOSType)
+	INSERT IGNORE INTO Temp_MBDeviceCodeMachineInsert(Code, MachineOSType, TransTime)
     SELECT	js.Code
 		,	IFNULL(sl.ItemID, 0) AS MachineOSType
+		,	js.TransTime
 	FROM JSON_TABLE(
 			ip_MBDeviceCodeMachineJson,
 			 "$[*]" COLUMNS(
 						Code		VARCHAR(32) COLLATE utf8_unicode_ci PATH "$.Code"
 					,	MachineOS	VARCHAR(32) COLLATE utf8_unicode_ci PATH "$.MachineOS"
+					,	TransTime	DATETIME(4)							PATH "$.TransTime"
 				)
 		   ) AS js
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 5 AND sl.ItemCode = js.MachineOS
@@ -53,8 +56,8 @@ BEGIN
 	SELECT	Code
 		,	MachineOSType
 		,	lv_CurrentDatetime AS InsertedTime
-		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
-		,	DATE(lv_CurrentDatetime) AS CreatedDate
+		,	DATE(TransTime) AS LastAccessedDate
+		,	DATE(TransTime) AS CreatedDate
 	FROM Temp_MBDeviceCodeMachineInsert
     WHERE IsNewRecord = 1;
 END$$

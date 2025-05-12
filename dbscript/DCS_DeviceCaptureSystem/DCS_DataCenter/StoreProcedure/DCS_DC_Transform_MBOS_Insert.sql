@@ -26,18 +26,21 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_MBOSInsert(
 			OSName			VARCHAR(32) NOT NULL
 		,	Version			VARCHAR(32) NOT NULL
+		,	TransTime		DATETIME(4)
 		,	IsNewRecord		TINYINT		DEFAULT 1
         ,	PRIMARY KEY (OSName, Version)
     );
     
-    INSERT IGNORE INTO Temp_MBOSInsert(OSName, Version)
+    INSERT IGNORE INTO Temp_MBOSInsert(OSName, Version, TransTime)
     SELECT	js.OSName
 		,	js.Version
+		,	js.TransTime
 	FROM JSON_TABLE(
 			ip_MBOSJson,
 			 "$[*]" COLUMNS(
 						OSName			VARCHAR(32) 	PATH "$.OSName"
 					,	Version			VARCHAR(32) 	PATH "$.Version"
+					,	TransTime		DATETIME(4)		PATH "$.TransTime"
 				)
 		   ) AS js
 	WHERE js.OSName <> '';
@@ -51,8 +54,8 @@ BEGIN
 	SELECT	OSName
 		,	Version
 		,	lv_CurrentDatetime AS InsertedTime
-		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
-		,	DATE(lv_CurrentDatetime) AS CreatedDate
+		,	DATE(TransTime) AS LastAccessedDate
+		,	DATE(TransTime) AS CreatedDate
 	FROM Temp_MBOSInsert
     WHERE IsNewRecord = 1;
 END$$
