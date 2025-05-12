@@ -35,11 +35,8 @@ BEGIN
 				,	MBDeviceID					BIGINT UNSIGNED
 			);
             
-			INSERT INTO Temp_NewDevice(MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID, SameDeviceID, RecoverType)
-			VALUES(1, 1, 1, 1, 0), (2, 1, 1, 1, 1), (3, 2, 2, 3, 0), (4, 2, 3, 3, 1); 
-            
-            UPDATE Temp_NewDevice
-            SET MBRawTransactionID = TransID;
+			INSERT INTO Temp_NewDevice(TransID, MBRawTransactionID, SameDeviceID, RecoverType)
+			VALUES(4,4,4,0);
             
 			CALL DCS_DC_Transform_MBDeviceMapping_Insert('Temp_NewDevice');
             select * from Temp_NewDevice;
@@ -298,7 +295,7 @@ BEGIN
         ,	MIN(tmp.MBRawTransactionID) AS FirstMBRawTransactionID
         ,	MIN(tmp.RecoverType) AS RecoverType
         ,	lv_CurrentDatetime AS InsertedTime
-        ,	DATE(TransTime) AS CreatedDate
+        ,	DATE(MIN(TransTime)) AS CreatedDate
     FROM Temp_DeviceMapping AS tmp
 		INNER JOIN Temp_DeviceMappingInsert AS tmpI ON tmp.MBDeviceCodeMediaDRMID = tmpI.MBDeviceCodeMediaDRMID
 													AND tmp.MBDeviceCodeMachineID = tmpI.MBDeviceCodeMachineID
