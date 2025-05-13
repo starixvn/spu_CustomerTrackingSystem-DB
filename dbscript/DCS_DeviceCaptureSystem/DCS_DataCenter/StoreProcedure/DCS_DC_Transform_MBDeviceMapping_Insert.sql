@@ -280,10 +280,11 @@ BEGIN
     
     
     /********************** INSERT New device ***********************************/
-    INSERT IGNORE INTO DCS_DataCenter.MBDevice(FirstMBRawTransactionID, LastAccessedDate, CreatedDate, CreatedTime)
+    INSERT IGNORE INTO DCS_DataCenter.MBDevice(FirstMBRawTransactionID, InsertedTime, LastAccessedDate, CreatedDate, CreatedTime)
     SELECT 	DISTINCT 
 			SameDeviceID
-		,	DATE(lv_CurrentDatetime) AS LastAccessedDate
+		,	lv_CurrentDatetime AS InsertedTime
+		,	DATE(TransTime) AS LastAccessedDate
 		,	DATE(TransTime) AS CreatedDate
 		,	TransTime AS CreatedTime
     FROM Temp_DeviceMapping
