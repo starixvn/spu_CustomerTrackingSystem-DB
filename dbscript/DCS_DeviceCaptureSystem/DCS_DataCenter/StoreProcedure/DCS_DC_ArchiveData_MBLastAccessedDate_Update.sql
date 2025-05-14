@@ -15,6 +15,7 @@ BEGIN
 
       Revisions:
         - 20241204@Jonathan.Doan: Created [Redmine ID: #213401]
+        - 20250514@Jonathan.Doan: Update field value LastLoginTime [Redmine ID: #221973]
       Param's Explanation (filtered by):
     Example:
       CALL DCS_DC_ArchiveData_MBLastAccessedDate_Update(100);
@@ -50,64 +51,64 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBAccount;
 	CREATE TEMPORARY TABLE Temp_MBAccount(
 		  ID            	BIGINT UNSIGNED PRIMARY KEY
-		, LastLoginTime     DATETIME
+		, LastLoginTime     DATETIME(4)
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeMediaDRM;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeMediaDRM(
 		  ID            		BIGINT UNSIGNED PRIMARY KEY
-		, MaxLastAccessedDate   DATETIME
+		, MaxLastAccessedDate   DATE
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeMachine;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeMachine(
 		  ID            		BIGINT UNSIGNED PRIMARY KEY
-		, MaxLastAccessedDate   DATETIME
+		, MaxLastAccessedDate   DATE
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeTagging;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeTagging(
 		  ID            		BIGINT UNSIGNED PRIMARY KEY
-		, MaxLastAccessedDate   DATETIME
+		, MaxLastAccessedDate   DATE
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceModel;
 	CREATE TEMPORARY TABLE Temp_MBDeviceModel(
 		  ID            		BIGINT UNSIGNED PRIMARY KEY
-		, MaxLastAccessedDate   DATETIME
+		, MaxLastAccessedDate   DATE
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBOS;
 	CREATE TEMPORARY TABLE Temp_MBOS(
 		  ID            		BIGINT UNSIGNED PRIMARY KEY
-		, MaxLastAccessedDate   DATETIME
+		, MaxLastAccessedDate   DATE
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBUserSetting;
 	CREATE TEMPORARY TABLE Temp_MBUserSetting(
 		  ID            		BIGINT UNSIGNED PRIMARY KEY
-		, MaxLastAccessedDate   DATETIME
+		, MaxLastAccessedDate   DATE
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDevice;
 	CREATE TEMPORARY TABLE Temp_MBDevice(
 		  ID            		BIGINT UNSIGNED PRIMARY KEY
-		, MaxLastAccessedDate   DATETIME
+		, MaxLastAccessedDate   DATE
 	);
     
     /*******GET DATA Transaction07********************/
 	INSERT INTO Temp_MBTransaction07(ID, MBAccountID, CreatedDate, TransTime, MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID, MBDeviceModelID, MBOSID, MBUserSettingID, MBDeviceID)
 	SELECT  trans.ID
-		, IFNULL(trans.MBAccountID, 0) AS MBAccountID
-		, trans.CreatedDate
-		, trans.TransTime
-		, IFNULL(dm.MBDeviceCodeMediaDRMID, 0) AS MBDeviceCodeMediaDRMID
-		, IFNULL(dm.MBDeviceCodeMachineID, 0) AS MBDeviceCodeMachineID
-		, IFNULL(dm.MBDeviceCodeTaggingID, 0) AS MBDeviceCodeTaggingID
-		, IFNULL(trans.MBDeviceModelID, 0) AS MBDeviceModelID
-		, IFNULL(trans.MBOSID, 0) AS MBOSID
-		, IFNULL(trans.MBUserSettingID, 0) AS MBUserSettingID
-		, IFNULL(trans.MBDeviceID, 0) AS MBDeviceID
+		,	IFNULL(trans.MBAccountID, 0) AS MBAccountID
+		,	trans.CreatedDate
+		,	trans.TransTime
+		,	IFNULL(dm.MBDeviceCodeMediaDRMID, 0) AS MBDeviceCodeMediaDRMID
+		,	IFNULL(dm.MBDeviceCodeMachineID, 0) AS MBDeviceCodeMachineID
+		,	IFNULL(dm.MBDeviceCodeTaggingID, 0) AS MBDeviceCodeTaggingID
+		,	IFNULL(trans.MBDeviceModelID, 0) AS MBDeviceModelID
+		,	IFNULL(trans.MBOSID, 0) AS MBOSID
+		,	IFNULL(trans.MBUserSettingID, 0) AS MBUserSettingID
+		,	IFNULL(trans.MBDeviceID, 0) AS MBDeviceID
 	FROM DCS_DataCenter.MBTransaction07 AS trans
 		LEFT JOIN DCS_DataCenter.MBDeviceMapping AS dm ON dm.ID = trans.MBDeviceMappingID
 	WHERE trans.ID > lv_MaxID
@@ -174,42 +175,50 @@ BEGIN
     /*******UPDATE MBAccount.LastLoginTime********************/
 	UPDATE DCS_DataCenter.MBAccount AS acc
 		INNER JOIN Temp_MBAccount AS tmp ON tmp.ID = acc.ID
-	SET acc.LastLoginTime = GREATEST(tmp.LastLoginTime, acc.LastLoginTime);
+    SET acc.LastLoginTime = tmp.LastLoginTime
+	WHERE acc.LastLoginTime < tmp.LastLoginTime;
     
     /*******UPDATE MBDeviceCodeMediaDRM ********************/
 	UPDATE DCS_DataCenter.MBDeviceCodeMediaDRM AS drm
 		INNER JOIN Temp_MBDeviceCodeMediaDRM AS tmp ON tmp.ID = drm.ID
-	SET drm.LastAccessedDate = GREATEST(tmp.MaxLastAccessedDate, drm.LastAccessedDate);
+    SET drm.LastAccessedDate = tmp.MaxLastAccessedDate
+	WHERE drm.LastAccessedDate < tmp.MaxLastAccessedDate;
     
 	/*******UPDATE MBDeviceCodeMachine ********************/               
 	UPDATE DCS_DataCenter.MBDeviceCodeMachine AS dc
 		INNER JOIN Temp_MBDeviceCodeMachine AS tmp ON tmp.ID = dc.ID
-	SET dc.LastAccessedDate = GREATEST(tmp.MaxLastAccessedDate, dc.LastAccessedDate);
+    SET dc.LastAccessedDate = tmp.MaxLastAccessedDate
+	WHERE dc.LastAccessedDate < tmp.MaxLastAccessedDate;
     
     /*******UPDATE MBDeviceCodeTagging ********************/
 	UPDATE DCS_DataCenter.MBDeviceCodeTagging AS tg
 		INNER JOIN Temp_MBDeviceCodeTagging AS tmp ON tmp.ID = tg.ID
-	SET tg.LastAccessedDate = GREATEST(tmp.MaxLastAccessedDate, tg.LastAccessedDate);
+    SET tg.LastAccessedDate = tmp.MaxLastAccessedDate
+	WHERE tg.LastAccessedDate < tmp.MaxLastAccessedDate;
     
 	/*******UPDATE MBDeviceModel ********************/         
 	UPDATE DCS_DataCenter.MBDeviceModel AS dm
 		INNER JOIN Temp_MBDeviceModel AS tmp ON tmp.ID = dm.ID
-	SET dm.LastAccessedDate = GREATEST(tmp.MaxLastAccessedDate, dm.LastAccessedDate);
+    SET dm.LastAccessedDate = tmp.MaxLastAccessedDate
+	WHERE dm.LastAccessedDate < tmp.MaxLastAccessedDate;
     
 	/*******UPDATE MBOS ********************/              
 	UPDATE DCS_DataCenter.MBOS AS os
 		INNER JOIN Temp_MBOS AS tmp ON tmp.ID = os.ID
-	SET os.LastAccessedDate = GREATEST(tmp.MaxLastAccessedDate, os.LastAccessedDate);
+    SET os.LastAccessedDate = tmp.MaxLastAccessedDate
+	WHERE os.LastAccessedDate < tmp.MaxLastAccessedDate;
     
 	/*******UPDATE MBUserSetting ********************/
 	UPDATE DCS_DataCenter.MBUserSetting AS us
 		INNER JOIN Temp_MBUserSetting AS tmp ON tmp.ID = us.ID
-	SET us.LastAccessedDate = GREATEST(tmp.MaxLastAccessedDate, us.LastAccessedDate);
+    SET us.LastAccessedDate = tmp.MaxLastAccessedDate
+	WHERE us.LastAccessedDate < tmp.MaxLastAccessedDate;
     
 	/*******UPDATE MBDevice ********************/
 	UPDATE DCS_DataCenter.MBDevice AS dv
 		INNER JOIN Temp_MBDevice AS tmp ON tmp.ID = dv.ID
-	SET dv.LastAccessedDate = GREATEST(tmp.MaxLastAccessedDate, dv.LastAccessedDate);
+    SET dv.LastAccessedDate = tmp.MaxLastAccessedDate
+	WHERE dv.LastAccessedDate < tmp.MaxLastAccessedDate;
     
     /*******UPDATE SystemSetting MaxTransID********************/
     SELECT MAX(ID)
