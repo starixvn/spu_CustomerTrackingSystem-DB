@@ -34,16 +34,13 @@ BEGIN
         ,	INDEX IX_Temp_MBAccount_CTSCustID(CTSCustID)
 	);  
 
-    SELECT sys.ParameterValue 
-    INTO lv_LastAccountID
-    FROM CTS_DataCenter.SystemParameter AS sys	
-	WHERE sys.ParameterID = CONST_SYSTEMPARAM_LASTACCOUNTID;
-    
+    SET lv_LastAccountID = 0;
+	
     SELECT MAX(acc.ID)
     INTO lv_MaxAccountID
     FROM DCS_DataCenter.MBAccount AS acc;
     
-    WHILE (lv_LastAccountID <  lv_MaxAccountID) DO	
+    WHILE (lv_LastAccountID <= lv_MaxAccountID) DO	
     
 		DELETE tmpAcc 
         FROM Temp_MBAccount AS tmpAcc;

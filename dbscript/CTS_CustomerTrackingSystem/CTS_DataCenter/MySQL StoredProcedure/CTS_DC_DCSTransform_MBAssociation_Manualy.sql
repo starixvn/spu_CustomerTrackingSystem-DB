@@ -42,7 +42,7 @@ BEGIN
     INTO lv_MaxAssID
     FROM DCS_DataCenter.MBAssociation AS ass;
     
-    WHILE (lv_LastAssID <  lv_MaxAssID) DO
+    WHILE (lv_LastAssID <=  lv_MaxAssID) DO
 		
         DELETE tmpAss 
         FROM Temp_MBAssociation AS tmpAss;
