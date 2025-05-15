@@ -19,12 +19,12 @@ BEGIN
 		Param's Explanation (filtered by): 
 
 		Example:
-			CALL CTS_DC_SpecialLicSubCC_Responese_Get(@ip_BatchSize:=3);
+			CALL CTS_DC_SpecialLicSubCC_Response_Get(@ip_BatchSize:=3);
 	*/    
     DECLARE CONST_PROCESSSTATUS_CLASSIFI_COMPLETE		TINYINT DEFAULT 2;
     DECLARE CONST_PROCESSSTATUS_RESPONESE_FAIL			TINYINT DEFAULT 3;
     DECLARE CONST_STATICLIST_STATUSCODE					TINYINT DEFAULT 26;
-    
+      
 	SELECT 	cus.ID
         ,	cus.CustID
         ,	cus.APICustomerClass
