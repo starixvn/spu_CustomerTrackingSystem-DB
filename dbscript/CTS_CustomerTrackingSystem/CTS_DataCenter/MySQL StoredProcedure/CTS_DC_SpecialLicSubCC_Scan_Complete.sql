@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_SpecialLicSubCC_Scan_Complete`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialLicSubCC_Scan_Complete`(
-		IN ip_BatchSize INT
+		IN ip_IDList TEXT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation (filtered by): 
 
 		Example:
-			CALL CTS_DC_SpecialLicSubCC_Scan_Complete(@ip_BatchSize:=5);
+			CALL CTS_DC_SpecialLicSubCC_Scan_Complete(@ip_IDList:='3,4,6,9,10');
 	*/   
 	DECLARE CONST_PROCESSSTATUS_INPROGRESS	TINYINT DEFAULT 1;
     

@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation (filtered by): 
 
 		Example:
-			CALL CTS_DC_SpecialLicSubCC_Scan_Get(1000);
+			CALL CTS_DC_SpecialLicSubCC_Scan_Get(@ip_BatchSize:=5);
 	*/   
     IF EXISTS (SELECT 1 FROM CTS_DataCenter.Customer_SpecialLicSubCC AS cus WHERE cus.ProcessStatus = 1) THEN
     
@@ -27,7 +27,8 @@ BEGIN
         
 	ELSE
     
-		SELECT cus.CustID AS CustID
+		SELECT 	cus.ID
+			,	cus.CustID AS CustID
         FROM CTS_DataCenter.Customer_SpecialLicSubCC AS cus
         WHERE cus.ProcessStatus = 0 AND cus.CustID IS NOT NULL
         ORDER BY cus.ID ASC

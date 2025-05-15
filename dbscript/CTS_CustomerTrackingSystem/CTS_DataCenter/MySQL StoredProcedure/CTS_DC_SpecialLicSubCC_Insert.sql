@@ -20,9 +20,7 @@ BEGIN
 		Param's Explanation (filtered by): 
 
 		Example:
-			CALL CTS_DC_SpecialLicSubCC_Insert('HAIFAINH01128822',202);
-			CALL CTS_DC_SpecialLicSubCC_Insert('HAIFAINH0112882',202);
-			CALL CTS_DC_SpecialLicSubCC_Insert('HAIFAINH0112882',200);
+			CALL CTS_DC_SpecialLicSubCC_Insert(@ip_Username:='HAIFAINH0112882',@ip_CustomerClass:=202);
 	*/   
     
     DECLARE CONST_SUBSCRIBERID_HAIFA					INT DEFAULT 104;
@@ -75,13 +73,12 @@ BEGIN
         WHERE stl.ListID = CONST_STATICLIST_LICSUBSTATUSCODE 
 			AND stl.ItemValue = CONST_STATICLIST_LICSUBSTATUSCODE_INVALID;   
             
-		INSERT INTO CTS_DataCenter.Customer_SpecialLicSubCC(Username, APICustomerClass, ProcessStatus, StatusCode, InsertedTime, ResponseTime)
+		INSERT INTO CTS_DataCenter.Customer_SpecialLicSubCC(Username, APICustomerClass, ProcessStatus, StatusCode, InsertedTime)
 		SELECT	ip_UserName
 			,	ip_CustomerClass
 			,	CONST_PROCESSSTATUS_COMPLETED AS ProcessStatus
             ,	lv_StatusCode
 			, 	CONST_INSERTEDTIME AS InsertedTime
-            ,	CONST_INSERTEDTIME AS ResponseTime
 		;
             
 	END IF;
