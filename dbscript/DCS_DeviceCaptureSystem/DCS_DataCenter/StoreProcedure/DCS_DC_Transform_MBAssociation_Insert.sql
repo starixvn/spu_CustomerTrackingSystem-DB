@@ -78,13 +78,14 @@ BEGIN
 														AND ass.MBDeviceID = tmp.MBDeviceID
     SET tmp.IsNewRecord = 0;
     
-	INSERT INTO DCS_DataCenter.MBAssociation(MBAccountID, MBDeviceID, SubscriberID, InsertedTime, CreatedDate, CreatedTime)
+	INSERT INTO DCS_DataCenter.MBAssociation(MBAccountID, MBDeviceID, SubscriberID, InsertedTime, CreatedDate, CreatedTime, LastAccessedDate)
 	SELECT	MBAccountID
 		,	MBDeviceID
 		,	SubscriberID
 		,	lv_CurrentDatetime AS InsertedTime
 		,	DATE(TransTime) AS CreatedDate
 		,	TransTime AS CreatedTime
+		,	DATE(TransTime) AS LastAccessedDate
 	FROM Temp_MBAssociationInsert
     WHERE IsNewRecord = 1;
 END$$

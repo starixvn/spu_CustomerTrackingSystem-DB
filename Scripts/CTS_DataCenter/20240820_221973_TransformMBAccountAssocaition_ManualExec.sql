@@ -13,13 +13,13 @@ USE CTS_Adhoc;
 
 SELECT NOW() AS StartTransformAccount;
 
-CALL CTS_Adhoc.CTS_DC_DCSTransform_MBAccount_Manualy(1000);
+CALL CTS_Adhoc.CTS_DC_DCSTransform_MBAccount_Manually(1000);
 
 SELECT NOW() AS EndTransformAccount;
 
 #========================================================
 SELECT NOW() AS StartTransformAssociation;
 
-CALL CTS_Adhoc.CTS_DC_DCSTransform_MBAssociation_Manualy(1000);
+CALL CTS_Adhoc.CTS_DC_DCSTransform_MBAssociation_Manually(1000);
 
 SELECT NOW() AS EndTransformAssociation;

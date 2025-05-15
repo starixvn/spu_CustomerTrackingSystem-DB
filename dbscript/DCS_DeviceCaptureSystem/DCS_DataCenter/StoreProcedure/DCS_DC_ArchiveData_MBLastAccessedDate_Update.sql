@@ -46,6 +46,7 @@ BEGIN
 		, MBOSID          			BIGINT UNSIGNED
 		, MBUserSettingID     		BIGINT UNSIGNED
 		, MBDeviceID        		BIGINT UNSIGNED
+		, MBAssociationID        	BIGINT UNSIGNED
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBAccount;
@@ -92,6 +93,12 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDevice;
 	CREATE TEMPORARY TABLE Temp_MBDevice(
+		  ID            		BIGINT UNSIGNED PRIMARY KEY
+		, MaxLastAccessedDate   DATE
+	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_MBAssociation;
+	CREATE TEMPORARY TABLE Temp_MBAssociation(
 		  ID            		BIGINT UNSIGNED PRIMARY KEY
 		, MaxLastAccessedDate   DATE
 	);
@@ -172,6 +179,19 @@ BEGIN
     WHERE MBDeviceID IS NOT NULL
     GROUP BY MBDeviceID;
     
+
+	UPDATE Temp_MBTransaction07 AS tmp
+		INNER JOIN DCS_DataCenter.MBAssociation AS ass ON ass.MBAccountID = tmp.MBAccountID
+													AND ass.MBDeviceID = tmp.MBDeviceID
+	SET tmp.MBAssociationID = ass.MBAssociationID;
+
+    INSERT INTO Temp_MBAssociation(ID, MaxLastAccessedDate)
+    SELECT	MBAssociationID AS ID
+		,	MAX(CreatedDate) AS MaxLastAccessedDate
+    FROM Temp_MBTransaction07
+    WHERE MBAssociationID IS NOT NULL
+    GROUP BY MBAssociationID;
+    
     /*******UPDATE MBAccount.LastLoginTime********************/
 	UPDATE DCS_DataCenter.MBAccount AS acc
 		INNER JOIN Temp_MBAccount AS tmp ON tmp.ID = acc.ID
@@ -219,6 +239,12 @@ BEGIN
 		INNER JOIN Temp_MBDevice AS tmp ON tmp.ID = dv.ID
     SET dv.LastAccessedDate = tmp.MaxLastAccessedDate
 	WHERE dv.LastAccessedDate < tmp.MaxLastAccessedDate;
+    
+	/*******UPDATE Temp_MBAssociation ********************/
+	UPDATE DCS_DataCenter.MBAssociation AS ass
+		INNER JOIN Temp_MBAssociation AS tmp ON tmp.ID = dv.ID
+    SET ass.LastAccessedDate = tmp.MaxLastAccessedDate
+	WHERE ass.LastAccessedDate < tmp.MaxLastAccessedDate;
     
     /*******UPDATE SystemSetting MaxTransID********************/
     SELECT MAX(ID)
