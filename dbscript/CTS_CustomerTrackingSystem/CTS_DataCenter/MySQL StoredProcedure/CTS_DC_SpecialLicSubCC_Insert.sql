@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_SpecialLicSubCC_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialLicSubCC_Insert`(
-		IN ip_Username VARCHAR(50)
+		IN ip_CustID		INT
     ,	IN ip_CustomerClass INT 
 )
     SQL SECURITY INVOKER
@@ -40,7 +40,7 @@ BEGIN
     SELECT	cus.CustID 
     INTO 	lv_CustID 
     FROM CTS_DataCenter.CTSCustomer AS cus
-    WHERE cus.UserName = ip_UserName
+    WHERE cus.CustID = ip_CustID
 		AND cus.SubscriberID = CONST_SUBSCRIBERID_HAIFA
         AND cus.RoleID = CONST_ROLEID_MEMBER
         AND ip_CustomerClass IN (	SELECT stl.ItemValue 
@@ -48,8 +48,7 @@ BEGIN
                                     WHERE stl.ListID = CONST_STATICLIST_LICSUBCUSTOMERCLASS);    
 
     SET lv_MaxID = (SELECT MAX(ID) FROM Customer_SpecialLicSubCC);   
-	
-	SELECT lv_CustID;
+
     IF (lv_CustID IS NOT NULL) THEN   
     
         SELECT	stl.ItemNameDisplay, 	stl.ItemValue
@@ -58,10 +57,9 @@ BEGIN
         WHERE stl.ListID = CONST_STATICLIST_LICSUBSTATUSCODE 
 			AND stl.ItemValue = CONST_STATICLIST_LICSUBSTATUSCODE_VALID;
 		
-		INSERT INTO CTS_DataCenter.Customer_SpecialLicSubCC(Username, APICustomerClass, CustID, InsertedTime)
-		SELECT	ip_UserName
+		INSERT INTO CTS_DataCenter.Customer_SpecialLicSubCC(CustID, APICustomerClass, InsertedTime)
+		SELECT	ip_CustID
 			,	ip_CustomerClass
-			,	lv_CustID
 			, 	CONST_INSERTEDTIME;
             
 	ELSE     
@@ -73,8 +71,8 @@ BEGIN
         WHERE stl.ListID = CONST_STATICLIST_LICSUBSTATUSCODE 
 			AND stl.ItemValue = CONST_STATICLIST_LICSUBSTATUSCODE_INVALID;   
             
-		INSERT INTO CTS_DataCenter.Customer_SpecialLicSubCC(Username, APICustomerClass, ProcessStatus, StatusCode, InsertedTime)
-		SELECT	ip_UserName
+		INSERT INTO CTS_DataCenter.Customer_SpecialLicSubCC(CustID, APICustomerClass, ProcessStatus, StatusCode, InsertedTime)
+		SELECT	ip_CustID
 			,	ip_CustomerClass
 			,	CONST_PROCESSSTATUS_COMPLETED AS ProcessStatus
             ,	lv_StatusCode
@@ -84,7 +82,7 @@ BEGIN
 	END IF;
 
     SELECT 	cus.ID					
-		,	cus.UserName 		
+		,	cus.CustID 		
 		,	cus.APICustomerClass
         ,	cus.InsertedTime
 	FROM CTS_DataCenter.Customer_SpecialLicSubCC AS cus

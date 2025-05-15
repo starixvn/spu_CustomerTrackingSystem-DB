@@ -27,10 +27,9 @@ CREATE TABLE Customer_SpecialLicSubCC_Log(
 DROP TABLE IF EXISTS Customer_SpecialLicSubCC;
 CREATE TABLE Customer_SpecialLicSubCC(
 		ID						INT UNSIGNED AUTO_INCREMENT PRIMARY KEY	
-	,	Username				VARCHAR(50) NOT NULL
+	,	CustID					BIGINT NULL
     ,	APICustomerClass 		INT UNSIGNED NOT NULL
     ,	LatestCustomerClass 	INT UNSIGNED NULL
-    ,	CustID					BIGINT NULL
     ,	ProcessStatus			TINYINT NOT NULL DEFAULT 0	COMMENT '0:API INPUT, 1:Inprocess, 2:ClassifiedComplete, 3:ResponseFail, 4:ResponseSuccess'   
     ,	IsDisabled				TINYINT(1) NOT NULL DEFAULT 0 COMMENT '0:Enabled, 1:Disabled'
     ,	StatusCode				INT NULL
@@ -81,9 +80,6 @@ FROM CustomerCategorySettings st
 	INNER JOIN CustomerCategory as cat ON st.CategoryID = cat.CategoryID
 WHERE  cat.CategoryID IN (40100,40400,40500,40600,40106,40406,40506,40606,21100)
 ;
-
-
-
 
 
 SELECT * FROM StaticList WHERE ListID = 6
