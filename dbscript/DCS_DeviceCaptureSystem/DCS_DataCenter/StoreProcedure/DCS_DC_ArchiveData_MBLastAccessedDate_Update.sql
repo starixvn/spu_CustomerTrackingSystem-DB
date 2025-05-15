@@ -183,7 +183,7 @@ BEGIN
 	UPDATE Temp_MBTransaction07 AS tmp
 		INNER JOIN DCS_DataCenter.MBAssociation AS ass ON ass.MBAccountID = tmp.MBAccountID
 													AND ass.MBDeviceID = tmp.MBDeviceID
-	SET tmp.MBAssociationID = ass.MBAssociationID;
+	SET tmp.MBAssociationID = ass.ID;
 
     INSERT INTO Temp_MBAssociation(ID, MaxLastAccessedDate)
     SELECT	MBAssociationID AS ID
@@ -242,7 +242,7 @@ BEGIN
     
 	/*******UPDATE Temp_MBAssociation ********************/
 	UPDATE DCS_DataCenter.MBAssociation AS ass
-		INNER JOIN Temp_MBAssociation AS tmp ON tmp.ID = dv.ID
+		INNER JOIN Temp_MBAssociation AS tmp ON tmp.ID = ass.ID
     SET ass.LastAccessedDate = tmp.MaxLastAccessedDate
 	WHERE ass.LastAccessedDate < tmp.MaxLastAccessedDate;
     
