@@ -28,6 +28,7 @@ AS
 		- 20240424@Thomas.Nguyen: Remove logic New Member Classify Tagging [Redmine ID: #200854]
 		- 20240618@Jonas.Huynh: Renovate CC - Phase 2 [Redmine ID: #205317]
 		- 20241223@Jonas.Huynh: HF Incorrect Inactive Category [Redmine ID: #215615]
+		- 20250515@Long.Luu: 	Add new 3 special licensees "Winbox, SM88, and SL88SW" [Redmine ID: #226846]
 
 	Param's Explanation:
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
@@ -224,7 +225,7 @@ BEGIN
 		-- #5: Get customer info
 		UPDATE a WITH(ROWLOCK, UPDLOCK)
 		SET	   a.SRecommend = c.srecommend,
-			   a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1 ELSE 0 END
+			   a.IsSpecialSite = CASE WHEN c.Site IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada','Winbox', 'SM88', 'SL88SW') THEN 1 ELSE 0 END
 		FROM #tmpCustomers AS a
 			INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) ON a.CustId = c.custid;
 

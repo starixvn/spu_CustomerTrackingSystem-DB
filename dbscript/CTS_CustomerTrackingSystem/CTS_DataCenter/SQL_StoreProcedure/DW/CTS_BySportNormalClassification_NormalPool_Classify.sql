@@ -22,6 +22,7 @@ AS
 		- 20240320@Thomas.Nguyen: Classify customers without performance that were removed special CC from manual action [Redmine ID: #201360]
 		- 20240426@Jonas.Huynh: Exclude New Parlay SportGroup [Redmine ID: #203600]
 		- 20240618@Jonas.Nguyen: Renovate CC - Phase 2 [Redmine ID: #205317]
+		- 20250515@Long.Luu: 	Add new 3 special licensees "Winbox, SM88, and SL88SW" [Redmine ID: #226846]
 
 	Param's Explanation:
 		@CustomersXML	 : This parameter is used to classify customer perf which bases on currentCategory
@@ -255,8 +256,8 @@ BEGIN
 	SET a.IsDeposit = c.IsDeposit,
 		a.IsSpecialSite = CASE
 							WHEN a.SportGroup = @SPORT_NONSPORT THEN NULL
-							WHEN a.SportGroup = @SPORT_ESPORT AND c.SiteName IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada', 'WINHX1') THEN 1
-							WHEN a.SportGroup <> @SPORT_ESPORT AND c.SiteName IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada') THEN 1
+							WHEN a.SportGroup = @SPORT_ESPORT AND c.SiteName IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada','Winbox', 'SM88', 'SL88SW','WINHX1') THEN 1
+							WHEN a.SportGroup <> @SPORT_ESPORT AND c.SiteName IN ('haifa','manbetx','HC6YAYOU','US8YAYOU','BPLE','Okada','Winbox', 'SM88', 'SL88SW') THEN 1
 							ELSE 0	
 						  END	
 	FROM #tmpCustomerAccummulatedInfo AS a
