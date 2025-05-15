@@ -236,3 +236,9 @@ UPDATE CustomerCategory AS cat
 INNER JOIN Temp_Priority AS t ON cat.CategoryID = t.CategoryID
 SET cat.CategoryPriority= t.CategoryPriority, cat.CustomerClassPriority = t.CustomerClassPriority;
 */
+
+
+/*========================================THOMAS=============================================*/
+INSERT INTO CustomerClassification_Remark (RemarkID,RemarkTemplate,Description)
+VALUES
+(59,'Turnover: [TurnOver] | Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]',Null);
