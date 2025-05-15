@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_Adhoc" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_DCSTransform_MBAccount_Manualy`;
+DROP PROCEDURE IF EXISTS `CTS_DC_DCSTransform_MBAccount_Manually`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_DCSTransform_MBAccount_Manualy`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_DCSTransform_MBAccount_Manually`(
 		IN ip_BatchSize INT
 )
   SQL SECURITY INVOKER
@@ -40,7 +40,7 @@ BEGIN
     INTO lv_MaxAccountID
     FROM DCS_DataCenter.MBAccount AS acc;
     
-    WHILE (lv_LastAccountID <= lv_MaxAccountID) DO	
+    WHILE (lv_LastAccountID < lv_MaxAccountID) DO	
     
 		DELETE tmpAcc 
         FROM Temp_MBAccount AS tmpAcc;

@@ -42,7 +42,7 @@ BEGIN
     INTO lv_MaxAssID
     FROM DCS_DataCenter.MBAssociation AS ass;
     
-    WHILE (lv_LastAssID <=  lv_MaxAssID) DO
+    WHILE (lv_LastAssID < lv_MaxAssID) DO
 		
         DELETE tmpAss 
         FROM Temp_MBAssociation AS tmpAss;
@@ -79,8 +79,8 @@ BEGIN
 		SET ass.IsCTSTransformed = 1
         WHERE tmpAss.CTSCustID IS NOT NULL;
         
-        SET lv_LastAssID = (SELECT MAX(MBAssID) FROM Temp_MBAssociation);
-        
+        SET lv_LastAssID = (SELECT MAX(MBAssID) FROM Temp_MBAssociation);        
+		
 		UPDATE CTS_DataCenter.SystemParameter AS sys
         SET sys.ParameterValue = IFNULL(lv_LastAssID,0)
 		WHERE sys.ParameterID = CONST_SYSTEMPARAM_LASTASSID;        
