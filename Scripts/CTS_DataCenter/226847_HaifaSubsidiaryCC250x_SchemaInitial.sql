@@ -26,18 +26,20 @@ CREATE TABLE Customer_SpecialLicSubCC_Log(
 
 DROP TABLE IF EXISTS Customer_SpecialLicSubCC;
 CREATE TABLE Customer_SpecialLicSubCC(
-		ID					BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY	
-	,	Username			VARCHAR(50) NOT NULL
-    ,	CustomerClass 		INT UNSIGNED NOT NULL
-    ,	CustID				BIGINT NOT NULL
-    ,	ProcessStatus		TINYINT NOT NULL DEFAULT 0	COMMENT '0:API INPUT, 1:Inprocess, 2:ClassifiedComplete, 3:ResponseFail, 4:ResponseSuccess'   
-    ,	IsDisabled			TINYINT(1) NOT NULL DEFAULT 0 COMMENT '0:Enabled, 1:Disabled'   
-    ,	ResponseTime		DATETIME(4) NULL
-    ,	ResponseHttpCode	INT NULL
-    ,	InsertedTime		DATETIME(4) NOT NULL
+		ID						INT UNSIGNED AUTO_INCREMENT PRIMARY KEY	
+	,	Username				VARCHAR(50) NOT NULL
+    ,	APICustomerClass 		INT UNSIGNED NOT NULL
+    ,	LatestCustomerClass 	INT UNSIGNED NULL
+    ,	CustID					BIGINT NULL
+    ,	ProcessStatus			TINYINT NOT NULL DEFAULT 0	COMMENT '0:API INPUT, 1:Inprocess, 2:ClassifiedComplete, 3:ResponseFail, 4:ResponseSuccess'   
+    ,	IsDisabled				TINYINT(1) NOT NULL DEFAULT 0 COMMENT '0:Enabled, 1:Disabled'
+    ,	StatusCode				INT NULL
+    ,	ResponseTime			DATETIME(4) NULL
+    ,	ResponseHttpCode		INT NULL
+    ,	InsertedTime			DATETIME(4) NOT NULL
     
-    ,	INDEX IX_Customer_LicSubCustomerClass_CustID(CustID)
-    ,	INDEX IX_Customer_LicSubCustomerClass_ProcessStatusCustID(ProcessStatus, CustID)
+    ,	INDEX IX_Customer_Customer_SpecialLicSubCC_CustID(CustID)
+    ,	INDEX IX_Customer_Customer_SpecialLicSubCC_ProcessStatusCustID(ProcessStatus, CustID)
 );
 
 # CustomerCategory
