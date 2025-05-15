@@ -77,14 +77,11 @@ BEGIN
 			,	CONST_PROCESSSTATUS_COMPLETED AS ProcessStatus
             ,	lv_StatusCode
 			, 	CONST_INSERTEDTIME AS InsertedTime
-		;
-            
+		;            
 	END IF;
 
-    SELECT 	cus.ID					
-		,	cus.CustID 		
-		,	cus.APICustomerClass
-        ,	cus.InsertedTime
+    SELECT 	cus.ID
+		,	cus.InsertedTime
 	FROM CTS_DataCenter.Customer_SpecialLicSubCC AS cus
     WHERE cus.ID > lv_MaxID 
 		AND InsertedTime = CONST_INSERTEDTIME;     

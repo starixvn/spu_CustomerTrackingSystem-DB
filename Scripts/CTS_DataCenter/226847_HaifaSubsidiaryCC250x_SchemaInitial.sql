@@ -45,13 +45,12 @@ CREATE TABLE Customer_SpecialLicSubCC(
 #CREATE TABLE CustomerCategory_CaseyBk20250514 SELECT * FROM CustomerCategory ;
 
 UPDATE CustomerCategory
-SET IsActive = 1
+SET   IsActive = 1
 	, CustomerClassPriority = 850
 	, CategoryPriority = (CASE WHEN CategoryID = 40606 THEN 845 ELSE 850 END)
     , RemarkTemplateID = 42
     , FlowNormalTaggingScan = 1
-WHERE  CategoryID IN (40106,40406,40506,40606)
-;
+WHERE  CategoryID IN (40106,40406,40506,40606);
 
 INSERT INTO StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,ItemParentItemID,PriorityOrder,Status,Description,CreatedDate)
 VALUES(25,1,'LicSubCustomerClass','','LicSubCustomerClass_New','',200,NULL,NULL,NULL,1,NULL,NOW())
