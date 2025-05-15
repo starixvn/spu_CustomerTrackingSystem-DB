@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Normal_GetC
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Normal_GetCurrentCategory`(
-		IN ip_CustIDList	TEXT
+		IN ip_Customer	JSON
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -13,14 +13,15 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20200423@Casey.Huynh [Redmine ID: #178022]: Created 
-			- 20230120@Long.Luu [Redmine ID: #182997]: Support special case for Inactive (return CategoryID instead of CategoryGroup) 
-            - 20230427@Jonas.Huynh [Redmine ID: #186678]: Renovate normal classification
-            - 20230605@Jonas.Huynh [Redmine ID: #186684]: Renovate normal classification (phase2)
-            - 20230915@Jonas.Huynh [Redmine ID: #193050]: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category
-            - 20231024@Jonas.Huynh [Redmine ID: #193050]: Rollback code
-			- 20240619@Jonas.Huynh [Redmine ID: #205317]: Renovate CC 
-            - 20240912@Jonas.Huynh [Redmine ID: #214058]: HF Inconsistent classification
+			- 20200423@Casey.Huynh: Created [Redmine ID: #178022]
+			- 20230120@Long.Luu: Support special case for Inactive (return CategoryID instead of CategoryGroup) [Redmine ID: #182997]
+            - 20230427@Jonas.Huynh: Renovate normal classification [Redmine ID: #186678]
+            - 20230605@Jonas.Huynh: Renovate normal classification (phase2) [Redmine ID: #186684]
+            - 20230915@Jonas.Huynh: HF Wrong Inactive Category for New and Realtime flow exclude S/R/P with not latest category [Redmine ID: #193050]
+            - 20231024@Jonas.Huynh: Rollback code [Redmine ID: #193050]
+			- 20240619@Jonas.Huynh: Renovate CC [Redmine ID: #205317]
+            - 20240912@Jonas.Huynh: HF Inconsistent classification [Redmine ID: #214058]
+			- 20250515@Thomas.Nguyen: Return more Haifa Lic Sub CC [Redmine ID: #226847]
             
 		Param's Explanation:
         
@@ -30,7 +31,12 @@ BEGIN
 	DECLARE	CONST_GROUP_PROBATION 	INT ;
 	DECLARE	CONST_GROUP_INACTIVE 	INT ;
 	DECLARE	CONST_PARENTID_NORMAL 	INT ;
-    DECLARE CONST_PARENTID_WRAPPER	INT	;   
+    DECLARE CONST_PARENTID_WRAPPER	INT	;
+
+	DECLARE CONST_CATEGORYID_NEW_LICSUB 	INT DEFAULT 40106;
+	DECLARE CONST_CATEGORYID_PROB_LICSUB 	INT DEFAULT 40406;
+	DECLARE CONST_CATEGORYID_SMART_LICSUB 	INT DEFAULT 40506;
+	DECLARE CONST_CATEGORYID_RISKY_LICSUB 	INT DEFAULT 40606;
     
 	DECLARE lv_CurrentTime 			DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_CurrentDate 			DATE DEFAULT CURRENT_DATE();
@@ -43,13 +49,13 @@ BEGIN
         
     DROP TEMPORARY TABLE IF EXISTS Temp_InputCust;
     CREATE TEMPORARY TABLE Temp_InputCust(
-			CustID 		BIGINT UNSIGNED PRIMARY KEY
+			CustID				BIGINT UNSIGNED PRIMARY KEY
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
-			CustID 			BIGINT UNSIGNED PRIMARY KEY
-		,	CreatedDate		DATETIME
+			CustID 				BIGINT UNSIGNED PRIMARY KEY
+		,	CreatedDate			DATETIME
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;
@@ -68,7 +74,7 @@ BEGIN
 	);  
     
     #1. Get valid customers
-    IF ip_CustIDList IS NOT NULL THEN        
+    IF ip_CustIDList IS NOT NULL THEN
 		SET @sql = CONCAT("INSERT INTO Temp_InputCust(CustID) VALUES ('", REPLACE(ip_CustIDList, ",", "'),('"),"');");
 		PREPARE stmt1 FROM @sql;
 		EXECUTE stmt1;
@@ -107,6 +113,7 @@ BEGIN
 			END AS CategoryID
 		,   CASE WHEN tmpCust.CreatedDate >= DATE_SUB(lv_CurrentTime, INTERVAL 29 DAY) THEN 1 ELSE 0 END AS IsNewCreated
         ,	CASE WHEN tmpCc.CategoryGroupID IS NOT NULL AND tmpCc.CategoryGroupID = CONST_GROUP_PROBATION AND tmpCc.CreatedDate <= lv_LastDayProbation THEN 1 ELSE 0 END AS IsProbationLastDay /*Up to Smart, Risky*/
+		,   CASE WHEN tmpCc.CategoryID IN (CONST_CATEGORYID_NEW_LICSUB, CONST_CATEGORYID_PROB_LICSUB, CONST_CATEGORYID_SMART_LICSUB, CONST_CATEGORYID_RISKY_LICSUB) THEN 1 ELSE 0 END AS IsLicSubSpecialCC
 	FROM Temp_Cust AS tmpCust
 		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID
 	WHERE tmpCc.CategoryGroupID IS NULL 

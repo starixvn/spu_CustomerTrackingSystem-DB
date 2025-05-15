@@ -23,6 +23,7 @@ AS
 		- 20240327@Jonas.Huynh: EC2024 - Resolve Locking [Redmine ID: #200842]
 		- 20240426@Thomas.Nguyen: Remove logic New Member Classify Tagging [Redmine ID: #200854]
 		- 20241226@Jonas.Huynh: HF Incorrect CC  [Redmine ID: #214058]
+		- 20250515@Thomas.Nguyen: Add logic for Special Lic Sub [Redmine ID: #226847]
 
 	Param's Explanation:
 		@ScannedMaxId: This parameter is used to output scanned MaxID
@@ -37,12 +38,13 @@ BEGIN
 	
 	DECLARE	@BATCHSIZE						INT 	= 20000;
 
-	DECLARE @FUNCTIONID_REALTIME			TINYINT = 1,
-			@FUNCTIONID_SCANTAGGING			TINYINT = 100;
+	DECLARE @FUNCTIONID_REALTIME					TINYINT = 1,
+			@FUNCTIONID_SCANTAGGING					TINYINT = 100,
+			@FUNCTIONID_SCANSPECIALLICSUBCC			TINYINT = 10;
 
-	DECLARE @SCANTAGGINGTYPE_NOTEXIST		TINYINT = 0,
-			@SCANTAGGINGTYPE_EXIST			TINYINT = 1,
-			@SCANTAGGINGTYPE_EXISTONLY		TINYINT = 2;
+	DECLARE @SCANTAGGINGTYPE_NOTEXIST				TINYINT = 0,
+			@SCANTAGGINGTYPE_EXIST					TINYINT = 1,
+			@SCANTAGGINGTYPE_EXISTONLY				TINYINT = 2;
 
 	DECLARE @GENERAL_LASTSCANNEDID			TINYINT = 3;
 	DECLARE @LastScannedID					BIGINT;
@@ -84,8 +86,10 @@ BEGIN
 	-- #3: Return dataset
 	SELECT CustId			 AS CustId, 
 		   IsRealtimeOnly	 AS IsRealtimeOnly,
-		   ScanTaggingType   AS ScanTaggingType
-	FROM #tmpCustomers;
+		   ScanTaggingType   AS ScanTaggingType,
+		   CASE WHEN np.CustId IS NOT NULL THEN 1 ELSE 0 END AS IsSpecialLicSubCC
+	FROM #tmpCustomers AS tmp WITH(NOLOCK)
+		LEFT JOIN dbo.CustomerClassification_NormalPool AS np WITH(NOLOCK) ON tmp.CustId = np.CustId AND np.FunctionId = @FUNCTIONID_SCANSPECIALLICSUBCC;
 	
 	DROP TABLE #tmpCustomers;
 END;
