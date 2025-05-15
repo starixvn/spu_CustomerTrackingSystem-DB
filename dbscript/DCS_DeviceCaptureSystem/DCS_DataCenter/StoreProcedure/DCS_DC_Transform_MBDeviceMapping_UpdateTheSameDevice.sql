@@ -49,6 +49,28 @@ BEGIN
     DECLARE lv_SameDeviceID 				BIGINT UNSIGNED;
     DECLARE lv_RecoverType		 			SMALLINT; /* 1: FirstRule, 2: SecondRule, 2: ThirdRule */
 
+	
+    /********************** Error handler ***********************************/
+	DECLARE lv_SQLState CHAR(5);
+	DECLARE lv_ErrorCode INT;
+	DECLARE lv_ErrorMessage TEXT;
+	DECLARE lv_FullMessage TEXT;
+
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+	BEGIN
+		GET DIAGNOSTICS CONDITION 1
+			lv_SQLState = RETURNED_SQLSTATE,
+			lv_ErrorCode = MYSQL_ERRNO,
+			lv_ErrorMessage = MESSAGE_TEXT;
+
+		SET lv_FullMessage = CONCAT('SQL:', lv_SQLState, ', code:', lv_ErrorCode, ', Msg:', lv_ErrorMessage);
+        
+		INSERT INTO CTS_Log.FPSLog(SpName, JsonString, OtherText, InsertTime)
+		SELECT 'DCS_DC_Transform_MBDeviceMapping_UpdateTheSameDevice', NULL, lv_FullMessage, CURRENT_TIMESTAMP();
+        
+        RESIGNAL;
+	END;
+    
 	DROP TEMPORARY TABLE IF EXISTS Temp_SameMBDevice;
     
 	CREATE TEMPORARY TABLE Temp_SameMBDevice(

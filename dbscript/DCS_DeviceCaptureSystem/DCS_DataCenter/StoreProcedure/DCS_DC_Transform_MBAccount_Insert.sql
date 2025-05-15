@@ -15,6 +15,7 @@ BEGIN
 
 	    Revisions:
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
+		    - 20250425@Jonathan.Doan: Add field CreatedDate, CreatedTime [Redmine ID: #221973]
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_MBAccount_Insert('[{"SubscriberID":2,"LoginName":"qatest002","TransTime":"2024-11-21 05:06:07"}]');
@@ -22,6 +23,27 @@ BEGIN
             SELECT * FROM DCS_DataCenter.MBAccount ORDER BY ID DESC;
     */
     DECLARE lv_CurrentDatetime DATETIME DEFAULT NOW();
+    
+    /********************** Error handler ***********************************/
+	DECLARE lv_SQLState CHAR(5);
+	DECLARE lv_ErrorCode INT;
+	DECLARE lv_ErrorMessage TEXT;
+	DECLARE lv_FullMessage TEXT;
+
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+	BEGIN
+		GET DIAGNOSTICS CONDITION 1
+			lv_SQLState = RETURNED_SQLSTATE,
+			lv_ErrorCode = MYSQL_ERRNO,
+			lv_ErrorMessage = MESSAGE_TEXT;
+
+		SET lv_FullMessage = CONCAT('SQL:', lv_SQLState, ', code:', lv_ErrorCode, ', Msg:', lv_ErrorMessage);
+        
+		INSERT INTO CTS_Log.FPSLog(SpName, JsonString, OtherText, InsertTime)
+		SELECT 'DCS_DC_Transform_MBAccount_Insert', NULL, lv_FullMessage, CURRENT_TIMESTAMP();
+        
+        RESIGNAL;
+	END;
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_AccountInsert;
 	CREATE TEMPORARY TABLE Temp_AccountInsert(
@@ -51,11 +73,13 @@ BEGIN
 		INNER JOIN DCS_DataCenter.MBAccount AS acc ON acc.SubscriberID = tmp.SubscriberID AND acc.LoginName = tmp.LoginName
     SET tmp.IsNewRecord = 0;
 	
-	INSERT INTO DCS_DataCenter.MBAccount(SubscriberID, LoginName, LastLoginTime, InsertedTime)
+	INSERT INTO DCS_DataCenter.MBAccount(SubscriberID, LoginName, LastLoginTime, InsertedTime, CreatedDate, CreatedTime)
 	SELECT	SubscriberID
 		,	LoginName
 		,	TransTime
-		,	lv_CurrentDatetime
+		,	lv_CurrentDatetime AS InsertedTime
+		,	DATE(TransTime) AS CreatedDate
+		,	TransTime AS CreatedTime
 	FROM Temp_AccountInsert
     WHERE IsNewRecord = 1;
 END$$

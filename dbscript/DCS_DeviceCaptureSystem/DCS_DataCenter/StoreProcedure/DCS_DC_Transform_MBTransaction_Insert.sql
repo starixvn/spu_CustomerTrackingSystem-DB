@@ -22,8 +22,8 @@ BEGIN
     */
     
     DECLARE lv_CurrentDatetime 				DATETIME DEFAULT NOW();
-    DECLARE lv_ListMBDeviceCodeMediaDRM 	LONGTEXT;
-    DECLARE lv_ListMBDeviceCodeTagging	 	LONGTEXT;
+    DECLARE lv_MBDeviceCodeMediaDRMJson 	LONGTEXT;
+    DECLARE lv_MBDeviceCodeTaggingJson	 	LONGTEXT;
     DECLARE lv_MBAccountJson 				LONGTEXT;
     DECLARE lv_ActionResultJson 			LONGTEXT;
     DECLARE lv_MBDeviceCodeMachineJson 		LONGTEXT;
@@ -139,20 +139,34 @@ BEGIN
 	CALL DCS_DC_Transform_ActionResult_Insert(lv_ActionResultJson);
     
     /* === Insert new MBDeviceCodeMediaDRM === */
-	SELECT GROUP_CONCAT(DISTINCT MBDeviceCodeMediaDRM)
-	INTO lv_ListMBDeviceCodeMediaDRM
-	FROM Temp_MBRawTransaction
-	WHERE MBDeviceCodeMediaDRM IS NOT NULL;
+    WITH CTE_DistinctData AS (
+		SELECT	DISTINCT
+				MBDeviceCodeMediaDRM
+            ,	TransTime
+		FROM Temp_MBRawTransaction
+		WHERE SubscriberID IS NOT NULL
+			AND LoginName IS NOT NULL
+    )
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+					'Code'			, MBDeviceCodeMediaDRM
+				,	'TransTime'		, TransTime
+                    
+			)
+		) AS json_data
+	INTO lv_MBDeviceCodeMediaDRMJson
+	FROM CTE_DistinctData;
     
-    IF (lv_ListMBDeviceCodeMediaDRM IS NOT NULL AND lv_ListMBDeviceCodeMediaDRM <> '') THEN
-		CALL DCS_DC_Transform_MBDeviceCodeMediaDRM_Insert(lv_ListMBDeviceCodeMediaDRM);
+    IF (lv_MBDeviceCodeMediaDRMJson IS NOT NULL AND lv_MBDeviceCodeMediaDRMJson <> '') THEN
+		CALL DCS_DC_Transform_MBDeviceCodeMediaDRM_Insert(lv_MBDeviceCodeMediaDRMJson);
 	END IF;
     
     /* === Insert new MBDeviceCodeMachine === */ -- [{"Code":"Code4", "MachineOSType":"2"},{"Code":"Code2"},{"Code":"Code3", "MachineOSType":""}]
     WITH CTE_DistinctData AS (
 		SELECT	DISTINCT
-				MBDeviceCodeMachine,
-                OSName
+				MBDeviceCodeMachine
+            ,	OSName
+            ,	TransTime
 		FROM Temp_MBRawTransaction
 		WHERE SubscriberID IS NOT NULL
 			AND LoginName IS NOT NULL
@@ -161,6 +175,7 @@ BEGIN
 			JSON_OBJECT(
 					'Code'			, MBDeviceCodeMachine
 				,	'MachineOS'		, OSName
+				,	'TransTime'		, TransTime
                     
 			)
 		) AS json_data
@@ -172,13 +187,26 @@ BEGIN
 	END IF;
     
     /* === Insert new MBDeviceCodeTagging === */
-	SELECT GROUP_CONCAT(DISTINCT MBDeviceCodeTagging)
-	INTO lv_ListMBDeviceCodeTagging
-	FROM Temp_MBRawTransaction
-	WHERE MBDeviceCodeTagging IS NOT NULL;
+    WITH CTE_DistinctData AS (
+		SELECT	DISTINCT
+				MBDeviceCodeTagging
+            ,	TransTime
+		FROM Temp_MBRawTransaction
+		WHERE SubscriberID IS NOT NULL
+			AND LoginName IS NOT NULL
+    )
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+					'Code'			, MBDeviceCodeTagging
+				,	'TransTime'		, TransTime
+                    
+			)
+		) AS json_data
+	INTO lv_MBDeviceCodeTaggingJson
+	FROM CTE_DistinctData;
     
-    IF (lv_ListMBDeviceCodeTagging IS NOT NULL AND lv_ListMBDeviceCodeTagging <> '') THEN
-		CALL DCS_DC_Transform_MBDeviceCodeTagging_Insert(lv_ListMBDeviceCodeTagging);
+    IF (lv_MBDeviceCodeTaggingJson IS NOT NULL AND lv_MBDeviceCodeTaggingJson <> '') THEN
+		CALL DCS_DC_Transform_MBDeviceCodeTagging_Insert(lv_MBDeviceCodeTaggingJson);
 	END IF;
     
     /* === Insert new MBDeviceModel === */ -- {"ModelName":"sdk_gphone64_x86_64", "Manufacturer":"Google", "Brand": "google"}
@@ -187,6 +215,7 @@ BEGIN
 				ModelName
 			,	Manufacturer
             ,	Brand
+            ,	TransTime
 		FROM Temp_MBRawTransaction
 		WHERE ModelName IS NOT NULL
 			OR Manufacturer IS NOT NULL
@@ -197,6 +226,7 @@ BEGIN
 					'ModelName'			, ModelName
 				,	'Manufacturer'		, Manufacturer
 				,	'Brand'				, Brand
+				,	'TransTime'			, TransTime
 			)
 		) AS json_data
 	INTO lv_MBDeviceModelJson
@@ -212,6 +242,7 @@ BEGIN
 				CountryName
 			,	TimeZone
 			,	Language
+			,	TransTime
 		FROM Temp_MBRawTransaction
 		WHERE CountryName IS NOT NULL
 			OR TimeZone IS NOT NULL
@@ -222,6 +253,7 @@ BEGIN
 					'CountryName'		, CountryName
 				,	'TimeZone'			, TimeZone
 				,	'LanguageName'		, Language
+				,	'TransTime'			, TransTime
 			)
 		) AS json_data
 	INTO lv_MBUserSettingJson
@@ -236,6 +268,7 @@ BEGIN
 		SELECT	DISTINCT
 				OSName
 			,	SDKVersion
+			,	TransTime
 		FROM Temp_MBRawTransaction
 		WHERE OSName IS NOT NULL
     )
@@ -243,6 +276,7 @@ BEGIN
 			JSON_OBJECT(
 					'OSName'		, OSName
 				,	'Version'		, SDKVersion
+				,	'TransTime'		, TransTime
 			)
 		) AS json_data
 	INTO lv_MBOSJson
