@@ -75,12 +75,13 @@ BEGIN
         WHERE stl.ListID = CONST_STATICLIST_LICSUBSTATUSCODE 
 			AND stl.ItemValue = CONST_STATICLIST_LICSUBSTATUSCODE_INVALID;   
             
-		INSERT INTO CTS_DataCenter.Customer_SpecialLicSubCC(Username, APICustomerClass, ProcessStatus, StatusCode, InsertedTime)
+		INSERT INTO CTS_DataCenter.Customer_SpecialLicSubCC(Username, APICustomerClass, ProcessStatus, StatusCode, InsertedTime, ResponseTime)
 		SELECT	ip_UserName
 			,	ip_CustomerClass
 			,	CONST_PROCESSSTATUS_COMPLETED AS ProcessStatus
             ,	lv_StatusCode
 			, 	CONST_INSERTEDTIME AS InsertedTime
+            ,	CONST_INSERTEDTIME AS ResponseTime
 		;
             
 	END IF;
@@ -88,8 +89,7 @@ BEGIN
     SELECT 	cus.ID					
 		,	cus.UserName 		
 		,	cus.APICustomerClass
-        ,	lv_StatusCode 		AS StatusCode
-        ,	lv_ErrorMessage 	AS ErrorMessage        
+        ,	cus.InsertedTime
 	FROM CTS_DataCenter.Customer_SpecialLicSubCC AS cus
     WHERE cus.ID > lv_MaxID 
 		AND InsertedTime = CONST_INSERTEDTIME;     

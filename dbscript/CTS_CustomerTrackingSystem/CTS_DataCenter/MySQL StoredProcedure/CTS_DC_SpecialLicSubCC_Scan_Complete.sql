@@ -19,22 +19,22 @@ BEGIN
 		Param's Explanation (filtered by): 
 
 		Example:
-			CALL CTS_DC_SpecialLicSubCC_Scan_Get(1000);
+			CALL CTS_DC_SpecialLicSubCC_Scan_Complete(@ip_BatchSize:=5);
 	*/   
-    IF EXISTS (SELECT 1 FROM CTS_DataCenter.Customer_SpecialLicSubCC AS cus WHERE cus.ProcessStatus = 1) THEN
+	DECLARE CONST_PROCESSSTATUS_INPROGRESS	TINYINT DEFAULT 1;
     
-		SELECT NULL AS CustID;
-        
-	ELSE
+    DROP TEMPORARY TABLE IF EXISTS Temp_ID;
+    CREATE TEMPORARY TABLE Temp_ID(
+		ID	INT PRIMARY KEY
+    );
+   
+    SET @sql = CONCAT("INSERT INTO Temp_ID (ID) VALUES ('", REPLACE(ip_IDList, ",", "'),('"),"');");
+	PREPARE stmt1 FROM @sql;
+	EXECUTE stmt1;
     
-		SELECT 	cus.ID
-			,	cus.CustID AS CustID
-        FROM CTS_DataCenter.Customer_SpecialLicSubCC AS cus
-        WHERE cus.ProcessStatus = 0 AND cus.CustID IS NOT NULL
-        ORDER BY cus.ID ASC
-        LIMIT ip_BatchSize;
-        
-    END IF;
+    UPDATE CTS_DataCenter.Customer_SpecialLicSubCC AS cus
+		INNER JOIN Temp_ID AS tmp ON cus.ID = tmp.ID
+	SET cus.ProcessStatus = CONST_PROCESSSTATUS_INPROGRESS;
 
 END$$
 DELIMITER ;
