@@ -8,6 +8,9 @@
 USE [bodb_VR2Model]
 GO
 
+ALTER TABLE CustomerClassification
+ADD IsSpecialLicSub BIT;
+
 INSERT INTO dbo.CustomerClassification_Priority(GroupId, GroupName, FunctionId, FunctionName, Priority) 
 VALUES 
 (1, 'ByFlow', 10, 'Scan Special Lic Sub CC', 10);

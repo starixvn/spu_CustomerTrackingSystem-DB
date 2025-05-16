@@ -29,6 +29,7 @@ AS
 		- 20240618@Jonas.Huynh: Renovate CC - Phase 2 [Redmine ID: #205317]
 		- 20241223@Jonas.Huynh: HF Incorrect Inactive Category [Redmine ID: #215615]
 		- 20250515@Long.Luu: 	Add new 3 special licensees "Winbox, SM88, and SL88SW" [Redmine ID: #226846]
+		- 20250515@Thomas.Nguyen: Add logic for Special Lic Sub [Redmine ID: #226847]
 
 	Param's Explanation:
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
@@ -68,7 +69,8 @@ BEGIN
 
 	DECLARE @ScanTaggingType_NotExist		TINYINT = 0,
 			@ScanTaggingType_Exist			TINYINT = 1,
-			@ScanTaggingType_ExistOnly		TINYINT = 2;
+			@ScanTaggingType_ExistOnly		TINYINT = 2,
+			@ScanSpecialLicSubType_Exist	TINYINT = 1;
 
 	DECLARE @ListCustIds					VARCHAR(MAX);
 
@@ -104,7 +106,8 @@ BEGIN
 	CREATE TABLE #tmpScanTaggingCustomer(
 		CustId			       INT PRIMARY KEY,
 		CurrentCategoryId      INT		NOT NULL,
-		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0
+		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0,
+		ScanSpecialLicSubType  TINYINT	NOT NULL DEFAULT 0
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -146,7 +149,8 @@ BEGIN
 		Margin				   DECIMAL(19, 4) NOT NULL,
 		BetCount			   BIGINT		  NOT NULL,
 		ActiveDays			   INT			  NOT NULL,
-		PerformanceTime        DATETIME       NOT NULL
+		PerformanceTime        DATETIME       NOT NULL,
+		ScanSpecialLicSubType  TINYINT        NOT NULL DEFAULT 0
 	);
 
 	CREATE CLUSTERED INDEX CIX_tmpCustomerAccummulatedInfo_CustId ON #tmpCustomerAccummulatedInfo(
@@ -183,13 +187,14 @@ BEGIN
 	);
 
 	-- #1: Get list customers
-	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay, ScanTaggingType)
+	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay, ScanTaggingType, ScanSpecialLicSubType)
 	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
 		,	T.C.value('./@CategoryId', 'INT')			AS CurrentCategoryId
 		,	T.C.value('./@IsNewCreated', 'BIT')			AS IsNewCreated
 		,	T.C.value('./@IsRealtimeOnly', 'BIT')		AS IsRealtimeOnly
 		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
 		,	T.C.value('./@ScanTaggingType', 'TINYINT')	AS ScanTaggingType
+		,	T.C.value('./@ScanSpecialLicSubType', 'TINYINT')	AS ScanSpecialLicSubType
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
@@ -218,7 +223,7 @@ BEGIN
 	DELETE a WITH (ROWLOCK)
 	OUTPUT DELETED.CustId,DELETED.CurrentCategoryId, DELETED.ScanTaggingType INTO #tmpScanTaggingCustomer(CustId, CurrentCategoryId, ScanTaggingType)
 	FROM #tmpCustomers AS a
-	WHERE ScanTaggingType = @ScanTaggingType_ExistOnly
+	WHERE ScanTaggingType = @ScanTaggingType_ExistOnly OR ScanSpecialLicSubType = @ScanSpecialLicSubType_Exist;
 
 	IF (EXISTS (SELECT 1 FROM #tmpCustomers))
 	BEGIN
@@ -267,7 +272,7 @@ BEGIN
 	IF (EXISTS (SELECT 1 FROM #tmpScanTaggingCustomer))
 	BEGIN
 		-- #8.1: Classify Tagging (link Association, TWGB,...)
-		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
+		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType, ScanSpecialLicSubType)
 		SELECT t.CustId
 			,  @GENERAL_SPORTID
 			,  t.CurrentCategoryId
@@ -280,6 +285,7 @@ BEGIN
 			,  c.ActiveDays
 			,  ISNULL(c.PerformanceTime, @CurrentDateTime)
 			,  t.ScanTaggingType
+			,  t.ScanSpecialLicSubType
 		FROM #tmpScanTaggingCustomer AS t
 			LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId;
 
