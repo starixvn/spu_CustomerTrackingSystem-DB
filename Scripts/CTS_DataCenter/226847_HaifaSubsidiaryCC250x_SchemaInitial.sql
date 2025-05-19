@@ -30,6 +30,12 @@ CREATE TABLE Customer_SpecialLicSubCC(
     ,	INDEX IX_Customer_Customer_SpecialLicSubCC_ProcessStatusCustID(ProcessStatus, CustID)
 );
 
+DELETE FROM CustomerCategory 
+WHERE  CategoryID IN (40106,40406,40506,40606);
+
+DELETE FROM CustomerCategorySettings 
+WHERE  CategoryID IN (40106,40406,40506,40606);
+
 INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,CustomerClass,CustomerClassName,CategoryGroupID,CategoryPriority,CustomerClassPriority,BusinessCategoryGroupID,IsActive,ScanIntervalInSecond,ScanTaggingIntervalInSecond,RelevantCategoryID,IsHedgingReasonMM,TVSReasonID,IsPAProbation,IsDangerProbation,AFCFraudID,DataSource,CreatedDate,CategoryNameCN,CategoryNameCN3,CategoryNameTHB,CategoryNameIND,CustomerClassNameCN,SabaSportType,TaggingID,TaggingType,RootTaggingID,OldCategoryID,ColorTypeID,Ext_ABIDangerLevel_Licensee,Ext_ABIDangerLevel_Credit,Ext_DangerLevelType,Ext_CategoryGroupID,Ext_EvidenceID_Licensee,Ext_EvidenceID_Credit,Ext_SabaIntelligentRiskLevel,Ext_SabaIntelligentRiskLevelTCN,Ext_SabaIntelligentRiskLevelSCN,Ext_SabaIntelligentRiskLevelCN3,Ext_SabaIntelligentRiskLevelTHB,Ext_SabaIntelligentRiskLevelIND)
 VALUES(40106,'New (Lic Sub)','New Member (43)',40000,2500,'New',40100,850,850,30,1,NULL,86400,NULL,NULL,NULL,0,1,NULL,NULL,NOW(),'新注册玩家','Mới (tuyến phụ)','ใหม่ (สายรอง)','Baru (jalur sekunder)','新會員',NULL,1,3,NULL,234,1,NULL,NULL,1,201,NULL,NULL,'New','新玩家','新玩家','Mới','นักเดิมพันใหม่','Baru')
 ,(40406,'Prob (Lic Sub)','Probation (45)',40000,2503,'Suspicious',40400,850,850,30,1,1209600,86400,NULL,NULL,NULL,0,0,NULL,NULL,NOW(),'观察中玩家','Theo dõi (tuyến phụ)','ติดตาม (สายรอง)','Pantau (jalur sekunder)','可疑',NULL,1,3,NULL,254,2,NULL,NULL,1,206,NULL,NULL,'Suspicious','可疑','可疑','Đáng ngờ','น่าสงสัย','Mencurigakan')
