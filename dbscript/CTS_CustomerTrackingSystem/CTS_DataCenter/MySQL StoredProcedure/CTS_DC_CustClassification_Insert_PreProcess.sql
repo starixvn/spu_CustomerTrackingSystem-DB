@@ -65,6 +65,7 @@ BEGIN
 			, 	LastProbationDay		DATE
 			,	ScanTaggingType			TINYINT DEFAULT 0   
 			,	IsPassProbationRule		TINYINT(1)
+			,	ScanSpecialLicSubType	TINYINT DEFAULT 0
 		);
 
 		DROP TEMPORARY TABLE IF EXISTS Temp_CustIgnoranceAction;    
@@ -75,12 +76,13 @@ BEGIN
 		); 
 		
 		 /*GET PROBATION CUSTOMERS*/
-		INSERT IGNORE INTO Temp_ProbationCustomer(CustID, DWCategoryGroupID, ProbationDate, LastProbationDay, ScanTaggingType)
+		INSERT IGNORE INTO Temp_ProbationCustomer(CustID, DWCategoryGroupID, ProbationDate, LastProbationDay, ScanTaggingType, ScanSpecialLicSubType)
 		SELECT 	cls.CustID
 			,	temp.DWCategoryGroupID	
 			, 	DATE(cls.CreatedDate)
 			, 	lv_FromProbationLastDay
 			, 	temp.ScanTaggingType
+			, 	temp.ScanSpecialLicSubType
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
