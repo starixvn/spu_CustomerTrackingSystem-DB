@@ -52,7 +52,8 @@ BEGIN
 	
     UPDATE CTS_DataCenter.Customer_SpecialLicSubCC AS cus
 		INNER JOIN Temp_Cust AS tmp ON cus.CustID = tmp.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmp.CategoryID
+        LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmp.CustID
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID
 	SET 	cus.ProcessStatus = CONST_PROCESSSTATUS_COMPLETE
 		,	cus.LatestCustomerClass = cat.CustomerClass
 		,	cus.StatusCode = (CASE WHEN cus.APICustomerClass = cat.CustomerClass THEN CONST_STATUSCODE_SUCCESS_EXACTLY
@@ -62,8 +63,8 @@ BEGIN
 	   
 	UPDATE CTS_DataCenter.Customer_SpecialLicSubCC AS cus
 		INNER JOIN Temp_Cust AS tmp ON cus.CustID = tmp.CustID
-        LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CategoryID = tmp.CategoryID
-        LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmp.CategoryID
+        LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmp.CustID
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID
 	SET 	cus.ProcessStatus = CONST_PROCESSSTATUS_COMPLETE
 		,	cus.LatestCustomerClass = cat.CustomerClass
 		,	cus.StatusCode = CONST_STATUSCODE_UNSUCCESS
