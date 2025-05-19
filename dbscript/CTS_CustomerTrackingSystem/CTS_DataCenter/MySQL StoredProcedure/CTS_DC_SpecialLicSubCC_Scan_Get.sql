@@ -22,8 +22,9 @@ BEGIN
 			CALL CTS_DC_SpecialLicSubCC_Scan_Get(@ip_BatchSize:=5);
 	*/   
     IF EXISTS (SELECT 1 FROM CTS_DataCenter.Customer_SpecialLicSubCC AS cus WHERE cus.ProcessStatus = 1) THEN
-    
-		SELECT NULL AS CustID;
+        
+        SELECT 0 AS 'CustID' 
+        WHERE -1 = 1;
         
 	ELSE
     
