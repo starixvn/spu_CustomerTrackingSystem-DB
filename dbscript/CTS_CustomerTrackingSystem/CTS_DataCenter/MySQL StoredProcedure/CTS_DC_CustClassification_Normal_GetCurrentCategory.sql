@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_Normal_GetC
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_Normal_GetCurrentCategory`(
-		IN ip_Customer	JSON
+		IN ip_CustIDList	TEXT
 )
     SQL SECURITY INVOKER
 BEGIN
