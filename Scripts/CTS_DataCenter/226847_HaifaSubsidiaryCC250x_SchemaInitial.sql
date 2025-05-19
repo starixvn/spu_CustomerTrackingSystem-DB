@@ -13,17 +13,6 @@ Reviewer:
 
 USE CTS_DataCenter;
 
-#
-/*
-DROP TABLE IF EXISTS Customer_SpecialLicSubCC_Log;
-CREATE TABLE Customer_SpecialLicSubCC_Log(
-		ID				BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
-	,	Username		VARCHAR(50) NOT NULL
-    ,	CustomerClass 	INT UNSIGNED NOT NULL
-    ,	InsertedTime		DATETIME(4) NOT NULL
-);
-*/
-
 DROP TABLE IF EXISTS Customer_SpecialLicSubCC;
 CREATE TABLE Customer_SpecialLicSubCC(
 		ID						INT UNSIGNED AUTO_INCREMENT PRIMARY KEY	
@@ -41,16 +30,18 @@ CREATE TABLE Customer_SpecialLicSubCC(
     ,	INDEX IX_Customer_Customer_SpecialLicSubCC_ProcessStatusCustID(ProcessStatus, CustID)
 );
 
-# CustomerCategory
-#CREATE TABLE CustomerCategory_CaseyBk20250514 SELECT * FROM CustomerCategory ;
+INSERT INTO CTS_DataCenter.CustomerCategory(CategoryID,CategoryName,CategorySpec,ParentID,CustomerClass,CustomerClassName,CategoryGroupID,CategoryPriority,CustomerClassPriority,BusinessCategoryGroupID,IsActive,ScanIntervalInSecond,ScanTaggingIntervalInSecond,RelevantCategoryID,IsHedgingReasonMM,TVSReasonID,IsPAProbation,IsDangerProbation,AFCFraudID,DataSource,CreatedDate,CategoryNameCN,CategoryNameCN3,CategoryNameTHB,CategoryNameIND,CustomerClassNameCN,SabaSportType,TaggingID,TaggingType,RootTaggingID,OldCategoryID,ColorTypeID,Ext_ABIDangerLevel_Licensee,Ext_ABIDangerLevel_Credit,Ext_DangerLevelType,Ext_CategoryGroupID,Ext_EvidenceID_Licensee,Ext_EvidenceID_Credit,Ext_SabaIntelligentRiskLevel,Ext_SabaIntelligentRiskLevelTCN,Ext_SabaIntelligentRiskLevelSCN,Ext_SabaIntelligentRiskLevelCN3,Ext_SabaIntelligentRiskLevelTHB,Ext_SabaIntelligentRiskLevelIND)
+VALUES(40106,'New (Lic Sub)','New Member (43)',40000,2500,'New',40100,850,850,30,1,NULL,86400,NULL,NULL,NULL,0,1,NULL,NULL,NOW(),'新注册玩家','Mới (tuyến phụ)','ใหม่ (สายรอง)','Baru (jalur sekunder)','新會員',NULL,1,3,NULL,234,1,NULL,NULL,1,201,NULL,NULL,'New','新玩家','新玩家','Mới','นักเดิมพันใหม่','Baru')
+,(40406,'Prob (Lic Sub)','Probation (45)',40000,2503,'Suspicious',40400,850,850,30,1,1209600,86400,NULL,NULL,NULL,0,0,NULL,NULL,NOW(),'观察中玩家','Theo dõi (tuyến phụ)','ติดตาม (สายรอง)','Pantau (jalur sekunder)','可疑',NULL,1,3,NULL,254,2,NULL,NULL,1,206,NULL,NULL,'Suspicious','可疑','可疑','Đáng ngờ','น่าสงสัย','Mencurigakan')
+,(40506,'Smart (Lic Sub)','Smart Punter (46)',40000,2504,'Dangerous',40500,850,850,30,1,1209600,86400,NULL,NULL,NULL,0,0,NULL,NULL,NOW(),'精明玩家','Thông minh (tuyến phụ)','สมาร์ท (สายรอง)','Kecerdasan (jalur sekunder)','危險',NULL,1,3,NULL,264,2,NULL,NULL,1,203,NULL,NULL,'Dangerous','危險','危险','Nguy hiểm','อันตราย','Berbahaya')
+,(40606,'Risky (Lic Sub)','High Risk Punter (47)',40000,2505,'Dangerous',40600,845,850,30,1,1209600,86400,NULL,NULL,NULL,0,0,NULL,NULL,NOW(),'高风险玩家','Rủi ro (tuyến phụ)','ความเสี่ยง (สายรอง)','Risiko (jalur sekunder)','危險',NULL,1,3,NULL,274,2,NULL,NULL,1,204,NULL,NULL,'Dangerous','危險','危险','Nguy hiểm','อันตราย','Berbahaya')
+;
 
-UPDATE CustomerCategory
-SET   IsActive = 1
-	, CustomerClassPriority = 850
-	, CategoryPriority = (CASE WHEN CategoryID = 40606 THEN 845 ELSE 850 END)
-    , RemarkTemplateID = 42
-    , FlowNormalTaggingScan = 1
-WHERE  CategoryID IN (40106,40406,40506,40606);
+INSERT INTO CTS_DataCenter.CustomerCategorySettings(CategoryID,CategoryGroupID,ParentID,IsParallelParentID,IsMultiCateIDSameParentID,IsKeepOldCateID,RemarkTemplateID,InsertPARescanType,InsertNormalRescanType,ActualProblemCategory,PotentialCategory,NormalCategory,NormalLinkCategory,FlowNormalDailyScan,FlowNormalClassification,FlowNormalRealtimeScan,FlowNormalTaggingScan,FlowPADailyScan,ExcludedFromClassifyMM,FlowNormalDgrAssociation,IsFirstTWTagging)
+VALUES(40106,40100,40000,0,0,0,59,0,1,0,0,1,0,0,1,1,0,0,0,0,0)
+,(40406,40400,40000,0,0,0,59,0,1,0,0,1,0,0,1,1,0,0,0,0,0)
+,(40506,40500,40000,0,0,0,59,0,1,0,0,1,0,0,1,1,0,0,0,0,0)
+,(40606,40600,40000,0,0,0,59,0,1,0,0,1,0,0,1,1,0,0,0,0,0);
 
 INSERT INTO StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,ItemParentItemID,PriorityOrder,Status,Description,CreatedDate)
 VALUES(25,1,'LicSubCustomerClass','','LicSubCustomerClass_New','',200,NULL,NULL,NULL,1,NULL,NOW())
@@ -65,180 +56,7 @@ VALUES(26,1,'LicSubStatusCode','','LicSubStatusCode_Successfully','Updated playe
 ,(26,4,'LicSubStatusCode','','LicSubStatusCode_Fail','CC update failed, player CC does not match',400,NULL,NULL,NULL,1,NULL,NOW())
 ,(26,5,'LicSubStatusCode','','LicSubStatusCode_Fail','CC update failed, player CC does not fit the rule',401,NULL,NULL,NULL,1,NULL,NOW());
 
-SELECT *
-FROM CTS_DataCenter.StaticList WHERE ListID IN (25,26);
-
-SELECT CustomerClassPriority, CategoryPriority, cat.*
-FROM CustomerCategory cat
-WHERE  CategoryID IN (40100,40400,40500,40600,40106,40406,40506,40606)
-ORDER BY CustomerClassPriority DESC;
-
-# CustomerCategorySettings == Existing will dupcheck flow
-SELECT cat.CategoryName, cat.CategoryPriority, cat.CustomerClassPriority,  st.*
-FROM CustomerCategorySettings st
-	INNER JOIN CustomerCategory as cat ON st.CategoryID = cat.CategoryID
-WHERE  cat.CategoryID IN (40100,40400,40500,40600,40106,40406,40506,40606,21100)
-;
-
-
-SELECT * FROM StaticList WHERE ListID = 6
-SELECT * FROM StaticList where itemvalue IN (40100,40400,40500,40600);
-SELECT * FROM StaticList where itemvalue IN (200,203,204,205);
-# CustomerClassification_Remark == 
-USE CTS_DataCenter;
-
-SELECT *
-FROM CustomerCategory
-WHERE CustomerClass IN (200,203,204,205)
-
-;
-/*
-DROP TEMPORARY TABLE IF EXISTS Temp_Priority;
-create temporary table Temp_Priority(CustomerClassPriority INT,	CategoryPriority INT,	CategoryID INT);
-INSERT INTO Temp_Priority
-VALUE (10,10,1010)
-,(900,300,10100)
-,(310,320,10200)
-,(300,300,10201)
-,(200,200,10300)
-,(400,400,20100)
-,(400,400,20101)
-,(400,400,20102)
-,(400,400,20103)
-,(400,400,20200)
-,(400,400,20201)
-,(400,400,20202)
-,(400,400,20203)
-,(400,400,20300)
-,(400,400,20301)
-,(400,400,20302)
-,(400,400,20303)
-,(400,400,20400)
-,(400,400,20401)
-,(400,400,20402)
-,(400,400,20403)
-,(400,400,20500)
-,(400,400,20501)
-,(400,400,20502)
-,(400,400,20503)
-,(400,400,20600)
-,(400,400,20601)
-,(400,400,20602)
-,(400,400,20603)
-,(400,400,20700)
-,(400,400,20701)
-,(400,400,20800)
-,(400,400,20801)
-,(400,400,20802)
-,(400,400,20900)
-,(420,420,21000)
-,(570,570,21100)
-,(400,400,21101)
-,(400,400,21103)
-,(580,580,21200)
-,(400,400,21300)
-,(400,400,21302)
-,(400,400,21303)
-,(400,400,21402)
-,(400,400,21500)
-,(400,400,21501)
-,(400,400,21502)
-,(400,400,21503)
-,(400,400,21600)
-,(400,400,21602)
-,(400,400,21700)
-,(400,400,21701)
-,(570,570,21800)
-,(400,400,25100)
-,(400,400,25101)
-,(400,400,25102)
-,(400,400,25103)
-,(400,400,25200)
-,(400,400,25201)
-,(400,400,25202)
-,(400,400,25203)
-,(400,400,25300)
-,(400,400,25301)
-,(400,400,25302)
-,(400,400,25303)
-,(400,400,25400)
-,(400,400,25401)
-,(400,400,25402)
-,(400,400,25403)
-,(400,400,25500)
-,(400,400,25501)
-,(400,400,25502)
-,(400,400,25503)
-,(400,400,25600)
-,(400,400,25601)
-,(400,400,25602)
-,(400,400,25603)
-,(400,400,25700)
-,(400,400,25701)
-,(400,400,25800)
-,(400,400,25801)
-,(400,400,25802)
-,(400,400,25900)
-,(420,420,26000)
-,(570,570,26100)
-,(580,580,26200)
-,(570,570,26800)
-,(530,530,30100)
-,(500,500,30200)
-,(450,450,30300)
-,(530,530,35100)
-,(500,500,35200)
-,(450,450,35300)
-,(1000,1000,40100)
-,(800,800,40101)
-,(800,800,40102)
-,(800,800,40103)
-,(600,600,40104)
-,(750,750,40105)
-,(550,550,40106)
-,(1000,1000,40200)
-,(800,800,40201)
-,(800,800,40202)
-,(800,800,40203)
-,(600,600,40204)
-,(750,750,40205)
-,(1000,1000,40300)
-,(800,800,40301)
-,(800,800,40302)
-,(800,800,40303)
-,(600,600,40304)
-,(750,750,40305)
-,(1000,1000,40400)
-,(800,800,40401)
-,(800,800,40402)
-,(800,800,40403)
-,(600,600,40404)
-,(750,750,40405)
-,(550,550,40406)
-,(1000,1000,40500)
-,(800,800,40501)
-,(800,800,40502)
-,(800,800,40503)
-,(600,600,40504)
-,(750,750,40505)
-,(550,550,40506)
-,(1000,1000,40600)
-,(800,795,40601)
-,(800,795,40602)
-,(800,795,40603)
-,(600,595,40604)
-,(750,745,40605)
-,(550,545,40606)
-,(1000,1000,40700)
-,(1000,1000,40701);
-
-UPDATE CustomerCategory AS cat
-INNER JOIN Temp_Priority AS t ON cat.CategoryID = t.CategoryID
-SET cat.CategoryPriority= t.CategoryPriority, cat.CustomerClassPriority = t.CustomerClassPriority;
-*/
-
-
 /*========================================THOMAS=============================================*/
 INSERT INTO CustomerClassification_Remark (RemarkID,RemarkTemplate,Description)
 VALUES
-(59,'Turnover: [TurnOver] | Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]',Null);
+(59,'Turnover: [TurnOver] | Win loss: [Winloss] | Margin: [Margin] | Bet Count: [BetCount]',NULL);
