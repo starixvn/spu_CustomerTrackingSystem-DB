@@ -89,7 +89,8 @@ BEGIN
 		IsActiveWithin30Days   BIT		NOT NULL DEFAULT 0,
 		IsDeposit			   BIT		NOT NULL DEFAULT 0,
 		IsSpecialSite		   BIT		NOT NULL DEFAULT 0,
-		SRecommend			   INT
+		SRecommend			   INT,
+		ScanSpecialLicSubType  TINYINT	NOT NULL DEFAULT 0
 	);
 	
 	CREATE NONCLUSTERED INDEX IX_tmpCustomers_IsRealtimeOnly_CurrentCategoryId_ScanTaggingType ON #tmpCustomers(
@@ -149,8 +150,7 @@ BEGIN
 		Margin				   DECIMAL(19, 4) NOT NULL,
 		BetCount			   BIGINT		  NOT NULL,
 		ActiveDays			   INT			  NOT NULL,
-		PerformanceTime        DATETIME       NOT NULL,
-		ScanSpecialLicSubType  TINYINT        NOT NULL DEFAULT 0
+		PerformanceTime        DATETIME       NOT NULL
 	);
 
 	CREATE CLUSTERED INDEX CIX_tmpCustomerAccummulatedInfo_CustId ON #tmpCustomerAccummulatedInfo(
@@ -221,7 +221,7 @@ BEGIN
 
 	-- #4: Scan tagging only
 	DELETE a WITH (ROWLOCK)
-	OUTPUT DELETED.CustId,DELETED.CurrentCategoryId, DELETED.ScanTaggingType INTO #tmpScanTaggingCustomer(CustId, CurrentCategoryId, ScanTaggingType)
+	OUTPUT DELETED.CustId,DELETED.CurrentCategoryId, DELETED.ScanTaggingType, DELETED.ScanSpecialLicSubType INTO #tmpScanTaggingCustomer(CustId, CurrentCategoryId, ScanTaggingType, ScanSpecialLicSubType)
 	FROM #tmpCustomers AS a
 	WHERE ScanTaggingType = @ScanTaggingType_ExistOnly OR ScanSpecialLicSubType = @ScanSpecialLicSubType_Exist;
 
