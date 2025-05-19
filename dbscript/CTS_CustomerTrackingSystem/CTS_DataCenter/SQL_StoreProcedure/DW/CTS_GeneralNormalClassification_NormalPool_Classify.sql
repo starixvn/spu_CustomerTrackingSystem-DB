@@ -462,8 +462,3 @@ BEGIN
 	DROP TABLE #tmpScanTaggingCustomer;
 END;
 GO
-
-GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify] TO [wsv_cts]
-GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify] TO [wsv_cts]
-GO

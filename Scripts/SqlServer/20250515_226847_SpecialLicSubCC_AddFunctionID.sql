@@ -9,7 +9,10 @@ USE [bodb_VR2Model]
 GO
 
 ALTER TABLE CustomerClassification
-ADD IsSpecialLicSub BIT;
+ADD ScanSpecialLicSubType TINYINT DEFAULT 0;
+
+ALTER TABLE CustomerClassification_DataTrace
+ADD ScanSpecialLicSubType TINYINT DEFAULT 0;
 
 INSERT INTO dbo.CustomerClassification_Priority(GroupId, GroupName, FunctionId, FunctionName, Priority) 
 VALUES 

@@ -98,8 +98,3 @@ BEGIN
 	DROP TABLE #tmpCustomers;
 END;
 GO
-
-GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Get] TO [wsv_cts]
-GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Get] TO [wsv_cts]
-GO
