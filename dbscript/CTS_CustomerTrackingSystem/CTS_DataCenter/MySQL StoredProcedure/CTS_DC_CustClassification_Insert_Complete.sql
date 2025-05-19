@@ -24,6 +24,7 @@ BEGIN
 			- 20240618@Victoria.Le:			Initial Writing [Redmine ID: #205317]
 			- 20240618@Victoria.Le:			Remove columns: SportGroupID_arc,CategoryID_arc [Redmine ID: #212240]
 			- 20250327@Thomas.Nguyen:		Add to source table for the first time classify TW GroupBetting or HighRejected [Redmine ID: #221508]
+			- 20250519@Thomas.Nguyen:		Set IsDisabled = 1 for Special Lic Sub source table when having CustomerClassPriority greater than [Redmine ID: #226847]
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -33,9 +34,10 @@ BEGIN
 	DECLARE CONST_CATEID_LICBA			 					INT;
 	DECLARE CONST_CATEID_INITIALGB							INT;
 	DECLARE CONST_CATEID_INITIALGBLOSING					INT;
+	DECLARE CONST_CATEID_NEWLICSUB							INT DEFAULT 40106;
 	DECLARE CONST_CC_LICBA									INT;
 	DECLARE CONST_CC_LICVIPSUSPICIOUS						INT;
-	DECLARE CONST_CC_LICVIPDANGEROUS						INT;
+	DECLARE CONST_CC_LICVIPDANGEROUS						INT;	
 	DECLARE CONST_PARENTID_WRAPPER 							INT;
 	DECLARE CONST_PARENTID_NORMAL							INT;
 	DECLARE CONST_REMARKID_PAMARKEDDIRECTLY					INT;
@@ -1076,6 +1078,26 @@ BEGIN
 			END IF;	
 
 		END IF;	
+		
+	END IF;
+
+	/*Set IsDisabled = 1 for Special Lic Sub source table */
+	SELECT cat.CustomerClassPriority
+	INTO lv_CustomerClassPriority
+	FROM CTS_DataCenter.CustomerCategory AS cat
+	WHERE cat.CategoryID = CONST_CATEID_NEWLICSUB;
+
+	IF EXISTS (SELECT 1
+				FROM Temp_NewClassification AS temp
+					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
+					INNER JOIN CTS_DataCenter.Customer_SpecialLicSubCC AS sls ON sls.CustID = temp.CustID
+				WHERE sls.IsDisabled = 0 AND cat.CustomerClassPriority > lv_CustomerClassPriority) THEN
+		
+		UPDATE CTS_DataCenter.Customer_SpecialLicSubCC AS sls
+			INNER JOIN Temp_NewClassification AS temp ON sls.CustID = temp.CustID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
+		SET sls.IsDisabled = 1
+		WHERE sls.IsDisabled = 0 AND cat.CustomerClassPriority > lv_CustomerClassPriority;
 		
 	END IF;
 
