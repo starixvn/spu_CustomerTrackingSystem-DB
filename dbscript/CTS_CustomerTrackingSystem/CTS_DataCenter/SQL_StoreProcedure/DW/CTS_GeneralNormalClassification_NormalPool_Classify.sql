@@ -6,7 +6,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-ALTER PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]
+CREATE PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_ClassifyCasey]
 		@CustomersXML		XML
 AS
 /*
@@ -35,12 +35,12 @@ AS
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
 		@IsScanOnlyTagging  : 0-Performance Classification, 1-Behaviour Classification (Tagging)
     Script:
-        EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassification_NormalPool_Classify 
+        EXEC bodb_VR2Model.dbo.[CTS_GeneralNormalClassification_NormalPool_Classify] 
 			@CustomersXML = N'<Root>
-								<r CustId="5002646" CategoryId="201" IsNewCreated="0" IsRealtimeOnly= "0" IsProbationLastDay="0" ScanTaggingType="0"/>
-								<r CustId="5022391" CategoryId="0"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="0" ScanTaggingType="0"/>
-								<r CustId="1275" CategoryId="205"  IsNewCreated="0" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
-								<r CustId="1280" CategoryId="202"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
+								<r CustId="5002646" CategoryId="201" IsNewCreated="0" IsRealtimeOnly= "0" IsProbationLastDay="0" ScanTaggingType="0" ScanSpecialLicSubType="1" IsSpecialLicSubCC="0"/>
+								<r CustId="5022391" CategoryId="0"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="0" ScanTaggingType="0" ScanSpecialLicSubType="1" IsSpecialLicSubCC="0"/>
+								<r CustId="1275" CategoryId="205"  IsNewCreated="0" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"  ScanSpecialLicSubType="0" IsSpecialLicSubCC="0"/>
+								<r CustId="1280" CategoryId="202"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"  ScanSpecialLicSubType="0" IsSpecialLicSubCC="1"/>
 							</Root>';
 */
 BEGIN
@@ -90,7 +90,8 @@ BEGIN
 		IsDeposit			   BIT		NOT NULL DEFAULT 0,
 		IsSpecialSite		   BIT		NOT NULL DEFAULT 0,
 		SRecommend			   INT,
-		ScanSpecialLicSubType  TINYINT	NOT NULL DEFAULT 0
+		ScanSpecialLicSubType  TINYINT	NOT NULL DEFAULT 0,
+		IsIgnoreInactive  	   BIT		NULL DEFAULT 0,
 	);
 	
 	CREATE NONCLUSTERED INDEX IX_tmpCustomers_IsRealtimeOnly_CurrentCategoryId_ScanTaggingType ON #tmpCustomers(
@@ -109,6 +110,7 @@ BEGIN
 		CurrentCategoryId      INT		NOT NULL,
 		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0,
 		ScanSpecialLicSubType  TINYINT	NOT NULL DEFAULT 0
+
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -187,7 +189,7 @@ BEGIN
 	);
 
 	-- #1: Get list customers
-	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay, ScanTaggingType, ScanSpecialLicSubType)
+	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay, ScanTaggingType, ScanSpecialLicSubType, IsIgnoreInactive)
 	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
 		,	T.C.value('./@CategoryId', 'INT')			AS CurrentCategoryId
 		,	T.C.value('./@IsNewCreated', 'BIT')			AS IsNewCreated
@@ -195,6 +197,7 @@ BEGIN
 		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
 		,	T.C.value('./@ScanTaggingType', 'TINYINT')	AS ScanTaggingType
 		,	T.C.value('./@ScanSpecialLicSubType', 'TINYINT')	AS ScanSpecialLicSubType
+		,	T.C.value('./@IsSpecialLicSubCC', 'BIT')	AS IsIgnoreInactive
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
@@ -243,8 +246,9 @@ BEGIN
 		SET a.IsActiveWithin30Days = 1
 		FROM #tmpCustomers AS a
 			LEFT JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
-		WHERE (c.CustId IS NOT NULL AND c.LastTransDate >= @From30Date)
-			OR a.IsNewCreated = 1;
+		WHERE ((c.CustId IS NOT NULL AND c.LastTransDate >= @From30Date)
+				OR a.IsNewCreated = 1)
+				AND a.IsIgnoreInactive = 0;
 	
 		-- #6: Update reset balance for credit - normal inactive with new placebet
 		EXEC dbo.CTS_GeneralNormalClassification_Balance_Reset @CurrentDateTime = @CurrentDateTime, @YesterdayDate = @YesterdayDate;
