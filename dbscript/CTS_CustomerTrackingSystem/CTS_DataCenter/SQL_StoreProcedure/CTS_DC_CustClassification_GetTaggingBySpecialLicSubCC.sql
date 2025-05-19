@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_GetTaggingBySpecialLicSubCC`
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_GetTaggingBySpecialLicSubCC`(
-	IN ip_CustIDs		TEXT
+	IN ip_CustJson		JSON
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -27,20 +27,29 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE 	Temp_Cust (
-			CustID 			BIGINT UNSIGNED PRIMARY KEY
-		,	TaggingID		SMALLINT
-		,	TaggingType		SMALLINT
+			CustID 						BIGINT UNSIGNED PRIMARY KEY
+		,	ScanSpecialLicSubType		TINYINT DEFAULT(0)
+		,	TaggingID					SMALLINT
+		,	TaggingType					SMALLINT
 	);   
 
-	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_Cust (CustID) VALUES ('", REPLACE(ip_CustIDs, ",", "'),('"),"');");
-	PREPARE stmt1 FROM @sql;
-	EXECUTE stmt1; 
+	INSERT IGNORE INTO Temp_Cust(CustID, ScanSpecialLicSubType, TaggingID, TaggingType)
+    SELECT  js.CustID
+		,	js.ScanSpecialLicSubType
+		,	CASE WHEN js.ScanSpecialLicSubType = 1 THEN CONST_TAGGINGID_SPECIALLICSUBCC END AS TaggingID
+		,	CASE WHEN js.ScanSpecialLicSubType = 1 THEN CONST_TAGGINGTYPE_SPECIALLICSUBCC END AS TaggingType
+	FROM JSON_TABLE(ip_CustJson,
+					 "$[*]" COLUMNS(
+								CustID					BIGINT UNSIGNED	PATH "$.CustID"
+							,	ScanSpecialLicSubType	TINYINT			PATH "$.ScanSpecialLicSubType"
+						)
+				) AS js;
 
 	UPDATE Temp_Cust AS tmp
 		INNER JOIN CTS_DataCenter.Customer_SpecialLicSubCC AS sls ON tmp.CustID = sls.CustID
 	SET		tmp.TaggingType = CONST_TAGGINGTYPE_SPECIALLICSUBCC 
 		,	tmp.TaggingID = CONST_TAGGINGID_SPECIALLICSUBCC
-    WHERE sls.IsDisabled = 0 AND sls.ProcessStatus = 2;
+    WHERE sls.IsDisabled = 0 AND sls.ProcessStatus = 2 AND tmp.ScanSpecialLicSubType = 0;
 
     SELECT  tmp.CustID
         ,	tmp.TaggingID
