@@ -43,11 +43,12 @@ VALUES(40106,'New (Lic Sub)','New Member (43)',40000,2500,'New',40100,850,850,30
 ,(40606,'Risky (Lic Sub)','High Risk Punter (47)',40000,2505,'Dangerous',40600,845,850,30,1,1209600,86400,NULL,NULL,NULL,0,0,NULL,NULL,NOW(),'高风险玩家','Rủi ro (tuyến phụ)','ความเสี่ยง (สายรอง)','Risiko (jalur sekunder)','危險',NULL,1,3,NULL,274,2,NULL,NULL,1,204,NULL,NULL,'Dangerous','危險','危险','Nguy hiểm','อันตราย','Berbahaya')
 ;
 
-INSERT INTO CTS_DataCenter.CustomerCategorySettings(CategoryID,CategoryGroupID,ParentID,IsParallelParentID,IsMultiCateIDSameParentID,IsKeepOldCateID,RemarkTemplateID,InsertPARescanType,InsertNormalRescanType,ActualProblemCategory,PotentialCategory,NormalCategory,NormalLinkCategory,FlowNormalDailyScan,FlowNormalClassification,FlowNormalRealtimeScan,FlowNormalTaggingScan,FlowPADailyScan,ExcludedFromClassifyMM,FlowNormalDgrAssociation,IsFirstTWTagging)
-VALUES(40106,40100,40000,0,0,0,59,0,1,0,0,1,0,0,1,1,0,0,0,0,0)
-,(40406,40400,40000,0,0,0,59,0,1,0,0,1,0,0,1,1,0,0,0,0,0)
-,(40506,40500,40000,0,0,0,59,0,1,0,0,1,0,0,1,1,0,0,0,0,0)
-,(40606,40600,40000,0,0,0,59,0,1,0,0,1,0,0,1,1,0,0,0,0,0);
+INSERT INTO CTS_DataCenter.CustomerCategorySettings(CategoryID,CategoryGroupID,ParentID,IsParallelParentID,IsMultiCateIDSameParentID,IsKeepOldCateID,RemarkTemplateID,ExcludedFromClassifyMM,FlowNormalDgrAssociation,IsFirstTWTagging)
+VALUES(40106,40100,40000,0,0,0,59,0,0,0)
+,(40406,40400,40000,0,0,0,59,0,0,0)
+,(40506,40500,40000,0,0,0,59,0,0,0)
+,(40606,40600,40000,0,0,0,59,0,0,0)
+;
 
 INSERT INTO StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,ItemParentItemID,PriorityOrder,Status,Description,CreatedDate)
 VALUES(25,1,'LicSubCustomerClass','','LicSubCustomerClass_New','',200,NULL,NULL,NULL,1,NULL,NOW())
