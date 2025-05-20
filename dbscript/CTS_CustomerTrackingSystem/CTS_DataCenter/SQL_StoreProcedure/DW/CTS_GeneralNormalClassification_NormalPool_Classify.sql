@@ -6,7 +6,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]
+ALTER PROCEDURE [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify]
 		@CustomersXML		XML
 AS
 /*
@@ -190,14 +190,14 @@ BEGIN
 
 	-- #1: Get list customers
 	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay, ScanTaggingType, ScanSpecialLicSubType, IsIgnoreInactive)
-	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
-		,	T.C.value('./@CategoryId', 'INT')			AS CurrentCategoryId
-		,	T.C.value('./@IsNewCreated', 'BIT')			AS IsNewCreated
-		,	T.C.value('./@IsRealtimeOnly', 'BIT')		AS IsRealtimeOnly
-		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
-		,	T.C.value('./@ScanTaggingType', 'TINYINT')	AS ScanTaggingType
+	SELECT	T.C.value('./@CustId', 'INT')						AS CustId
+		,	T.C.value('./@CategoryId', 'INT')					AS CurrentCategoryId
+		,	T.C.value('./@IsNewCreated', 'BIT')					AS IsNewCreated
+		,	T.C.value('./@IsRealtimeOnly', 'BIT')				AS IsRealtimeOnly
+		,	T.C.value('./@IsProbationLastDay', 'BIT')			AS IsProbationLastDay
+		,	T.C.value('./@ScanTaggingType', 'TINYINT')			AS ScanTaggingType
 		,	T.C.value('./@ScanSpecialLicSubType', 'TINYINT')	AS ScanSpecialLicSubType
-		,	T.C.value('./@IsSpecialLicSubCC', 'BIT')	AS IsIgnoreInactive
+		,	T.C.value('./@IsSpecialLicSubCC', 'BIT')			AS IsIgnoreInactive
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
@@ -248,7 +248,7 @@ BEGIN
 			LEFT JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
 		WHERE ((c.CustId IS NOT NULL AND c.LastTransDate >= @From30Date)
 				OR a.IsNewCreated = 1)
-				AND a.IsIgnoreInactive = 0;
+				OR a.IsIgnoreInactive = 1;
 	
 		-- #6: Update reset balance for credit - normal inactive with new placebet
 		EXEC dbo.CTS_GeneralNormalClassification_Balance_Reset @CurrentDateTime = @CurrentDateTime, @YesterdayDate = @YesterdayDate;
