@@ -127,6 +127,6 @@ BEGIN
 		LEFT JOIN Temp_CustCategory AS tmpCc ON tmpCc.CustID = tmpCust.CustID
 	WHERE tmpCc.CategoryGroupID IS NULL 
 	 	OR tmpCc.ParentID = CONST_PARENTID_NORMAL
-		OR tmpCc.ScanSpecialLicSubType = CONST_SCANSPECIALLICSUBTYPE_EXIST;
+		OR tmpCust.ScanSpecialLicSubType = CONST_SCANSPECIALLICSUBTYPE_EXIST;
 END$$
 DELIMITER ;
