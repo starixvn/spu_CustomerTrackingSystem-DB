@@ -1091,13 +1091,17 @@ BEGIN
 				FROM Temp_NewClassification AS temp
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
 					INNER JOIN CTS_DataCenter.Customer_SpecialLicSubCC AS sls ON sls.CustID = temp.CustID
-				WHERE sls.IsDisabled = 0 AND cat.CustomerClassPriority > lv_CustomerClassPriority) THEN
+				WHERE sls.IsDisabled = 0 AND cat.CustomerClassPriority < lv_CustomerClassPriority
+					AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls 
+									WHERE cls.CustID = temp.CustID AND cls.ParentID = CONST_PARENTID_WRAPPER)) THEN
 		
 		UPDATE CTS_DataCenter.Customer_SpecialLicSubCC AS sls
 			INNER JOIN Temp_NewClassification AS temp ON sls.CustID = temp.CustID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID AND cat.ParentID <> CONST_PARENTID_WRAPPER
 		SET sls.IsDisabled = 1
-		WHERE sls.IsDisabled = 0 AND cat.CustomerClassPriority > lv_CustomerClassPriority;
+		WHERE sls.IsDisabled = 0 AND cat.CustomerClassPriority < lv_CustomerClassPriority
+			AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls 
+							WHERE cls.CustID = temp.CustID AND cls.ParentID = CONST_PARENTID_WRAPPER);
 		
 	END IF;
 

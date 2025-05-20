@@ -25,6 +25,7 @@ sp: BEGIN
 			-	20240628@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
 			- 	20241018@Thomas.Nguyen: CC Agent [Redmine ID: #185799]
 			-	20250327@Casey.Huynh: 	Clean Table Customer_FirstTWTaggingCC [Redmine ID #221508]
+			-	20250520@Thomas.Nguyen: Clean Table Customer_SpecialLicSubCC [Redmine ID #226847]
 
 		Param's Explanation (filtered by):	
         
@@ -1779,7 +1780,7 @@ sp: BEGIN
         
         SET lv_Table = 'CTS_DataCenter.Customer_FirstTWTaggingCC';
 	 END IF; 
-	/*************************************** 41. CTS_DataCenter.TaggingExclusion ******************************/
+	/*************************************** 41. CTS_DataCenter.Customer_FirstTWTaggingCC ******************************/
     IF (lv_Table = 'CTS_DataCenter.Customer_FirstTWTaggingCC') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.Customer_FirstTWTaggingCC AS tag WHERE tag.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
 			DROP TEMPORARY TABLE IF EXISTS Temp_Customer_FirstTWTaggingCC_Clean;
@@ -1815,6 +1816,42 @@ sp: BEGIN
 
 		SET lv_Table = 'CTS_DataCenter.CTSCustomer';
 	 END IF;   	
+
+	 /*************************************** 42. CTS_DataCenter.Customer_SpecialLicSubCC ******************************/
+    IF (lv_Table = 'CTS_DataCenter.Customer_SpecialLicSubCC') THEN
+		IF EXISTS (SELECT 1  FROM CTS_DataCenter.Customer_SpecialLicSubCC As sp WHERE sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
+			DROP TEMPORARY TABLE IF EXISTS Temp_Customer_SpecialLicSubCC_Clean;
+			CREATE TEMPORARY TABLE Temp_Customer_SpecialLicSubCC_Clean(
+					ID   BIGINT UNSIGNED PRIMARY KEY
+			);
+            
+            INSERT IGNORE INTO Temp_Customer_SpecialLicSubCC_Clean(ID)
+            SELECT 	sp.ID
+			FROM CTS_DataCenter.Customer_SpecialLicSubCC As sp
+			WHERE  sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)
+			LIMIT lv_CleanTableBatchSize;
+            
+			DELETE sp
+			FROM CTS_DataCenter.Customer_SpecialLicSubCC AS sp
+				INNER JOIN Temp_Customer_SpecialLicSubCC_Clean AS tmp ON tmp.ID = sp.ID;
+			
+			UPDATE  CTS_DataCenter.SystemParameter 
+			SET ParameterValue = 'CTS_DataCenter.Customer_SpecialLicSubCC'
+			WHERE ParameterID = 46;
+			
+			SELECT COUNT(1)
+            INTO lv_Count
+            FROM Temp_Customer_SpecialLicSubCC_Clean;
+            
+            IF lv_Count >= lv_CleanTableBatchSize THEN
+				LEAVE sp;
+            END IF;
+			
+            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
+        END IF;
+        
+		SET lv_Table = 'CTS_DataCenter.CTSCustomer';
+	 END IF; 
     /*************************************** 42. CTS_DataCenter.CTSCustomer ************************************/
 	
     DELETE cus
