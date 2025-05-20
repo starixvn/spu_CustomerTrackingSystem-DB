@@ -25,12 +25,9 @@ BEGIN
                         ,	{"CustID":"16647323","CategoryID":"NULL"}]');
 
 	*/
-    DECLARE CONST_PROCESSSTATUS_INPROGRESS	TINYINT DEFAULT 1;
-    DECLARE CONST_PROCESSSTATUS_COMPLETE	TINYINT DEFAULT 2;
-	DECLARE CONST_CATEGORYID_NEW 	INT DEFAULT 40100;
-	DECLARE CONST_CATEGORYID_PROB 	INT DEFAULT 40400;
-	DECLARE CONST_CATEGORYID_SMART 	INT DEFAULT 40500;
-	DECLARE CONST_CATEGORYID_RISKY 	INT DEFAULT 40600;
+    DECLARE CONST_PROCESSSTATUS_INPROGRESS			TINYINT DEFAULT 1;
+    DECLARE CONST_PROCESSSTATUS_COMPLETE			TINYINT DEFAULT 2;
+    DECLARE CONST_SPECIALCC_CATEGORYID				INT DEFAULT 10300;
 	DECLARE CONST_STATUSCODE_SUCCESS_EXACTLY		INT DEFAULT 200;
 	DECLARE CONST_STATUSCODE_SUCCESS_VALIDRANGE		INT DEFAULT 201;
 	DECLARE CONST_STATUSCODE_UNSUCCESS	 			INT DEFAULT 401;  
@@ -40,7 +37,21 @@ BEGIN
 			CustID			INT PRIMARY KEY
         ,	CategoryID		INT UNSIGNED
     );
-   
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_CategoryMapping;
+    CREATE TEMPORARY TABLE Temp_CategoryMapping(
+			NormalCategoryID		INT PRIMARY KEY
+        ,	NormalCustomerClass		INT
+		,	LicCategoryID			INT
+        ,	LicCustomerClass		INT
+    );
+    
+    INSERT INTO Temp_CategoryMapping(NormalCategoryID, NormalCustomerClass, LicCategoryID, LicCustomerClass)
+    VALUES(40100,200,40106,2500)
+		, (40400,203,40406,2503)
+        , (40500,204,40506,2504)
+        , (40600,205,40606,2505);
+
     INSERT IGNORE INTO Temp_Cust(CustID, CategoryID)
 	SELECT	info.CustID
 		, 	info.CategoryID
@@ -50,27 +61,27 @@ BEGIN
 			, 	CategoryID		INT UNSIGNED	PATH "$.CategoryID"  )
 	) AS info;
 	
-    UPDATE CTS_DataCenter.Customer_SpecialLicSubCC AS cus
-		INNER JOIN Temp_Cust AS tmp ON cus.CustID = tmp.CustID
-        LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmp.CustID
-        LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID
-	SET 	cus.ProcessStatus = CONST_PROCESSSTATUS_COMPLETE
-		,	cus.LatestCustomerClass = cat.CustomerClass
-		,	cus.StatusCode = (CASE WHEN cus.APICustomerClass = cat.CustomerClass THEN CONST_STATUSCODE_SUCCESS_EXACTLY
+   
+    UPDATE CTS_DataCenter.Customer_SpecialLicSubCC AS slc
+		INNER JOIN Temp_Cust AS tmpCus ON tmpCus.CustID = slc.CustID
+        INNER JOIN Temp_CategoryMapping AS tmpMap ON tmpMap.NormalCategoryID = tmpCus.CategoryID
+        INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpCus.CustID AND cls.CategoryID = tmpMap.LicCategoryID 
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID
+	SET 	slc.ProcessStatus = CONST_PROCESSSTATUS_COMPLETE
+		,	slc.LatestCustomerClass = cat.CustomerClass
+		,	slc.StatusCode = (CASE WHEN slc.APICustomerClass = tmpMap.NormalCustomerClass AND cat.CustomerClass = tmpMap.LicCustomerClass THEN CONST_STATUSCODE_SUCCESS_EXACTLY
 									ELSE CONST_STATUSCODE_SUCCESS_VALIDRANGE END)
-	WHERE cus.ProcessStatus = 1
-		AND tmp.CategoryID IN (CONST_CATEGORYID_NEW,CONST_CATEGORYID_PROB,CONST_CATEGORYID_SMART,CONST_CATEGORYID_RISKY);
-	   
-	UPDATE CTS_DataCenter.Customer_SpecialLicSubCC AS cus
-		INNER JOIN Temp_Cust AS tmp ON cus.CustID = tmp.CustID
-        LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmp.CustID
+	WHERE slc.ProcessStatus = CONST_PROCESSSTATUS_INPROGRESS;	
+
+	UPDATE CTS_DataCenter.Customer_SpecialLicSubCC AS slc
+		INNER JOIN Temp_Cust AS tmpCus ON slc.CustID = tmpCus.CustID
+        LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = tmpCus.CustID
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cls.CategoryID
-	SET 	cus.ProcessStatus = CONST_PROCESSSTATUS_COMPLETE
-		,	cus.LatestCustomerClass = cat.CustomerClass
-		,	cus.StatusCode = CONST_STATUSCODE_UNSUCCESS
-    WHERE cus.ProcessStatus = 1
-		AND (tmp.CategoryID NOT IN (CONST_CATEGORYID_NEW,CONST_CATEGORYID_PROB,CONST_CATEGORYID_SMART,CONST_CATEGORYID_RISKY)
-				OR tmp.CategoryID IS NULL);
+	SET 	slc.ProcessStatus = CONST_PROCESSSTATUS_COMPLETE
+		,	slc.LatestCustomerClass = (CASE WHEN cat.CategoryID = CONST_SPECIALCC_CATEGORYID THEN (SELECT CustomerClass FROM CTS_DataCenter.SpecialCustomerClass AS sps WHERE sps.CustID = tmpCus.CustID LIMIT 1)
+											ELSE cat.CustomerClass END)
+		,	slc.StatusCode = CONST_STATUSCODE_UNSUCCESS
+    WHERE slc.ProcessStatus = CONST_PROCESSSTATUS_INPROGRESS;
         
 END$$
 DELIMITER ;
