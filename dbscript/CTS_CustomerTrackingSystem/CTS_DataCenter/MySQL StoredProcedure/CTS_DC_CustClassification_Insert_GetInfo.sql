@@ -673,7 +673,7 @@ BEGIN
 			INSERT INTO Temp_NewClassification(
 					CustID,CTSCustID,DWCategoryID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate
 				,	TWTicketRejectRate,TWDesktopUsageRate,TaggingID,TaggingType,PerformanceTime,ScanTaggingType
-				,	SubscriberID,RoleID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,SpecialCC,IsDataChanged)
+				,	SubscriberID,RoleID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,SpecialCC,IsDataChanged,ScanSpecialLicSubType)
 			SELECT DISTINCT
 					tmpJs.CustID
 				,	cus.CTSCustID
@@ -698,6 +698,7 @@ BEGIN
 				,	cus.IsLicenseeBA
 				,	sp.CustomerClass AS SpecialCC
 				,	1 AS IsDataChanged
+				,	tmpJs.ScanSpecialLicSubType
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 					BIGINT UNSIGNED		PATH "$.CustID"
