@@ -32,10 +32,10 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_ResponseInfo;
 	CREATE TEMPORARY TABLE Temp_ResponseInfo(
-			ID					INT UNSIGNED 
+			ID					BIGINT UNSIGNED 
 		,	ResponseStatus		TINYINT
         ,	ResponseTime		DATETIME(4)	
-        ,	ResponseHttpCode	INT
+        ,	ResponseHttpCode	SMALLINT
         
         ,	PRIMARY KEY Temp_ResponseInfo_ID(ID)
 	);	
@@ -47,7 +47,7 @@ BEGIN
         ,	js.ResponseHttpCode
 	FROM JSON_TABLE(ip_ResponseInfo, 
 		"$[*]" COLUMNS(
-				ID					INT UNSIGNED	PATH "$.ID"
+				ID					BIGINT UNSIGNED	PATH "$.ID"
 			,	ResponseStatus		TINYINT	 		PATH "$.ResponseStatus" #0: response fail, 1:Response success
             ,	ResponseTime		DATETIME(4)	 	PATH "$.ResponseTime" 	
             ,	ResponseHttpCode	INT				PATH "$.ResponseHttpCode"	

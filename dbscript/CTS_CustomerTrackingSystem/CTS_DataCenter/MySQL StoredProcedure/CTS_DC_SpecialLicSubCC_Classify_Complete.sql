@@ -34,16 +34,16 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Cust;
     CREATE TEMPORARY TABLE Temp_Cust(
-			CustID			INT PRIMARY KEY
+			CustID			BIGINT UNSIGNED PRIMARY KEY
         ,	CategoryID		INT UNSIGNED
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CategoryMapping;
     CREATE TEMPORARY TABLE Temp_CategoryMapping(
-			NormalCategoryID		INT PRIMARY KEY
-        ,	NormalCustomerClass		INT
-		,	LicCategoryID			INT
-        ,	LicCustomerClass		INT
+			NormalCategoryID		INT UNSIGNED PRIMARY KEY
+        ,	NormalCustomerClass		INT UNSIGNED
+		,	LicCategoryID			INT UNSIGNED
+        ,	LicCustomerClass		INT UNSIGNED
     );
     
     INSERT INTO Temp_CategoryMapping(NormalCategoryID, NormalCustomerClass, LicCategoryID, LicCustomerClass)

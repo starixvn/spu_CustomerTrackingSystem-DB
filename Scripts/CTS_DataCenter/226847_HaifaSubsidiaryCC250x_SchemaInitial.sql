@@ -15,15 +15,15 @@ USE CTS_DataCenter;
 
 DROP TABLE IF EXISTS Customer_SpecialLicSubCC;
 CREATE TABLE Customer_SpecialLicSubCC(
-		ID						INT UNSIGNED AUTO_INCREMENT PRIMARY KEY	
-	,	CustID					BIGINT NULL
+		ID						BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY	
+	,	CustID					BIGINT UNSIGNED NULL
     ,	APICustomerClass 		INT UNSIGNED NOT NULL
     ,	LatestCustomerClass 	INT UNSIGNED NULL
     ,	ProcessStatus			TINYINT NOT NULL DEFAULT 0	COMMENT '0:API INPUT, 1:Inprocess, 2:ClassifiedComplete, 3:ResponseFail, 4:ResponseSuccess'   
     ,	IsDisabled				TINYINT(1) NOT NULL DEFAULT 0 COMMENT '0:Enabled, 1:Disabled'
     ,	StatusCode				INT NULL
     ,	ResponseTime			DATETIME(4) NULL
-    ,	ResponseHttpCode		INT NULL
+    ,	ResponseHttpCode		SMALLINT NULL
     ,	InsertedTime			DATETIME(4) NOT NULL
     
     ,	INDEX IX_Customer_Customer_SpecialLicSubCC_CustID(CustID)
