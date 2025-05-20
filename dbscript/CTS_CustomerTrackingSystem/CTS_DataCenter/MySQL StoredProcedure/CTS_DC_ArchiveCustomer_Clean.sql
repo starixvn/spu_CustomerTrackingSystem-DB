@@ -1830,11 +1830,12 @@ sp: BEGIN
 			FROM CTS_DataCenter.Customer_SpecialLicSubCC As sp
 			WHERE  sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)
 			LIMIT lv_CleanTableBatchSize;
-            
-			DELETE sp
-			FROM CTS_DataCenter.Customer_SpecialLicSubCC AS sp
-				INNER JOIN Temp_Customer_SpecialLicSubCC_Clean AS tmp ON tmp.ID = sp.ID;
-			
+            		
+			UPDATE CTS_DataCenter.Customer_SpecialLicSubCC AS sp
+				INNER JOIN Temp_Customer_SpecialLicSubCC_Clean AS tmp ON tmp.ID = sp.ID
+			SET sp.IsDisabled = 1 
+			WHERE  sp.IsDisabled = 0;
+
 			UPDATE  CTS_DataCenter.SystemParameter 
 			SET ParameterValue = 'CTS_DataCenter.Customer_SpecialLicSubCC'
 			WHERE ParameterID = 46;
