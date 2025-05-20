@@ -16,4 +16,4 @@ ADD ScanSpecialLicSubType TINYINT DEFAULT 0;
 
 INSERT INTO dbo.CustomerClassification_Priority(GroupId, GroupName, FunctionId, FunctionName, Priority) 
 VALUES 
-(1, 'ByFlow', 10, 'Scan Special Lic Sub CC', 10);
+(1, 'ByFlow', 10, 'Scan Special Lic Sub CC', 5);
