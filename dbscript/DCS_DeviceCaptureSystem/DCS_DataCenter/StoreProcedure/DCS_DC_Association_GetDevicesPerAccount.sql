@@ -53,7 +53,7 @@ BEGIN
 	FROM DCS_DataCenter.Association AS ass
 		INNER JOIN DCS_DataCenter.Account AS acc ON ass.AccountID = acc.AccountID
 	WHERE acc.LastLoginTime >= lv_CutoffDate
-		AND ass.SubscriberID = ip_SubcriberID
+		AND ass.SubscriberID = ip_SubscriberID
 	GROUP BY ass.AccountID, acc.LoginName
 	HAVING COUNT(ass.DeviceID) >= ip_NoOfDevice;
     
