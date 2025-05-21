@@ -1833,7 +1833,8 @@ sp: BEGIN
             		
 			UPDATE CTS_DataCenter.Customer_SpecialLicSubCC AS sp
 				INNER JOIN Temp_Customer_SpecialLicSubCC_Clean AS tmp ON tmp.ID = sp.ID
-			SET sp.IsDisabled = 1 
+			SET		sp.IsDisabled = 1
+				,	sp.ArchivedDate = lv_CurrentDateTime
 			WHERE  sp.IsDisabled = 0;
 
 			UPDATE  CTS_DataCenter.SystemParameter 

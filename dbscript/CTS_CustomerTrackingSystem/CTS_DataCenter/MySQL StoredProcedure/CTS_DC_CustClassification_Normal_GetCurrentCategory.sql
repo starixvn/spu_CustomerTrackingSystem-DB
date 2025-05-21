@@ -116,7 +116,7 @@ BEGIN
     #3. Return data set
 	SELECT	DISTINCT tmpCust.CustID
 		,	CASE
-				WHEN tmpCc.CategoryGroupID IS NULL THEN 0
+				WHEN tmpCc.CategoryGroupID IS NULL OR tmpCust.ScanSpecialLicSubType = CONST_SCANSPECIALLICSUBTYPE_EXIST THEN 0
                 WHEN tmpCc.CategoryGroupID = CONST_GROUP_INACTIVE THEN tmpCc.CategoryID
                 ELSE tmpCc.CategoryGroupID
 			END AS CategoryID

@@ -138,7 +138,7 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryGroupID = temp.DWCategoryGroupID 
 																AND cate.TaggingType = temp.TaggingType 
 																AND cate.TaggingID = temp.TaggingID
-		SET temp.DWCategoryID = cate.CategoryID
+		SET temp.DWCategoryID = IFNULL(cate.CategoryID, temp.DWCategoryID)
 		WHERE temp.DWCategoryGroupID <> CONST_CATEGROUPID_INACTIVE;
 		
 	ELSE
