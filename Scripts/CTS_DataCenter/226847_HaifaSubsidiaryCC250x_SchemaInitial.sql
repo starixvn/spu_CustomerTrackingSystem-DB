@@ -53,15 +53,15 @@ VALUES(40106,40100,40000,0,0,0,59,0,0,0)
 INSERT INTO StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,ItemParentItemID,PriorityOrder,Status,Description,CreatedDate)
 VALUES(25,1,'LicSubCustomerClass','','LicSubCustomerClass_New','',200,NULL,NULL,NULL,1,NULL,NOW())
 ,(25,2,'LicSubCustomerClass','','LicSubCustomerClass_Probation','',203,NULL,NULL,NULL,1,NULL,NOW())
-,(25,3,'LicSubCustomerClass','','LicSubCustomerClass_Smark','',204,NULL,NULL,NULL,1,NULL,NOW())
+,(25,3,'LicSubCustomerClass','','LicSubCustomerClass_Smart','',204,NULL,NULL,NULL,1,NULL,NOW())
 ,(25,4,'LicSubCustomerClass','','LicSubCustomerClass_Risky','',205,NULL,NULL,NULL,1,NULL,NOW());
 
 INSERT INTO StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,ItemParentItemID,PriorityOrder,Status,Description,CreatedDate)
-VALUES(26,1,'LicSubStatusCode','','LicSubStatusCode_Successfully','Updated played CC Successfully',200,NULL,NULL,NULL,1,NULL,NOW())
-,(26,2,'LicSubStatusCode','','LicSubStatusCode_Successfully','Updated played CC Successfully.However, the previous CC did not match',201,NULL,NULL,NULL,1,NULL,NOW())
+VALUES(26,1,'LicSubStatusCode','','LicSubStatusCode_Successfully','Updated player CC successfully',200,NULL,NULL,NULL,1,NULL,NOW())
+,(26,2,'LicSubStatusCode','','LicSubStatusCode_Successfully','Updated player CC successfully. However, the previous CC did not match',201,NULL,NULL,NULL,1,NULL,NOW())
 ,(26,3,'LicSubStatusCode','','LicSubStatusCode_Inprogress','LicSubStatusCode_Inprogress',300,NULL,NULL,NULL,1,NULL,NOW())
 ,(26,4,'LicSubStatusCode','','LicSubStatusCode_Fail','CC update failed, player CC does not match',400,NULL,NULL,NULL,1,NULL,NOW())
-,(26,5,'LicSubStatusCode','','LicSubStatusCode_Fail','CC update failed, player CC does not fit the rule',401,NULL,NULL,NULL,1,NULL,NOW());
+,(26,5,'LicSubStatusCode','','LicSubStatusCode_Fail','CC update failed, player CC does not fit the rules',401,NULL,NULL,NULL,1,NULL,NOW());
 
 /*========================================THOMAS=============================================*/
 INSERT INTO CustomerClassification_Remark (RemarkID,RemarkTemplate,Description)
