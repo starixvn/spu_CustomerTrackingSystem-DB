@@ -24,6 +24,7 @@ CREATE TABLE Customer_SpecialLicSubCC(
     ,	StatusCode				INT NULL
     ,	ResponseTime			DATETIME(4) NULL
     ,	ResponseHttpCode		SMALLINT NULL
+    ,	ArchivedDate 			DATETIME
     ,	InsertedTime			DATETIME(4) NOT NULL
     
     ,	INDEX IX_Customer_Customer_SpecialLicSubCC_CustID(CustID)
