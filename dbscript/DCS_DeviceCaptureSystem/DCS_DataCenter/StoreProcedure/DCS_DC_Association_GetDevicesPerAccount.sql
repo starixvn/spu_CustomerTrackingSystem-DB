@@ -3,7 +3,8 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Association_GetDevicesPerAccount`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Association_GetDevicesPerAccount`(
-		IN ip_NoOfDevice	INT
+		IN ip_SubscriberID	INT
+	,	IN ip_NoOfDevice	INT
 	,	IN ip_LastDay		INT
 	,	IN ip_PageSize		INT
 	,	IN ip_PageIndex		INT
@@ -25,12 +26,13 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
+		SET @SubcriberID = 2;
 		SET @NoOfDevice	= 1;
-		SET @LastDay	= 5;
+		SET @LastDay	= 100;
 		SET @PageSize	= 5;
 		SET @PageIndex	= 1;
 
-		CALL DCS_DataCenter.DCS_DC_Association_GetDevicesPerAccount(@NoOfDevice, @LastDay, @PageSize, @PageIndex, @op_TotalPages, @op_TotalRows);
+		CALL DCS_DataCenter.DCS_DC_Association_GetDevicesPerAccount(@SubcriberID, @NoOfDevice, @LastDay, @PageSize, @PageIndex, @op_TotalPages, @op_TotalRows);
         SELECT @op_TotalPages,@op_TotalRows;
 	*/
     
@@ -51,6 +53,7 @@ BEGIN
 	FROM DCS_DataCenter.Association AS ass
 		INNER JOIN DCS_DataCenter.Account AS acc ON ass.AccountID = acc.AccountID
 	WHERE acc.LastLoginTime >= lv_CutoffDate
+		AND ass.SubscriberID = @SubcriberID
 	GROUP BY ass.AccountID, acc.LoginName
 	HAVING COUNT(ass.DeviceID) >= ip_NoOfDevice;
     
