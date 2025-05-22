@@ -19,8 +19,9 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_Process(9);
 			
 		Revisions: 
-			-	20240618@Victoria.Le:			Initial Writing [Redmine ID: #205317]
-           	- 	20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
+			- 20240618@Victoria.Le: Initial Writing [Redmine ID: #205317]
+           	- 20240923@Jonas.Huynh: Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
+			- 20250519@Thomas.Nguyen: Add ActionType to ignore lower priority for Special Lic Sub CC [Redmine ID: #226847]	
 */
 
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL		INT;
@@ -32,6 +33,10 @@ BEGIN
 	DECLARE CONST_CATEID_INACTIVENORMAL 				INT;
 	DECLARE CONST_CATEID_INACTIVESMART	 				INT;
 	DECLARE CONST_CATEID_SPECIALCC		 				INT;
+	DECLARE CONST_CATEGORYID_NEW_LICSUB 				INT DEFAULT 40106;
+	DECLARE CONST_CATEGORYID_PROB_LICSUB 				INT DEFAULT 40406;
+	DECLARE CONST_CATEGORYID_SMART_LICSUB 				INT DEFAULT 40506;
+	DECLARE CONST_CATEGORYID_RISKY_LICSUB 				INT DEFAULT 40606;
 
 	DECLARE CONST_CATEGROUPID_INACTIVE					INT;
 	DECLARE CONST_CATEGROUPID_NEW						INT;
@@ -58,6 +63,7 @@ BEGIN
     DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 			INT DEFAULT 5;
     DECLARE CONST_ACTIONTYPE_RESCAN_CHANGECC 			INT DEFAULT 6;
     DECLARE CONST_ACTIONTYPE_RESCAN_CHANGECATEGORY		INT DEFAULT 7;
+	DECLARE CONST_ACTIONTYPE_IGNORELOWERPRIORITY		INT DEFAULT 8;
 	
     DECLARE CONST_SOURCETYPE_SAMECATEGORY 				INT DEFAULT 0;
     DECLARE CONST_SOURCETYPE_LESSTHAN10TICKETS 			INT DEFAULT 1;
@@ -154,8 +160,8 @@ BEGIN
 			AND temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA,CONST_ACTIONTYPE_EXISTEDVVIP); 
 
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old (
-				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID)
-		SELECT 	temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, ccs.CategoryID, ccs.CategoryGroupID
+				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, CategoryGroupID, CustomerClassPriority)
+		SELECT 	temp.CustID, temp.CTSCustID, temp.SubscriberID, temp.RoleID, ccs.CategoryID, ccs.CategoryGroupID, ccs.CustomerClassPriority
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID AND cls.ParentID = CONST_PARENTID_NORMAL
 			INNER JOIN CTS_DataCenter.CustomerCategory AS ccs ON ccs.CategoryID = cls.CategoryID
@@ -167,6 +173,15 @@ BEGIN
 			,	temp.OldCategoryID = CASE WHEN o.CustID IS NULL THEN CONST_CATEGROUPID_NEW ELSE o.CategoryID END
 			,	temp.IsFromOld = CASE WHEN o.CustID IS NULL THEN 0 ELSE 1 END
 		WHERE temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA,CONST_ACTIONTYPE_EXISTEDVVIP);
+
+		/*NO ACTION + VIEW LOG: If Priority of NewCategoryID > Priority of OldCategoryID (Special Lic Sub CC)*/
+		UPDATE Temp_NewClassification AS temp 
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON temp.NewCategoryID = cat.CategoryID
+			INNER JOIN Temp_CTSCustomerClassification_Old AS old ON temp.CustID = old.CustID
+		SET 	temp.ActionType = CONST_ACTIONTYPE_IGNORELOWERPRIORITY
+			, 	temp.IsDataChanged = 0
+			, 	temp.IsReturnData = 0
+		WHERE cat.CustomerClassPriority > old.CustomerClassPriority AND old.CategoryID IN (CONST_CATEGORYID_NEW_LICSUB, CONST_CATEGORYID_PROB_LICSUB, CONST_CATEGORYID_SMART_LICSUB, CONST_CATEGORYID_RISKY_LICSUB);
 
 		/* UPDATE NewIsDangerProbation */    
     	UPDATE 	Temp_NewClassification AS temp 
@@ -283,7 +298,7 @@ BEGIN
 			,	tmp.NewCategoryID = tmp.OldCategoryID
 			, 	tmp.NewCategoryGroupID = tmp.OldCategoryGroupID
 			,	tmp.NewIsDangerProbation = cate.IsDangerProbation
-		WHERE tmp.ActionType IN (CONST_ACTIONTYPE_IGNOREPROBATION,CONST_ACTIONTYPE_RESCAN_CHANGECC);
+		WHERE tmp.ActionType IN (CONST_ACTIONTYPE_IGNOREPROBATION,CONST_ACTIONTYPE_RESCAN_CHANGECC, CONST_ACTIONTYPE_IGNORELOWERPRIORITY);
 		
 		UPDATE Temp_NewClassification
 		SET 	IsDataChanged = 1
