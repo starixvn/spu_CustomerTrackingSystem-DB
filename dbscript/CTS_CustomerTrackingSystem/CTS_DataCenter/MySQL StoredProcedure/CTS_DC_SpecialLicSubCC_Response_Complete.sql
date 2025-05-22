@@ -50,7 +50,7 @@ BEGIN
 				ID					BIGINT UNSIGNED	PATH "$.ID"
 			,	ResponseStatus		TINYINT	 		PATH "$.ResponseStatus" #0: response fail, 1:Response success
             ,	ResponseTime		DATETIME(4)	 	PATH "$.ResponseTime" 	
-            ,	ResponseHttpCode	INT				PATH "$.ResponseHttpCode"	
+            ,	ResponseHttpCode	SMALLINT		PATH "$.ResponseHttpCode"	
 		)
 	) AS js;	 
     

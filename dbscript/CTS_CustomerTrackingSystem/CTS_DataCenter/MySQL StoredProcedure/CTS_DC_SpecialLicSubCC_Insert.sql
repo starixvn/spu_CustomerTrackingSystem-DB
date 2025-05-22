@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DC_SpecialLicSubCC_Insert`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_SpecialLicSubCC_Insert`(
-		IN ip_CustID		INT
+		IN ip_CustID		BIGINT UNSIGNED
     ,	IN ip_CustomerClass INT 
 )
     SQL SECURITY INVOKER
@@ -47,7 +47,7 @@ BEGIN
 									FROM CTS_DataCenter.StaticList AS stl 
                                     WHERE stl.ListID = CONST_STATICLIST_LICSUBCUSTOMERCLASS);    
 
-    SET lv_MaxID = (SELECT MAX(ID) FROM Customer_SpecialLicSubCC);   
+    SET lv_MaxID = (SELECT MAX(ID) FROM CTS_DataCenter.Customer_SpecialLicSubCC);   
 
     IF (lv_CustID IS NOT NULL) THEN   
     
