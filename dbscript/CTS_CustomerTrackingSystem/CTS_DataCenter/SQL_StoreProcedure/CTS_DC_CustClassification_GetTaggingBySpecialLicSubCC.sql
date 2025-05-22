@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation (filtered by): 
 
 		Example:
-			CALL CTS_DC_CustClassification_GetTaggingBySpecialLicSubCC (@ip_CustIDs:= '1284,1287');
+			CALL CTS_DC_CustClassification_GetTaggingBySpecialLicSubCC('[{"CustID":4357127,"ScanSpecialLicSubType":0}]');
 	*/ 
 	DECLARE CONST_TAGGINGTYPE_SPECIALLICSUBCC                       SMALLINT DEFAULT 3;
 	DECLARE CONST_TAGGINGID_SPECIALLICSUBCC                         SMALLINT DEFAULT 1;
