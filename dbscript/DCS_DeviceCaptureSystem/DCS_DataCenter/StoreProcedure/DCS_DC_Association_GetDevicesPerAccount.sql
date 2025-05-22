@@ -69,7 +69,7 @@ BEGIN
 			,	tmp.NoOfDevice
 		FROM Temp_AccountNoOfDevice AS tmp
 			INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = tmp.AccountID
-		ORDER BY tmp.NoOfDevice DESC
+		ORDER BY tmp.NoOfDevice DESC, tmp.AccountID ASC
 		LIMIT ip_PageSize
 		OFFSET lv_Offset;
 	ELSE
