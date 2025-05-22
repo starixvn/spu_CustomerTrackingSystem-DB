@@ -1080,6 +1080,8 @@ BEGIN
 		END IF;	
 		
 	END IF;
+		
+	END IF;
 
 	/*Set IsDisabled = 1 for Special Lic Sub source table */
 	SELECT cat.CustomerClassPriority
@@ -1097,15 +1099,13 @@ BEGIN
 		
 		UPDATE CTS_DataCenter.Customer_SpecialLicSubCC AS sls
 			INNER JOIN Temp_NewClassification AS temp ON sls.CustID = temp.CustID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID AND cat.ParentID <> CONST_PARENTID_WRAPPER
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
 		SET sls.IsDisabled = 1
 		WHERE sls.IsDisabled = 0 AND cat.CustomerClassPriority < lv_CustomerClassPriority
 			AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassification AS cls 
 							WHERE cls.CustID = temp.CustID AND cls.ParentID = CONST_PARENTID_WRAPPER);
-		
-	END IF;
 
-END IF;
+	END IF;
 	
 END$$
 DELIMITER ;
