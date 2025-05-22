@@ -52,9 +52,9 @@ BEGIN
 		,	COUNT(ass.DeviceID) AS NoOfDevice
 	FROM DCS_DataCenter.Association AS ass
 		INNER JOIN DCS_DataCenter.Account AS acc ON ass.AccountID = acc.AccountID
-	WHERE acc.LastLoginTime >= lv_CutoffDate
-		AND ass.SubscriberID = ip_SubscriberID
-	GROUP BY ass.AccountID, acc.LoginName
+	WHERE ass.SubscriberID = ip_SubscriberID
+		AND acc.LastLoginTime >= lv_CutoffDate
+	GROUP BY ass.AccountID
 	HAVING COUNT(ass.DeviceID) >= ip_NoOfDevice;
     
     SET op_TotalRows = (SELECT COUNT(1) FROM Temp_AccountNoOfDevice);
@@ -69,6 +69,7 @@ BEGIN
 			,	tmp.NoOfDevice
 		FROM Temp_AccountNoOfDevice AS tmp
 			INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = tmp.AccountID
+		ORDER BY tmp.NoOfDevice DESC
 		LIMIT ip_PageSize
 		OFFSET lv_Offset;
 	ELSE

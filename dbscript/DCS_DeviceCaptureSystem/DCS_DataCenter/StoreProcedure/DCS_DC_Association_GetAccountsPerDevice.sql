@@ -32,7 +32,7 @@ BEGIN
 		SET @PageSize		= 25;
 		SET @PageIndex		= 1;
 
-		CALL DCS_DataCenter.DCS_DC_Association_GetAccountsPerDevice(@SubcriberID, @LastDay, @NoOfAccount, @PageSize, @PageIndex, @op_TotalPages, @op_TotalRows);
+		CALL DCS_DataCenter.DCS_DC_Association_GetAccountsPerDevice(@SubcriberID, @LastDay, @NoOfAccount, @PageSize, @PageIndex, @TotalPages, @TotalRows);
         SELECT @TotalPages, @TotalRows
 	*/
     
@@ -51,10 +51,9 @@ BEGIN
 	SELECT	ass.DeviceID
 		,	COUNT(ass.AccountID) AS NoOfAccount
 	FROM DCS_DataCenter.Association AS ass
-		INNER JOIN DCS_DataCenter.Device AS device ON ass.DeviceID = device.DeviceID
         INNER JOIN DCS_DataCenter.Account AS acc ON ass.AccountID = acc.AccountID
-	WHERE acc.LastLoginTime >= lv_CutoffDate
-		AND ass.SubscriberID = ip_SubscriberID
+	WHERE ass.SubscriberID = ip_SubscriberID
+		AND acc.LastLoginTime >= lv_CutoffDate
 	GROUP BY ass.DeviceID
 	HAVING COUNT(ass.AccountID) >= ip_NoOfAccount;
     
@@ -70,6 +69,7 @@ BEGIN
 			,	tmp.NoOfAccount
 		FROM Temp_DeviceIDNoOfAccount AS tmp
 			INNER JOIN DCS_DataCenter.Device AS device ON tmp.DeviceID = device.DeviceID
+		ORDER BY tmp.NoOfAccount DESC
 		LIMIT ip_PageSize
 		OFFSET lv_Offset;
 	ELSE
