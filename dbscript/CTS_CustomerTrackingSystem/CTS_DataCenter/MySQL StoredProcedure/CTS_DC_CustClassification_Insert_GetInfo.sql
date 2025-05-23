@@ -25,8 +25,9 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_GetInfo (9,3,'[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]');
 			
 		Revisions: 
-			- 20240618@Victoria.Le:			Initial Writing [Redmine ID: #205317]
-			- 20241017@Victoria.Le:			Remove the statement which being used as a temporary solution for datatypes that are out of range  [Redmine ID: #212240]
+			- 20240618@Victoria.Le:	Initial Writing [Redmine ID: #205317]
+			- 20241017@Victoria.Le:	Remove the statement which being used as a temporary solution for datatypes that are out of range  [Redmine ID: #212240]
+			- 20250519@Thomas.Nguyen: Special Lic Sub CC - Add column ScanSpecialLicSubType [Redmine ID: #226847]
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -173,6 +174,7 @@ BEGIN
 		,	Remark						VARCHAR(500)
 		,	GroupName					VARCHAR(100)
 		,	IsRobot						TINYINT(1) DEFAULT 0
+		,	ScanSpecialLicSubType		TINYINT DEFAULT 0
 		, 	PRIMARY KEY (CustID, DWCategoryID)
 		,	KEY IX_Temp_NewCC_CustID_NewCateID (CustID, NewCategoryGroupID)
 		,	KEY IX_Temp_NewCC_CustID_Priority (CustID,CustomerClassPriority)
@@ -671,7 +673,7 @@ BEGIN
 			INSERT INTO Temp_NewClassification(
 					CustID,CTSCustID,DWCategoryID,DWCategoryGroupID,TurnoverRM,WinlossRM,BetCount,ActiveDays,TWBetCount,TWGroupBettingRate
 				,	TWTicketRejectRate,TWDesktopUsageRate,TaggingID,TaggingType,PerformanceTime,ScanTaggingType
-				,	SubscriberID,RoleID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,SpecialCC,IsDataChanged)
+				,	SubscriberID,RoleID,IsLicensee,IsLicenseeVIP,IsLicenseeBA,SpecialCC,IsDataChanged,ScanSpecialLicSubType)
 			SELECT DISTINCT
 					tmpJs.CustID
 				,	cus.CTSCustID
@@ -696,6 +698,7 @@ BEGIN
 				,	cus.IsLicenseeBA
 				,	sp.CustomerClass AS SpecialCC
 				,	1 AS IsDataChanged
+				,	tmpJs.ScanSpecialLicSubType
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 					BIGINT UNSIGNED		PATH "$.CustID"
@@ -713,6 +716,7 @@ BEGIN
 											, 	TaggingType				SMALLINT			PATH "$.TaggingType"	
 											, 	PerformanceTime			DATETIME			PATH "$.PerformanceTime"
 											, 	ScanTaggingType			TINYINT				PATH "$.ScanTaggingType"
+											,	ScanSpecialLicSubType	TINYINT				PATH "$.ScanSpecialLicSubType"
 										)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmpJs.CustID = cus.CustID AND cus.CustSubID = 0
 				LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON tmpJs.CustID = sp.CustID;

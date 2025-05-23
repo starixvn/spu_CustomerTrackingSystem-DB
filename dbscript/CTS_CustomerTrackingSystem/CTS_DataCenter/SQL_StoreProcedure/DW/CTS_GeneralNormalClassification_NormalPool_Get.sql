@@ -23,6 +23,7 @@ AS
 		- 20240327@Jonas.Huynh: EC2024 - Resolve Locking [Redmine ID: #200842]
 		- 20240426@Thomas.Nguyen: Remove logic New Member Classify Tagging [Redmine ID: #200854]
 		- 20241226@Jonas.Huynh: HF Incorrect CC  [Redmine ID: #214058]
+		- 20250515@Thomas.Nguyen: Add logic for Special Lic Sub [Redmine ID: #226847]
 
 	Param's Explanation:
 		@ScannedMaxId: This parameter is used to output scanned MaxID
@@ -37,12 +38,15 @@ BEGIN
 	
 	DECLARE	@BATCHSIZE						INT 	= 20000;
 
-	DECLARE @FUNCTIONID_REALTIME			TINYINT = 1,
-			@FUNCTIONID_SCANTAGGING			TINYINT = 100;
+	DECLARE @FUNCTIONID_REALTIME					TINYINT = 1,
+			@FUNCTIONID_SCANTAGGING					TINYINT = 100,
+			@FUNCTIONID_SCANSPECIALLICSUBCC			TINYINT = 10;
 
-	DECLARE @SCANTAGGINGTYPE_NOTEXIST		TINYINT = 0,
-			@SCANTAGGINGTYPE_EXIST			TINYINT = 1,
-			@SCANTAGGINGTYPE_EXISTONLY		TINYINT = 2;
+	DECLARE @SCANTAGGINGTYPE_NOTEXIST				TINYINT = 0,
+			@SCANTAGGINGTYPE_EXIST					TINYINT = 1,
+			@SCANTAGGINGTYPE_EXISTONLY				TINYINT = 2,
+			@SCANSPECIALLICSUBTYPE_NOTEXIST			TINYINT = 0,
+			@SCANSPECIALLICSUBTYPE_EXIST			TINYINT = 1;
 
 	DECLARE @GENERAL_LASTSCANNEDID			TINYINT = 3;
 	DECLARE @LastScannedID					BIGINT;
@@ -54,7 +58,8 @@ BEGIN
 		Id					BIGINT PRIMARY KEY IDENTITY(1,1),
 		CustId				INT UNIQUE NOT NULL,
 		IsRealtimeOnly		BIT DEFAULT(0),
-		ScanTaggingType  	TINYINT DEFAULT(0)
+		ScanTaggingType  	TINYINT DEFAULT(0),
+		ScanSpecialLicSubType		TINYINT
 	);
 
 	-- #1: Get Scanned MaxID
@@ -66,14 +71,16 @@ BEGIN
 	-- #2: Get top customers by priority
 	IF(@ScannedMaxId IS NOT NULL)
 	BEGIN
-		INSERT INTO #tmpCustomers(CustId, IsRealtimeOnly, ScanTaggingType)
+		INSERT INTO #tmpCustomers(CustId, IsRealtimeOnly, ScanTaggingType, ScanSpecialLicSubType)
 		SELECT TOP(@BATCHSIZE) c.CustId,
 			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.ID) * @FUNCTIONID_SCANTAGGING) THEN 0
 					WHEN SUM(CASE WHEN c.FunctionId = @FUNCTIONID_SCANTAGGING THEN @FUNCTIONID_REALTIME ELSE c.FunctionId END) = (COUNT(c.ID) * @FUNCTIONID_REALTIME) THEN 1 
 					ELSE 0 END,
 			   CASE WHEN SUM(c.FunctionId) = (COUNT(c.CustId) * @FUNCTIONID_SCANTAGGING) THEN @SCANTAGGINGTYPE_EXISTONLY 
 					WHEN SUM(CASE WHEN c.FunctionId = @FUNCTIONID_SCANTAGGING THEN @FUNCTIONID_SCANTAGGING ELSE 0 END) > 1 THEN @SCANTAGGINGTYPE_EXIST 
-					ELSE @SCANTAGGINGTYPE_NOTEXIST END
+					ELSE @SCANTAGGINGTYPE_NOTEXIST END,
+			   CASE WHEN SUM(CASE WHEN c.FunctionId = @FUNCTIONID_SCANSPECIALLICSUBCC THEN @FUNCTIONID_SCANSPECIALLICSUBCC ELSE 0 END) > 1 THEN @SCANSPECIALLICSUBTYPE_EXIST 
+					ELSE @SCANSPECIALLICSUBTYPE_NOTEXIST END
 		FROM dbo.CustomerClassification_NormalPool AS c WITH(NOLOCK)
 		WHERE c.ID <= @ScannedMaxId
 			AND NOT EXISTS (SELECT 1 FROM dbo.CustomerClassification AS cc WITH (NOLOCK) WHERE cc.ID > @LastScannedID AND cc.CustId = c.CustId)
@@ -84,14 +91,10 @@ BEGIN
 	-- #3: Return dataset
 	SELECT CustId			 AS CustId, 
 		   IsRealtimeOnly	 AS IsRealtimeOnly,
-		   ScanTaggingType   AS ScanTaggingType
-	FROM #tmpCustomers;
+		   ScanTaggingType   AS ScanTaggingType,
+		   ScanSpecialLicSubType AS ScanSpecialLicSubType
+	FROM #tmpCustomers AS tmp WITH(NOLOCK);
 	
 	DROP TABLE #tmpCustomers;
 END;
-GO
-
-GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Get] TO [wsv_cts]
-GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Get] TO [wsv_cts]
 GO

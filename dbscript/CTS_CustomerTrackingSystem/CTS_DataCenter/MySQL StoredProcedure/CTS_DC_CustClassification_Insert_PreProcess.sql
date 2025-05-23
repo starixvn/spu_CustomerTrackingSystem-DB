@@ -18,7 +18,8 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassification_Insert_PreProcess(9);
 				
 		Revisions: 
-			- 20240620@Thomas.Nguyen:			Created [Redmine ID: #205317]
+			- 20240620@Thomas.Nguyen: Created [Redmine ID: #205317]
+			- 20250519@Thomas.Nguyen: Special Lic Sub CC - Add column ScanSpecialLicSubType to ignore keeping Probation rule [Redmine ID: #226847]
 */ 
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL			INT;
 	DECLARE CONST_CATEGROUPID_INACTIVE						INT;
@@ -64,6 +65,7 @@ BEGIN
 			, 	LastProbationDay		DATE
 			,	ScanTaggingType			TINYINT DEFAULT 0   
 			,	IsPassProbationRule		TINYINT(1)
+			,	ScanSpecialLicSubType	TINYINT DEFAULT 0
 		);
 
 		DROP TEMPORARY TABLE IF EXISTS Temp_CustIgnoranceAction;    
@@ -74,12 +76,13 @@ BEGIN
 		); 
 		
 		 /*GET PROBATION CUSTOMERS*/
-		INSERT IGNORE INTO Temp_ProbationCustomer(CustID, DWCategoryGroupID, ProbationDate, LastProbationDay, ScanTaggingType)
+		INSERT IGNORE INTO Temp_ProbationCustomer(CustID, DWCategoryGroupID, ProbationDate, LastProbationDay, ScanTaggingType, ScanSpecialLicSubType)
 		SELECT 	cls.CustID
 			,	temp.DWCategoryGroupID	
 			, 	DATE(cls.CreatedDate)
 			, 	lv_FromProbationLastDay
 			, 	temp.ScanTaggingType
+			, 	temp.ScanSpecialLicSubType
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cls.CategoryID = cate.CategoryID
@@ -95,7 +98,8 @@ BEGIN
 		SELECT	temp.CustID, CONST_ACTIONTYPE_IGNOREPROBATION, 0 AS IsReturnData
 		FROM 	Temp_ProbationCustomer AS temp 
 		WHERE 	temp.IsPassProbationRule = 0
-			AND temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_NOTEXIST;
+			AND temp.ScanTaggingType = CONST_SCANTAGGINGTYPE_NOTEXIST
+			AND temp.ScanSpecialLicSubType = 0;
 			
 		INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType, IsReturnData)
 		SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_EXISTEDVVIP, 0 AS IsReturnData
@@ -134,7 +138,7 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryGroupID = temp.DWCategoryGroupID 
 																AND cate.TaggingType = temp.TaggingType 
 																AND cate.TaggingID = temp.TaggingID
-		SET temp.DWCategoryID = cate.CategoryID
+		SET temp.DWCategoryID = IFNULL(cate.CategoryID, temp.DWCategoryID)
 		WHERE temp.DWCategoryGroupID <> CONST_CATEGROUPID_INACTIVE;
 		
 	ELSE

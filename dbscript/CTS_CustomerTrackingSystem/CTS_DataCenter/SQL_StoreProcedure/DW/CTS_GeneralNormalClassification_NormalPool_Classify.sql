@@ -29,17 +29,18 @@ AS
 		- 20240618@Jonas.Huynh: Renovate CC - Phase 2 [Redmine ID: #205317]
 		- 20241223@Jonas.Huynh: HF Incorrect Inactive Category [Redmine ID: #215615]
 		- 20250515@Long.Luu: 	Add new 3 special licensees "Winbox, SM88, and SL88SW" [Redmine ID: #226846]
+		- 20250515@Thomas.Nguyen: Add logic for Special Lic Sub [Redmine ID: #226847]
 
 	Param's Explanation:
 		@CustomersXML		: This parameter is used to classify customer perf which bases on currentCategory
 		@IsScanOnlyTagging  : 0-Performance Classification, 1-Behaviour Classification (Tagging)
     Script:
-        EXEC bodb_VR2Model.dbo.CTS_GeneralNormalClassification_NormalPool_Classify 
+        EXEC bodb_VR2Model.dbo.[CTS_GeneralNormalClassification_NormalPool_Classify] 
 			@CustomersXML = N'<Root>
-								<r CustId="5002646" CategoryId="201" IsNewCreated="0" IsRealtimeOnly= "0" IsProbationLastDay="0" ScanTaggingType="0"/>
-								<r CustId="5022391" CategoryId="0"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="0" ScanTaggingType="0"/>
-								<r CustId="1275" CategoryId="205"  IsNewCreated="0" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
-								<r CustId="1280" CategoryId="202"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"/>
+								<r CustId="5002646" CategoryId="201" IsNewCreated="0" IsRealtimeOnly= "0" IsProbationLastDay="0" ScanTaggingType="0" ScanSpecialLicSubType="1" IsSpecialLicSubCC="0"/>
+								<r CustId="5022391" CategoryId="0"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="0" ScanTaggingType="0" ScanSpecialLicSubType="1" IsSpecialLicSubCC="0"/>
+								<r CustId="1275" CategoryId="205"  IsNewCreated="0" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"  ScanSpecialLicSubType="0" IsSpecialLicSubCC="0"/>
+								<r CustId="1280" CategoryId="202"  IsNewCreated="1" IsRealtimeOnly= "1" IsProbationLastDay="1" ScanTaggingType="0"  ScanSpecialLicSubType="0" IsSpecialLicSubCC="1"/>
 							</Root>';
 */
 BEGIN
@@ -68,7 +69,8 @@ BEGIN
 
 	DECLARE @ScanTaggingType_NotExist		TINYINT = 0,
 			@ScanTaggingType_Exist			TINYINT = 1,
-			@ScanTaggingType_ExistOnly		TINYINT = 2;
+			@ScanTaggingType_ExistOnly		TINYINT = 2,
+			@ScanSpecialLicSubType_Exist	TINYINT = 1;
 
 	DECLARE @ListCustIds					VARCHAR(MAX);
 
@@ -87,7 +89,9 @@ BEGIN
 		IsActiveWithin30Days   BIT		NOT NULL DEFAULT 0,
 		IsDeposit			   BIT		NOT NULL DEFAULT 0,
 		IsSpecialSite		   BIT		NOT NULL DEFAULT 0,
-		SRecommend			   INT
+		SRecommend			   INT,
+		ScanSpecialLicSubType  TINYINT	NOT NULL DEFAULT 0,
+		IsIgnoreInactive  	   BIT		NULL DEFAULT 0,
 	);
 	
 	CREATE NONCLUSTERED INDEX IX_tmpCustomers_IsRealtimeOnly_CurrentCategoryId_ScanTaggingType ON #tmpCustomers(
@@ -104,7 +108,9 @@ BEGIN
 	CREATE TABLE #tmpScanTaggingCustomer(
 		CustId			       INT PRIMARY KEY,
 		CurrentCategoryId      INT		NOT NULL,
-		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0
+		ScanTaggingType		   TINYINT	NOT NULL DEFAULT 0,
+		ScanSpecialLicSubType  TINYINT	NOT NULL DEFAULT 0
+
 	);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
@@ -183,13 +189,15 @@ BEGIN
 	);
 
 	-- #1: Get list customers
-	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay, ScanTaggingType)
-	SELECT	T.C.value('./@CustId', 'INT')				AS CustId
-		,	T.C.value('./@CategoryId', 'INT')			AS CurrentCategoryId
-		,	T.C.value('./@IsNewCreated', 'BIT')			AS IsNewCreated
-		,	T.C.value('./@IsRealtimeOnly', 'BIT')		AS IsRealtimeOnly
-		,	T.C.value('./@IsProbationLastDay', 'BIT')	AS IsProbationLastDay
-		,	T.C.value('./@ScanTaggingType', 'TINYINT')	AS ScanTaggingType
+	INSERT INTO #tmpCustomers(CustId, CurrentCategoryId, IsNewCreated, IsRealtimeOnly, IsProbationLastDay, ScanTaggingType, ScanSpecialLicSubType, IsIgnoreInactive)
+	SELECT	T.C.value('./@CustId', 'INT')						AS CustId
+		,	T.C.value('./@CategoryId', 'INT')					AS CurrentCategoryId
+		,	T.C.value('./@IsNewCreated', 'BIT')					AS IsNewCreated
+		,	T.C.value('./@IsRealtimeOnly', 'BIT')				AS IsRealtimeOnly
+		,	T.C.value('./@IsProbationLastDay', 'BIT')			AS IsProbationLastDay
+		,	T.C.value('./@ScanTaggingType', 'TINYINT')			AS ScanTaggingType
+		,	T.C.value('./@ScanSpecialLicSubType', 'TINYINT')	AS ScanSpecialLicSubType
+		,	T.C.value('./@IsSpecialLicSubCC', 'BIT')			AS IsIgnoreInactive
 	FROM @CustomersXML.nodes('//r') AS T(C)
 	OPTION (OPTIMIZE FOR (@CustomersXML = NULL));
 	
@@ -216,9 +224,9 @@ BEGIN
 
 	-- #4: Scan tagging only
 	DELETE a WITH (ROWLOCK)
-	OUTPUT DELETED.CustId,DELETED.CurrentCategoryId, DELETED.ScanTaggingType INTO #tmpScanTaggingCustomer(CustId, CurrentCategoryId, ScanTaggingType)
+	OUTPUT DELETED.CustId,DELETED.CurrentCategoryId, DELETED.ScanTaggingType, DELETED.ScanSpecialLicSubType INTO #tmpScanTaggingCustomer(CustId, CurrentCategoryId, ScanTaggingType, ScanSpecialLicSubType)
 	FROM #tmpCustomers AS a
-	WHERE ScanTaggingType = @ScanTaggingType_ExistOnly
+	WHERE ScanTaggingType = @ScanTaggingType_ExistOnly OR ScanSpecialLicSubType = @ScanSpecialLicSubType_Exist;
 
 	IF (EXISTS (SELECT 1 FROM #tmpCustomers))
 	BEGIN
@@ -238,8 +246,9 @@ BEGIN
 		SET a.IsActiveWithin30Days = 1
 		FROM #tmpCustomers AS a
 			LEFT JOIN dbo.CustomerClassification_LatestActiveDay AS c WITH(NOLOCK) ON a.CustId = c.CustId
-		WHERE (c.CustId IS NOT NULL AND c.LastTransDate >= @From30Date)
-			OR a.IsNewCreated = 1;
+		WHERE ((c.CustId IS NOT NULL AND c.LastTransDate >= @From30Date)
+				OR a.IsNewCreated = 1)
+				OR a.IsIgnoreInactive = 1;
 	
 		-- #6: Update reset balance for credit - normal inactive with new placebet
 		EXEC dbo.CTS_GeneralNormalClassification_Balance_Reset @CurrentDateTime = @CurrentDateTime, @YesterdayDate = @YesterdayDate;
@@ -267,7 +276,7 @@ BEGIN
 	IF (EXISTS (SELECT 1 FROM #tmpScanTaggingCustomer))
 	BEGIN
 		-- #8.1: Classify Tagging (link Association, TWGB,...)
-		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType)
+		INSERT INTO dbo.CustomerClassification(CustId, SportId, CategoryId, CurrentCategoryId, CreatedDate, CreatedTime, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, ScanTaggingType, ScanSpecialLicSubType)
 		SELECT t.CustId
 			,  @GENERAL_SPORTID
 			,  t.CurrentCategoryId
@@ -280,6 +289,7 @@ BEGIN
 			,  c.ActiveDays
 			,  ISNULL(c.PerformanceTime, @CurrentDateTime)
 			,  t.ScanTaggingType
+			,  t.ScanSpecialLicSubType
 		FROM #tmpScanTaggingCustomer AS t
 			LEFT JOIN #tmpCustomerAccummulatedInfo AS c ON t.CustId = c.CustId;
 
@@ -455,9 +465,4 @@ BEGIN
 	DROP TABLE #tmpRemoveCust;
 	DROP TABLE #tmpScanTaggingCustomer;
 END;
-GO
-
-GRANT EXECUTE ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify] TO [wsv_cts]
-GO
-GRANT VIEW DEFINITION ON [dbo].[CTS_GeneralNormalClassification_NormalPool_Classify] TO [wsv_cts]
 GO
