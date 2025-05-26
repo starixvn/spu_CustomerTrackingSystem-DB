@@ -26,7 +26,7 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
-		SET @SubcriberID = 104;
+		SET @SubcriberID = 2;
 		SET @NoOfDevice	= 1;
 		SET @LastDay	= 100;
 		SET @PageSize	= 25;
@@ -57,7 +57,6 @@ BEGIN
 	GROUP BY ass.AccountID
 	HAVING COUNT(ass.DeviceID) >= ip_NoOfDevice;
     
-    SELECT * FROM Temp_AccountNoOfDevice;
     SET op_TotalRows = (SELECT COUNT(1) FROM Temp_AccountNoOfDevice);
     
     IF op_TotalRows > 0 THEN
