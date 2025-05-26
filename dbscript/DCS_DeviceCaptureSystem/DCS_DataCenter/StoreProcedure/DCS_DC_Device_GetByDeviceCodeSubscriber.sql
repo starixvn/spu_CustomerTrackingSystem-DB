@@ -20,32 +20,19 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
-		CALL DCS_DC_Device_GetByDeviceCodeSubscriber(@ip_SubscriberID:=8000001,@ip_DeviceCode:='71ea9dc88d474a96b042e0436f9c745f');
+		CALL DCS_DC_Device_GetByDeviceCodeSubscriber(@ip_SubscriberID:=2,@ip_DeviceCode:='4f143f8ccad246bd8cc95b2fa3202aa2');
 	*/
-    #========SEARCH BY DeviceCode=====================
-    DECLARE lv_DeviceID BIGINT UNSIGNED;
-    DECLARE lv_DeviceCode VARCHAR(32);
-    DECLARE lv_UserAgentKey VARCHAR(32);
-    DECLARE lv_OS VARCHAR(20);
-     
-	SELECT	dv.DeviceID
-		, 	dv.FirstDeviceCode
-		, 	dv.UserAgentKey
-    INTO lv_DeviceID, lv_DeviceCode, lv_UserAgentKey
-    FROM DCS_DataCenter.Device AS dv
-	WHERE dv.FirstDeviceCode = ip_DeviceCode
-		AND EXISTS (SELECT 1 FROM DCS_DataCenter.Association AS ass WHERE ass.DeviceID = dv.DeviceID AND ass.SubscriberID = ip_SubscriberID);   
-
-    IF lv_UserAgentKey IS NOT NULL THEN	
-		SELECT ua.OS
-        INTO lv_OS
-		FROM  DCS_DataCenter.UserAgent AS ua
-		WHERE ua.UserAgentKey = lv_UserAgentKey;
-	END IF;
     
-	#===========Return Info=============
-	SELECT 	lv_DeviceID AS DeviceID 
-		, 	lv_DeviceCode AS DeviceCode
-        , 	lv_OS AS OS;
+	SELECT	dv.DeviceID 			AS DeviceID
+		, 	dv.FirstDeviceCode		AS DeviceCode
+		, 	ua.OS					AS OS
+    FROM DCS_DataCenter.Device AS dv
+		INNER JOIN  DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = dv.UserAgentKey
+	WHERE dv.FirstDeviceCode = ip_DeviceCode
+		AND EXISTS (SELECT 1 
+					FROM DCS_DataCenter.Association AS ass 
+                    WHERE ass.DeviceID = dv.DeviceID 
+						AND ass.SubscriberID = ip_SubscriberID)
+	LIMIT 1;   
 END$$
 DELIMITER ;
