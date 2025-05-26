@@ -22,17 +22,18 @@ BEGIN
 	Example:
 		CALL DCS_DC_Device_GetByDeviceCodeSubscriber(@ip_SubscriberID:=2,@ip_DeviceCode:='4f143f8ccad246bd8cc95b2fa3202aa2');
 	*/
-    
+
 	SELECT	dv.DeviceID 			AS DeviceID
-		, 	dv.FirstDeviceCode		AS DeviceCode
-		, 	ua.OS					AS OS
-    FROM DCS_DataCenter.Device AS dv
-		INNER JOIN  DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = dv.UserAgentKey
+		,	dv.FirstDeviceCode		AS DeviceCode
+		,	ua.OS					AS OS
+	FROM DCS_DataCenter.Device AS dv
+		LEFT JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = dv.UserAgentKey
 	WHERE dv.FirstDeviceCode = ip_DeviceCode
-		AND EXISTS (SELECT 1 
-					FROM DCS_DataCenter.Association AS ass 
-                    WHERE ass.DeviceID = dv.DeviceID 
+		AND EXISTS (SELECT 1
+					FROM DCS_DataCenter.Association AS ass
+					WHERE ass.DeviceID = dv.DeviceID
 						AND ass.SubscriberID = ip_SubscriberID)
-	LIMIT 1;   
+	ORDER BY dv.DeviceID ASC
+	LIMIT 1;
 END$$
 DELIMITER ;
