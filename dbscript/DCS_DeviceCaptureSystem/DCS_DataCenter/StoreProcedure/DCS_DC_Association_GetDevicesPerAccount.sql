@@ -26,10 +26,10 @@ BEGIN
 	Param's Explanation (filtered by):
 
 	Example:
-		SET @SubcriberID = 2;
+		SET @SubcriberID = 104;
 		SET @NoOfDevice	= 1;
 		SET @LastDay	= 100;
-		SET @PageSize	= 5;
+		SET @PageSize	= 25;
 		SET @PageIndex	= 1;
 
 		CALL DCS_DataCenter.DCS_DC_Association_GetDevicesPerAccount(@SubcriberID, @NoOfDevice, @LastDay, @PageSize, @PageIndex, @op_TotalPages, @op_TotalRows);
@@ -57,6 +57,7 @@ BEGIN
 	GROUP BY ass.AccountID
 	HAVING COUNT(ass.DeviceID) >= ip_NoOfDevice;
     
+    SELECT * FROM Temp_AccountNoOfDevice;
     SET op_TotalRows = (SELECT COUNT(1) FROM Temp_AccountNoOfDevice);
     
     IF op_TotalRows > 0 THEN
@@ -64,11 +65,13 @@ BEGIN
 		SET op_TotalPages = CEIL(op_TotalRows / ip_PageSize);
 		SET lv_Offset = (ip_PageIndex - 1) * ip_PageSize;
         
-		SELECT	tmp.AccountID
-			,	acc.LoginName
+		SELECT 	ca.CTSCustID
+			,	cus.RegisterName
+            ,	cus.UserName
 			,	tmp.NoOfDevice
 		FROM Temp_AccountNoOfDevice AS tmp
-			INNER JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = tmp.AccountID
+			INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON tmp.AccountID = ca.AccountID AND ca.SubscriberID = ip_SubscriberID
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
 		ORDER BY tmp.NoOfDevice DESC, tmp.AccountID ASC
 		LIMIT ip_PageSize
 		OFFSET lv_Offset;
