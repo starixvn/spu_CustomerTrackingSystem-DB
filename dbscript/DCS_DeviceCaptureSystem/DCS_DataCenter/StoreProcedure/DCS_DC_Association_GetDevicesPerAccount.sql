@@ -62,7 +62,6 @@ BEGIN
 		INNER JOIN DCS_DataCenter.Account AS acc ON ass.AccountID = acc.AccountID
 	WHERE ass.SubscriberID = ip_SubscriberID
 		AND acc.LastLoginTime >= lv_CutoffDate
-		AND acc.IsCTSTransformed = 1
 	GROUP BY ass.AccountID
 	HAVING COUNT(ass.DeviceID) >= ip_NoOfDevice;
     
