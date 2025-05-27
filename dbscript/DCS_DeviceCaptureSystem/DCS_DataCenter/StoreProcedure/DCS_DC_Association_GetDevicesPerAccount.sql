@@ -8,7 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Association_GetDevicesPerAccount
 	,	IN ip_LastDay		INT
 	,	IN ip_PageSize		INT
 	,	IN ip_PageIndex		INT
-    
+
 	,	OUT op_TotalPages	INT
 	,	OUT op_TotalRows	INT
 )
@@ -33,18 +33,26 @@ BEGIN
 		SET @PageIndex	= 1;
 
 		CALL DCS_DataCenter.DCS_DC_Association_GetDevicesPerAccount(@SubcriberID, @NoOfDevice, @LastDay, @PageSize, @PageIndex, @op_TotalPages, @op_TotalRows);
-        SELECT @op_TotalPages,@op_TotalRows;
+		SELECT @op_TotalPages,@op_TotalRows;
 	*/
-    
-    DECLARE lv_CutoffDate	DATE;
-    DECLARE lv_Offset 		INT;
-    
-    DROP TEMPORARY TABLE IF EXISTS Temp_AccountNoOfDevice;
+
+	DECLARE lv_CutoffDate	DATE;
+	DECLARE lv_Offset 		INT;
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_AccountNoOfDevice;
 	CREATE TEMPORARY TABLE Temp_AccountNoOfDevice (
-            AccountID		BIGINT UNSIGNED PRIMARY KEY
+			AccountID		BIGINT UNSIGNED PRIMARY KEY
 		,	NoOfDevice		INT
 	);
-    
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustomerInfo;
+	CREATE TEMPORARY TABLE Temp_CustomerInfo (
+			CTSCustID		BIGINT UNSIGNED PRIMARY KEY
+		,	RegisterName	VARCHAR(50)
+		,	UserName		VARCHAR(50)
+		,	NoOfDevice		INT
+	);
+
 	SET lv_CutoffDate = DATE_SUB(NOW(), INTERVAL ip_LastDay DAY);
 
 	INSERT INTO Temp_AccountNoOfDevice(AccountID, NoOfDevice)
@@ -54,30 +62,38 @@ BEGIN
 		INNER JOIN DCS_DataCenter.Account AS acc ON ass.AccountID = acc.AccountID
 	WHERE ass.SubscriberID = ip_SubscriberID
 		AND acc.LastLoginTime >= lv_CutoffDate
+		AND acc.IsCTSTransformed = 1
 	GROUP BY ass.AccountID
 	HAVING COUNT(ass.DeviceID) >= ip_NoOfDevice;
     
-    SET op_TotalRows = (SELECT COUNT(1) FROM Temp_AccountNoOfDevice);
+    INSERT INTO Temp_CustomerInfo(CTSCustID, RegisterName, UserName, NoOfDevice)
+	SELECT 	ca.CTSCustID
+		,	cus.RegisterName
+		,	cus.UserName
+		,	tmp.NoOfDevice
+	FROM Temp_AccountNoOfDevice AS tmp
+		INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON tmp.AccountID = ca.AccountID AND ca.SubscriberID = ip_SubscriberID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0;
     
-    IF op_TotalRows > 0 THEN
+	SET op_TotalRows = (SELECT COUNT(1) FROM Temp_CustomerInfo);
+
+	IF op_TotalRows > 0 THEN
 		SET ip_PageSize = LEAST(ip_PageSize, op_TotalRows);
 		SET op_TotalPages = CEIL(op_TotalRows / ip_PageSize);
 		SET lv_Offset = (ip_PageIndex - 1) * ip_PageSize;
-        
-		SELECT 	ca.CTSCustID
-			,	cus.RegisterName
-            ,	cus.UserName
-			,	tmp.NoOfDevice
-		FROM Temp_AccountNoOfDevice AS tmp
-			INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON tmp.AccountID = ca.AccountID AND ca.SubscriberID = ip_SubscriberID
-			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
-		ORDER BY tmp.NoOfDevice DESC, tmp.AccountID ASC
+
+		SELECT 	CTSCustID
+			,	RegisterName
+			,	UserName
+			,	NoOfDevice
+		FROM Temp_CustomerInfo
+		ORDER BY NoOfDevice DESC, RegisterName ASC, UserName ASC
 		LIMIT ip_PageSize
 		OFFSET lv_Offset;
 	ELSE
 		SET op_TotalPages = 0;
 		SET op_TotalRows = 0;
-    END IF;
-    
+	END IF;
+
 END$$
 DELIMITER ;
