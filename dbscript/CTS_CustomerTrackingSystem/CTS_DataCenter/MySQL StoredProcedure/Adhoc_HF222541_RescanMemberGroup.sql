@@ -280,6 +280,4 @@ sp : BEGIN
 	END WHILE;	
 END$$
 DELIMITER ;
-CALL Adhoc_HF115554_RescanMemberGroup();
-#SELECT * FROM Adhoc_HF222541_AssociatedGroupAccount_Target WHERE IsScaned = 1;
-#SHOW processlist;
+
