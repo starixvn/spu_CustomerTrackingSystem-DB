@@ -39,7 +39,7 @@ sp : BEGIN
 		,	CustID 				BIGINT UNSIGNED
 		,	AddGroupDate 		DATETIME
 		,	IsIgnored			TINYINT DEFAULT 0
-        ,	INDEX 				IX_Temp_Cust_CustID(CustID)
+        ,	INDEX 				IX_Temp_Cust_CustID_IsIgnored(CustID, IsIgnored)
 	);
     
     
@@ -97,7 +97,7 @@ sp : BEGIN
         TRUNCATE TABLE Temp_CustDetected;
         
 		SELECT 	HasDevice
-			,	HasIP
+			,	1 AS HasIP
 			,	HasAI
 		INTO 	lv_HasDevice
 			,	lv_HasIP
@@ -105,17 +105,21 @@ sp : BEGIN
 		FROM  CTS_DataCenter.AssociatedGroup AS ag
 		WHERE ag.GroupID = lv_ScanGroupID
 		LIMIT 1;
-
 		
 		INSERT INTO Temp_Cust(CTSCustID, CustID, AddGroupDate, IsIgnored)
 		SELECT 	acc.CTSCustID
 			,	cus.CustID
 			,	acc.Created
-			,	0
+			,	CASE WHEN acc.IsAuto = 0 THEN 1 ELSE 0 END AS IsIgnored
 		FROM CTS_DataCenter.AssociatedGroupAccount AS acc
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON acc.CTSCustID = cus.CTSCustID
 		WHERE acc.GroupID = lv_ScanGroupID
 			AND Created = lv_ScanCreated;
+
+		INSERT INTO CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target(GroupID,CTSCustID,IsAuto,Remark,Created,CreatedBy,LastModifiedDate,LastModifiedBy,IsScaned)
+		SELECT ass.GroupID, ass.CTSCustID, ass.IsAuto, ass.Remark, ass.Created, ass.CreatedBy, ass.LastModifiedDate, ass.LastModifiedBy, 1
+		FROM CTS_DataCenter.AssociatedGroupAccount AS ass
+		WHERE ass.GroupID = lv_ScanGroupID AND ass.Created = lv_ScanCreated AND ass.IsAuto = 0;
 
 		/**************************Device*******************************/
 		DROP TEMPORARY TABLE IF EXISTS Temp_AssociationByDevice;
@@ -131,7 +135,8 @@ sp : BEGIN
 			SELECT 	dv.CTSCustID
 				,	dv.DCSDeviceID
 			FROM Temp_Cust AS tmp 
-				INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON  dv.CTSCustID = tmp.CTSCustID;
+				INNER JOIN CTS_DataCenter.AssociationByDevice AS dv ON  dv.CTSCustID = tmp.CTSCustID
+			WHERE tmp.IsIgnored = 0;
 			
 			INSERT IGNORE INTO Temp_CustDetected(CTSCustID, AssType)
 			SELECT 	dv.CTSCustID

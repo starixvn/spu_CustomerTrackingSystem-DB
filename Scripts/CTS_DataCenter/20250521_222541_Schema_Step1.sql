@@ -16,7 +16,6 @@ DROP TABLE IF EXISTS Adhoc_HF222541_AssociatedGroupAccount_Group;
 CREATE TABLE Adhoc_HF222541_AssociatedGroupAccount_Group(
   GroupID INT
     , Created DATETIME
-	  , FromCreated DATETIME
     , TotalScanMember INT
     , ProcessStatus TINYINT    
     
@@ -26,7 +25,7 @@ CREATE TABLE Adhoc_HF222541_AssociatedGroupAccount_Group(
 
 DROP TABLE IF EXISTS Adhoc_HF222541_AssociatedGroupAccount_Target;
 CREATE TABLE Adhoc_HF222541_AssociatedGroupAccount_Target (
-  GroupID bigint unsigned NOT NULL AUTO_INCREMENT,
+  GroupID bigint unsigned NOT NULL,
   CTSCustID bigint unsigned NOT NULL,
   IsAuto bit(1) DEFAULT 0,
   Remark varchar(200) DEFAULT NULL,
@@ -39,18 +38,11 @@ CREATE TABLE Adhoc_HF222541_AssociatedGroupAccount_Target (
   KEY IX_AssociatedGroupAccount_Target_CTSCustID (CTSCustID)
 ) ENGINE=InnoDB;
 
-INSERT INTO CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Group(GroupID, Created, FromCreated,TotalScanMember,ProcessStatus )
-WITH cte AS
-(
-	SELECT  ass.GroupID, MIN(ass.Created) AS FromCreated
-	FROM CTS_DataCenter.AssociatedGroupAccount AS ass
-  INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON ag.GroupID = ass.GroupID
-  WHERE ag.IsDisable = 0
-  GROUP BY ass.GroupID
-)
-SELECT ass.GroupID, ass.Created, MIN(cte.FromCreated), COUNT(1), 0
+INSERT INTO CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Group(GroupID, Created,TotalScanMember,ProcessStatus )
+SELECT  ass.GroupID, ass.Created, COUNT(1), 0
 FROM CTS_DataCenter.AssociatedGroupAccount AS ass
-	INNER JOIN cte ON cte.GroupID = ass.GroupID AND ass.Created > cte.FromCreated
+  INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON ag.GroupID = ass.GroupID
+WHERE ag.IsDisable = 0 AND ass.GroupID IN (14,25)
 GROUP BY ass.GroupID, ass.Created;
 
 INSERT INTO CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target(GroupID,CTSCustID,IsAuto,Remark,Created,CreatedBy,LastModifiedDate,LastModifiedBy,IsScaned)
@@ -58,10 +50,10 @@ WITH cte AS
 (
 	SELECT  ass.GroupID, MIN(ass.Created) AS FromCreated
 	FROM CTS_DataCenter.AssociatedGroupAccount AS ass
-  INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON ag.GroupID = ass.GroupID
-  WHERE ag.IsDisable = 0
+    INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON ag.GroupID = ass.GroupID
+  WHERE ag.IsDisable = 0 AND ass.GroupID IN (14,25)
   GROUP BY ass.GroupID
 )
 SELECT ass.GroupID, ass.CTSCustID, ass.IsAuto, ass.Remark, ass.Created, ass.CreatedBy, ass.LastModifiedDate, ass.LastModifiedBy, 0
 FROM CTS_DataCenter.AssociatedGroupAccount AS ass
-	INNER JOIN cte ON cte.GroupID = ass.GroupID AND ass.Created = cte.FromCreated;
+	INNER JOIN cte ON cte.GroupID = ass.GroupID AND ass.Created = cte.FromCreated AND ass.IsAuto = 0;
