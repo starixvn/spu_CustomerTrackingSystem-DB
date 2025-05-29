@@ -38,6 +38,15 @@ CREATE TABLE Adhoc_HF222541_AssociatedGroupAccount_Target (
   KEY IX_AssociatedGroupAccount_Target_CTSCustID (CTSCustID)
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS Adhoc_HF222541_CustNeedToUpdateABI;
+CREATE TABLE Adhoc_HF222541_CustNeedToUpdateABI(
+		CustID INT NOT NULL PRIMARY KEY
+  , UserName varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+  , ABI tinyint
+  , GroupID bigint unsigned
+  , Created datetime
+);
+
 INSERT INTO CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Group(GroupID, Created,TotalScanMember,ProcessStatus )
 WITH cte AS
 (
