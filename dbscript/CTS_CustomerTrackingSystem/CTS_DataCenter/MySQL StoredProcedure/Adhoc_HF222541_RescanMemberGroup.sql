@@ -270,12 +270,21 @@ sp : BEGIN
 		WHERE GroupID = lv_ScanGroupID
 			AND Created = lv_ScanCreated;		
 
-		SELECT gp.GroupID, gp.Created
-		INTO lv_ScanGroupID, lv_ScanCreated
-		FROM CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Group AS gp
-        WHERE gp.ProcessStatus = 0
-		ORDER BY gp.GroupID ASC, gp.Created ASC
-		LIMIT 1;
+		IF EXISTS (	SELECT 1 
+					FROM CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Group AS gp
+					WHERE gp.ProcessStatus = 0) THEN
+
+			SELECT gp.GroupID, gp.Created
+			INTO lv_ScanGroupID, lv_ScanCreated
+			FROM CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Group AS gp
+			WHERE gp.ProcessStatus = 0
+			ORDER BY gp.GroupID ASC, gp.Created ASC
+			LIMIT 1;
+		ELSE
+			SET lv_ScanGroupID = NULL;
+			SET lv_ScanCreated = NULL;
+		END IF;
+
 
 	END WHILE;	
 END$$

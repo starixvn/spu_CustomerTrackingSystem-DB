@@ -15,6 +15,7 @@ sp: BEGIN
 
 	Revisions: 
 			- 20250404@Thomas.Nguyen:	Created[Redmine ID: #223426]
+			- 20250529@Thomas.Nguyen:	Change table name[Redmine ID: #222541]
 */
 
 DECLARE lv_StartRow 			INT;
@@ -32,7 +33,7 @@ CREATE TEMPORARY TABLE Tmp_CustNeedToUpdateABI(
 
 INSERT INTO Tmp_CustNeedToUpdateABI (CustID)
 SELECT CustID
-FROM Adhoc_CustNeedToUpdateABI;
+FROM CTS_DataCenter.Adhoc_HF222541_CustNeedToUpdateABI;
 
 CREATE INDEX IX_CustNeedToUpdateABI_CustID ON Tmp_CustNeedToUpdateABI (CustID);
 		
