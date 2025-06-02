@@ -29,7 +29,7 @@ INSERT INTO CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Clean(GroupID,C
 SELECT ass.GroupID, ass.CTSCustID, ass.IsAuto, ass.Remark, ass.Created, ass.CreatedBy, ass.LastModifiedDate, ass.LastModifiedBy
 FROM CTS_DataCenter.AssociatedGroupAccount AS ass
   LEFT JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS t On ass.CTSCustID = t.CTSCustID AND ass.GroupID = t.GroupID
-WHERE t.CTSCustID IS NULL;
+WHERE ass.GroupID IN (14,25) AND t.CTSCustID IS NULL;
 
 DELETE ass
 FROM CTS_DataCenter.AssociatedGroupAccount AS ass
