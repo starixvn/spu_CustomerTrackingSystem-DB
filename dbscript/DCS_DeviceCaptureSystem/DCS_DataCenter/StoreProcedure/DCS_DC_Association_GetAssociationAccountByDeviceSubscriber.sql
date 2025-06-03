@@ -31,7 +31,6 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_Association(
 			AccountID		BIGINT UNSIGNED
 		,	DeviceID		BIGINT UNSIGNED
-		,	CreatedDate		DATETIME
 		,	CreatedTime		DATETIME(4)
 
 		,	PRIMARY KEY PK_Temp_Association(AccountID, DeviceID)
@@ -41,10 +40,10 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_AccountID;
 	CREATE TEMPORARY TABLE Temp_AccountID(
-			AccountID		BIGINT UNSIGNED PRIMARY KEY
+			AccountID			BIGINT UNSIGNED PRIMARY KEY
 		,	LastCreatedTime		DATETIME(4)
 		
-		,	INDEX IX_Temp_AccountID_CreatedTime(LastCreatedTime)
+		,	INDEX IX_Temp_AccountID_LastCreatedTime(LastCreatedTime)
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedAccount;
@@ -76,7 +75,8 @@ BEGIN
 		SELECT DISTINCT ass.AccountID
 			,	MAX(ass.CreatedTime) AS LastCreatedTime
 		FROM DCS_DataCenter.Association AS ass
-		WHERE ass.DeviceID = ip_DeviceID AND ass.SubscriberID = ip_SubscriberID
+		WHERE ass.DeviceID = ip_DeviceID 
+			AND ass.SubscriberID = ip_SubscriberID
 		GROUP BY ass.AccountID
 		ORDER BY LastCreatedTime DESC
 		LIMIT ip_NoOfRecord;   
@@ -89,7 +89,8 @@ BEGIN
 		SELECT DISTINCT ass.AccountID
 			,	MAX(ass.CreatedTime) AS LastCreatedTime
 		FROM DCS_DataCenter.Association AS ass
-		WHERE ass.DeviceID = ip_DeviceID AND ass.SubscriberID = ip_SubscriberID
+		WHERE ass.DeviceID = ip_DeviceID 
+			AND ass.SubscriberID = ip_SubscriberID
 		GROUP BY ass.AccountID
 		ORDER BY LastCreatedTime DESC;
 		
@@ -104,7 +105,10 @@ BEGIN
 		INNER JOIN Temp_AccountID AS tmpAcc ON ass.SubscriberID = ip_SubscriberID AND ass.AccountID = tmpAcc.AccountID;
 
 	INSERT IGNORE INTO Temp_AccountAssociation(RootAccountID,DeviceId,CreatedTime,AssAccountID)
-	SELECT tmpAs.AccountID, tmpAs.DeviceID, tmpAs.CreatedTime, ass.AccountID
+	SELECT	tmpAs.AccountID
+		, 	tmpAs.DeviceID
+		,	tmpAs.CreatedTime
+		,	ass.AccountID
 	FROM Temp_Association AS tmpAs
 		LEFT JOIN DCS_DataCenter.Association AS ass ON ass.SubscriberID = ip_SubscriberID AND tmpAs.DeviceID = ass.DeviceID AND tmpAs.AccountID <> ass.AccountID;
 

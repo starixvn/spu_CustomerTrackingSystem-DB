@@ -43,9 +43,9 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_RootDevice;
 	CREATE TEMPORARY TABLE Temp_RootDevice(
-			DeviceID	BIGINT UNSIGNED	PRIMARY KEY
-		,	FirstDeviceCode	VARCHAR(32)
-		,	CreatedTime DATETIME(4)
+			DeviceID			BIGINT UNSIGNED	PRIMARY KEY
+		,	FirstDeviceCode		VARCHAR(32)
+		,	CreatedTime 		DATETIME(4)
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_AccountAssociation;
@@ -56,24 +56,26 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Account;
 	CREATE TEMPORARY TABLE Temp_Account(
-			AccountID 	BIGINT UNSIGNED PRIMARY KEY
-		,	CreatedTime	DATETIME(4)
+			AccountID 			BIGINT UNSIGNED PRIMARY KEY
+		,	CreatedTime			DATETIME(4)
 	);
 	#==============================================
 	INSERT INTO Temp_Account(AccountID, CreatedTime)
-	SELECT DISTINCT	ass.AccountID
-		,	ass.CreatedTime
+	SELECT	ass.AccountID
+		,	MAX(ass.CreatedTime) AS LastCreatedTime
 	FROM DCS_DataCenter.Association AS ass
-	WHERE ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = ip_DeviceID
-	ORDER BY ass.CreatedTime DESC
+	WHERE ass.SubscriberID = ip_SubscriberID 
+		AND ass.DeviceID = ip_DeviceID
+	GROUP BY ass.AccountID
+	ORDER BY LastCreatedTime DESC
 	LIMIT ip_NoOfCustomer;  
 
-	INSERT IGNORE INTO Temp_RootDevice(DeviceID,FirstDeviceCode,CreatedTime)
-	SELECT DISTINCT	dv.DeviceID
+	INSERT IGNORE INTO Temp_RootDevice(DeviceID, FirstDeviceCode, CreatedTime)
+	SELECT	dv.DeviceID
 		,	dv.FirstDeviceCode
 		,	dv.CreatedTime
-	FROM DCS_DataCenter.Association AS ass
-		INNER JOIN Temp_Account AS tmpAc ON tmpAc.AccountID = ass.AccountID
+	FROM Temp_Account AS tmpAc
+		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmpAc.AccountID
 		INNER JOIN DCS_DataCenter.Device AS dv ON dv.DeviceID = ass.DeviceID        
 	ORDER BY  dv.CreatedTime DESC
 	LIMIT ip_NoOfDevice;    
@@ -86,8 +88,8 @@ BEGIN
 		,	cus.RegisterName
 		,	cus.UserName
 		,	ass.CreatedTime
-	FROM DCS_DataCenter.Association AS ass
-		INNER JOIN Temp_Account AS tmpAc ON tmpAc.AccountID = ass.AccountID
+	FROM Temp_Account AS tmpAc
+		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmpAc.AccountID
 		INNER JOIN Temp_RootDevice AS dv ON dv.DeviceID = ass.DeviceID
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON tmpAc.AccountID = ca.AccountID AND ca.SubscriberID = ip_SubscriberID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0

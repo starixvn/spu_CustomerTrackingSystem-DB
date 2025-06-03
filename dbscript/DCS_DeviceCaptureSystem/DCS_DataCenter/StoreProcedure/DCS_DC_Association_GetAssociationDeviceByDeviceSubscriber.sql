@@ -26,25 +26,24 @@ BEGIN
 	*/
 	DROP TEMPORARY TABLE IF EXISTS Temp_Account;
 	CREATE TEMPORARY TABLE Temp_Account(
-			AccountID BIGINT UNSIGNED PRIMARY KEY
+			AccountID 		BIGINT UNSIGNED PRIMARY KEY
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Device;
 	CREATE TEMPORARY TABLE Temp_Device(
-			DeviceID	BIGINT UNSIGNED PRIMARY KEY
-		,	CreatedTime	DATETIME(4)
+			DeviceID		BIGINT UNSIGNED PRIMARY KEY
+		,	CreatedTime		DATETIME(4)
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_DistinctAccount;
 	CREATE TEMPORARY TABLE Temp_DistinctAccount(
-			AccountID BIGINT UNSIGNED PRIMARY KEY
+			AccountID 		BIGINT UNSIGNED PRIMARY KEY
 	);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedDevice;
 	CREATE TEMPORARY TABLE Temp_AssociatedDevice(
 			AccountID		BIGINT UNSIGNED
 		,	DeviceID		BIGINT UNSIGNED
-		,	CreatedTime		DATETIME(4)
 
 		,	PRIMARY KEY PK_Temp_AssociatedDevice(AccountID, DeviceID)
 		,	INDEX IX_Temp_AssociatedDevice_DeviceID(DeviceID)
@@ -54,7 +53,6 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_AssociatedAccount(
 			AccountID		BIGINT UNSIGNED
 		,	DeviceID		BIGINT UNSIGNED
-		,	CreatedTime		DATETIME(4)
 
 		,	PRIMARY KEY PK_Temp_AssociatedAccount(AccountID, DeviceID)
 		,	INDEX IX_Temp_AssociatedAccount_DeviceID(DeviceID)
@@ -67,51 +65,62 @@ BEGIN
 			DeviceID			BIGINT UNSIGNED
 		,	AssociatedAccounts	INT
 		,	AssociatedDevices	INT
-		,	CreatedTime			DATETIME(4)
 
-		,	PRIMARY KEY PK_Temp_AssociatedAccount(DeviceID)
+		,	PRIMARY KEY PK_Temp_AssociatedDevice(DeviceID)
 	);
 
 	#======GET Cust Association LIST: ip_DeviceID AND ASSOCIATED CUSTOMER=======================================    
-
 	INSERT INTO Temp_Account(AccountID)
 	SELECT AccountID
 	FROM DCS_DataCenter.Association AS ass 
 	WHERE ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = ip_DeviceID
 	ORDER BY ass.CreatedDate DESC;
 
-	INSERT IGNORE INTO Temp_Device(DeviceID, CreatedTime)
-	SELECT	ass.DeviceID
-		,	MAX(ass.CreatedTime) AS MaxCreatedTime
-	FROM DCS_DataCenter.Association AS ass 
-		INNER JOIN Temp_Account AS acc ON ass.AccountID = acc.AccountID 
-	GROUP BY ass.DeviceID
-	ORDER BY  MaxCreatedTime DESC
-	LIMIT ip_NoOfRecord; 
+	IF ip_NoOfRecord > 0 THEN 
 
-	INSERT INTO Temp_AssociatedDevice(AccountID, DeviceID,  CreatedTime)
+		INSERT IGNORE INTO Temp_Device(DeviceID, CreatedTime)
+		SELECT	ass.DeviceID
+			,	MAX(ass.CreatedTime) AS MaxCreatedTime
+		FROM DCS_DataCenter.Association AS ass 
+			INNER JOIN Temp_Account AS acc ON ass.AccountID = acc.AccountID 
+		GROUP BY ass.DeviceID
+		ORDER BY MaxCreatedTime DESC
+		LIMIT ip_NoOfRecord; 
+
+	END IF;
+
+	IF ip_NoOfRecord = 0 THEN 
+
+		INSERT IGNORE INTO Temp_Device(DeviceID, CreatedTime)
+		SELECT	ass.DeviceID
+			,	MAX(ass.CreatedTime) AS MaxCreatedTime
+		FROM DCS_DataCenter.Association AS ass 
+			INNER JOIN Temp_Account AS acc ON ass.AccountID = acc.AccountID 
+		GROUP BY ass.DeviceID
+		ORDER BY MaxCreatedTime DESC;
+
+	END IF;
+
+	INSERT INTO Temp_AssociatedDevice(AccountID, DeviceID)
 	SELECT	ass.AccountID
 		,	ass.DeviceID
-		,	tmpDv.CreatedTime
 	FROM Temp_Device AS tmpDv
-		INNER JOIN DCS_DataCenter.Association AS ass ON ass.DeviceID = tmpDv.DeviceID AND ass.SubscriberID = ip_SubscriberID;
+		INNER JOIN DCS_DataCenter.Association AS ass ON ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = tmpDv.DeviceID;
 
 	INSERT INTO Temp_DistinctAccount(AccountID)
 	SELECT DISTINCT tmpAd.AccountID
 	FROM Temp_AssociatedDevice AS tmpAd;    
 
-	INSERT INTO Temp_AssociatedAccount(AccountID, DeviceID, CreatedTime)
+	INSERT INTO Temp_AssociatedAccount(AccountID, DeviceID)
 	SELECT	tmpAc.AccountID
 		,	ass.DeviceID
-		,	ass.CreatedTime
 	FROM Temp_DistinctAccount AS tmpAc
 		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmpAc.AccountID;
 
-	INSERT INTO Temp_AssociatedDeviceInfo(DeviceID, AssociatedAccounts, AssociatedDevices, CreatedTime)
+	INSERT INTO Temp_AssociatedDeviceInfo(DeviceID, AssociatedAccounts, AssociatedDevices)
 	SELECT	tmpAd.DeviceID
 		,	COUNT(DISTINCT tmpAa.AccountID) AS AssociatedAccounts
 		,	COUNT(DISTINCT tmpAa.DeviceID)-1 AS AssociatedDevices
-		,	MAX(tmpAd.CreatedTime)
 	FROM Temp_AssociatedDevice AS tmpAd
 		INNER JOIN Temp_AssociatedAccount AS tmpAa ON tmpAd.AccountID = tmpAa.AccountID
 	GROUP BY tmpAd.DeviceID;
