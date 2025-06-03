@@ -15,7 +15,6 @@ GO
 BULK INSERT Adhoc_HF222541_CustNeedToUpdateABI
 FROM 'C:\Users\thomas.nguyen\Downloads\222541_ListCustcorrectABI.csv'
 WITH (
-    FIELDTERMINATOR = '\n',
     ROWTERMINATOR = '\n',
     FIRSTROW = 1
 );
