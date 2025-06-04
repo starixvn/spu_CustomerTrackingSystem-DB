@@ -144,7 +144,7 @@ sp : BEGIN
 			FROM  Temp_AssociationByDevice AS dv
 			WHERE EXISTS (	SELECT 1
 							FROM CTS_DataCenter.AssociationByDevice AS lv1  
-								INNER JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = lv1.CTSCustID
+								INNER JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = lv1.CTSCustID AND tg.GroupID = lv_ScanGroupID
 							WHERE dv.DCSDeviceID = lv1.DCSDeviceID)
 			;
 				
@@ -163,7 +163,7 @@ sp : BEGIN
 				INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON tmp.CustID = ai.FromCustID            
 			WHERE EXISTS (SELECT 1
 							FROM CTS_DataCenter.CTSCustomer AS cus
-								INNER JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
+								INNER JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID AND tg.GroupID = lv_ScanGroupID
 							WHERE cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.RoleID = 1)
 				AND EXISTS (SELECT 1 FROM Temp_AssociationByAI_AssType AS tmpAt WHERE tmpAt.AssTypeItemValue = ai.AssType)
 				AND tmp.IsIgnored = 0;
@@ -179,7 +179,7 @@ sp : BEGIN
 				INNER JOIN CTS_DataCenter.AssociationByAI AS ai ON tmp.CustID = ai.ToCustID            
 			WHERE EXISTS (SELECT 1
 							FROM CTS_DataCenter.CTSCustomer AS cus
-								INNER JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
+								INNER JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID AND tg.GroupID = lv_ScanGroupID
 							WHERE cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.RoleID = 1)
 				AND EXISTS (SELECT 1 FROM Temp_AssociationByAI_AssType AS tmpAt WHERE tmpAt.AssTypeItemValue = ai.AssType)
 				AND tmp.IsIgnored = 0;
@@ -214,7 +214,7 @@ sp : BEGIN
 			WHERE EXISTS (	SELECT 1
 							FROM CTS_DataCenter.AssociationGroupByAI AS lv1
 								INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = lv1.CustID AND cus.CustSubID = 0 AND cus.RoleID = 1
-								INNER JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
+								INNER JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID AND tg.GroupID = lv_ScanGroupID
 							WHERE tmp.GroupID = lv1.GroupID)
 			;
 			
@@ -232,7 +232,7 @@ sp : BEGIN
 				INNER JOIN CTS_DataCenter.AssociationByIP AS ai ON tmp.CustID = ai.FromCustID            
 			WHERE EXISTS (SELECT 1
 							FROM CTS_DataCenter.CTSCustomer AS cus
-								INNER JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
+								INNER JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID AND tg.GroupID = lv_ScanGroupID
 							WHERE cus.CustID = ai.ToCustID AND cus.CustSubID = 0 AND cus.RoleID = 1)
 				AND EXISTS (SELECT 1 FROM Temp_AssociationByIP_AssType AS tmpAt WHERE tmpAt.AssTypeItemValue = ai.AssType)
 				AND tmp.IsIgnored = 0;
@@ -248,7 +248,7 @@ sp : BEGIN
 				INNER JOIN CTS_DataCenter.AssociationByIP AS ai ON tmp.CustID = ai.ToCustID            
 			WHERE EXISTS (SELECT 1
 							FROM CTS_DataCenter.CTSCustomer AS cus
-								INNER JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID
+								INNER JOIN CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Target AS tg ON tg.CTSCustID = cus.CTSCustID AND tg.GroupID = lv_ScanGroupID
 							WHERE cus.CustID = ai.FromCustID AND cus.CustSubID = 0 AND cus.RoleID = 1)
 				AND EXISTS (SELECT 1 FROM Temp_AssociationByIP_AssType AS tmpAt WHERE tmpAt.AssTypeItemValue = ai.AssType)
 				AND tmp.IsIgnored = 0;
