@@ -10,12 +10,14 @@ GO
 DROP TABLE IF EXISTS [dbo].[Adhoc_HF222541_CustNeedToUpdateABI];
 CREATE TABLE [dbo].[Adhoc_HF222541_CustNeedToUpdateABI](
 		CustID INT NOT NULL PRIMARY KEY
+    ,   danger2 TINYINT NOT NULL
 );
 
 GO
 BULK INSERT Adhoc_HF222541_CustNeedToUpdateABI
-FROM 'C:\Users\thomas.nguyen\Downloads\222541_ListCustcorrectABI.csv'
+FROM 'C:\Users\patrick.pham\Downloads\222541_ListCustcorrectABI.csv'
 WITH (
+    FIELDTERMINATOR = ',',
     ROWTERMINATOR = '\n',
-    FIRSTROW = 1
+    FIRSTROW = 2
 );

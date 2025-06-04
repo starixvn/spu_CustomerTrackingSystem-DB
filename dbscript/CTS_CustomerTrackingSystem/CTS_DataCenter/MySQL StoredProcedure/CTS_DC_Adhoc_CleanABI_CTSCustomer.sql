@@ -29,11 +29,13 @@ DROP TEMPORARY TABLE IF EXISTS Tmp_CustNeedToUpdateABI;
 CREATE TEMPORARY TABLE Tmp_CustNeedToUpdateABI(
 		ID INT AUTO_INCREMENT PRIMARY KEY
 	,	CustID BIGINT UNSIGNED
+	,	Danger2 TINYINT
 );
 
-INSERT INTO Tmp_CustNeedToUpdateABI (CustID)
-SELECT CustID
-FROM CTS_DataCenter.Adhoc_HF222541_CustNeedToUpdateABI;
+INSERT INTO Tmp_CustNeedToUpdateABI (CustID, Danger2)
+SELECT	ad.CustID
+	,	ad.ABI AS Danger2
+FROM CTS_DataCenter.Adhoc_HF222541_CustNeedToUpdateABI AS ad;
 
 CREATE INDEX IX_CustNeedToUpdateABI_CustID ON Tmp_CustNeedToUpdateABI (CustID);
 		
@@ -52,7 +54,7 @@ WHILE (lv_MaxRow IS NOT NULL) DO
 		SET lv_UpdatedCount = 0;
 
 		UPDATE CTS_DataCenter.CTSCustomer AS cus 
-			INNER JOIN Tmp_CustNeedToUpdateABI AS tmp ON cus.CustID = tmp.CustID
+			INNER JOIN Tmp_CustNeedToUpdateABI AS tmp ON cus.CustID = tmp.CustID AND tmp.Danger2 = cus.Danger2
 		SET cus.Danger2 = 0
 		WHERE tmp.ID BETWEEN lv_StartRow AND lv_StopRow;
 		
