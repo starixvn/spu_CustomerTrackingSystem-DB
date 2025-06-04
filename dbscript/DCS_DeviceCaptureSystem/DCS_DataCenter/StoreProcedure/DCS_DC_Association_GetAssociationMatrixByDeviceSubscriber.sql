@@ -1,8 +1,8 @@
- /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `DCS_DC_Association_GetAssociationMatrixByDeviceSubscriber`;
 
 DELIMITER $$
- CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Association_GetAssociationMatrixByDeviceSubscriber`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Association_GetAssociationMatrixByDeviceSubscriber`(
 		IN ip_SubscriberID	INT
 	,	IN ip_DeviceID		BIGINT UNSIGNED
 	,	IN ip_NoOfCustomer	INT
@@ -26,7 +26,7 @@ BEGIN
 				CALL DCS_DC_Association_GetAssociationMatrixByDeviceSubscriber(8000001, 141, 15, 100);
 
 	*/
-
+    
 	#======GET Cust Association LIST: ip_DeviceID AND ASSOCIATED CUSTOMER=======================================  
 	DROP TEMPORARY TABLE IF EXISTS Temp_Matrix;
 	CREATE TEMPORARY TABLE Temp_Matrix(
@@ -111,5 +111,6 @@ BEGIN
 	FROM Temp_Matrix AS tmpMt
 		INNER JOIN Temp_AccountAssociation AS tmpAc ON tmpAc.AccountID = tmpMt.AccountID
 	ORDER BY tmpAc.LastAssCreatedTime DESC;
-
-END
+	
+END$$
+DELIMITER ;
