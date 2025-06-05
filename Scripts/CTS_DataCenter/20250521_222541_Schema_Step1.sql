@@ -40,11 +40,12 @@ CREATE TABLE Adhoc_HF222541_AssociatedGroupAccount_Target (
 
 DROP TABLE IF EXISTS Adhoc_HF222541_CustNeedToUpdateABI;
 CREATE TABLE Adhoc_HF222541_CustNeedToUpdateABI(
-		CustID INT NOT NULL PRIMARY KEY
+		CustID bigint unsigned NOT NULL
   , UserName varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
   , ABI tinyint
   , GroupID bigint unsigned
   , Created datetime
+  , PRIMARY KEY (CustID, GroupID)
 );
 
 INSERT INTO CTS_DataCenter.Adhoc_HF222541_AssociatedGroupAccount_Group(GroupID, Created,TotalScanMember,ProcessStatus )
