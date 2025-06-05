@@ -22,6 +22,7 @@ BEGIN
 
 	Revisions:
 		- 20230321@Jonathan.Doan: Created [Redmine ID: 227652]
+        - 20250605@Aida.Tran: Updated Logic [Redmine ID: 227652] 
 		
 	Param's Explanation (filtered by):
 
