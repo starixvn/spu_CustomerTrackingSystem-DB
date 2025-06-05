@@ -76,6 +76,14 @@ BEGIN
 	WHERE ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = ip_DeviceID
 	ORDER BY ass.CreatedDate DESC;
 
+	DELETE tmp
+	FROM Temp_Account AS tmp
+	WHERE NOT EXISTS (
+		SELECT 1 
+		FROM CTS_DataCenter.CustDCSAccount AS custAcc 
+		WHERE custAcc.AccountID = tmp.AccountID
+	);
+
 	IF ip_NoOfRecord > 0 THEN 
 
 		INSERT IGNORE INTO Temp_Device(DeviceID, CreatedTime)

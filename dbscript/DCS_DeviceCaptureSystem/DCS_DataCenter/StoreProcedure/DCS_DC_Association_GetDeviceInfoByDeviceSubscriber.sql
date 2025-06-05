@@ -47,6 +47,14 @@ BEGIN
 	WHERE ass.DeviceID = ip_DeviceID
 		AND ass.SubscriberID = ip_SubscriberID;
 
+	DELETE tmp
+	FROM Temp_AssociationAccount AS tmp
+	WHERE NOT EXISTS (
+		SELECT 1 
+		FROM CTS_DataCenter.CustDCSAccount AS custAcc 
+		WHERE custAcc.AccountID = tmp.AccountID
+	);
+
 	SELECT COUNT(DISTINCT AccountID) 
 	INTO lv_AssociatedAccounts
 	FROM Temp_AssociationAccount;    
