@@ -22,6 +22,7 @@ BEGIN
 
 	Revisions:
 		- 20250520@Lando.Vu: Created [Redmine ID: 227652]
+        - 20250606@Aida.Tran: Updated logic [Redmine ID: 227652]
 		
 	Param's Explanation (filtered by):
 
@@ -52,6 +53,8 @@ BEGIN
 		,	COUNT(ass.AccountID) AS NoOfAccount
 	FROM DCS_DataCenter.Association AS ass
         INNER JOIN DCS_DataCenter.Account AS acc ON ass.AccountID = acc.AccountID
+        INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ass.AccountID = ca.AccountID
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0 AND cus.CurrencyID NOT IN (20, 27, 28, 72)
 	WHERE ass.SubscriberID = ip_SubscriberID
 		AND acc.LastLoginTime >= lv_CutoffDate
 	GROUP BY ass.DeviceID
