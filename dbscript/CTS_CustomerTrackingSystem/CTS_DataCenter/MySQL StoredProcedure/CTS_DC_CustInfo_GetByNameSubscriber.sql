@@ -16,7 +16,7 @@ BEGIN
 
 		Revisions:
 			- 	20230601@Casey.Huynh: Created [Redmine ID: 185787]
-			
+			- 	20250609@Aida.Tran: Updated exclude test account [Redmine ID: 227652]
 		Param's Explanation (filtered by):
 			
 		Example:
@@ -25,36 +25,42 @@ BEGIN
 	*/   
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
-    CREATE TEMPORARY TABLE Temp_Customer(
+	CREATE TEMPORARY TABLE Temp_Customer(
 			UserName		VARCHAR(50)  PRIMARY KEY
-        ,	RegisterName	VARCHAR(50)
-        ,	CTSCustID		BIGINT UNSIGNED
-        ,	SubscriberID	INT        
+		,	RegisterName	VARCHAR(50)
+		,	CTSCustID		BIGINT UNSIGNED
+		,	SubscriberID	INT        
 	);
-    
+	
 	#========SEARCH BY USERNAME2=====================
-	INSERT IGNORE INTO Temp_Customer (CTSCustID, Username, RegisterName, SubscriberID)
-    SELECT	cus.CTSCustID
+	INSERT INTO Temp_Customer (CTSCustID, Username, RegisterName, SubscriberID)
+	SELECT	cus.CTSCustID
 		,	cus.Username
-        ,	cus.RegisterName
-        ,	cus.SubscriberID
-    FROM CTS_DataCenter.CTSCustomer AS cus
-	WHERE cus.SubscriberID = ip_SubscriberID AND cus.RegisterName = ip_UserName AND cus.IsInternal = 0;        
-        
+		,	cus.RegisterName
+		,	cus.SubscriberID
+	FROM CTS_DataCenter.CTSCustomer AS cus
+	WHERE cus.SubscriberID = ip_SubscriberID 
+		AND cus.RegisterName = ip_UserName 
+		AND cus.IsInternal = 0
+		AND cus.CurrencyID NOT IN (20, 27, 28, 72);
+
 	#========SEARCH BY USERNAME=====================
-    INSERT INTO Temp_Customer (CTSCustID, Username, RegisterName, SubscriberID)
-    SELECT	cus.CTSCustID
+	INSERT IGNORE INTO Temp_Customer (CTSCustID, Username, RegisterName, SubscriberID)
+	SELECT	cus.CTSCustID
 		,	cus.Username
-        ,	cus.RegisterName
-        ,	cus.SubscriberID
-    FROM CTS_DataCenter.CTSCustomer AS cus
-	WHERE cus.SubscriberID = ip_SubscriberID AND cus.Username = ip_UserName AND cus.IsInternal = 0;
-    
-    SELECT	tmpCus.CTSCustID
+		,	cus.RegisterName
+		,	cus.SubscriberID
+	FROM CTS_DataCenter.CTSCustomer AS cus
+	WHERE cus.SubscriberID = ip_SubscriberID 
+		AND cus.Username = ip_UserName 
+		AND cus.IsInternal = 0
+		AND cus.CurrencyID NOT IN (20, 27, 28, 72);
+
+	SELECT	tmpCus.CTSCustID
 		,	tmpCus.Username
-        ,	tmpCus.RegisterName
-        ,	tmpCus.SubscriberID
-    FROM Temp_Customer AS tmpCus;
-    
+		,	tmpCus.RegisterName
+		,	tmpCus.SubscriberID
+	FROM Temp_Customer AS tmpCus;
+
 END$$
 DELIMITER ;

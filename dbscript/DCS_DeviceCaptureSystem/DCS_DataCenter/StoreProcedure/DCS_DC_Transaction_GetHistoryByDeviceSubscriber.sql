@@ -20,7 +20,7 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 	20250604@Aida.Tran: Created [Redmine ID: 227652]
+			- 	20250609@Aida.Tran: Created [Redmine ID: 227652]
 			
 		Param's Explanation (filtered by):
 			
@@ -59,9 +59,9 @@ BEGIN
 			FROM DCS_DataCenter.Transaction07 AS trs
 				INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON trs.AccountID = ca.AccountID AND ca.SubscriberID = ip_SubscriberID
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
-				LEFT JOIN DCS_Extra.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
-				LEFT JOIN DCS_Extra.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
-				LEFT JOIN DCS_Extra.URL AS ur ON trs.URLID = ur.URLID
+				LEFT JOIN DCS_DataCenter.UserAgent AS uag ON trs.UserAgentKey = uag.UserAgentKey
+				LEFT JOIN DCS_DataCenter.ActionResult AS ar ON trs.ActionResultID = ar.ActionResultID
+				LEFT JOIN DCS_DataCenter.URL AS ur ON trs.URLID = ur.URLID
 				LEFT JOIN DCS_DataCenter.StaticList AS stl ON stl.ListID = 1 AND stl.ItemID = trs.Flagged
 			WHERE trs.SubscriberID = ip_SubscriberID 
 				AND trs.CreatedDate BETWEEN ip_FromDate AND ip_ToDate 

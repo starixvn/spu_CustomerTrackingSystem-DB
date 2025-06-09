@@ -16,6 +16,7 @@ BEGIN
 
 	Revisions:
 		- 20250526@Lando.Vu: Created [Redmine ID: 227652]
+		- 20250609@Aida.Tran: Updated exclude test account [Redmine ID: 227652]
 		
 	Param's Explanation (filtered by):
 
@@ -31,6 +32,8 @@ BEGIN
 	WHERE dv.FirstDeviceCode = ip_DeviceCode
 		AND EXISTS (SELECT 1
 					FROM DCS_DataCenter.Association AS ass
+						INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ass.AccountID = ca.AccountID
+						INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0 AND cus.CurrencyID NOT IN (20, 27, 28, 72)
 					WHERE ass.DeviceID = dv.DeviceID
 						AND ass.SubscriberID = ip_SubscriberID)
 	ORDER BY dv.DeviceID ASC
