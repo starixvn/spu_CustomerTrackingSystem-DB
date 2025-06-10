@@ -100,6 +100,7 @@ BEGIN
 			,	MAX(ass.CreatedTime) AS LastCreatedTime
 		FROM DCS_DataCenter.Association AS ass
 			INNER JOIN Temp_Association AS tmpAs ON ass.DeviceID = tmpAs.DeviceID AND ass.SubscriberID = ip_SubscriberID
+            INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = ass.AccountID
 		GROUP BY AccountID
 		ORDER BY LastCreatedTime DESC
 		LIMIT ip_NoOfRecord;   
@@ -111,6 +112,7 @@ BEGIN
 			,	MAX(ass.CreatedTime) AS LastCreatedTime
 		FROM DCS_DataCenter.Association AS ass
 			INNER JOIN Temp_Association AS tmpAs ON ass.DeviceID = tmpAs.DeviceID AND ass.SubscriberID = ip_SubscriberID
+            INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = ass.AccountID
 		GROUP BY AccountID
 		ORDER BY LastCreatedTime DESC;
   
