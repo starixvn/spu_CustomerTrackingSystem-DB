@@ -112,7 +112,9 @@ BEGIN
 		,	tmpAs.CreatedTime
 		,	ass.AccountID
 	FROM Temp_Association AS tmpAs
-		LEFT JOIN DCS_DataCenter.Association AS ass ON ass.SubscriberID = ip_SubscriberID AND tmpAs.DeviceID = ass.DeviceID AND tmpAs.AccountID <> ass.AccountID;
+		LEFT JOIN DCS_DataCenter.Association AS ass ON ass.SubscriberID = ip_SubscriberID 
+													AND tmpAs.DeviceID = ass.DeviceID 
+                                                    AND tmpAs.AccountID <> ass.AccountID;
 
 	INSERT INTO Temp_AssociatedAccount(AccountID, RegisterName, UserName, DeviceInCommon, OtherDeives, AssociatedAccount, MaxCreatedTime)
 	SELECT	tmpAs.RootAccountID AS AccountID
@@ -124,7 +126,9 @@ BEGIN
 		,	MAX(tmpAs.CreatedTime) AS MaxCreatedTime
 	FROM Temp_AccountAssociation AS tmpAs		
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON tmpAs.RootAccountID = ca.AccountID AND ca.SubscriberID = ip_SubscriberID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0 AND cus.CurrencyID NOT IN (20, 27, 28, 72)
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID 
+													AND cus.IsInternal = 0 
+													AND cus.CurrencyID NOT IN (20, 27, 28, 72)
 	GROUP BY tmpAs.RootAccountID;
 
 	SELECT	tmpAa.AccountID

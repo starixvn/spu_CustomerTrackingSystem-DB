@@ -18,6 +18,7 @@ BEGIN
 		Revisions:
 			- 	20230601@Casey.Huynh: Created [Redmine ID: 185787]
 			-	20230706@Casey.Huynh: Show Device Association Info [Redmine ID: 190950]
+            -	20250610@Aida.Tran: Exclude Test Account [Redmine ID: 227652]
             
 		Param's Explanation (filtered by):
 			@ip_NoOfRecord = 0 GET all Ass Account
@@ -123,7 +124,9 @@ BEGIN
         ,	tmp.LastCreatedTime
 	FROM Temp_AccountID AS tmp
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON tmp.AccountID = cda.AccountID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cda.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cda.CTSCustID = cus.CTSCustID 
+													AND cus.IsInternal = 0 
+                                                    AND cus.CurrencyID NOT IN (20, 27, 28, 72)
 	ORDER BY tmp.LastCreatedTime DESC;
 
 	DELETE tmpAs
@@ -145,7 +148,9 @@ BEGIN
 	FROM Temp_Association AS tmpAs
         LEFT JOIN DCS_DataCenter.Association AS ass ON ass.SubscriberID = ip_SubscriberID AND tmpAs.DeviceID = ass.DeviceID AND tmpAs.AccountID <> ass.AccountID
         LEFT JOIN CTS_DataCenter.CustDCSAccount AS cda ON ass.AccountID = cda.AccountID
-        LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cda.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0 ;
+        LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cda.CTSCustID = cus.CTSCustID 
+													AND cus.IsInternal = 0  
+                                                    AND cus.CurrencyID NOT IN (20, 27, 28, 72) ;
 
     INSERT INTO Temp_AssociatedCustomer(CTSCustID, DeviceInCommon, OtherDeives, AssociatedAccount, IsFirstCust, MaxCreatedTime)
     SELECT	tmpAs.RootCTSCustID

@@ -40,12 +40,14 @@ BEGIN
 		,	PRIMARY KEY PK_Temp_AssociationAccount_AccountIDDeviceID(AccountID, DeviceID)
 	);
 
-	INSERT INTO Temp_AssociationAccount(AccountID, DeviceID)
+	INSERT IGNORE INTO Temp_AssociationAccount(AccountID, DeviceID)
 	SELECT 	ass.AccountID
 		,	ass.DeviceID
 	FROM DCS_DataCenter.Association AS ass
 		INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ass.AccountID = ca.AccountID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0 AND cus.CurrencyID NOT IN (20, 27, 28, 72)
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID 
+													AND cus.IsInternal = 0 
+													AND cus.CurrencyID NOT IN (20, 27, 28, 72)
 	WHERE ass.DeviceID = ip_DeviceID
 		AND ass.SubscriberID = ip_SubscriberID;
 
