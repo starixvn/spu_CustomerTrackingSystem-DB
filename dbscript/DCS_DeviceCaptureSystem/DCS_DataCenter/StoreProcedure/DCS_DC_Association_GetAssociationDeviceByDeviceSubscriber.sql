@@ -71,18 +71,12 @@ BEGIN
 
 	#======GET Cust Association LIST: ip_DeviceID AND ASSOCIATED CUSTOMER=======================================    
 	INSERT INTO Temp_Account(AccountID)
-	SELECT AccountID
-	FROM DCS_DataCenter.Association AS ass 
+	SELECT ass.AccountID
+	FROM DCS_DataCenter.Association AS ass
+		INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ass.AccountID = ca.AccountID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0 AND cus.CurrencyID NOT IN (20, 27, 28, 72)
 	WHERE ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = ip_DeviceID
 	ORDER BY ass.CreatedDate DESC;
-
-	DELETE tmp
-	FROM Temp_Account AS tmp
-	WHERE NOT EXISTS (
-		SELECT 1 
-		FROM CTS_DataCenter.CustDCSAccount AS custAcc 
-		WHERE custAcc.AccountID = tmp.AccountID
-	);
 
 	IF ip_NoOfRecord > 0 THEN 
 
