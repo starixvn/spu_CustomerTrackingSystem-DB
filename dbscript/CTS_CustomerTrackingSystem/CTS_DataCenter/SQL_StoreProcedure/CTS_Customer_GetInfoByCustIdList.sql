@@ -200,7 +200,7 @@ BEGIN;
 		INSERT INTO #Tmp_CustMissingInfo(CustID)
 		SELECT tmp.CustId
 		FROM #tmpCustomers AS tmp WITH(NOLOCK)
-		WHERE (tmp.IsLicensee IS NULL OR tmp.SiteId IS NULL OR tmp.UserName IS NULL) AND tmp.CurrencyId NOT IN (20,27,28);
+		WHERE ((tmp.IsLicensee IS NULL OR tmp.SiteId IS NULL) AND tmp.CurrencyId NOT IN (20,27,28)) OR tmp.UserName IS NULL;
 
 		SELECT	a.CustId		AS CustID
 			,	a.Username		AS UserName
