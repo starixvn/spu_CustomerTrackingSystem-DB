@@ -1,3 +1,4 @@
+-- Active: 1747023026880@@10.18.200.72@3306@CTS_DataCenter
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_DC_Association_GetAssociationDeviceByCustSubscriber`;
 
@@ -53,7 +54,6 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Device;
 	CREATE TEMPORARY TABLE Temp_Device(
 			DeviceID	BIGINT UNSIGNED PRIMARY KEY
-        ,	CreatedTime	DATETIME(4)
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
@@ -72,33 +72,32 @@ BEGIN
         ,	PRIMARY KEY PK_Temp_AssociatedAccount(DeviceID)
     );  
     
-    #======GET Cust Association LIST: ip_CTSCustID AND ASSOCIATED CUSTOMER=======================================          
+    #======GET Cust Association LIST: ip_CTSCustID AND ASSOCIATED CUSTOMER=======================================
 
-    INSERT INTO Temp_Device(DeviceID, CreatedTime)
-	SELECT	ass.DeviceID
-		,	ass.CreatedTime
+    INSERT IGNORE INTO Temp_Device(DeviceID)
+	SELECT ass.DeviceID
     FROM CTS_DataCenter.CustDCSAccount AS cda
 		INNER JOIN DCS_DataCenter.Association AS ass ON cda.AccountID = ass.AccountID
-    WHERE cda.SubscriberID = ip_SubscriberID AND cda.CTSCustID = ip_CTSCustID
-    ORDER BY  ass.CreatedDate DESC, ass.CreatedTime DESC
-    LIMIT ip_NoOfRecord;        
-  
-    INSERT INTO Temp_AssociatedDevice(AccountID, DeviceID, CTSCustID,  CreatedTime)
+    WHERE cda.SubscriberID = ip_SubscriberID 
+		AND cda.CTSCustID = ip_CTSCustID
+    LIMIT ip_NoOfRecord;
+
+    INSERT INTO Temp_AssociatedDevice(AccountID, DeviceID, CTSCustID)
     SELECT	ass.AccountID
 		,	ass.DeviceID
 		,	cda.CTSCustID
-        ,	tmpDv.CreatedTime
     FROM Temp_Device AS tmpDv
-		INNER JOIN DCS_DataCenter.Association AS ass ON ass.DeviceID = tmpDv.DeviceID AND ass.SubscriberID = ip_SubscriberID 
+		INNER JOIN DCS_DataCenter.Association AS ass ON ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = tmpDv.DeviceID
         INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = ass.AccountID
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = cda.CTSCustID 
-														AND cus.IsInternal = 0  
-														AND cus.CurrencyID NOT IN (20, 27, 28, 72);
+													AND cus.IsInternal = 0  
+													AND cus.CurrencyID NOT IN (20, 27, 28, 72);
 
 	INSERT INTO Temp_Account(AccountID, CTSCustID)
-    SELECT DISTINCT tmpAd.AccountID
-		,	tmpAd.CTSCustID
-    FROM Temp_AssociatedDevice AS tmpAd;    
+    SELECT	DISTINCT
+			AccountID
+		,	CTSCustID
+    FROM Temp_AssociatedDevice;
     
     INSERT INTO Temp_AssociatedAccount(AccountID, DeviceID, CTSCustID, CreatedTime)
     SELECT	tmpAc.AccountID
@@ -108,15 +107,14 @@ BEGIN
     FROM Temp_Account AS tmpAc
 		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmpAc.AccountID;
      
-    INSERT INTO Temp_AssociatedDeviceInfo(DeviceID, AssociatedAccounts, AssociatedDevices, CreatedTime)
+    INSERT INTO Temp_AssociatedDeviceInfo(DeviceID, AssociatedAccounts, AssociatedDevices)
 	SELECT	tmpAd.DeviceID
 		,	COUNT(DISTINCT tmpAa.AccountID) AS AssociatedAccounts
         ,	COUNT(DISTINCT tmpAa.DeviceID)-1 AS AssociatedDevices
-        ,	MAX(tmpAd.CreatedTime)
     FROM Temp_AssociatedDevice AS tmpAd
 		INNER JOIN Temp_AssociatedAccount AS tmpAa ON tmpAd.AccountID = tmpAa.AccountID
-	GROUP BY tmpAd.DeviceID;   
-	    
+	GROUP BY tmpAd.DeviceID;
+
     SELECT	dv.DeviceID
 		,	dv.FirstDeviceCode AS DeviceCode
         ,	DATE(dv.CreatedTime) AS FirstSeenDate
@@ -124,7 +122,6 @@ BEGIN
         ,	tmpAd.AssociatedDevices
     FROM Temp_AssociatedDeviceInfo AS tmpAd
 		INNER JOIN DCS_DataCenter.Device AS dv ON dv.DeviceID = tmpAd.DeviceID
-	ORDER BY dv.CreatedTime DESC;     
-    
+	ORDER BY dv.CreatedTime DESC, dv.DeviceID DESC;
 END$$
 DELIMITER ;

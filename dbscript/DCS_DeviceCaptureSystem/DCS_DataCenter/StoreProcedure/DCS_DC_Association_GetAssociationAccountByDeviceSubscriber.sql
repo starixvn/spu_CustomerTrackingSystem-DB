@@ -65,30 +65,28 @@ BEGIN
 		,	DeviceID 			BIGINT UNSIGNED
 		,	CreatedTime 		DATETIME(4)
 		,	AssAccountID 		BIGINT UNSIGNED
-		, 	PRIMARY KEY PK_Temp_AccountAssociation(RootAccountID,DeviceID, AssAccountID));
+		, 	PRIMARY KEY PK_Temp_AccountAssociation(RootAccountID, DeviceID, AssAccountID));
 	
 	#======GET Cust Association LIST: ip_DeviceID AND ASSOCIATED CUSTOMER=======================================    
 
 	IF ip_NoOfRecord > 0 THEN 
 
 		INSERT INTO Temp_AccountID(AccountID, LastCreatedTime)
-		SELECT 	DISTINCT 
-				ass.AccountID
+		SELECT 	ass.AccountID
 			,	MAX(ass.CreatedTime) AS LastCreatedTime
 		FROM DCS_DataCenter.Association AS ass
 		WHERE ass.DeviceID = ip_DeviceID 
 			AND ass.SubscriberID = ip_SubscriberID
 		GROUP BY ass.AccountID
 		ORDER BY LastCreatedTime DESC
-		LIMIT ip_NoOfRecord;   
+		LIMIT ip_NoOfRecord;
 
 	END IF;
 	
 	IF ip_NoOfRecord = 0 THEN 
 
 		INSERT INTO Temp_AccountID(AccountID, LastCreatedTime)
-		SELECT 	DISTINCT
-				ass.AccountID
+		SELECT 	ass.AccountID
 			,	MAX(ass.CreatedTime) AS LastCreatedTime
 		FROM DCS_DataCenter.Association AS ass
 		WHERE ass.DeviceID = ip_DeviceID 
@@ -114,7 +112,7 @@ BEGIN
 	FROM Temp_Association AS tmpAs
 		LEFT JOIN DCS_DataCenter.Association AS ass ON ass.SubscriberID = ip_SubscriberID 
 													AND tmpAs.DeviceID = ass.DeviceID 
-                                                    AND tmpAs.AccountID <> ass.AccountID;
+													AND tmpAs.AccountID <> ass.AccountID;
 
 	INSERT INTO Temp_AssociatedAccount(AccountID, RegisterName, UserName, DeviceInCommon, OtherDeives, AssociatedAccount, MaxCreatedTime)
 	SELECT	tmpAs.RootAccountID AS AccountID
@@ -124,9 +122,9 @@ BEGIN
 		,	COUNT(DISTINCT tmpAs.DeviceID) - COUNT(DISTINCT CASE WHEN tmpAs.AssAccountID > 0 THEN tmpAs.DeviceID ELSE NULL END) AS OtherDevices
 		,	COUNT(DISTINCT CASE WHEN tmpAs.AssAccountID > 0 THEN tmpAs.AssAccountID ELSE NULL END) AS AsscociatedAccount
 		,	MAX(tmpAs.CreatedTime) AS MaxCreatedTime
-	FROM Temp_AccountAssociation AS tmpAs		
-		INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON tmpAs.RootAccountID = ca.AccountID AND ca.SubscriberID = ip_SubscriberID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID 
+	FROM Temp_AccountAssociation AS tmpAs
+		INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ca.SubscriberID = ip_SubscriberID AND ca.AccountID = tmpAs.RootAccountID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID
 													AND cus.IsInternal = 0 
 													AND cus.CurrencyID NOT IN (20, 27, 28, 72)
 	GROUP BY tmpAs.RootAccountID;

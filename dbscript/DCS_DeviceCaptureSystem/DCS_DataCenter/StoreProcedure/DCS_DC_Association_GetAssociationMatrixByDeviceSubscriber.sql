@@ -30,10 +30,10 @@ BEGIN
 	#======GET Cust Association LIST: ip_DeviceID AND ASSOCIATED CUSTOMER=======================================  
 	DROP TEMPORARY TABLE IF EXISTS Temp_Matrix;
 	CREATE TEMPORARY TABLE Temp_Matrix(
-			DeviceID			BIGINT UNSIGNED		
+			DeviceID			BIGINT UNSIGNED
+		,	AccountID			BIGINT UNSIGNED	
 		,	CreatedTime			DATETIME(4)
 		,	FirstDeviceCode		VARCHAR(32)
-		,	AccountID			BIGINT UNSIGNED
 		,	RegisterName		VARCHAR(50)
 		,	UserName			VARCHAR(50)
 		,	AssCreatedTime		DATETIME(4)
@@ -67,7 +67,6 @@ BEGIN
 	WHERE ass.SubscriberID = ip_SubscriberID 
 		AND ass.DeviceID = ip_DeviceID
 	GROUP BY ass.AccountID
-	ORDER BY LastCreatedTime DESC
 	LIMIT ip_NoOfCustomer;  
 
 	INSERT IGNORE INTO Temp_RootDevice(DeviceID, FirstDeviceCode, CreatedTime)
@@ -77,14 +76,14 @@ BEGIN
 	FROM Temp_Account AS tmpAc
 		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmpAc.AccountID
 		INNER JOIN DCS_DataCenter.Device AS dv ON dv.DeviceID = ass.DeviceID        
-	ORDER BY  dv.CreatedTime DESC
-	LIMIT ip_NoOfDevice;    
+	ORDER BY dv.CreatedTime DESC
+	LIMIT ip_NoOfDevice;
 
-	INSERT IGNORE INTO Temp_Matrix(DeviceID, FirstDeviceCode, CreatedTime, AccountID, RegisterName, UserName, AssCreatedTime )
+	INSERT IGNORE INTO Temp_Matrix(DeviceID, AccountID, FirstDeviceCode, CreatedTime, RegisterName, UserName, AssCreatedTime )
 	SELECT  ass.DeviceID
+		,	ass.AccountID
 		,	dv.FirstDeviceCode
 		,	dv.CreatedTime
-		,	ass.AccountID
 		,	cus.RegisterName
 		,	cus.UserName
 		,	ass.CreatedTime

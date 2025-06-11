@@ -45,10 +45,10 @@ BEGIN
         
 	DROP TEMPORARY TABLE IF EXISTS Temp_AccountID;
 	CREATE TEMPORARY TABLE Temp_AccountID(
-			AccountID		BIGINT UNSIGNED PRIMARY KEY
+			AccountID			BIGINT UNSIGNED PRIMARY KEY
 		,	LastCreatedTime		DATETIME(4)
         
-        ,	INDEX IX_Temp_AccountID_CreatedTime(LastCreatedTime)
+        ,	INDEX IX_Temp_AccountID_LastCreatedTime(LastCreatedTime)
     );
     
     DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedAccount;
@@ -76,11 +76,12 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssCust;
 	CREATE TEMPORARY TABLE Temp_AssCust(
-			RootCTSCustID BIGINT UNSIGNED
-        ,	DeviceID BIGINT UNSIGNED
-        ,	CreatedTime DATETIME(4)
-        ,	AssCTSCustID BIGINT UNSIGNED
-        , 	PRIMARY KEY PK_Temp_AssCust(RootCTSCustID,DeviceId, AssCTSCustID));
+			RootCTSCustID 		BIGINT UNSIGNED
+        ,	DeviceID 			BIGINT UNSIGNED
+        ,	CreatedTime 		DATETIME(4)
+        ,	AssCTSCustID 		BIGINT UNSIGNED
+
+        , 	PRIMARY KEY PK_Temp_AssCust(RootCTSCustID, DeviceId, AssCTSCustID));
     
     #======GET Cust Association LIST: ip_CTSCustID AND ASSOCIATED CUSTOMER=======================================    
     INSERT INTO Temp_Association(AccountID, DeviceID, CTSCustID, CreatedDate, CreatedTime)
@@ -90,32 +91,32 @@ BEGIN
         ,	ass.CreatedDate
         ,	ass.CreatedTime
     FROM CTS_DataCenter.CustDCSAccount AS cda
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cda.CTSCustID = cus.CTSCustID 
+													AND cus.IsInternal = 0 
+                                                    AND cus.CurrencyID NOT IN (20, 27, 28, 72)
 		INNER JOIN DCS_DataCenter.Association AS ass ON cda.AccountID = ass.AccountID
-    WHERE cda.SubscriberID = ip_SubscriberID AND cda.CTSCustID = ip_CTSCustID;
+    WHERE cda.SubscriberID = ip_SubscriberID
+		AND cda.CTSCustID = ip_CTSCustID;
 
-    IF ip_NoOfRecord > 0 THEN 
-		
+    IF ip_NoOfRecord > 0 THEN
 		INSERT INTO Temp_AccountID(AccountID, LastCreatedTime)
-		SELECT DISTINCT ass.AccountID
+		SELECT	DISTINCT
+				ass.AccountID
 			,	MAX(ass.CreatedTime) AS LastCreatedTime
-		FROM DCS_DataCenter.Association AS ass
-			INNER JOIN Temp_Association AS tmpAs ON ass.DeviceID = tmpAs.DeviceID AND ass.SubscriberID = ip_SubscriberID
-            INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = ass.AccountID
+		FROM Temp_Association AS tmpAs
+			INNER JOIN DCS_DataCenter.Association AS ass ON ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = tmpAs.DeviceID
 		GROUP BY AccountID
-		ORDER BY LastCreatedTime DESC
-		LIMIT ip_NoOfRecord;   
+		LIMIT ip_NoOfRecord;
 	END IF;
-    IF ip_NoOfRecord = 0 THEN 
 
+    IF ip_NoOfRecord = 0 THEN
 		INSERT INTO Temp_AccountID(AccountID, LastCreatedTime)
-		SELECT DISTINCT ass.AccountID
+		SELECT	DISTINCT 
+				ass.AccountID
 			,	MAX(ass.CreatedTime) AS LastCreatedTime
-		FROM DCS_DataCenter.Association AS ass
-			INNER JOIN Temp_Association AS tmpAs ON ass.DeviceID = tmpAs.DeviceID AND ass.SubscriberID = ip_SubscriberID
-            INNER JOIN CTS_DataCenter.CustDCSAccount AS cda ON cda.AccountID = ass.AccountID
-		GROUP BY AccountID
-		ORDER BY LastCreatedTime DESC;
-  
+		FROM Temp_Association AS tmpAs
+			INNER JOIN DCS_DataCenter.Association AS ass ON ass.SubscriberID = ip_SubscriberID AND ass.DeviceID = tmpAs.DeviceID
+		GROUP BY AccountID;
 	END IF;
 
 	INSERT INTO Temp_AssociatedAccount(AccountID, CTSCustID, UserName, RegisterName, LastCreatedTime)

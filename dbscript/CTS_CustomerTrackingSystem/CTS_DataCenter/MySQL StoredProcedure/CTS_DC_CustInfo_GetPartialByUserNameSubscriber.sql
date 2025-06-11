@@ -63,7 +63,7 @@ BEGIN
 	FROM CTS_DataCenter.CTSCustomer AS cus
 	WHERE cus.SubscriberID = ip_SubscriberID 
 		AND cus.UserName LIKE CONCAT(ip_UserName,'%') 
-		AND cus.IsInternal = 0 
+		AND cus.IsInternal = 0
 		AND cus.LastLoginTime IS NOT NULL
 		AND cus.CurrencyID NOT IN (20, 27, 28, 72);
 

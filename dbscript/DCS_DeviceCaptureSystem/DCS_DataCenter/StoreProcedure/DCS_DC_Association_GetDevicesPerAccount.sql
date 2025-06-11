@@ -72,8 +72,10 @@ BEGIN
 		,	cus.UserName
 		,	tmp.NoOfDevice
 	FROM Temp_AccountNoOfDevice AS tmp
-		INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON tmp.AccountID = ca.AccountID AND ca.SubscriberID = ip_SubscriberID
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID AND cus.IsInternal = 0 AND cus.CurrencyID NOT IN (20, 27, 28, 72);
+		INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ca.SubscriberID = ip_SubscriberID AND tmp.AccountID = ca.AccountID
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID
+													AND cus.IsInternal = 0
+													AND cus.CurrencyID NOT IN (20, 27, 28, 72);
     
 	SET op_TotalRows = (SELECT COUNT(1) FROM Temp_CustomerInfo);
 

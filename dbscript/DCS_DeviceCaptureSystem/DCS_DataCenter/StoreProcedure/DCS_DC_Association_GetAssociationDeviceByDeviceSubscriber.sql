@@ -57,8 +57,6 @@ BEGIN
 		,	PRIMARY KEY PK_Temp_AssociatedAccount(AccountID, DeviceID)
 		,	INDEX IX_Temp_AssociatedAccount_DeviceID(DeviceID)
 	);
-		   
-	
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_AssociatedDeviceInfo;
 	CREATE TEMPORARY TABLE Temp_AssociatedDeviceInfo(
@@ -81,29 +79,23 @@ BEGIN
 		AND ass.DeviceID = ip_DeviceID
 	ORDER BY ass.CreatedDate DESC;
 
-	IF ip_NoOfRecord > 0 THEN 
-
+	IF ip_NoOfRecord > 0 THEN
 		INSERT IGNORE INTO Temp_Device(DeviceID, CreatedTime)
 		SELECT	ass.DeviceID
 			,	MAX(ass.CreatedTime) AS MaxCreatedTime
-		FROM DCS_DataCenter.Association AS ass 
-			INNER JOIN Temp_Account AS acc ON ass.AccountID = acc.AccountID 
+		FROM Temp_Account AS acc
+			INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = acc.AccountID 
 		GROUP BY ass.DeviceID
-		ORDER BY MaxCreatedTime DESC
-		LIMIT ip_NoOfRecord; 
-
+		LIMIT ip_NoOfRecord;
 	END IF;
 
-	IF ip_NoOfRecord = 0 THEN 
-
+	IF ip_NoOfRecord = 0 THEN
 		INSERT IGNORE INTO Temp_Device(DeviceID, CreatedTime)
 		SELECT	ass.DeviceID
 			,	MAX(ass.CreatedTime) AS MaxCreatedTime
-		FROM DCS_DataCenter.Association AS ass 
-			INNER JOIN Temp_Account AS acc ON ass.AccountID = acc.AccountID 
-		GROUP BY ass.DeviceID
-		ORDER BY MaxCreatedTime DESC;
-
+		FROM Temp_Account AS acc
+			INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = acc.AccountID
+		GROUP BY ass.DeviceID;
 	END IF;
 
 	INSERT INTO Temp_AssociatedDevice(AccountID, DeviceID)
@@ -114,7 +106,7 @@ BEGIN
 
 	INSERT INTO Temp_DistinctAccount(AccountID)
 	SELECT DISTINCT tmpAd.AccountID
-	FROM Temp_AssociatedDevice AS tmpAd;    
+	FROM Temp_AssociatedDevice AS tmpAd;
 
 	INSERT INTO Temp_AssociatedAccount(AccountID, DeviceID)
 	SELECT	tmpAc.AccountID

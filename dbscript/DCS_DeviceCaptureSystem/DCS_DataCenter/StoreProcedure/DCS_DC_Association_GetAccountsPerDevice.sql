@@ -42,7 +42,7 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_DeviceIDNoOfAccount;
 	CREATE TEMPORARY TABLE Temp_DeviceIDNoOfAccount (
-            DeviceID		BIGINT UNSIGNED PRIMARY KEY
+			DeviceID		BIGINT UNSIGNED PRIMARY KEY
 		,	NoOfAccount		INT
 	);
     
