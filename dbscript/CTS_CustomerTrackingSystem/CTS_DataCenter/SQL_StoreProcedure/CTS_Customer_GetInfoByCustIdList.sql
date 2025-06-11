@@ -32,6 +32,7 @@ AS
 		- 20241216@Tony.Nguyen: Change the process so that it retrieves SiteID/Site for the member directly (Redmine ID: #214585)
 		- 20250416@Thomas.Nguyen: Return more Customer missing info [Redmine ID: #223443]
 		- 20250428@Thomas.Nguyen: Upgrade CurrencyID datatype [Redmine ID: #225335]
+		- 20250611@Thomas.Nguyen: Return more reactivated cust missed info [Redmine ID: #230204]
 
 	Param's Explanation (filtered by):
 		- @sourceType: 0- GET New Customer Info
@@ -199,7 +200,7 @@ BEGIN;
 		INSERT INTO #Tmp_CustMissingInfo(CustID)
 		SELECT tmp.CustId
 		FROM #tmpCustomers AS tmp WITH(NOLOCK)
-		WHERE (tmp.IsLicensee IS NULL OR tmp.SiteId IS NULL) AND tmp.CurrencyId NOT IN (20,27,28);
+		WHERE ((tmp.IsLicensee IS NULL OR tmp.SiteId IS NULL) AND tmp.CurrencyId NOT IN (20,27,28)) OR tmp.UserName IS NULL;
 
 		SELECT	a.CustId		AS CustID
 			,	a.Username		AS UserName
