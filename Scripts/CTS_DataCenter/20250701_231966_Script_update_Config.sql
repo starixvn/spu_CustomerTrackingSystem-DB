@@ -59,8 +59,7 @@ SET IsGoodOrNormalClass = 1
 WHERE CategoryID IN (
     SELECT CategoryID
     FROM CustomerCategory
-    WHERE CategoryName LIKE '%Good%'
-       OR CategoryName LIKE '%Normal%'
+    WHERE CustomerClass in (201,202)
 );
 
 SELECT * FROM CustomerCategorySettings WHERE IsGoodOrNormalClass = 1;
