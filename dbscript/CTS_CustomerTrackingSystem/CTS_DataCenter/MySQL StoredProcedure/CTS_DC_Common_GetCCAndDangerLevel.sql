@@ -320,30 +320,30 @@ BEGIN
         ,	cate.CustomerClassName  
 		,	cate.ParentID
 		,	cate.TaggingType
-		CASE
-    		WHEN cate.DangerLevelType = 1 THEN
-				CASE
-					-- AC01: Members from EVOIO site, All CC (except New member CC200) will be set to Ori 18
-					WHEN c.SiteID = CONST_SITEID_EVOIO AND IFNULL(cate.CustomerClass, -1) <> CONST_CATEID_NEW 
-					THEN 18
-					-- AC02: Licensee members using USDT and EURO currency (exclusive of members from EVOIO) with Suspicious, Dangerous, Problems, Robot Class will be set to Ori 19
-					WHEN c.IsLicensee = 1
-					    AND c.SiteID <> CONST_SITEID_EVOIO -- exclusive of members from EVOIO
-					    AND c.CurrencyID IN (CONST_CURRENCYID_USDT, CONST_CURRENCYID_EURO)
-					    AND ccs.IsSpecialLicenseeClass = 1
-					THEN 19
-					-- AC03: Members from credit INDO site - Special Class - Ori 17
-					WHEN c.SiteID = CONST_SITEID_INDO
-						AND ccs.IsIndoSpecialClass = 1
-					THEN 17
-					-- AC04: If customer is re-classified to Good or Normal CC, system reset the danger Ori 17 or 19 to 0
-					WHEN ccs.IsGoodOrNormalClass = 1
-     						AND (cate.DangerLevel = 17 OR cate.DangerLevel = 19)
-					THEN 0
-                	ELSE cate.DangerLevel
-            	END
-    		ELSE cate.DangerLevel
-		END AS DangerLevel
+		,	CASE
+				WHEN cate.DangerLevelType = 1 THEN
+					CASE
+						-- AC01: Members from EVOIO site, All CC (except New member CC200) will be set to Ori 18
+						WHEN c.SiteID = CONST_SITEID_EVOIO AND IFNULL(cate.CustomerClass, -1) <> CONST_CATEID_NEW 
+						THEN 18
+						-- AC02: Licensee members using USDT and EURO currency (exclusive of members from EVOIO) with Suspicious, Dangerous, Problems, Robot Class will be set to Ori 19
+						WHEN c.IsLicensee = 1
+							AND c.SiteID <> CONST_SITEID_EVOIO -- exclusive of members from EVOIO
+							AND c.CurrencyID IN (CONST_CURRENCYID_USDT, CONST_CURRENCYID_EURO)
+							AND ccs.IsSpecialLicenseeClass = 1
+						THEN 19
+						-- AC03: Members from credit INDO site - Special Class - Ori 17
+						WHEN c.SiteID = CONST_SITEID_INDO
+							AND ccs.IsIndoSpecialClass = 1
+						THEN 17
+						-- AC04: If customer is re-classified to Good or Normal CC, system reset the danger Ori 17 or 19 to 0
+						WHEN ccs.IsGoodOrNormalClass = 1
+								AND (cate.DangerLevel = 17 OR cate.DangerLevel = 19)
+						THEN 0
+						ELSE cate.DangerLevel
+					END
+				ELSE cate.DangerLevel
+			END AS DangerLevel
         ,	cate.DangerLevelType
     FROM Temp_CustInfo AS tmp
 		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID
