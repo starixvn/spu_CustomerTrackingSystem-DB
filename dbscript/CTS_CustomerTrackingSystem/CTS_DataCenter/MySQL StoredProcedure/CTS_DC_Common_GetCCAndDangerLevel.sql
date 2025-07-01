@@ -20,6 +20,7 @@ BEGIN
 			- 20240628@Thomas.Nguyen:	Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
 			- 20240923@Jonas.Huynh:		Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
 			- 20240930@Casey.Huynh: 	Return Agency CC and Danger [Redmine ID: #185799]
+			- 20250701@Logan.Nguyen: 	Set to Ori 17-18-19 [Redmine ID: #229875]
             
         Param's Explanation:     
         Example:
@@ -152,7 +153,7 @@ BEGIN
     FROM JSON_TABLE(CONCAT('[',ip_CustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS(CustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID  = 0
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = tmp.CustID;
-     
+	 
 	/* ==========================GET MEMBER CC INFO================================================= */    
     SELECT CustomerClass, CustomerClassPriority, CustomerClassName
     INTO lv_LicBACC, lv_LicBAPriority, lv_LicBACC_Name
@@ -335,11 +336,10 @@ BEGIN
 					WHEN c.SiteID = CONST_SITEID_INDO
 						AND ccs.IsIndoSpecialClass = 1
 					THEN 17
-					-- AC04: 
+					-- AC04: If customer is re-classified to Good or Normal CC, system reset the danger Ori 17 or 19 to 0
 					WHEN ccs.IsGoodOrNormalClass = 1
      						AND (cate.DangerLevel = 17 OR cate.DangerLevel = 19)
 					THEN 0
-
                 	ELSE cate.DangerLevel
             	END
     		ELSE cate.DangerLevel
