@@ -329,21 +329,14 @@ BEGIN
 					WHEN c.IsLicensee = 1
 					    AND c.SiteID <> CONST_SITEID_EVOIO -- exclusive of members from EVOIO
 					    AND c.CurrencyID IN (CONST_CURRENCYID_USDT, CONST_CURRENCYID_EURO)
-					    AND (
-                    		cate.CustomerClassName LIKE '%Suspicious%'
-                 			OR cate.CustomerClassName LIKE '%Danger%'
-                 			OR cate.CustomerClassName LIKE '%Problem%'
-                 			OR cate.CustomerClassName LIKE '%Robot%'
-                 			)
+					    AND ccs.IsSpecialLicenseeClass = 1
 					THEN 19
+					-- AC03: Members from credit INDO site - Special Class - Ori 17
 					WHEN c.SiteID = CONST_SITEID_INDO
-						AND IFNULL(cate.CustomerClass, -1) IN (
-							203, 2303, 2005, 2105, 2205, 2305,
-							2600, 2700, 2800, 204, 205, 2304,
-							301, 3101, 302, 303, 304, 300, 2100, 2300
-						)
+						AND ccs.IsIndoSpecialClass = 1
 					THEN 17
-					WHEN (cate.CategoryName LIKE '%Good%' OR cate.CategoryName LIKE '%Normal%')
+					-- AC04: 
+					WHEN ccs.IsGoodOrNormalClass = 1
      						AND (cate.DangerLevel = 17 OR cate.DangerLevel = 19)
 					THEN 0
 
@@ -353,8 +346,9 @@ BEGIN
 		END AS DangerLevel
         ,	cate.DangerLevelType
     FROM Temp_CustInfo AS tmp
-		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID;
-		LEFT JOIN CTSCustomer c ON tmp.CustID = c.CustID;
+		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID
+		LEFT JOIN CTSCustomer AS c ON tmp.CustID = c.CustID
+		LEFT JOIN CustomerCategorySettings AS ccs ON cate.CategoryID = ccs.CategoryID;
 END$$
 
 DELIMITER ;
