@@ -347,7 +347,7 @@ BEGIN
 					AND ccs.IsOri19TargetClass = 1
 				THEN 19
 				-- AC03: Members from credit INDO site - Special Class - Ori 17
-				WHEN tmp.SiteID = 2001
+				WHEN tmp.SiteID = 11
 					AND ccs.IsOri17TargetClass = 1
 				THEN 17
 				-- AC04: If customer is re-classified to Good or Normal CC, system reset the danger Ori 17 or 19 to 0
