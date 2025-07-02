@@ -147,7 +147,7 @@ BEGIN
     );  
     
     /* START */
-    INSERT IGNORE INTO Temp_CustInfo(CustID, RoleID, IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsRobotException,SpecialCC)
+    INSERT IGNORE INTO Temp_CustInfo(CustID, RoleID, IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsRobotException,SpecialCC,SiteID,CurrencyID,Danger1)
     SELECT  tmp.CustID
 		,	cus.RoleID
 		,	cus.IsLicensee
@@ -322,7 +322,7 @@ BEGIN
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;         
     #=========================================================================================================            
-	INSERT INTO Temp_CustClassificationInfo(CustID, RoleID, CategoryID, CustomerClass, CustomerClassName, ParentID, TaggingType, DangerLevel, DangerLevelType)	
+	INSERT INTO Temp_CustClassificationInfo(CustID, RoleID, CategoryID, CustomerClass, CustomerClassName, ParentID, TaggingType, DangerLevel, DangerLevelType, Danger1)	
 	SELECT 	tmp.CustID
 		,	tmp.RoleID
 		,	cate.CategoryID        
