@@ -102,7 +102,7 @@ BEGIN
 		,	SiteID						INT
 	);
 
-	INSERT INTO Temp_OriSite (SiteType, SiteID) VALUES ('EVOIO', 1763),('INDO', 2001);
+	INSERT INTO Temp_OriSite (SiteType, SiteID) VALUES ('EVOIO', 1763),('INDO', 11);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_OriCurrency; 
     CREATE TEMPORARY TABLE Temp_OriCurrency (
