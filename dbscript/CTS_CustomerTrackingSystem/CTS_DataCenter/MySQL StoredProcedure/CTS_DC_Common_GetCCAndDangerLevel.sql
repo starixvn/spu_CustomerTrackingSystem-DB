@@ -47,13 +47,7 @@ BEGIN
     DECLARE lv_LicVIPCC_Danger					INT UNSIGNED;
     DECLARE lv_LicVIPCC_Suspicious				INT UNSIGNED;
     DECLARE lv_VVIPCC							INT UNSIGNED; 
-	    
-	DECLARE	CONST_SITEID_EVOIO					INT;
-	DECLARE CONST_SITEID_INDO 					INT;
-	DECLARE	CONST_CATEID_NEW					INT;
-	DECLARE	CONST_CURRENCYID_USDT				INT;
-	DECLARE CONST_CURRENCYID_EURO 				INT;	   
-       
+	         
     #=========================Agency Define==========================================        
     DECLARE CONST_ROLEID_AGENT					SMALLINT DEFAULT 2;
     DECLARE CONST_ROLEID_MASTER					SMALLINT DEFAULT 3;
@@ -75,12 +69,6 @@ BEGIN
 	SET CONST_CATEID_LICVIPDANGEROUS 			= CTS_DC_CategoryTypeParent_Get('CONST_CATEID_LICVIPDANGEROUS');
 	SET CONST_BIZCATEGROUPID_NORMAL 			= CTS_DC_CategoryTypeParent_Get ('CONST_BIZCATEGROUPID_NORMAL');
     
-	SET CONST_SITEID_EVOIO			    		= 1763; --  EVOIO site
-	SET CONST_SITEID_INDO			    		= 11; --  INDO site
-	SET CONST_CATEID_NEW 				    	= 200;
-	SET CONST_CURRENCYID_USDT 					= 96;
-	SET CONST_CURRENCYID_EURO 					= 6;
-
 	#===================================GET Staticlist Define constant for Agency==================================================================== 
     SET CONST_AGENCY_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get('CONST_AGENCY_PARENTID_PA');
 	SET CONST_AGENCY_CATEID_VVIP 						= CTS_DC_CategoryTypeParent_Get('CONST_AGENCY_CATEID_VVIP');
@@ -101,10 +89,29 @@ BEGIN
 		,   SpecialCCDangerProbation   	BIT DEFAULT NULL
 		,	DangerLevel					INT  
 		,	DangerLevelType				INT  
+		,	SiteID                      INT
+		,	CurrencyID					INT		
+		,	Danger1						INT	
         
         , INDEX IX_Temp_CustInfo_RoleID(RoleID)
-    );    
-    
+    );   
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_OriSite; 
+    CREATE TEMPORARY TABLE Temp_OriSite (
+    		SiteType					VARCHAR(50)
+		,	SiteID						INT
+	);
+
+	INSERT INTO Temp_OriSite (SiteType, SiteID) VALUES ('EVOIO', 1763),('INDO', 2001);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_OriCurrency; 
+    CREATE TEMPORARY TABLE Temp_OriCurrency (
+    		CurrencyType				VARCHAR(50)
+		,	CurrencyID					INT
+	);
+
+	INSERT INTO Temp_OriCurrency (CurrencyType, CurrencyID) VALUES ('USDT', 96),('EURO', 6);
+
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo;
     CREATE TEMPORARY TABLE 		Temp_CustCateInfo(
         	CustID				BIGINT UNSIGNED PRIMARY KEY
@@ -150,6 +157,9 @@ BEGIN
 				 ELSE 0 
 			END AS IsRobotException
         , 	sp.CustomerClass
+		,	cus.SiteID
+		,	cus.CurrencyID
+		,	cus.Danger1
     FROM JSON_TABLE(CONCAT('[',ip_CustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS(CustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID  = 0
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = tmp.CustID;
@@ -324,21 +334,21 @@ BEGIN
 				WHEN cate.DangerLevelType = 1 THEN
 					CASE
 						-- AC01: Members from EVOIO site, All CC (except New member CC200) will be set to Ori 18
-						WHEN c.SiteID = CONST_SITEID_EVOIO AND IFNULL(cate.CustomerClass, -1) <> CONST_CATEID_NEW 
+						WHEN EXISTS (SELECT 1 FROM Temp_OriSite s WHERE s.SiteType = 'EVOIO' AND s.SiteID = tmp.SiteID) AND ccs.IsOri18Excepted = 0 AND ccs.IsOri18Excepted = 0
 						THEN 18
 						-- AC02: Licensee members using USDT and EURO currency (exclusive of members from EVOIO) with Suspicious, Dangerous, Problems, Robot Class will be set to Ori 19
-						WHEN c.IsLicensee = 1
-							AND c.SiteID <> CONST_SITEID_EVOIO -- exclusive of members from EVOIO
-							AND c.CurrencyID IN (CONST_CURRENCYID_USDT, CONST_CURRENCYID_EURO)
-							AND ccs.IsSpecialLicenseeClass = 1
+						WHEN tmp.IsLicensee = 1
+							AND tmp.SiteID <> (SELECT 1 FROM Temp_OriSite s WHERE s.SiteType = 'EVOIO' AND s.SiteID = tmp.SiteID) -- exclusive of members from EVOIO
+							AND EXISTS (SELECT 1 FROM Temp_OriCurrency c WHERE c.CurrencyType IN ('USDT', 'EURO') AND c.CurrencyID = tmp.CurrencyID)
+							AND ccs.IsOri19TargetClass = 1
 						THEN 19
 						-- AC03: Members from credit INDO site - Special Class - Ori 17
-						WHEN c.SiteID = CONST_SITEID_INDO
-							AND ccs.IsIndoSpecialClass = 1
+						WHEN tmp.SiteID = (SELECT 1 FROM Temp_OriSite s WHERE s.SiteType = 'INDO' AND s.SiteID = tmp.SiteID)
+							AND ccs.IsOri17TargetClass = 1
 						THEN 17
 						-- AC04: If customer is re-classified to Good or Normal CC, system reset the danger Ori 17 or 19 to 0
-						WHEN ccs.IsGoodOrNormalClass = 1
-								AND (cate.DangerLevel = 17 OR cate.DangerLevel = 19)
+						WHEN ccs.IsOri0ResetClass = 1
+								AND tmp.Danger1 IN (17, 19)
 						THEN 0
 						ELSE cate.DangerLevel
 					END
@@ -347,8 +357,7 @@ BEGIN
         ,	cate.DangerLevelType
     FROM Temp_CustInfo AS tmp
 		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID
-		LEFT JOIN CTSCustomer AS c ON tmp.CustID = c.CustID
-		LEFT JOIN CustomerCategorySettings AS ccs ON cate.CategoryID = ccs.CategoryID;
+		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cate.CategoryID = ccs.CategoryID;
 END$$
 
 DELIMITER ;
