@@ -11,32 +11,46 @@ Revisions:
 Reviewer:
 */
 
+-- AC01 --------------------------------------------------------
+
+ALTER TABLE CustomerCategorySettings
+ADD COLUMN IsOri18Excepted TINYINT(1) DEFAULT 0;
+
+UPDATE CustomerCategorySettings
+SET IsOri18Excepted = 1
+WHERE CategoryID IN (
+    SELECT CategoryID
+    FROM CustomerCategory
+    WHERE CustomerClass in (200)
+);
+
+-- SELECT * FROM CustomerCategorySettings WHERE IsOri18Excepted = 1;
 -- AC02 --------------------------------------------------------
 
 ALTER TABLE CustomerCategorySettings
-ADD COLUMN IsSpecialLicenseeClass TINYINT(1) DEFAULT 0;
+ADD COLUMN IsOri19TargetClass TINYINT(1) DEFAULT 0;
 
 UPDATE CustomerCategorySettings
-SET IsSpecialLicenseeClass = 1
+SET IsOri19TargetClass = 1
 WHERE CategoryID IN (
     SELECT CategoryID
     FROM CustomerCategory
     WHERE
         CustomerClassName LIKE '%Suspicious%'
-     OR CustomerClassName LIKE '%Danger%'
+     OR CustomerClassName LIKE '%Dangerous%'
      OR CustomerClassName LIKE '%Problem%'
      OR CustomerClassName LIKE '%Robot%'
 );
 
-SELECT * FROM CustomerCategorySettings WHERE IsSpecialLicenseeClass = 1;
+-- SELECT * FROM CustomerCategorySettings WHERE IsOri19TargetClass = 1;
 
 -- AC03 ----------------------------------------------------------
 
 ALTER TABLE CustomerCategorySettings
-ADD COLUMN IsIndoSpecialClass TINYINT(1) DEFAULT 0;
+ADD COLUMN IsOri17TargetClass TINYINT(1) DEFAULT 0;
 
 UPDATE CustomerCategorySettings
-SET IsIndoSpecialClass = 1
+SET IsOri17TargetClass = 1
 WHERE CategoryID IN (
     SELECT CategoryID
     FROM CustomerCategory
@@ -47,20 +61,20 @@ WHERE CategoryID IN (
     )
 );
 
-SELECT * FROM CustomerCategorySettings WHERE IsIndoSpecialClass = 1;
+-- SELECT * FROM CustomerCategorySettings WHERE IsOri17TargetClass = 1;
 
 -- AC04 --------------------------------------------------
 
 ALTER TABLE CustomerCategorySettings
-ADD COLUMN IsGoodOrNormalClass TINYINT(1) DEFAULT 0;
+ADD COLUMN IsOri0ResetClass TINYINT(1) DEFAULT 0;
 
 UPDATE CustomerCategorySettings
-SET IsGoodOrNormalClass = 1
+SET IsOri0ResetClass = 1
 WHERE CategoryID IN (
     SELECT CategoryID
     FROM CustomerCategory
     WHERE CustomerClass in (201,202)
 );
 
-SELECT * FROM CustomerCategorySettings WHERE IsGoodOrNormalClass = 1;
+-- SELECT * FROM CustomerCategorySettings WHERE IsOri0ResetClass = 1;
 
