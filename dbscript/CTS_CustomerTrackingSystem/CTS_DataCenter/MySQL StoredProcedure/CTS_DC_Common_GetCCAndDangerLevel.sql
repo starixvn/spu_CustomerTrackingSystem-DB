@@ -98,19 +98,19 @@ BEGIN
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_OriSite; 
     CREATE TEMPORARY TABLE Temp_OriSite (
-    		SiteType					VARCHAR(50)
-		,	SiteID						INT
+    		Site					VARCHAR(50)
+		,	SiteID						INT PRIMARY KEY
 	);
 
-	INSERT INTO Temp_OriSite (SiteType, SiteID) VALUES ('EVOIO', 1763),('INDO', 11);
+	INSERT INTO Temp_OriSite (Site, SiteID) VALUES ('EVOIO', 1763),('INDO', 11);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_OriCurrency; 
     CREATE TEMPORARY TABLE Temp_OriCurrency (
-    		CurrencyType				VARCHAR(50)
-		,	CurrencyID					INT
+    		Currency				VARCHAR(50)
+		,	CurrencyID					INT PRIMARY KEY
 	);
 
-	INSERT INTO Temp_OriCurrency (CurrencyType, CurrencyID) VALUES ('USDT', 96),('EURO', 6);
+	INSERT INTO Temp_OriCurrency (Currency, CurrencyID) VALUES ('USDT', 96),('EURO', 6);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo;
     CREATE TEMPORARY TABLE 		Temp_CustCateInfo(
@@ -337,20 +337,16 @@ BEGIN
 		,	cate.DangerLevel
 		,	cate.DangerLevelType
 		,	CASE
-				-- AC01: Members from EVOIO site, All CC (except New member CC200) will be set to Ori 18
-				WHEN os.SiteType = 'EVOIO' AND ccs.IsOri18Excepted = 0 
+				WHEN os.Site = 'EVOIO' AND ccs.IsOri18Excepted = 0 
 				THEN 18
-				-- AC02: Licensee members using USDT and EURO currency (exclusive of members from EVOIO) with Suspicious, Dangerous, Problems, Robot Class will be set to Ori 19
 				WHEN tmp.IsLicensee = 1
-					AND (os.SiteType IS NULL OR os.SiteType <> 'EVOIO') -- exclusive of members from EVOIO
-					AND oc.CurrencyType IN ('USDT', 'EURO')
+					AND (os.Site IS NULL OR os.Site <> 'EVOIO')
+					AND oc.Currency IN ('USDT', 'EURO')
 					AND ccs.IsOri19TargetClass = 1
 				THEN 19
-				-- AC03: Members from credit INDO site - Special Class - Ori 17
-				WHEN os.SiteType = 'INDO'
+				WHEN os.Site = 'INDO'
 					AND ccs.IsOri17TargetClass = 1
 				THEN 17
-				-- AC04: If customer is re-classified to Good or Normal CC, system reset the danger Ori 17 or 19 to 0
 				WHEN ccs.IsOriResetClass = 1
 						AND tmp.Danger1 IN (17, 19)
 				THEN 0
