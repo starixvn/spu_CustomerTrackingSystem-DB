@@ -98,16 +98,16 @@ BEGIN
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_OriSite; 
     CREATE TEMPORARY TABLE Temp_OriSite (
-    		Site					VARCHAR(50)
-		,	SiteID						INT PRIMARY KEY
+    		Site				VARCHAR(50)
+		,	SiteID				INT PRIMARY KEY
 	);
 
 	INSERT INTO Temp_OriSite (Site, SiteID) VALUES ('EVOIO', 1763),('INDO', 11);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_OriCurrency; 
     CREATE TEMPORARY TABLE Temp_OriCurrency (
-    		Currency				VARCHAR(50)
-		,	CurrencyID					INT PRIMARY KEY
+    		Currency			VARCHAR(50)
+		,	CurrencyID			INT PRIMARY KEY
 	);
 
 	INSERT INTO Temp_OriCurrency (Currency, CurrencyID) VALUES ('USDT', 96),('EURO', 6);
