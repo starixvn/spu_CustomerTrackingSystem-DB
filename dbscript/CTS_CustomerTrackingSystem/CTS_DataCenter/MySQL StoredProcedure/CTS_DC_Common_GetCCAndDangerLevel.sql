@@ -159,6 +159,7 @@ BEGIN
         , 	sp.CustomerClass
 		,	cus.SiteID
 		,	cus.CurrencyID
+		,	cus.Danger1
     FROM JSON_TABLE(CONCAT('[',ip_CustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS(CustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID  = 0
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = tmp.CustID;
@@ -329,7 +330,7 @@ BEGIN
         ,	cate.CustomerClassName  
 		,	cate.ParentID
 		,	cate.TaggingType
-		,	DangerLevel
+		,	cate.DangerLevel
 		,	cate.DangerLevelType
 		,	CASE
 				-- AC01: Members from EVOIO site, All CC (except New member CC200) will be set to Ori 18
@@ -337,7 +338,7 @@ BEGIN
 				THEN 18
 				-- AC02: Licensee members using USDT and EURO currency (exclusive of members from EVOIO) with Suspicious, Dangerous, Problems, Robot Class will be set to Ori 19
 				WHEN tmp.IsLicensee = 1
-					AND tmp.SiteID <> (SELECT 1 FROM Temp_OriSite s WHERE s.SiteType = 'EVOIO' AND s.SiteID = tmp.SiteID) -- exclusive of members from EVOIO
+					AND NOT EXISTS (SELECT 1 FROM Temp_OriSite s WHERE s.SiteType = 'EVOIO' AND s.SiteID = tmp.SiteID) -- exclusive of members from EVOIO
 					AND EXISTS (SELECT 1 FROM Temp_OriCurrency c WHERE c.CurrencyType IN ('USDT', 'EURO') AND c.CurrencyID = tmp.CurrencyID)
 					AND ccs.IsOri19TargetClass = 1
 				THEN 19
@@ -349,7 +350,7 @@ BEGIN
 				WHEN ccs.IsOriResetClass = 1
 						AND tmp.Danger1 IN (17, 19)
 				THEN 0
-				ELSE cate.DangerLevel			
+				ELSE tmp.Danger1			
 			END	AS Danger1
     FROM Temp_CustInfo AS tmp
 		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID
