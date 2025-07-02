@@ -115,6 +115,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo;
     CREATE TEMPORARY TABLE 		Temp_CustCateInfo(
         	CustID				BIGINT UNSIGNED PRIMARY KEY
+		,	CategoryIDSetting	INT
 		,	CategoryID			INT        
 		,	IsDangerProbation	BIT DEFAULT 0
 		,	CustomerClass		INT
@@ -196,8 +197,9 @@ BEGIN
 	WHERE tmp.RoleID = CONST_ROLEID_MEMBER
 	GROUP BY tmp.CustID;
         
-    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
+    INSERT INTO Temp_CustCateInfo(CustID,CategoryIDSetting,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
+		,	clss.CategoryIDSetting
 		,	clss.CategoryID
 		,	clss.CustomerClass
         ,	clss.CustomerClassName  
@@ -244,6 +246,7 @@ BEGIN
 						END AS CustomerClassName
 					,	cate.ParentID
 					,	cate.TaggingType
+					,	clss.CategoryID AS CategoryIDSetting
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1
                 WHERE clss.CustID = tmp.CustID
@@ -339,8 +342,8 @@ BEGIN
 				THEN 18
 				-- AC02: Licensee members using USDT and EURO currency (exclusive of members from EVOIO) with Suspicious, Dangerous, Problems, Robot Class will be set to Ori 19
 				WHEN tmp.IsLicensee = 1
-					AND  tmp.SiteID <> 1763-- exclusive of members from EVOIO
-					AND EXISTS (SELECT 1 FROM Temp_OriCurrency c WHERE c.CurrencyType IN ('USDT', 'EURO') AND c.CurrencyID = tmp.CurrencyID)
+					AND tmp.SiteID <> 1763-- exclusive of members from EVOIO
+					AND tmp.CurrencyID IN (96,6)
 					AND ccs.IsOri19TargetClass = 1
 				THEN 19
 				-- AC03: Members from credit INDO site - Special Class - Ori 17
@@ -355,7 +358,7 @@ BEGIN
 			END	AS Danger1
     FROM Temp_CustInfo AS tmp
 		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID
-		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cate.CategoryID = ccs.CategoryID;
+		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cate.CategoryIDSetting = ccs.CategoryID;
 END$$
 
 DELIMITER ;
