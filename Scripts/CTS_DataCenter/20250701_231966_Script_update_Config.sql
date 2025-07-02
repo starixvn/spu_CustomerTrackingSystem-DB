@@ -66,15 +66,15 @@ WHERE CategoryID IN (
 -- AC04 --------------------------------------------------
 
 ALTER TABLE CustomerCategorySettings
-ADD COLUMN IsOri0ResetClass TINYINT(1) DEFAULT 0;
+ADD COLUMN IsOriResetClass TINYINT(1) DEFAULT 0;
 
 UPDATE CustomerCategorySettings
-SET IsOri0ResetClass = 1
+SET IsOriResetClass = 1
 WHERE CategoryID IN (
     SELECT CategoryID
     FROM CustomerCategory
     WHERE CustomerClass in (201,202)
 );
 
--- SELECT * FROM CustomerCategorySettings WHERE IsOri0ResetClass = 1;
+-- SELECT * FROM CustomerCategorySettings WHERE IsOriResetClass = 1;
 
