@@ -358,7 +358,7 @@ BEGIN
 			END	AS Danger1
     FROM Temp_CustInfo AS tmp
 		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID
-		LEFT JOIN Temp_OriSite AS os ON tmp.SiteID = os.CusSiteIDtID
+		LEFT JOIN Temp_OriSite AS os ON tmp.SiteID = os.SiteID
 		LEFT JOIN Temp_OriCurrency AS oc ON tmp.CurrencyID = oc.CurrencyID
 		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cate.CategoryIDSetting = ccs.CategoryID;
 END$$
