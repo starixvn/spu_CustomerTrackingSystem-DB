@@ -338,16 +338,16 @@ BEGIN
 		,	cate.DangerLevelType
 		,	CASE
 				-- AC01: Members from EVOIO site, All CC (except New member CC200) will be set to Ori 18
-				WHEN tmp.SiteID = 1763 AND ccs.IsOri18Excepted = 0 
+				WHEN os.SiteType = 'EVOIO' AND ccs.IsOri18Excepted = 0 
 				THEN 18
 				-- AC02: Licensee members using USDT and EURO currency (exclusive of members from EVOIO) with Suspicious, Dangerous, Problems, Robot Class will be set to Ori 19
 				WHEN tmp.IsLicensee = 1
-					AND tmp.SiteID <> 1763-- exclusive of members from EVOIO
-					AND tmp.CurrencyID IN (96,6)
+					AND (os.SiteType IS NULL OR os.SiteType <> 'EVOIO') -- exclusive of members from EVOIO
+					AND oc.CurrencyType IN ('USDT', 'EURO')
 					AND ccs.IsOri19TargetClass = 1
 				THEN 19
 				-- AC03: Members from credit INDO site - Special Class - Ori 17
-				WHEN tmp.SiteID = 11
+				WHEN os.SiteType = 'INDO'
 					AND ccs.IsOri17TargetClass = 1
 				THEN 17
 				-- AC04: If customer is re-classified to Good or Normal CC, system reset the danger Ori 17 or 19 to 0
@@ -358,6 +358,8 @@ BEGIN
 			END	AS Danger1
     FROM Temp_CustInfo AS tmp
 		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID
+		LEFT JOIN Temp_OriSite AS os ON tmp.SiteID = os.CusSiteIDtID
+		LEFT JOIN Temp_OriCurrency AS oc ON tmp.CurrencyID = oc.CurrencyID
 		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cate.CategoryIDSetting = ccs.CategoryID;
 END$$
 
