@@ -35,6 +35,7 @@ BEGIN
         ,	CustomerClassName  
         ,	DangerLevel
         ,	DangerLevelType 
+		,	Danger1
     FROM Temp_CustClassificationInfo;
 END$$
 

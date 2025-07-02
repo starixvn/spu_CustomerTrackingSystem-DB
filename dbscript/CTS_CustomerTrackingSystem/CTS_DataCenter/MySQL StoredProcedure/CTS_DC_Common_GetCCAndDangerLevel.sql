@@ -142,7 +142,8 @@ BEGIN
 		,	ParentID			INT
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
-		,	DangerLevelType		SMALLINT
+		,	DangerLevelType		SMALLINT	
+		,	Danger1				INT	
         ,	INDEX 				IX_Temp_CustClassificationInfo_CustID(CustID)
     );  
     
@@ -334,16 +335,16 @@ BEGIN
 		,	cate.DangerLevelType
 		,	CASE
 				-- AC01: Members from EVOIO site, All CC (except New member CC200) will be set to Ori 18
-				WHEN EXISTS (SELECT 1 FROM Temp_OriSite s WHERE s.SiteType = 'EVOIO' AND s.SiteID = tmp.SiteID) AND ccs.IsOri18Excepted = 0 AND ccs.IsOri18Excepted = 0
+				WHEN tmp.SiteID = 1763 AND ccs.IsOri18Excepted = 0 
 				THEN 18
 				-- AC02: Licensee members using USDT and EURO currency (exclusive of members from EVOIO) with Suspicious, Dangerous, Problems, Robot Class will be set to Ori 19
 				WHEN tmp.IsLicensee = 1
-					AND NOT EXISTS (SELECT 1 FROM Temp_OriSite s WHERE s.SiteType = 'EVOIO' AND s.SiteID = tmp.SiteID) -- exclusive of members from EVOIO
+					AND  tmp.SiteID <> 1763-- exclusive of members from EVOIO
 					AND EXISTS (SELECT 1 FROM Temp_OriCurrency c WHERE c.CurrencyType IN ('USDT', 'EURO') AND c.CurrencyID = tmp.CurrencyID)
 					AND ccs.IsOri19TargetClass = 1
 				THEN 19
 				-- AC03: Members from credit INDO site - Special Class - Ori 17
-				WHEN EXISTS (SELECT 1 FROM Temp_OriSite s WHERE s.SiteType = 'INDO' AND s.SiteID = tmp.SiteID)
+				WHEN tmp.SiteID = 2001
 					AND ccs.IsOri17TargetClass = 1
 				THEN 17
 				-- AC04: If customer is re-classified to Good or Normal CC, system reset the danger Ori 17 or 19 to 0
