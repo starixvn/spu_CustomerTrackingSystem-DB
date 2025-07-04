@@ -100,17 +100,21 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_OriSite (
     		Site				VARCHAR(50)
 		,	SiteID				INT PRIMARY KEY
+		,	IsOri17Site			INT
+		,	IsOri18Site			INT
+		,	IsNotOri19Site		INT
 	);
 
-	INSERT INTO Temp_OriSite (Site, SiteID) VALUES ('EVOIO', 1763),('INDO', 11);
+	INSERT INTO Temp_OriSite (Site, SiteID) VALUES ('EVOIO', 1763, 0, 1, 1),('INDO', 11, 1, 0, 0);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_OriCurrency; 
     CREATE TEMPORARY TABLE Temp_OriCurrency (
     		Currency			VARCHAR(50)
 		,	CurrencyID			INT PRIMARY KEY
+		,	IsOri19Currency		INT
 	);
 
-	INSERT INTO Temp_OriCurrency (Currency, CurrencyID) VALUES ('USDT', 96),('EURO', 6);
+	INSERT INTO Temp_OriCurrency (Currency, CurrencyID, IsOri19Currency) VALUES ('USDT', 96, 1),('EURO', 6, 1);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo;
     CREATE TEMPORARY TABLE 		Temp_CustCateInfo(
@@ -337,14 +341,14 @@ BEGIN
 		,	cate.DangerLevel
 		,	cate.DangerLevelType
 		,	CASE
-				WHEN os.Site = 'EVOIO' AND ccs.IsOri18Excepted = 0 
+				WHEN os.IsOri18Site = 1 AND ccs.IsOri18Excepted = 0 
 				THEN 18
 				WHEN tmp.IsLicensee = 1
-					AND (os.Site IS NULL OR os.Site <> 'EVOIO')
-					AND oc.Currency IN ('USDT', 'EURO')
+					AND (os.Site IS NULL OR os.IsNotOri19Site = 1)
+					AND oc.IsOri19Currency = 1
 					AND ccs.IsOri19TargetClass = 1
 				THEN 19
-				WHEN os.Site = 'INDO'
+				WHEN os.IsOri17Site = 1
 					AND ccs.IsOri17TargetClass = 1
 				THEN 17
 				WHEN ccs.IsOriResetClass = 1
