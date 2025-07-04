@@ -187,7 +187,7 @@ BEGIN
 	INSERT INTO Temp_CustLatestCate(CustID,LatesCCPriority,CategoryIDSetting)
     SELECT tmp.CustID, MIN(clss.CustomerClassPriority), clss.CategoryID
     FROM Temp_CustInfo AS tmp,
-		LATERAL(SELECT 	cate.CustomerClassPriority
+		LATERAL(SELECT 	cate.CustomerClassPriority, cate.CategoryID
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1
                 WHERE clss.CustID = tmp.CustID
