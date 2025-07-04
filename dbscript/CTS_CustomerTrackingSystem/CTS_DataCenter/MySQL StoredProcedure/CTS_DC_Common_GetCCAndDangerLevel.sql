@@ -196,7 +196,7 @@ BEGIN
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss
 	WHERE tmp.RoleID = CONST_ROLEID_MEMBER
-	GROUP BY tmp.CustID;
+	GROUP BY tmp.CustID, clss.CategoryID;
         
     INSERT INTO Temp_CustCateInfo(CustID,CategoryIDSetting,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
