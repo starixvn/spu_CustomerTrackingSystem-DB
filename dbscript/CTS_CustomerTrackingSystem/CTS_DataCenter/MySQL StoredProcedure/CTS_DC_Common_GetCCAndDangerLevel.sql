@@ -112,7 +112,7 @@ BEGIN
 		,	1
 		,	1
 	FROM CTS_DataCenter.MappingSubscriberSite AS MSS
-	WHERE MSS.SiteName = 'EVOIO';
+	WHERE MSS.SiteName = 'EVOIO'
 	UNION
 	SELECT MSS.SiteName
 		,	MSS.SiteID
