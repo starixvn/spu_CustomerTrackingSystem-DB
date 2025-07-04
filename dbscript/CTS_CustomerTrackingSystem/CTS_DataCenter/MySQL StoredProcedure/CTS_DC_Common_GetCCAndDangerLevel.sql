@@ -105,7 +105,7 @@ BEGIN
 		,	IsNotOri19Site		INT
 	);
 
-	INSERT INTO Temp_OriSite (Site, SiteID) VALUES ('EVOIO', 1763, 0, 1, 1),('INDO', 11, 1, 0, 0);
+	INSERT INTO Temp_OriSite (Site, SiteID, IsOri17Site, IsOri18Site, IsNotOri19Site) VALUES ('EVOIO', 1763, 0, 1, 1),('INDO', 11, 1, 0, 0);
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_OriCurrency; 
     CREATE TEMPORARY TABLE Temp_OriCurrency (
