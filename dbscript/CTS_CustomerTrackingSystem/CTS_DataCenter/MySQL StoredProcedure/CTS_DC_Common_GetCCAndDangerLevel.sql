@@ -98,14 +98,29 @@ BEGIN
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_OriSite; 
     CREATE TEMPORARY TABLE Temp_OriSite (
-    		Site				VARCHAR(50)
+    		SiteName				VARCHAR(50)
 		,	SiteID				INT PRIMARY KEY
 		,	IsOri17Site			INT
 		,	IsOri18Site			INT
 		,	IsNotOri19Site		INT
 	);
 
-	INSERT INTO Temp_OriSite (Site, SiteID, IsOri17Site, IsOri18Site, IsNotOri19Site) VALUES ('EVOIO', 1763, 0, 1, 1),('INDO', 11, 1, 0, 0);
+	INSERT INTO Temp_OriSite (SiteName, SiteID, IsOri17Site, IsOri18Site, IsNotOri19Site)
+	SELECT	MSS.SiteName
+		,	MSS.SiteID
+		,	0
+		,	1
+		,	1
+	FROM CTS_DataCenter.MappingSubscriberSite AS MSS
+	WHERE MSS.SiteName = 'EVOIO';
+	UNION
+	SELECT MSS.SiteName
+		,	MSS.SiteID
+		,	1
+		,	0
+		,	0
+	FROM CTS_DataCenter.MappingSubscriberSite AS MSS
+	WHERE MSS.SiteName = 'INDO';
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_OriCurrency; 
     CREATE TEMPORARY TABLE Temp_OriCurrency (
