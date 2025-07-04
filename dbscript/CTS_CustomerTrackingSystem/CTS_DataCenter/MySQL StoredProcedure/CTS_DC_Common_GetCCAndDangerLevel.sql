@@ -359,7 +359,7 @@ BEGIN
 				WHEN os.IsOri18Site = 1 AND ccs.IsOri18Excepted = 0 
 				THEN 18
 				WHEN tmp.IsLicensee = 1
-					AND os.IsNotOri19Site = 1
+					AND (os.SiteName IS NULL OR os.IsNotOri19Site = 1)
 					AND oc.IsOri19Currency = 1
 					AND ccs.IsOri19TargetClass = 1
 				THEN 19
