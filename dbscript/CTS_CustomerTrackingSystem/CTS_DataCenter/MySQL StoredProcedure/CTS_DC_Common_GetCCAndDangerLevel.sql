@@ -87,11 +87,11 @@ BEGIN
         ,	SpecialCCName				VARCHAR(50)
 		,   SpecialCCPriority   		SMALLINT DEFAULT -1
 		,   SpecialCCDangerProbation   	BIT DEFAULT NULL
-		,	DangerLevel					INT  
-		,	DangerLevelType				INT  
+		,	DangerLevel					INT
+		,	DangerLevelType				INT
 		,	SiteID                      INT
-		,	CurrencyID					INT		
-		,	Danger1						INT	
+		,	CurrencyID					INT
+		,	Danger1						INT
         
         , INDEX IX_Temp_CustInfo_RoleID(RoleID)
     );   
@@ -115,7 +115,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo;
     CREATE TEMPORARY TABLE 		Temp_CustCateInfo(
         	CustID				BIGINT UNSIGNED PRIMARY KEY
-		,	CategoryIDSetting	INT
+		,	CategoryIDSetting	INT DEFAULT NULL
 		,	CategoryID			INT        
 		,	IsDangerProbation	BIT DEFAULT 0
 		,	CustomerClass		INT
@@ -130,6 +130,7 @@ BEGIN
     CREATE TEMPORARY TABLE 		Temp_CustLatestCate(
         	CustID				BIGINT UNSIGNED PRIMARY KEY
 		,	LatesCCPriority   	SMALLINT DEFAULT -1  
+		,	CategoryIDSetting	INT DEFAULT NULL
     );  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustClassificationInfo;
@@ -183,8 +184,8 @@ BEGIN
     INTO lv_VVIPCC
     FROM CustomerCategory WHERE CategoryID = CONST_CATEID_VVIP;
     
-	INSERT INTO Temp_CustLatestCate(CustID,LatesCCPriority)
-    SELECT tmp.CustID, MIN(clss.CustomerClassPriority)
+	INSERT INTO Temp_CustLatestCate(CustID,LatesCCPriority,CategoryIDSetting)
+    SELECT tmp.CustID, MIN(clss.CustomerClassPriority), clss.CategoryID
     FROM Temp_CustInfo AS tmp,
 		LATERAL(SELECT 	cate.CustomerClassPriority
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
@@ -199,7 +200,7 @@ BEGIN
         
     INSERT INTO Temp_CustCateInfo(CustID,CategoryIDSetting,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
-		,	clss.CategoryIDSetting
+		,	t.CategoryIDSetting
 		,	clss.CategoryID
 		,	clss.CustomerClass
         ,	clss.CustomerClassName  
@@ -246,7 +247,6 @@ BEGIN
 						END AS CustomerClassName
 					,	cate.ParentID
 					,	cate.TaggingType
-					,	clss.CategoryID AS CategoryIDSetting
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1
                 WHERE clss.CustID = tmp.CustID
