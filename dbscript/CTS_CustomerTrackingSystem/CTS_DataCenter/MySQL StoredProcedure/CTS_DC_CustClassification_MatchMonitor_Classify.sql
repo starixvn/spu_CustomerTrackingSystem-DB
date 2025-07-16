@@ -21,6 +21,7 @@ BEGIN
 			- 20240530@Casey.Huynh:	Saba Group Betting (NOT Classify Saba GB Match) [Redmine ID: #191972]
 			- 20240717@Jonas.Huynh:	Renovate CC [Redmine ID: #205317]
             - 20241202@Casey.Huynh: Potential Risk cannot be classified into System Detect GB [Redmine ID: #214567]
+            - 20250716@Winfred.pham [Redmine ID: #227848]: [CTS] - Customer Classification - Classify Saba Soccer Group Betting into CC3101-3201 and KickOffTime < 30mins
             
 		Param's Explanation:
         
@@ -54,8 +55,10 @@ BEGIN
 		SELECT mm.MatchID
         INTO lv_MatchID
         FROM CTS_DataCenter.MatchMonitor AS mm
-        WHERE mm.ClassifyStatus = 2	AND SportType IN (1,2) 
-			AND mm.LeagueGroupID IS NULL
+        WHERE mm.ClassifyStatus = 2	
+            AND ((SportType IN (1,2) AND mm.LeagueGroupID IS NULL)
+            OR (SportType IN (1) AND mm.LeagueGroupID = 42)
+            )
         ORDER BY mm.KickOffTime ASC
         LIMIT 1;
         
