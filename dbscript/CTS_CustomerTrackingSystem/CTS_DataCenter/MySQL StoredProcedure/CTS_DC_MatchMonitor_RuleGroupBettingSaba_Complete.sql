@@ -23,6 +23,7 @@ BEGIN
 
 		Revisions:
 			- 	20240603@Casey.Huynh: Created [Redmine ID: #191972]
+			- 	20250718@Logan.Nguyen: Saba Group Betting - Classify Saba Soccer Group Betting into CC3101-3201 [Redmine ID: #202505]
             
 		Param's Explanation (filtered by):
 			
@@ -41,6 +42,7 @@ BEGIN
     DECLARE lv_TransIDList 		LONGTEXT;
     DECLARE lv_OldTransList 	LONGTEXT;    
     DECLARE lv_CustIDList		LONGTEXT;
+    DECLARE lv_HighStakeLicCustList		LONGTEXT;
     DECLARE lv_NoOfOldGroupID	INT;
     DECLARE lv_EventDate 		DATE;
     DECLARE lv_LiveHomeScore	SMALLINT UNSIGNED;
@@ -70,6 +72,7 @@ BEGIN
 			GroupID 				INT PRIMARY KEY
         ,	CustIDList 				LONGTEXT
         ,	TransIDList				LONGTEXT 
+        ,	HighStakeLicCustList	LONGTEXT
     );    
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_GroupBettingSabaGroup;
@@ -78,6 +81,7 @@ BEGIN
 			GroupID 				INT PRIMARY KEY
         ,	CustIDList 				LONGTEXT
         ,	TransIDList				LONGTEXT 
+        ,	HighStakeLicCustList	LONGTEXT
     );   
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_GroupBettingSabaOldGroup;
@@ -90,23 +94,25 @@ BEGIN
 			TransID	BIGINT PRIMARY KEY
     ); 
     
-    INSERT IGNORE INTO Temp_TransGroup(GroupID, CustIDList, TransIDList)
+    INSERT IGNORE INTO Temp_TransGroup(GroupID, CustIDList, TransIDList, HighStakeLicCustList)
 	SELECT  js.GroupID
 		,	js.CustIDList
         ,	js.TransIDList
+        ,	js.HighStakeLicCustList
 	FROM JSON_TABLE(ip_TransGroup,
 					 "$[*]" COLUMNS(
 								GroupID			INT PATH "$.GroupID" 
 							,	CustIDList		LONGTEXT PATH "$.CustIDList" 
                             ,	TransIDList		LONGTEXT PATH "$.TransIDList"
-                            ,	SequenceIDList	LONGTEXT PATH "$.SequenceIDList" 
+                            ,	HighStakeLicCustList	LONGTEXT PATH "$.HighStakeLicCustList"
 						)
 				) AS js;     
     
-    INSERT INTO Temp_GroupBettingSabaGroup(GroupID, CustIDList, TransIDList)
+    INSERT INTO Temp_GroupBettingSabaGroup(GroupID, CustIDList, TransIDList, HighStakeLicCustList)
     SELECT  tmpTg.GroupID
 		,	tmpTg.CustIDList
         ,	tmpTg.TransIDList
+        ,	tmpTg.HighStakeLicCustList
 	FROM Temp_TransGroup AS tmpTg;
 
     #======Update MatchMonitorDetails====================================  
@@ -134,10 +140,11 @@ BEGIN
 
 			SET lv_GroupID = 0;
 
-			SELECT tmpTg.GroupID, tmpTg.TransIDList, tmpTg.CustIDList
-			INTO lv_GroupID,  lv_TransIDList, lv_CustIDList
+			SELECT tmpTg.GroupID, tmpTg.TransIDList, tmpTg.CustIDList, tmpTg.HighStakeLicCustList
+			INTO lv_GroupID,  lv_TransIDList, lv_CustIDList, lv_HighStakeLicCustList
 			FROM Temp_GroupBettingSabaGroup AS tmpTg
-			ORDER BY tmpTg.GroupID ASC LIMIT 1;        
+			ORDER BY tmpTg.GroupID ASC 
+			LIMIT 1;        
 			  
 			IF lv_GroupID =0 
 			THEN			
@@ -182,9 +189,9 @@ BEGIN
 
 				SET lv_TargetGroupID =  lv_TargetGroupID + 1;
                 
-				INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, ScoreDiff, BettypeID, BetID, Betteam, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, Reason)##LOG185793
+				INSERT IGNORE INTO CTS_DataCenter.MatchMonitorDetails(MatchID, LiveIndicator, ScoreDiff, BettypeID, BetID, Betteam, EventDate, GroupID, LiveHomeScore, LiveAwayScore, ListCustID, ListTransID, HighStakeLicCustList, Reason)##LOG185793
 				VALUES(ip_MatchID, ip_LiveIndicator, ip_ScoreDiff, ip_BettypeID, ip_BetID, ip_Betteam, lv_EventDate, lv_TargetGroupID, lv_LiveHomeScore, lv_LiveAwayScore
-				, lv_CustIDList, lv_TransIDList, CONS_MMREASON_GROUPBETTINGSABA);      
+				, lv_CustIDList, lv_TransIDList, lv_HighStakeLicCustList, CONS_MMREASON_GROUPBETTINGSABA);      
 
 			END IF; 
 	
@@ -192,14 +199,18 @@ BEGIN
 				SELECT mmd.ListTransID
                 INTO lv_OldTransList
                 FROM CTS_DataCenter.MatchMonitorDetails AS mmd 
-                WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID 
-					AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID = lv_TargetGroupID  AND mmd.Reason = CONS_MMREASON_GROUPBETTINGSABA;
+                WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID
+					AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID 
+					AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff
+					AND mmd.GroupID = lv_TargetGroupID  AND mmd.Reason = CONS_MMREASON_GROUPBETTINGSABA;
                 
                 IF LENGTH(lv_OldTransList) < LENGTH(lv_TransIDList) THEN					
 					UPDATE IGNORE CTS_DataCenter.MatchMonitorDetails AS mmd 
 					SET mmd.GroupID = lv_TargetGroupID, mmd.ListCustID = lv_CustIDList, mmd.ListTransID = lv_TransIDList, mmd.Reason = CONS_MMREASON_GROUPBETTINGSABA
-					WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID 
-						AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff AND mmd.GroupID = lv_TargetGroupID  AND mmd.Reason = CONS_MMREASON_GROUPBETTINGSABA;
+					WHERE  mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID
+						AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID 
+						AND mmd.Betteam = ip_Betteam AND mmd.ScoreDiff = ip_ScoreDiff
+						AND mmd.GroupID = lv_TargetGroupID AND mmd.Reason = CONS_MMREASON_GROUPBETTINGSABA;
 				END IF;
 				
 			END IF;        
@@ -247,8 +258,7 @@ BEGIN
 		
 		#========UPDATE MatchMonitor===================================    
 		INSERT IGNORE INTO CTS_DataCenter.MatchMonitor(MatchID, BettypeID, BetID, LiveIndicator, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueName, LeagueGroupID, Sporttype, Reason)
-		SELECT	ip_MatchID, ip_BettypeID, ip_BetID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_LeagueGroupID, lv_Sporttype
-			,	mmd.Reason
+		SELECT	ip_MatchID, ip_BettypeID, ip_BetID, ip_LiveIndicator, lv_EventDate, lv_KickOffTime, lv_EventStatus, lv_HomeID, lv_AwayID, lv_LeagueID, lv_LeagueName, lv_LeagueGroupID, lv_Sporttype, mmd.Reason
 		FROM CTS_DataCenter.MatchMonitorDetails AS mmd
 		WHERE mmd.LiveIndicator = ip_LiveIndicator AND mmd.MatchID = ip_MatchID 
 			AND mmd.BettypeID = ip_BettypeID AND mmd.BetID = ip_BetID 
@@ -262,4 +272,3 @@ BEGIN
     END IF;
 END$$
 DELIMITER ;
-
