@@ -23,17 +23,17 @@ BEGIN
 	 */ 	
      DECLARE lv_Sub90minute DATETIME;
      DECLARE lv_Sub60minute DATETIME;
-     DECLARE lv_Sub45minute DATETIME;
+     DECLARE lv_Sub30minute DATETIME;
 
      SET lv_Sub90minute = TIMESTAMPADD(MINUTE,-90, NOW());
      SET lv_Sub60minute = TIMESTAMPADD(MINUTE,-60, NOW());
-     SET lv_Sub45minute = TIMESTAMPADD(MINUTE,-30, NOW());
+     SET lv_Sub30minute = TIMESTAMPADD(MINUTE,-30, NOW());
 
      SELECT DISTINCT mm.MatchID
      FROM CTS_DataCenter.MatchMonitor AS mm
      WHERE	mm.ClassifyStatus = 0
 		AND ((mm.SportType = 1 AND mm.KickOffTime < lv_Sub90minute)
 			OR (mm.SportType = 2 AND mm.KickOffTime < lv_Sub60minute)
-			OR (mm.SportType = 1 AND mm.LeagueGroupID = 42 AND mm.KickOffTime < lv_Sub45minute)) ; 
+			OR (mm.SportType = 1 AND mm.LeagueGroupID = 42 AND mm.KickOffTime < lv_Sub30minute)) ; 
 END$$
 DELIMITER ;
