@@ -6,7 +6,7 @@ Server:  	Master
 DBName:		CTS_DataCenter
 
 Revisions: 
-		- 20250701@Logan.Nguyen: Created [Redmine ID: #229875]
+		- 	20250718@Logan.Nguyen: Saba Group Betting - Classify Saba Soccer Group Betting into CC3101-3201 [Redmine ID: #227848]
 
 Reviewer:
 */
