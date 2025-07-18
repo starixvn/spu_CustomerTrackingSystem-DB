@@ -13,6 +13,6 @@ Reviewer:
 
 
 ALTER TABLE MatchMonitorStagingGroupBettingSabaNonLive
-ADD COLUMN IsLicensee TINYINT(1) DEFAULT 0;
+ADD COLUMN IsLicensee TINYINT(1) DEFAULT NULL;
 ALTER TABLE MatchMonitorStagingGroupBettingSabaLive
-ADD COLUMN IsLicensee TINYINT(1) DEFAULT 0;
+ADD COLUMN IsLicensee TINYINT(1) DEFAULT NULL;
