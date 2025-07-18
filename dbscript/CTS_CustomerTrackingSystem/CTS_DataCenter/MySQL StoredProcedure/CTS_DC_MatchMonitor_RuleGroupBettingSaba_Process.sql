@@ -212,12 +212,13 @@ sp: BEGIN
 		SELECT	GROUP_CONCAT(tmp.CustID) AS CustIDList
 			,	GROUP_CONCAT(tmp.CTSCustID) AS CTSCustIDList
 			,	GROUP_CONCAT(tmp.CustSequenceIDList) AS SequenceIDList
-			,	tmpGr.LicCustList
+			,	tmp.LicCustList
 		FROM (	SELECT	tmpGr.TimeGroupID
 					,	mms.CustID
 					,	mms.CTSCustID
                     ,	SUM(mms.Stake) AS CustStake
 					,	GROUP_CONCAT(mms.SequenceID) AS CustSequenceIDList
+					,	tmpGr.LicCustList
 				FROM Temp_Group AS tmpGr
 				JOIN JSON_TABLE(REPLACE(JSON_ARRAY(tmpGr.SequenceIDList), ',', '","'), 
 								'$[*]' COLUMNS (SequenceID BIGINT UNSIGNED PATH '$')
@@ -304,12 +305,13 @@ sp: BEGIN
 		SELECT	GROUP_CONCAT(tmp.CustID) AS CustIDList
 			,	GROUP_CONCAT(tmp.CTSCustID) AS CTSCustIDList
 			,	GROUP_CONCAT(tmp.CustSequenceIDList) AS SequenceIDList
-			,	tmpGr.LicCustList
+			,	tmp.LicCustList
 		FROM (	SELECT	tmpGr.TimeGroupID
 					,	mms.CustID
 					,	mms.CTSCustID
                     ,	SUM(mms.Stake) AS CustStake
 					,	GROUP_CONCAT(mms.SequenceID) AS CustSequenceIDList
+					,	tmpGr.LicCustList
 				FROM Temp_Group AS tmpGr
 				JOIN JSON_TABLE(REPLACE(JSON_ARRAY(tmpGr.SequenceIDList), ',', '","'), 
 								'$[*]' COLUMNS (SequenceID BIGINT UNSIGNED PATH '$')
