@@ -261,7 +261,7 @@ sp: BEGIN
 		
         #=====GROUP BETTING SABA===================
 		IF (ip_PoolType = 1002) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, BetID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime)
+			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, BetID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime, IsLicensee)
 			SELECT	tmpSt.SequenceID
 				,	tmpSt.TransID
 				,	tmpSt.TransDate
@@ -287,6 +287,7 @@ sp: BEGIN
                 ,	tmpSt.LeagueGroupID
 				,	tmpSt.LeagueName
 				,	CURRENT_TIMESTAMP(3) AS InsertTime
+				,	cus.IsLicensee
 			FROM Temp_Staging AS tmpSt
 				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTINGSABA 
@@ -431,7 +432,7 @@ sp: BEGIN
         
 		#=====GROUP BETTING SABA===================
 		IF (ip_PoolType = 2002) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, BetID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime)
+			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, BetID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime, IsLicensee)
 			SELECT	tmpSt.SequenceID
 				,	tmpSt.TransID
 				,	tmpSt.TransDate
@@ -457,6 +458,7 @@ sp: BEGIN
                 ,	tmpSt.LeagueGroupID
 				,	tmpSt.LeagueName
 				,	CURRENT_TIMESTAMP(3) AS InsertTime
+				,	cus.IsLicensee
 			FROM Temp_Staging AS tmpSt
 				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTINGSABA 
