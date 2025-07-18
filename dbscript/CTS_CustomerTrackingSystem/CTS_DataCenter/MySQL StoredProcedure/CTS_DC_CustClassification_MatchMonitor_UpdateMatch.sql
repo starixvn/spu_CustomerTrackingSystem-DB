@@ -35,7 +35,7 @@ BEGIN
 			,	EventStatus 		VARCHAR(50)	PATH "$.EventStatus"
 		 )) AS tmpJs
 	 WHERE tmpJs.EventStatus = 'Completed' 
-			AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS ms WHERE ms.MatchID = tmpJs.MatchID);
+			AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS ms WHERE ms.MatchID = tmpJs.MatchID)
 			AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS ms WHERE ms.MatchID = tmpJs.MatchID);
          
 	UPDATE CTS_DataCenter.MatchMonitor AS mm
