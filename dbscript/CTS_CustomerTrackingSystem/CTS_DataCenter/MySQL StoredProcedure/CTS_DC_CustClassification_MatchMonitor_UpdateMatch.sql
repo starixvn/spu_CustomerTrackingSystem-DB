@@ -15,6 +15,7 @@ BEGIN
 		Revisions:
 			- 20220627@Casey.Huynh [Redmine ID: #174218]: Created 
             - 20220113@Casey.Huynh: Rename Table [Redmine ID: #179502]
+            - 20250716@Winfred.pham [CTS] - Customer Classification - Classify Saba Soccer Group Betting into CC3101-3201  [Redmine ID: #227848]:
             
 		Param's Explanation:
         
@@ -35,6 +36,7 @@ BEGIN
 		 )) AS tmpJs
 	 WHERE tmpJs.EventStatus = 'Completed' 
 			AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.MatchMonitorStagingGroupBettingLive AS ms WHERE ms.MatchID = tmpJs.MatchID);
+			AND NOT EXISTS (SELECT 1 FROM CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive AS ms WHERE ms.MatchID = tmpJs.MatchID);
          
 	UPDATE CTS_DataCenter.MatchMonitor AS mm
 		INNER JOIN Temp_CompletedMatch AS tmpMi ON mm.MatchID = tmpMi.MatchID
