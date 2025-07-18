@@ -43,6 +43,7 @@ sp: BEGIN
 			-	20250414@Casey.Huynh: Match Monitor Table Tennis Child Match [Redmine ID: #221510]
             - 	20250527@Casey.Huynh: Detect Volleyball Group Betting(Bettype 704,705,219,220) [Redmine ID: #226408]
             - 	20250610@Casey.Huynh: Detect Tennis Group Betting(Bettype 153,154,155,156) [Redmine ID: #229855]
+			- 	20250718@Logan.Nguyen: Saba Group Betting - Classify Saba Soccer Group Betting into CC3101-3201 [Redmine ID: #227848]
             
 		Param's Explanation (filtered by):		
 			ip_PoolType: 
