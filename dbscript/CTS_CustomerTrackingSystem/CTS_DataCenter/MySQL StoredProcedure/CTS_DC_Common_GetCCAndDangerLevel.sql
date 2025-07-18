@@ -20,6 +20,7 @@ BEGIN
 			- 20240628@Thomas.Nguyen:	Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
 			- 20240923@Jonas.Huynh:		Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
 			- 20240930@Casey.Huynh: 	Return Agency CC and Danger [Redmine ID: #185799]
+			- 20250701@Logan.Nguyen: 	Set to Ori 17-18-19 [Redmine ID: #229875]
             
         Param's Explanation:     
         Example:
@@ -31,7 +32,7 @@ BEGIN
     
 	DECLARE	CONST_PARENTID_PA 					INT;
 	DECLARE	CONST_PARENTID_WRAPPER				INT;
-    
+	
 	DECLARE	CONST_CATEID_VVIP					INT;
 	DECLARE	CONST_CATEID_LICBA					INT;
 	DECLARE	CONST_CATEID_LICVIPSUSPICIOUS		INT;
@@ -45,8 +46,8 @@ BEGIN
     DECLARE lv_LicBAPriority					SMALLINT UNSIGNED;
     DECLARE lv_LicVIPCC_Danger					INT UNSIGNED;
     DECLARE lv_LicVIPCC_Suspicious				INT UNSIGNED;
-    DECLARE lv_VVIPCC							INT UNSIGNED;    
-       
+    DECLARE lv_VVIPCC							INT UNSIGNED; 
+	         
     #=========================Agency Define==========================================        
     DECLARE CONST_ROLEID_AGENT					SMALLINT DEFAULT 2;
     DECLARE CONST_ROLEID_MASTER					SMALLINT DEFAULT 3;
@@ -86,15 +87,54 @@ BEGIN
         ,	SpecialCCName				VARCHAR(50)
 		,   SpecialCCPriority   		SMALLINT DEFAULT -1
 		,   SpecialCCDangerProbation   	BIT DEFAULT NULL
-		,	DangerLevel					INT  
-		,	DangerLevelType				INT  
+		,	DangerLevel					INT
+		,	DangerLevelType				INT
+		,	SiteID                      INT
+		,	CurrencyID					INT
+		,	Danger1						INT
         
         , INDEX IX_Temp_CustInfo_RoleID(RoleID)
-    );    
-    
+    );   
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_OriSite; 
+    CREATE TEMPORARY TABLE Temp_OriSite (
+    		SiteName				VARCHAR(50)
+		,	SiteID				INT PRIMARY KEY
+		,	IsOri17Site			INT
+		,	IsOri18Site			INT
+		,	IsNotOri19Site		INT
+	);
+
+	INSERT INTO Temp_OriSite (SiteName, SiteID, IsOri17Site, IsOri18Site, IsNotOri19Site)
+	SELECT	MSS.SiteName
+		,	MSS.SiteID
+		,	0
+		,	1
+		,	1
+	FROM CTS_DataCenter.MappingSubscriberSite AS MSS
+	WHERE MSS.SiteName = 'EVOIO'
+	UNION
+	SELECT MSS.SiteName
+		,	MSS.SiteID
+		,	1
+		,	0
+		,	0
+	FROM CTS_DataCenter.MappingSubscriberSite AS MSS
+	WHERE MSS.SiteName = 'INDO';
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_OriCurrency; 
+    CREATE TEMPORARY TABLE Temp_OriCurrency (
+    		Currency			VARCHAR(50)
+		,	CurrencyID			INT PRIMARY KEY
+		,	IsOri19Currency		INT
+	);
+
+	INSERT INTO Temp_OriCurrency (Currency, CurrencyID, IsOri19Currency) VALUES ('USDT', 96, 1),('EURO', 6, 1);
+
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo;
     CREATE TEMPORARY TABLE 		Temp_CustCateInfo(
         	CustID				BIGINT UNSIGNED PRIMARY KEY
+		,	CategoryIDSetting	INT DEFAULT NULL
 		,	CategoryID			INT        
 		,	IsDangerProbation	BIT DEFAULT 0
 		,	CustomerClass		INT
@@ -109,6 +149,7 @@ BEGIN
     CREATE TEMPORARY TABLE 		Temp_CustLatestCate(
         	CustID				BIGINT UNSIGNED PRIMARY KEY
 		,	LatesCCPriority   	SMALLINT DEFAULT -1  
+		,	CategoryIDSetting	INT DEFAULT NULL
     );  
     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustClassificationInfo;
@@ -122,12 +163,13 @@ BEGIN
 		,	ParentID			INT
 		,	TaggingType			SMALLINT
         ,	DangerLevel			INT
-		,	DangerLevelType		SMALLINT
+		,	DangerLevelType		SMALLINT	
+		,	Danger1				INT	
         ,	INDEX 				IX_Temp_CustClassificationInfo_CustID(CustID)
     );  
     
     /* START */
-    INSERT IGNORE INTO Temp_CustInfo(CustID, RoleID, IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsRobotException,SpecialCC)
+    INSERT IGNORE INTO Temp_CustInfo(CustID, RoleID, IsLicensee,IsLicenseeVIP,IsLicenseeBA,IsRobotException,SpecialCC,SiteID,CurrencyID,Danger1)
     SELECT  tmp.CustID
 		,	cus.RoleID
 		,	cus.IsLicensee
@@ -137,10 +179,13 @@ BEGIN
 				 ELSE 0 
 			END AS IsRobotException
         , 	sp.CustomerClass
+		,	cus.SiteID
+		,	cus.CurrencyID
+		,	cus.Danger1
     FROM JSON_TABLE(CONCAT('[',ip_CustIDs,']'),'$[*]' COLUMNS(NESTED PATH '$' COLUMNS(CustID BIGINT UNSIGNED PATH '$'))) AS tmp
 		LEFT JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID  = 0
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS sp ON sp.CustID = tmp.CustID;
-     
+	 
 	/* ==========================GET MEMBER CC INFO================================================= */    
     SELECT CustomerClass, CustomerClassPriority, CustomerClassName
     INTO lv_LicBACC, lv_LicBAPriority, lv_LicBACC_Name
@@ -158,10 +203,10 @@ BEGIN
     INTO lv_VVIPCC
     FROM CustomerCategory WHERE CategoryID = CONST_CATEID_VVIP;
     
-	INSERT INTO Temp_CustLatestCate(CustID,LatesCCPriority)
-    SELECT tmp.CustID, MIN(clss.CustomerClassPriority)
+	INSERT INTO Temp_CustLatestCate(CustID,LatesCCPriority,CategoryIDSetting)
+    SELECT tmp.CustID, MIN(clss.CustomerClassPriority), clss.CategoryID
     FROM Temp_CustInfo AS tmp,
-		LATERAL(SELECT 	cate.CustomerClassPriority
+		LATERAL(SELECT 	cate.CustomerClassPriority, cate.CategoryID
 				FROM CTS_DataCenter.CTSCustomerClassification AS clss
 					INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1
                 WHERE clss.CustID = tmp.CustID
@@ -170,10 +215,11 @@ BEGIN
 						, clss.LastModifiedDate DESC
                 LIMIT 1) AS clss
 	WHERE tmp.RoleID = CONST_ROLEID_MEMBER
-	GROUP BY tmp.CustID;
+	GROUP BY tmp.CustID, clss.CategoryID;
         
-    INSERT INTO Temp_CustCateInfo(CustID,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
+    INSERT INTO Temp_CustCateInfo(CustID,CategoryIDSetting,CategoryID,CustomerClass,CustomerClassName,ParentID,TaggingType,DangerLevel,DangerLevelType)
     SELECT 	tmp.CustID
+		,	t.CategoryIDSetting
 		,	clss.CategoryID
 		,	clss.CustomerClass
         ,	clss.CustomerClassName  
@@ -299,7 +345,7 @@ BEGIN
 						, c.LastModifiedDate DESC
                 LIMIT 1) AS dangerlvl;         
     #=========================================================================================================            
-	INSERT INTO Temp_CustClassificationInfo(CustID, RoleID, CategoryID, CustomerClass, CustomerClassName, ParentID, TaggingType, DangerLevel, DangerLevelType)	
+	INSERT INTO Temp_CustClassificationInfo(CustID, RoleID, CategoryID, CustomerClass, CustomerClassName, ParentID, TaggingType, DangerLevel, DangerLevelType, Danger1)	
 	SELECT 	tmp.CustID
 		,	tmp.RoleID
 		,	cate.CategoryID        
@@ -307,10 +353,29 @@ BEGIN
         ,	cate.CustomerClassName  
 		,	cate.ParentID
 		,	cate.TaggingType
-        ,	cate.DangerLevel
-        ,	cate.DangerLevelType
+		,	cate.DangerLevel
+		,	cate.DangerLevelType
+		,	CASE
+				WHEN os.IsOri18Site = 1 AND ccs.IsOri18Excepted = 0 
+				THEN 18
+				WHEN tmp.IsLicensee = 1
+					AND (os.SiteName IS NULL OR os.IsNotOri19Site = 1) -- exclusive of members from EVOIO (SiteName IS NULL -- If tmp.SiteID not found in Temp_OriSite, 'os' columns will be NULL)
+					AND oc.IsOri19Currency = 1
+					AND ccs.IsOri19TargetClass = 1
+				THEN 19
+				WHEN os.IsOri17Site = 1
+					AND ccs.IsOri17TargetClass = 1
+				THEN 17
+				WHEN ccs.IsOriResetClass = 1
+						AND tmp.Danger1 IN (17, 19)
+				THEN 0
+				ELSE tmp.Danger1			
+			END	AS Danger1
     FROM Temp_CustInfo AS tmp
-		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID;
+		LEFT JOIN Temp_CustCateInfo AS cate ON tmp.CustID = cate.CustID
+		LEFT JOIN Temp_OriSite AS os ON tmp.SiteID = os.SiteID
+		LEFT JOIN Temp_OriCurrency AS oc ON tmp.CurrencyID = oc.CurrencyID
+		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cate.CategoryIDSetting = ccs.CategoryID;
 END$$
 
 DELIMITER ;

@@ -20,6 +20,7 @@ BEGIN
             - 20220930@Aries.Nguyen: Renovate Association Detection [RedmineID: #178311]
             - 20240930@Casey.Huynh: Return Agency CC and Danger with RoleID [Redmine ID: #185799]
 			- 20241216@Thomas.Nguyen: Change datatype from TEXT to LONGTEXT for ip_CustIDs [Redmine ID: #214655]
+			- 20250702@Logan.Nguyen: 	Set to Ori 17-18-19 [Redmine ID: #229875]
 
         Param's Explanation:     
         Example:
@@ -35,6 +36,7 @@ BEGIN
         ,	CustomerClassName  
         ,	DangerLevel
         ,	DangerLevelType 
+		,	Danger1
     FROM Temp_CustClassificationInfo;
 END$$
 
