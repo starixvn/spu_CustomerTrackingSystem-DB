@@ -200,7 +200,7 @@ sp: BEGIN
 		SELECT	tmpGr.GroupID	
 			,	tmpGr.CustIDList
 			,	tmpGr.TransIDList  
-			,	(CASE WHEN (ip_SportType = CONST_SPORTTYPE_SOCCER AND  AND tmpGr.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_SOCCERSABA) 
+			,	(CASE WHEN (ip_SportType = CONST_SPORTTYPE_SOCCER AND tmpGr.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_SOCCERSABA) 
 						AND tmpGr.LicCustTotal >= CONST_CLASSIFYTOTALCUSTSABA THEN tmpGr.LicCustList ELSE NULL END) AS HighStakeLicCustList      
 		FROM Temp_Group AS tmpGr
 			INNER JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
