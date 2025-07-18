@@ -25,7 +25,7 @@ sp: BEGIN
 		Revisions:
 			- 20240603@Casey.Huynh: Created [Redmine ID: #191972]
             - 20240704@Casey.Huynh: Saba Group Betting - Add Basketball and enhance Soccer [Redmine ID: #207523]
-			- 20250717@Logan.Nguyen: Saba Group Betting - Classify Saba Soccer Group Betting into CC3101-3201 [Redmine ID: #202505]
+			- 20250717@Logan.Nguyen: Saba Group Betting - Classify Saba Soccer Group Betting into CC3101-3201 [Redmine ID: #227848]
             
 		Param's Explanation (filtered by):
 			
@@ -47,7 +47,7 @@ sp: BEGIN
 	DECLARE CONST_CLASSIFYTOTALSTAKE_SOCCERSABA	DECIMAL(20,4) DEFAULT 150;
 	DECLARE CONST_CLASSIFYTOTALCUSTSABA			INT DEFAULT 3;
     DECLARE CONST_MMREASON_GROUPBETTINGSABA		INT DEFAULT 0;
-	DECLARE CONST_SPORTTYPE_SOCCERSABA			INT DEFAULT 1;
+	DECLARE CONST_SPORTTYPE_SOCCER				INT DEFAULT 1;
 	DECLARE lv_RuleTimeStep 					SMALLINT;
     DECLARE lv_RuleCustStake 					DECIMAL(20,4);
 	DECLARE lv_RuleTotalStake 					DECIMAL(20,4);
@@ -200,7 +200,7 @@ sp: BEGIN
 		SELECT	tmpGr.GroupID	
 			,	tmpGr.CustIDList
 			,	tmpGr.TransIDList  
-			,	(CASE WHEN (ip_SportType = CONST_SPORTTYPE_SOCCER AND tmpGr.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_SOCCERSABA) 
+			,	(CASE WHEN (ip_SportType = CONST_SPORTTYPE_SOCCER AND  AND tmpGr.LicCustTotalStake >= CONST_CLASSIFYTOTALSTAKE_SOCCERSABA) 
 						AND tmpGr.LicCustTotal >= CONST_CLASSIFYTOTALCUSTSABA THEN tmpGr.LicCustList ELSE NULL END) AS HighStakeLicCustList      
 		FROM Temp_Group AS tmpGr
 			INNER JOIN Temp_Completed AS tmpCp ON tmpGr.GroupID = tmpCp.GroupID
