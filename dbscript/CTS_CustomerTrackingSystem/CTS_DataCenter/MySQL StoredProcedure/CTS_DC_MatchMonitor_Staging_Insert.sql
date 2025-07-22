@@ -43,6 +43,7 @@ sp: BEGIN
 			-	20250414@Casey.Huynh: Match Monitor Table Tennis Child Match [Redmine ID: #221510]
             - 	20250527@Casey.Huynh: Detect Volleyball Group Betting(Bettype 704,705,219,220) [Redmine ID: #226408]
             - 	20250610@Casey.Huynh: Detect Tennis Group Betting(Bettype 153,154,155,156) [Redmine ID: #229855]
+			- 	20250718@Logan.Nguyen: Saba Group Betting - Classify Saba Soccer Group Betting into CC3101-3201 [Redmine ID: #227848]
             
 		Param's Explanation (filtered by):		
 			ip_PoolType: 
@@ -261,7 +262,7 @@ sp: BEGIN
 		
         #=====GROUP BETTING SABA===================
 		IF (ip_PoolType = 1002) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, BetID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime)
+			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, BetID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime, IsLicensee)
 			SELECT	tmpSt.SequenceID
 				,	tmpSt.TransID
 				,	tmpSt.TransDate
@@ -287,6 +288,7 @@ sp: BEGIN
                 ,	tmpSt.LeagueGroupID
 				,	tmpSt.LeagueName
 				,	CURRENT_TIMESTAMP(3) AS InsertTime
+				,	cus.IsLicensee
 			FROM Temp_Staging AS tmpSt
 				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTINGSABA 
@@ -431,7 +433,7 @@ sp: BEGIN
         
 		#=====GROUP BETTING SABA===================
 		IF (ip_PoolType = 2002) THEN
-			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, BetID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime)
+			INSERT IGNORE INTO CTS_DataCenter.MatchMonitorStagingGroupBettingSabaNonLive(SequenceID, TransID, TransDate, TransDateToSecond, MatchID, SportType, ScoreDiff, BettypeID, BetID, Betteam, CustID, CTSCustID, Stake, GroupID, LiveHomeScore, LiveAwayScore, EventDate, KickOffTime, EventStatus, HomeID, AwayID, LeagueID, LeagueGroupID, LeagueName, InsertTime, IsLicensee)
 			SELECT	tmpSt.SequenceID
 				,	tmpSt.TransID
 				,	tmpSt.TransDate
@@ -457,6 +459,7 @@ sp: BEGIN
                 ,	tmpSt.LeagueGroupID
 				,	tmpSt.LeagueName
 				,	CURRENT_TIMESTAMP(3) AS InsertTime
+				,	cus.IsLicensee
 			FROM Temp_Staging AS tmpSt
 				INNER JOIN CTS_DataCenter.CTSCustomer cus ON tmpSt.CustID = cus.CustID
 				INNER JOIN Temp_MatchMonitorRuleSetting AS tmpMst ON  tmpMst.RuleGroupID = CONST_RULE_GROUPID_GROUPBETTINGSABA 
