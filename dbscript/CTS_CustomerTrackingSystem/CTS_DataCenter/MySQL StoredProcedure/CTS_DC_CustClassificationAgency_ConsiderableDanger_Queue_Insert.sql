@@ -1,0 +1,51 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_Considerable_Queue_Insert`;
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_Considerable_Queue_Insert`(		
+		IN 	ip_ScanType 	TINYINT
+    ,	IN 	ip_Cust		        LONGTEXT
+)
+SQL SECURITY INVOKER
+BEGIN
+	/*
+		Creator:	20250725@Winfred.Pham
+		Task:	 	Insert Customer into Latency Queue for Customer Latency Insert
+		Server:  	CTSMain
+		DBName:		CTS_DataCenter
+
+		Revisions: 
+				- 20250725@Winfred.Pham: 	Created [Redmine ID: #186799]
+                
+		Param's Explanation (filtered by): 
+			@ip_ScanType: '1: Total Member Change , 2: Only Scan WL, PA Member change'
+        
+		Example:
+			CALL CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=1, @ip_Cust:='[{"CustID":1}]');
+            CALL CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=2, @ip_Cust:='[{"CustID":2}]');
+	*/
+    DECLARE lv_MinQueueID	BIGINT UNSIGNED DEFAULT 0;
+
+    SELECT sys.ParameterValue
+    INTO lv_MinQueueID
+    FROM CTS_DataCenter.SystemParameter AS sys
+    WHERE ParameterID = 194;  
+
+    DROP TEMPORARY TABLE IF EXISTS Temp_AgentCredit;
+    CREATE TEMPORARY TABLE Temp_AgentCredit(
+			CustID	BIGINT
+    ); 
+    CALL CTS_DC_Sys_SplitStringToTempItemTable(ip_Cust,',','BIGINT');
+            
+	INSERT IGNORE INTO Temp_AgentCredit (CustID) SELECT * FROM TempItemTable;   
+
+	INSERT IGNORE INTO CTS_DataCenter.CustomerConsiderableDangerQueue(CustID, ScanType, InsertedTime)
+    SELECT DISTINCT js.CustID
+		,	ip_ScanType	
+		,	CURRENT_TIMESTAMP(4) AS InsertedTime
+	FROM Temp_AgentCredit AS js 
+     WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS clss WHERE clss.ID > lv_MinQueueID AND clss.CustID = js.CustID AND clss.ScanType = ip_ScanType)
+	   AND js.CustID IS NOT NULL
+	   AND js.CustID > 0;
+
+END$$
+DELIMITER ;

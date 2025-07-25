@@ -45,6 +45,7 @@ BEGIN
 			- 20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
             - 202409266@Casey.Huynh: Return Agent [Redmine ID: #185799]
 			- 20241216@Tony.Nguyen:	Remove UNSIGNED of SMA Recommend (Redmine ID: #214585)
+			- 20250725@Winfred.Pham: Get Agent for Member Credit add Queue Considerable (Redmine ID: #186799)
             
 		Param's Explanation (filtered by):
 		Example:
@@ -58,6 +59,7 @@ BEGIN
     DECLARE CONST_ROLEID_AGENT            		TINYINT DEFAULT 2;
     DECLARE CONST_ROLEID_MASTER            		TINYINT DEFAULT 3;
     DECLARE CONST_ROLEID_SUPER            		TINYINT DEFAULT 4;
+	DECLARE lv_AgentCreditJson 					LONGTEXT DEFAULT NULL;
 
 	DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
     
@@ -371,7 +373,18 @@ BEGIN
     	,	cus.CustSubID
     FROM	Temp_CTSCustomer AS tmpCus
 		INNER JOIN 	CTS_DataCenter.CTSCustomer AS cus ON tmpCus.CustID = cus.CustID AND tmpCus.CustSubID = cus.CustSubID; 
-		
+
+	#=====INSERT Agent Credit for CustomerConsiderableDangerQueue====================
+
+	SELECT  GROUP_CONCAT(DISTINCT tmpCus.Recommend) AS CustJson 
+	INTO lv_AgentCreditJson	
+	FROM Temp_CTSCustomer AS tmpCus
+	WHERE	tmpCus.DuplicateType = 0 AND tmpCus.IsLicensee = 0; 
+
+	IF lv_AgentCreditJson IS NOT NULL THEN        
+		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=1, @ip_Cust:=lv_AgentCreditJson);
+    END IF;   
+
 	#=====UPDATE CTSCustomerClassification====================
     UPDATE CTS_DataCenter.CTSCustomerClassification AS cc
     INNER JOIN Temp_Result AS tmpCus ON tmpCus.CustSubID = 0 AND tmpCus.CustID= cc.CustID
