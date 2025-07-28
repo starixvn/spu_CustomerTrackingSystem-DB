@@ -14,6 +14,7 @@ BEGIN
 		
 		Revisions:
 			- 20241001@Casey.Huynh: Created [Redmine ID: #185799]
+			- 20250728@Adam.Tran: Agent's CC - Considerable Low Value - CC 30001 and Considerable High Value - CC 31001 [Redmine ID: #219679]
 
 		Param's Explanation (filtered by):
         Example:
@@ -23,7 +24,7 @@ BEGIN
 	DECLARE CONST_AGENCY_PARENTID_VVIP 					INT;
 	DECLARE	CONST_AGENCY_PARENTID_PA 					INT;
 	DECLARE	CONST_AGENCY_PARENTID_NORMAL 				INT;
-
+	DECLARE CONST_AGENCY_PARENTID_CONSIDERABLEDANGER 	INT;
     DECLARE	CONST_AGENCY_CATEGROUPID_NEW 				INT;
     
 	DECLARE lv_NextCategoryScan		DATE;
@@ -36,6 +37,7 @@ BEGIN
 	SET CONST_AGENCY_PARENTID_VVIP 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
 	SET CONST_AGENCY_PARENTID_PA 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
 	SET CONST_AGENCY_PARENTID_NORMAL 		= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
+	SET CONST_AGENCY_PARENTID_CONSIDERABLEDANGER = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_CONSIDERABLEDANGER');
 	SET CONST_AGENCY_CATEGROUPID_NEW 		= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEGROUPID_NEW');
 	
 	SELECT 	LastLoginTime
@@ -66,7 +68,7 @@ BEGIN
 		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS clss
 			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID =  clss.CategoryID AND cate.IsActive = 1
 		WHERE clss.CTSCustID = ip_CTSCustID
-				AND clss.ParentID IN (CONST_AGENCY_PARENTID_PA)
+				AND clss.ParentID IN (CONST_AGENCY_PARENTID_PA, CONST_AGENCY_PARENTID_CONSIDERABLEDANGER)
 		LIMIT 1;
 		
 		/* Normal Category */
