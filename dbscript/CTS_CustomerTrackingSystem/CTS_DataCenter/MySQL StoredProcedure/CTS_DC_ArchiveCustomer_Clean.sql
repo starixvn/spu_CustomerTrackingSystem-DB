@@ -26,6 +26,7 @@ sp: BEGIN
 			- 	20241018@Thomas.Nguyen: CC Agent [Redmine ID: #185799]
 			-	20250327@Casey.Huynh: 	Clean Table Customer_FirstTWTaggingCC [Redmine ID #221508]
 			-	20250520@Thomas.Nguyen: Clean Table Customer_SpecialLicSubCC [Redmine ID #226847]
+			- 	20250725@Winfred.Pham: Archive Agent and rescan Queue Considerable (Redmine ID: #186799)
 
 		Param's Explanation (filtered by):	
         
@@ -42,6 +43,7 @@ sp: BEGIN
     DECLARE lv_NextID 					BIGINT UNSIGNED;
     DECLARE lv_Table 					VARCHAR(100);
     DECLARE lv_Count				    INT DEFAULT 0;
+	DECLARE lv_AgentCreditList 					LONGTEXT DEFAULT NULL;
     
 	SET CONST_PARENTID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_PARENTID_WRAPPER			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
@@ -1856,9 +1858,18 @@ sp: BEGIN
 	 END IF; 
     /*************************************** 42. CTS_DataCenter.CTSCustomer ************************************/
 	
+	SELECT  GROUP_CONCAT(DISTINCT tmpCus.Recommend) AS CustJson 
+	INTO lv_AgentCreditList	
+	FROM CTS_DataCenter.CTSCustomer AS tmpCus
+	WHERE tmpCus.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp) AND tmpCus.IsLicensee = 0 ; 
+
     DELETE cus
 	FROM CTS_DataCenter.CTSCustomer AS cus
 	WHERE  cus.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp);
+
+	IF lv_AgentCreditList IS NOT NULL THEN        
+		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=1, @ip_Cust:=lv_AgentCreditList);
+    END IF;  
   
     UPDATE  CTS_DataCenter.SystemParameter 
 	SET ParameterValue = 'DCS_DataCenter.Association'

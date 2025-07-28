@@ -20,8 +20,8 @@ BEGIN
 			@ip_ScanType: '1: Total Member Change , 2: Only Scan WL, PA Member change'
         
 		Example:
-			CALL CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=1, @ip_Cust:='[{"CustID":1}]');
-            CALL CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=2, @ip_Cust:='[{"CustID":2}]');
+			CALL CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=1, @ip_Cust:='1,2,3,4,5,6,9,10,11,12]');
+            CALL CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=2, @ip_Cust:='1,2,3,4,5,6,9,10,11,12]');
 	*/
     DECLARE lv_MinQueueID	BIGINT UNSIGNED DEFAULT 0;
 
@@ -41,7 +41,7 @@ BEGIN
 	INSERT IGNORE INTO CTS_DataCenter.CustomerConsiderableDangerQueue(CustID, ScanType, InsertedTime)
     SELECT DISTINCT js.CustID
 		,	ip_ScanType	
-		,	CURRENT_TIMESTAMP(4) AS InsertedTime
+		,	CURRENT_TIMESTAMP(3) AS InsertedTime
 	FROM Temp_AgentCredit AS js 
      WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS clss WHERE clss.ID > lv_MinQueueID AND clss.CustID = js.CustID AND clss.ScanType = ip_ScanType)
 	   AND js.CustID IS NOT NULL

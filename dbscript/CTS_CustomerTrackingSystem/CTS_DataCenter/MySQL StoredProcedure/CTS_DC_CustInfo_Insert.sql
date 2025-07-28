@@ -59,7 +59,7 @@ BEGIN
     DECLARE CONST_ROLEID_AGENT            		TINYINT DEFAULT 2;
     DECLARE CONST_ROLEID_MASTER            		TINYINT DEFAULT 3;
     DECLARE CONST_ROLEID_SUPER            		TINYINT DEFAULT 4;
-	DECLARE lv_AgentCreditJson 					LONGTEXT DEFAULT NULL;
+	DECLARE lv_AgentCreditList 					LONGTEXT DEFAULT NULL;
 
 	DECLARE lv_LastArchiveID 	BIGINT UNSIGNED;
     
@@ -377,12 +377,12 @@ BEGIN
 	#=====INSERT Agent Credit for CustomerConsiderableDangerQueue====================
 
 	SELECT  GROUP_CONCAT(DISTINCT tmpCus.Recommend) AS CustJson 
-	INTO lv_AgentCreditJson	
+	INTO lv_AgentCreditList	
 	FROM Temp_CTSCustomer AS tmpCus
 	WHERE	tmpCus.DuplicateType = 0 AND tmpCus.IsLicensee = 0; 
 
-	IF lv_AgentCreditJson IS NOT NULL THEN        
-		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=1, @ip_Cust:=lv_AgentCreditJson);
+	IF lv_AgentCreditList IS NOT NULL THEN        
+		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=1, @ip_Cust:=lv_AgentCreditList);
     END IF;   
 
 	#=====UPDATE CTSCustomerClassification====================
