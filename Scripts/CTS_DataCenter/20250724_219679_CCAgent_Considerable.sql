@@ -18,7 +18,7 @@ CREATE TABLE CustomerConsiderableDangerQueue(
 		ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
     ,	CustID BIGINT
     ,	ScanType TINYINT
-    ,	InsertedTime DATETIME(4)   
+    ,	InsertedTime DATETIME(3)   
 );
 #================================================================================
 DROP TABLE CTSCustomerClassificationAgency_History_Archive;
@@ -61,6 +61,7 @@ CREATE TABLE CTSCustomerClassificationAgency_History_Archive(
 ) ENGINE=InnoDB;
 
 #2. New table Customer_ConsiderableDanger
+DROP TABLE Customer_ConsiderableDanger;
 CREATE TABLE Customer_ConsiderableDanger(
     	CustID 			BIGINT	
 	,	CTSCustID		BIGINT UNSIGNED
@@ -95,6 +96,7 @@ SELECT * FROM CTS_DataCenter.CustomerCategoryAgency WHERE ParentID = 130000;
 INSERT INTO CTS_DataCenter.CustomerCategoryAgency (CategoryID, CategoryName, CategorySpec, ParentID, RoleID, CustomerClass, CustomerClassName, CategoryGroupID, CategoryPriority, CustomerClassPriority, IsActive, RelevantCategoryID, IsPAProbation, ColorTypeID, Ext_CategoryGroupID) 
 VALUES ('130100', 'Considerable Danger Low-value', 'Considerable Danger Low value', '130000', '2', '30001', 'Dangerous', '130100', '600', '600', '1', '135100', '0', '6', '130100')
 	,	('135100', 'Considerable Danger Hight-value', 'Considerable Danger High value', '130000', '2', '31001', 'Dangerous -', '135100', '600', '600', '1', '130100', '1', '7', '135100');																															
+
 #==============CTS_DataCenter.CustomerCategorySettingsAgency===========================	
 SELECT * FROM CTS_DataCenter.CustomerCategorySettingsAgency WHERE ParentID = 130000;            
 INSERT INTO CTS_DataCenter.CustomerCategorySettingsAgency(CategoryID,CategoryGroupID,ParentID,IsParallelParentID,IsMultiCateIDSameParentID,IsKeepOldCateID,RemarkTemplateID,FlowPADailyScan)

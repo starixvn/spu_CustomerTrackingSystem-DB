@@ -46,6 +46,7 @@ BEGIN
             - 20240923@Jonas.Huynh:		Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
 			- 20240927@Thomas.Nguyen:	Moved AffectedDownline to Agent's CC flow [Redmine ID: #185799]
             - 20241203@Jonas.Huynh: 	CC 210x - Device Association [Redmine ID: #214353]
+            - 20250725@Casey.Huynh:		Agent CC, Insert Considerable Agency Queue [Redmine ID: #219679]
             
 */
 	DECLARE CONST_CATEID_VVIP 								INT;

@@ -37,7 +37,7 @@ BEGIN
 	DECLARE CONST_INPUTFLOWID_GENERAL_REMOVE_LICBA 			INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_REMOVE_PA 			INT;
     
-     DECLARE	CONST_ROLEID_MEMBER							INT DEFAULT 1;
+	DECLARE	CONST_ROLEID_MEMBER							INT DEFAULT 1;
 
 	DECLARE CONST_ACTIONTYPE_REMOVE 						INT DEFAULT 2;
 	DECLARE CONST_ACTIONTYPE_UNMARKPA 						INT DEFAULT 4;
@@ -50,6 +50,8 @@ BEGIN
 	DECLARE CONST_SOURCETYPE_PA_UNMARK_DIRECTLY				INT DEFAULT 33;
 	DECLARE CONST_SOURCETYPE_PA_UNMARK_AFFECTED_UPLINE		INT DEFAULT 34;
 	DECLARE CONST_SOURCETYPE_NOREASON_DETAILS				INT DEFAULT 38;
+    
+    DECLARE CONST_CONSIDERABLEDANGERQUEUE_SCANTYPE			TINYINT	DEFAULT 1;
 	
 	DECLARE lv_SourceTypeID									INT;
 	DECLARE lv_CurrentDateTime 								DATETIME DEFAULT CURRENT_TIMESTAMP();
@@ -70,7 +72,37 @@ BEGIN
 	SET CONST_INPUTFLOWID_GENERAL_REMOVE_LICVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_REMOVE_LICVIP');
 	SET CONST_INPUTFLOWID_GENERAL_REMOVE_LICBA				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_REMOVE_LICBA');
 	SET CONST_INPUTFLOWID_GENERAL_REMOVE_PA					= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_REMOVE_PA');
+	
+    #=================CONSIDERABLE_BEGIN: GET PA BEFORE==================
+    DROP TEMPORARY TABLE IF EXISTS Temp_PACustStart;    
+	CREATE TEMPORARY TABLE Temp_PACustStart(	  	
+			CustID		BIGINT PRIMARY KEY		
+        , 	Recommend	BIGINT
+	);  
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_PACustEnd;    
+	CREATE TEMPORARY TABLE Temp_PACustEnd(	  	
+			CustID		BIGINT PRIMARY KEY		
+        , 	Recommend	BIGINT
+	);  
 
+	INSERT INTO Temp_PACustStart(CustID, Recommend)
+    SELECT	cls.CustID
+		,	cus.Recommend
+	FROM Temp_NewClassification AS temp 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = temp.CustID AND cus.IsLicensee = 0
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
+	WHERE cls.ParentID = CONST_PARENTID_PA
+		AND NOT EXISTS (SELECT 1			
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls2	
+							INNER JOIN CTS_DataCenter.CustomerCategory AS cc2 ON cc2.CategoryID = cls2.CategoryID AND cc2.IsActive = 1				
+						WHERE cls.CustID = cls2.CustID
+							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
+							AND cc2.ParentID <> cc.ParentID)
+    ;
+    #=================CONSIDERABLE_END: GET PA BEFORE==================    
+    
 	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_REMOVE_VVIP THEN
 		SET lv_IsAuto 				= 0;
 		SET lv_TargetCC				= -1;
@@ -618,7 +650,39 @@ BEGIN
 		FROM Temp_Customer AS temp;
 
 	END IF;
-
+	
+    #=================CONSIDERABLE_BEGIN: GET PA AFTER==================    
+	INSERT INTO Temp_PACustEnd(CustID, Recommend)
+    SELECT	cls.CustID
+		,	cus.Recommend
+	FROM Temp_NewClassification AS temp 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = temp.CustID AND cus.IsLicensee = 0
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
+	WHERE cls.ParentID = CONST_PARENTID_PA
+		AND NOT EXISTS (SELECT 1			
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls2	
+							INNER JOIN CTS_DataCenter.CustomerCategory AS cc2 ON cc2.CategoryID = cls2.CategoryID AND cc2.IsActive = 1				
+						WHERE cls.CustID = cls2.CustID
+							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
+							AND cc2.ParentID <> cc.ParentID);
+    
+    INSERT INTO CustomerConsiderableDangerQueue(CustID, ScanType, InsertedTime)
+    SELECT tmp.Recommend AS CustID
+		,	CONST_CONSIDERABLEDANGERQUEUE_SCANTYPE AS  ScanType
+        ,	CURRENT_TIMESTAMP(3) AS InsertedTime
+	FROM (  SELECT DISTINCT en.Recommend
+			FROM Temp_PACustEnd AS en
+				LEFT JOIN Temp_PACustStart AS st ON st.CustID = en.CustID 
+			WHERE st.CustID IS NULL
+			UNION
+            SELECT DISTINCT st.Recommend
+			FROM Temp_PACustStart AS st
+				LEFT JOIN Temp_PACustStart AS en ON en.CustID = st.CustID 
+			WHERE en.CustID IS NULL
+		) AS tmp
+    ;         
+   #=================CONSIDERABLE_END: GET PA AFTER==================   
 
 END$$
 DELIMITER ;
