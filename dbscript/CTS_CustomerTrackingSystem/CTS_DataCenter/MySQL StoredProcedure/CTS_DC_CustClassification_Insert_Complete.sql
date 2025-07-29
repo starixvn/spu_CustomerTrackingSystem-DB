@@ -137,8 +137,7 @@ BEGIN
 							INNER JOIN CTS_DataCenter.CustomerCategory AS cc2 ON cc2.CategoryID = cls2.CategoryID AND cc2.IsActive = 1				
 						WHERE cls.CustID = cls2.CustID
 							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
-							AND cc2.ParentID <> cc.ParentID)
-    ;
+							AND cc2.ParentID <> cc.ParentID);
     #=================CONSIDERABLE_END: GET PA BEFORE==================
    
     /*1 - VVIP*/
@@ -1159,21 +1158,23 @@ BEGIN
 							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
 							AND cc2.ParentID <> cc.ParentID);
     
+    
     INSERT INTO CustomerConsiderableDangerQueue(CustID, ScanType, InsertedTime)
-    SELECT tmp.Recommend AS CustID
+    SELECT DISTINCT en.Recommend
 		,	CONST_CONSIDERABLEDANGERQUEUE_SCANTYPE AS  ScanType
         ,	CURRENT_TIMESTAMP(3) AS InsertedTime
-	FROM (  SELECT DISTINCT en.Recommend
-			FROM Temp_PACustEnd AS en
-				LEFT JOIN Temp_PACustStart AS st ON st.CustID = en.CustID 
-			WHERE st.CustID IS NULL
-			UNION
-            SELECT DISTINCT st.Recommend
-			FROM Temp_PACustStart AS st
-				LEFT JOIN Temp_PACustStart AS en ON en.CustID = st.CustID 
-			WHERE en.CustID IS NULL
-		) AS tmp
-    ;           
+	FROM Temp_PACustEnd AS en
+		LEFT JOIN Temp_PACustStart AS st ON st.CustID = en.CustID 
+	WHERE st.CustID IS NULL;
+    
+    INSERT IGNORE INTO CustomerConsiderableDangerQueue(CustID, ScanType, InsertedTime)
+    SELECT DISTINCT st.Recommend
+		,	CONST_CONSIDERABLEDANGERQUEUE_SCANTYPE AS  ScanType
+        ,	CURRENT_TIMESTAMP(3) AS InsertedTime
+	FROM Temp_PACustStart AS st
+		LEFT JOIN Temp_PACustEnd AS en ON en.CustID = st.CustID 
+	WHERE en.CustID IS NULL;
+           
    #=================CONSIDERABLE_END: GET PA AFTER==================       
 	
 END$$
