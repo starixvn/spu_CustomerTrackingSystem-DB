@@ -69,12 +69,12 @@ CREATE TABLE Customer_ConsiderableDanger(
     ,	PAMember		INT
     ,	PAMemberRatio	DECIMAL(2,2)
     ,	IsDisable		BOOLEAN
-    ,	InsertedTime	DATETIME(4)
+    ,	InsertedTime	DATETIME(3)
     
     ,	PRIMARY KEY PK_Customer_ConsiderableDanger(CustID,InsertedTime)    
 );
 
-#New table Customer_ConsiderableDanger_Log
+#3.New table Customer_ConsiderableDanger_Log
 #DROP TABLE Customer_ConsiderableDanger_Log;
 CREATE TABLE Customer_ConsiderableDanger_Log(
 		ID				BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
@@ -83,15 +83,17 @@ CREATE TABLE Customer_ConsiderableDanger_Log(
     ,	TotalMember		INT
     ,	PAMember		INT
     ,	PAMemberRatio	DECIMAL(2,2)  
-    ,	InsertedTime	DATETIME(4)
+    ,	InsertedTime	DATETIME(3)
     
     ,	INDEX	IX_Customer_ConsiderableDanger_Log(CustID)
 );
 
+#4.Add Column SystemRemark CTSCustomerClassificationAgency_History
 ALTER TABLE CTSCustomerClassificationAgency_History
 	ADD COLUMN SystemRemark VARCHAR(255)
 ;
 
+#5.Add Column SystemRemark CustomerCategorySettings: FlowConsiderableDanger
 ALTER TABLE CustomerCategorySettings
 	ADD COLUMN FlowConsiderableDangerScan TINYINT DEFAULT 0
 ;
