@@ -79,7 +79,7 @@ BEGIN
     -- #4: Return Considerable Insert to CD Queue Insert
 	SELECT DISTINCT tmp.CustID
     FROM Temp_CustomerCategory AS tmp
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.RoleID = CONST_ROLEID_AGENT AND cus.CustSubID = 0 AND IsLicensee = 0;
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID = 0 AND IsLicensee = 0 AND cus.RoleID = CONST_ROLEID_AGENT;
 
 END$$
 DELIMITER ;
