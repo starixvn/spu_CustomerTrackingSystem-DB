@@ -90,7 +90,7 @@ BEGIN
 		AND TransTime >= ip_FromDate
 		AND TransTime < DATE_ADD(ip_ToDate, INTERVAL 1 DAY)
 		AND LoginName = ip_LoginName
-	ORDER BY TransID ASC
+	ORDER BY TransID DESC
 	LIMIT ip_BatchSize;
 	
 	UPDATE Temp_Transaction AS trans
@@ -157,7 +157,8 @@ BEGIN
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND sl.ItemID = trans.Flagged
 		LEFT JOIN DCS_DataCenter.URL AS url ON url.URLID = trans.URLID
-		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID;
+		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID
+	ORDER BY trans.TransID DESC;
 		
 END$$
 DELIMITER ;
