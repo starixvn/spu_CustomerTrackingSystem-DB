@@ -102,6 +102,24 @@ BEGIN
 							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
 							AND cc2.ParentID <> cc.ParentID)
     ;
+    
+    INSERT IGNORE INTO Temp_PACustStart(CustID, Recommend)
+    SELECT	cls.CustID
+		,	cus.Recommend
+	FROM Temp_CustomerClassification AS temp 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = temp.CustID AND cus.IsLicensee = 0
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID AND cs.FlowConsiderableDangerScan = 1
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID AND cc.IsActive = 1        
+	WHERE cls.ParentID = CONST_PARENTID_PA
+		AND NOT EXISTS (SELECT 1			
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls2	
+							INNER JOIN CTS_DataCenter.CustomerCategory AS cc2 ON cc2.CategoryID = cls2.CategoryID AND cc2.IsActive = 1				
+						WHERE cls.CustID = cls2.CustID
+							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
+							AND cc2.ParentID <> cc.ParentID)
+    ;
+
     #=================CONSIDERABLE_END: GET PA BEFORE==================    
     
 	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_REMOVE_VVIP THEN
@@ -668,6 +686,22 @@ BEGIN
 						WHERE cls.CustID = cls2.CustID
 							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
 							AND cc2.ParentID <> cc.ParentID);
+	
+    INSERT IGNORE INTO Temp_PACustEnd(CustID, Recommend)
+    SELECT	cls.CustID
+		,	cus.Recommend
+	FROM Temp_CustomerClassification AS temp 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = temp.CustID AND cus.IsLicensee = 0
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID AND cs.FlowConsiderableDangerScan = 1
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID AND cc.IsActive = 1        
+	WHERE cls.ParentID = CONST_PARENTID_PA
+		AND NOT EXISTS (SELECT 1			
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls2	
+							INNER JOIN CTS_DataCenter.CustomerCategory AS cc2 ON cc2.CategoryID = cls2.CategoryID AND cc2.IsActive = 1				
+						WHERE cls.CustID = cls2.CustID
+							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
+							AND cc2.ParentID <> cc.ParentID);
     
     INSERT INTO CustomerConsiderableDangerQueue(CustID, ScanType, InsertedTime)
     SELECT DISTINCT en.Recommend
@@ -685,7 +719,10 @@ BEGIN
 		LEFT JOIN Temp_PACustEnd AS en ON en.CustID = st.CustID 
 	WHERE en.CustID IS NULL;
     
+    SELECT 'DEBUG_Temp_PACustEnd', t.* FROM Temp_PACustEnd AS t;
+    
+    
    #=================CONSIDERABLE_END: GET PA AFTER==================   
-
+	
 END$$
 DELIMITER ;
