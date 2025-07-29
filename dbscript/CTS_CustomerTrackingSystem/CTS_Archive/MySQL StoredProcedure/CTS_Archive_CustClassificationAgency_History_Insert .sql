@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_Archive" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_Archive`.`CTS_Archive_CustClassificationAgency_History_Insert `;
+DROP PROCEDURE IF EXISTS `CTS_Archive`.`CTS_Archive_CustClassificationAgency_History_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_Archive_CustClassificationAgency_History_Insert `(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_Archive_CustClassificationAgency_History_Insert`(
 		IN ip_HistoryJson JSON
 )
     SQL SECURITY INVOKER
