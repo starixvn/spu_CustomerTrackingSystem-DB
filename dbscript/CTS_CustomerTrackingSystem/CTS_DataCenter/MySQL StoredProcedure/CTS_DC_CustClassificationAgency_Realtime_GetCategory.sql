@@ -15,11 +15,13 @@ BEGIN
 		Revisions:
 			- 20241003@Jonas.Huynh: Created [Redmine ID: #185799]
 			- 20250228@Thomas.Nguyen: Agent PA Losing [Redmine ID: #218588]
+            - 20250725@Casey.Huynh: Agent CC, Insert Considerable Agency Queue [Redmine ID: #219679]
             
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_CustClassificationAgency_Realtime_GetCategory('761925')
 	*/  
-    DECLARE	CONST_AGENCY_PARENTID_NORMAL		INT;
+    DECLARE	CONST_AGENCY_PARENTID_NORMAL	INT;
+    DECLARE	CONST_ROLEID_AGENT 				TINYINT DEFAULT 2;
     
 	SET CONST_AGENCY_PARENTID_NORMAL	 		= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
        
@@ -73,6 +75,11 @@ BEGIN
     FROM Temp_CustomerCategory AS tmp
 		INNER JOIN CTS_DataCenter.CustomerCategorySettingsAgency AS cs ON cs.CategoryID = tmp.CategoryID
     WHERE cs.FlowPADailyScan = 1;
+    
+    -- #4: Return Considerable Insert to CD Queue Insert
+	SELECT DISTINCT tmp.CustID
+    FROM Temp_CustomerCategory AS tmp
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.RoleID = CONST_ROLEID_AGENT AND cus.CustSubID = 0 AND IsLicensee = 0;
 
 END$$
 DELIMITER ;
