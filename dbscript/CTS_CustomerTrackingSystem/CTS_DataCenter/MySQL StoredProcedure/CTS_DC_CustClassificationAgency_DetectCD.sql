@@ -33,8 +33,8 @@ BEGIN
 			AgentID	BIGINT UNSIGNED
     ); 
 
-	DROP TEMPORARY TABLE IF EXISTS Temp_AgentConsiderable;
-    CREATE TEMPORARY TABLE Temp_AgentConsiderable(
+	DROP TEMPORARY TABLE IF EXISTS Temp_AgentConsiderableDanger;
+    CREATE TEMPORARY TABLE Temp_AgentConsiderableDanger(
 			CustID	BIGINT UNSIGNED 
         ,   CTSCustID BIGINT UNSIGNED DEFAULT 0
 		,	TotalCust	INT
@@ -42,14 +42,14 @@ BEGIN
 		,	PAMemberRatio	DECIMAL(5,2)
 		,   IsPassRuleConsiderable  BIT DEFAULT 0 
 		,   IsPassRuleRatio  BIT DEFAULT 0 
-        ,	INDEX	IX_Temp_AgentConsiderable_CustID(CustID)  
+        ,	INDEX	IX_Temp_AgentConsiderableDanger_CustID(CustID)  
     ); 
-
-    CALL CTS_DC_Sys_SplitStringToTempItemTable(ip_Cust,',','BIGINT');
-            
-	INSERT IGNORE INTO Temp_AgentList (AgentID) SELECT * FROM TempItemTable;   
-
-	INSERT IGNORE INTO Temp_AgentConsiderable (CustID, CTSCustID, TotalCust, TotalPACust) 
+	
+	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_AgentList (AgentID) VALUES ('", REPLACE(ip_Cust, ",", "'),('"),"');");
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1; 	
+     
+	INSERT IGNORE INTO Temp_AgentConsiderableDanger (CustID, CTSCustID, TotalCust, TotalPACust) 
 	SELECT AgentID, cus.CTSCustID,  COUNT(cus.CTSCustID) AS TotalCust, 
 			SUM(CASE WHEN EXISTS (SELECT 1  FROM CTS_DataCenter.CustomerCategorySettings AS cls WHERE cls.CategoryID = ccc.CategoryID AND cls.FlowConsiderableDangerScan = 1) 
 					 THEN 1 ELSE 0 END ) AS TotalPA 
@@ -59,7 +59,7 @@ BEGIN
 	WHERE cus.RoleID = 1
     GROUP BY tac.AgentID, cus.CTSCustID;
 
-	UPDATE Temp_AgentConsiderable AS tac
+	UPDATE Temp_AgentConsiderableDanger AS tac
 		,LATERAL	(
 							SELECT cls.CategoryID
 							FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
@@ -77,12 +77,12 @@ BEGIN
     
     INSERT INTO CTS_DataCenter.Customer_ConsiderableDanger(CustID, CTSCustID, TotalMember, TotalPAMember, PAMemberRatio, InsertedTime)
     SELECT CustID, CTSCustID, TotalCust, TotalPACust, PAMemberRatio, CURRENT_TIMESTAMP(3) AS InsertedTime
-    FROM Temp_AgentConsiderable AS tac
+    FROM Temp_AgentConsiderableDanger AS tac
     WHERE IsPassRuleRatio = 1;
 
     INSERT INTO CTS_DataCenter.Customer_ConsiderableDanger_Log(CustID, CTSCustID, TotalMember, TotalPAMember, PAMemberRatio, InsertedTime)
     SELECT CustID, CTSCustID, TotalCust, TotalPACust, PAMemberRatio, CURRENT_TIMESTAMP(3) AS InsertedTime
-    FROM Temp_AgentConsiderable AS tac;
+    FROM Temp_AgentConsiderableDanger AS tac;
 
     IF ip_IsRescan = 0 THEN
         SELECT CustID	
@@ -90,7 +90,7 @@ BEGIN
 		,	TotalPACust	
 		,   IsPassRuleConsiderable  
 		,   IsPassRuleRatio
-	    FROM Temp_AgentConsiderable AS tac;
+	    FROM Temp_AgentConsiderableDanger AS tac;
     END IF;
 
 END$$

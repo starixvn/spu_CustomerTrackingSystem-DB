@@ -8,7 +8,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_History
 sp:BEGIN 
 	/*
 		Created:	20250725@Winfred.Pham	
-		Task :		Clean-up Classification Agency History are not used. Only take 30 lastest days.
+		Task :		Clean-up Classification Agency History are not used. Only take 180 lastest days.
 		DB:			CTS_DataCenter
 		Original:
 		
@@ -191,11 +191,6 @@ sp:BEGIN
 		DELETE arc
 		FROM Temp_ArchiveHistory AS arc
 			INNER JOIN Temp_HistoryShouldNotBeRemoved AS nre ON nre.ID = arc.ID
-		;				     
-			
-		DELETE his  
-		FROM CTS_DataCenter.CTSCustomerClassificationAgency_History AS his
-			INNER JOIN Temp_ArchiveHistory AS arc ON arc.ID = his.ID
 		;
     END IF;
 	

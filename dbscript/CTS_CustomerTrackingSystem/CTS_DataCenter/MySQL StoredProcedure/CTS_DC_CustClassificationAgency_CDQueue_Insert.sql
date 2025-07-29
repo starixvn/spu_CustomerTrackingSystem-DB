@@ -32,11 +32,12 @@ BEGIN
 
     DROP TEMPORARY TABLE IF EXISTS Temp_AgentCredit;
     CREATE TEMPORARY TABLE Temp_AgentCredit(
-			CustID	BIGINT
+			CustID	BIGINT UNSIGNED PRIMARY KEY
     ); 
-    CALL CTS_DC_Sys_SplitStringToTempItemTable(ip_Cust,',','BIGINT');
-            
-	INSERT IGNORE INTO Temp_AgentCredit (CustID) SELECT * FROM TempItemTable;   
+    
+	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_AgentCredit (CustID) VALUES ('", REPLACE(ip_ListArchiveID, ",", "'),('"),"');");
+	PREPARE 	stmt1 FROM @sql;
+	EXECUTE 	stmt1; 	
 
 	INSERT IGNORE INTO CTS_DataCenter.CustomerConsiderableDangerQueue(CustID, ScanType, InsertedTime)
     SELECT DISTINCT js.CustID
