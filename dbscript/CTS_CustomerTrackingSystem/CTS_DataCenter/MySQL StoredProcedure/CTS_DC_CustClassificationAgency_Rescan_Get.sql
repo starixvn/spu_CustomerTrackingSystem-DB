@@ -14,7 +14,7 @@ sp: BEGIN
 		Original: 
 		Revisions:  
 			- 20241010@Jonas.Huynh: 	Created [Redmine ID: #185799]
-			- 20250725@Winfred.Pham:  rescan Queue Considerable for Agent (Redmine ID: #186799)
+			- 20250725@Winfred.Pham:  rescan Queue Considerable for Agent (Redmine ID: #219679)
             
         Param's Explanation:
 
@@ -230,7 +230,7 @@ sp: BEGIN
         FROM Temp_CustInfo AS tmp    
             INNER JOIN Temp_AgentConsiderable AS tacd ON tacd.CustID = tmp.CustID
             LEFT JOIN Temp_CustCategory AS tcc ON tcc.CustID = tmp.CustID
-        WHERE tcc.CustID IS NULL AND tacd.IsPassRuleRatio = 1;;
+        WHERE tcc.CustID IS NULL AND tacd.IsPassRuleRatio = 1;
     END IF; 
 
 	/***********************Return****************************/ 

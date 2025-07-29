@@ -29,6 +29,7 @@ sp : BEGIN
             - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
 			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
 			- 20241017@Thomas.Nguyen: CC Agent [Redmine ID: #185799]
+			- 20250725@Winfred.Pham: Agent Considerable Range (Redmine ID: #219679)
 
 		Param's Explanation (filtered by):
             - ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
@@ -45,6 +46,7 @@ sp : BEGIN
 	DECLARE	CONST_PARENTID_WRAPPER				INT;
 	DECLARE	CONST_AGENCY_PARENTID_PA 			INT;
 	DECLARE	CONST_AGENCY_PARENTID_NORMAL 		INT;
+	DECLARE	CONST_AGENCY_PARENTID_CD 			INT	DEFAULT 130000;
 
 	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
@@ -443,7 +445,7 @@ sp : BEGIN
 		) AS clss
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cls 
 				ON cls.CustID = clss.CustID AND cls.ParentID = clss.ParentID 
-				AND cls.ParentID IN (CONST_AGENCY_PARENTID_PA,CONST_AGENCY_PARENTID_NORMAL)
+				AND cls.ParentID IN (CONST_AGENCY_PARENTID_PA,CONST_AGENCY_PARENTID_NORMAL,CONST_AGENCY_PARENTID_CD)
 		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = cls.CategoryID
 	GROUP BY clss.CustID;
 

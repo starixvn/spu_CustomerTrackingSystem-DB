@@ -14,6 +14,7 @@ BEGIN
 		
 		Revisions:
 			- 20241001@Casey.Huynh: Created [Redmine ID: #185799]
+			- 20250725@Winfred.Pham:  Get information Considerable Dange for Agent (Redmine ID: #219679)
 
 		Param's Explanation (filtered by):
         
@@ -22,16 +23,12 @@ BEGIN
 
 	 */ 	
 	DECLARE CONST_AGENCY_PARENTID_PA               INT;
-	DECLARE CONST_AGENCY_PARENTID_NORMAL      		INT;
     DECLARE CONST_AGENCY_PARENTID_VVIP      		INT;
-	DECLARE CONST_AGENCY_CATEID_VVIP				INT;
 
 	DECLARE lv_LowestParentIDPriority		SMALLINT;
 
 	SET CONST_AGENCY_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
-	SET CONST_AGENCY_PARENTID_NORMAL 				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
     SET CONST_AGENCY_PARENTID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
-	SET CONST_AGENCY_CATEID_VVIP 					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_VVIP');
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_LatestRecordOfCategory;
     CREATE TEMPORARY TABLE Temp_LatestRecordOfCategory(
@@ -60,7 +57,6 @@ BEGIN
 	FROM	CTS_DataCenter.CTSCustomerClassificationAgency AS cate
 		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = cate.CategoryID
     WHERE	cate.CTSCustID = ip_CTSCustID 
-		AND cc.ParentID IN (CONST_AGENCY_PARENTID_PA, CONST_AGENCY_PARENTID_NORMAL, CONST_AGENCY_PARENTID_VVIP)
         AND cc.IsActive = 1;
 
 	IF EXISTS(SELECT 1 FROM Temp_LatestRecordOfCategory WHERE ParentID = CONST_AGENCY_PARENTID_VVIP) THEN

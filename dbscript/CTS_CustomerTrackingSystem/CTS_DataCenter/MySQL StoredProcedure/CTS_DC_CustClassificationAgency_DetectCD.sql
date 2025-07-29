@@ -14,7 +14,7 @@ BEGIN
 		DBName:		CTS_DataCenter
 
 		Revisions: 
-				- 20250725@Winfred.Pham: 	Created [Redmine ID: #186799]
+				- 20250725@Winfred.Pham: 	Created [Redmine ID: #219679]
                 
 		Param's Explanation :
         
@@ -80,10 +80,9 @@ BEGIN
     FROM Temp_AgentConsiderable AS tac
     WHERE IsPassRuleRatio = 1;
 
-    INSERT INTO CTS_DataCenter.Customer_ConsiderableDanger_Log(CustID, CTSCustID, TotalMember, PAMember, PAMemberRatio, InsertedTime)
-    SELECT CustID, CTSCustID, TotalCust, TotalPACust, PAMemberRatio, CURRENT_TIMESTAMP(4) AS InsertedTime
-    FROM Temp_AgentConsiderable AS tac
-    WHERE IsPassRuleRatio = 1;
+    INSERT INTO CTS_DataCenter.Customer_ConsiderableDanger_Log(CustID, CTSCustID, TotalMember, TotalPAMember, PAMemberRatio, InsertedTime)
+    SELECT CustID, CTSCustID, TotalCust, TotalPACust, PAMemberRatio, CURRENT_TIMESTAMP(3) AS InsertedTime
+    FROM Temp_AgentConsiderable AS tac;
 
     IF ip_IsRescan = 0 THEN
         SELECT CustID	

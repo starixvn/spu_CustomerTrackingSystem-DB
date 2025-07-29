@@ -26,7 +26,7 @@ sp: BEGIN
 			- 	20241018@Thomas.Nguyen: CC Agent [Redmine ID: #185799]
 			-	20250327@Casey.Huynh: 	Clean Table Customer_FirstTWTaggingCC [Redmine ID #221508]
 			-	20250520@Thomas.Nguyen: Clean Table Customer_SpecialLicSubCC [Redmine ID #226847]
-			- 	20250725@Winfred.Pham: Archive Agent and rescan Queue Considerable (Redmine ID: #186799)
+			- 	20250725@Winfred.Pham: Archive Agent and rescan Queue Considerable (Redmine ID: #219679)
 
 		Param's Explanation (filtered by):	
         
@@ -1868,7 +1868,7 @@ sp: BEGIN
 	WHERE  cus.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp);
 
 	IF lv_AgentCreditList IS NOT NULL THEN        
-		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_CDQueue_Insert(@ip_ScanType:=1, @ip_Cust:=lv_AgentCreditList);
+		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_CDQueue_Insert(1, lv_AgentCreditList);
     END IF;  
   
     UPDATE  CTS_DataCenter.SystemParameter 

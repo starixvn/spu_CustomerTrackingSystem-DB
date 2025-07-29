@@ -45,7 +45,7 @@ BEGIN
 			- 20240703@Victoria.Le	Renovate CC Phase2 [Redmine ID: #205317]
             - 202409266@Casey.Huynh: Return Agent [Redmine ID: #185799]
 			- 20241216@Tony.Nguyen:	Remove UNSIGNED of SMA Recommend (Redmine ID: #214585)
-			- 20250725@Winfred.Pham: Get Agent for Member Credit add Queue Considerable (Redmine ID: #186799)
+			- 20250725@Winfred.Pham: Get Agent for Member Credit add Queue Considerable (Redmine ID: #219679)
             
 		Param's Explanation (filtered by):
 		Example:

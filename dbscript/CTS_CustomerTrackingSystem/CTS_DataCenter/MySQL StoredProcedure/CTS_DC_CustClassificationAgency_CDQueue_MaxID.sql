@@ -12,7 +12,7 @@ BEGIN
 		DBName:		CTS_DataCenter
 
 		Revisions: 
-				- 20250725@Winfred.Pham: 	Created [Redmine ID: #186799]
+				- 20250725@Winfred.Pham: 	Created [Redmine ID: #219679]
                 
 		Param's Explanation: 
         
