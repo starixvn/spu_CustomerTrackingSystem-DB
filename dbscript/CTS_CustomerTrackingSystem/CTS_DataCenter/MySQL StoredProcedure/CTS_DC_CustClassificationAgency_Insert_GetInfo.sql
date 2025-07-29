@@ -25,8 +25,8 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_GetInfo (1009, 3, 0,'[{"CustID":24181831,"CategoryID":140300,"CategoryGroupID":140300,"CreatedTime":"2024-10-02T02:32:57.063","TurnoverRM":2307165.5342 ,"WinlossRM":-62850.5761,"BetCount":8300,"LastXDaysTurnoverRM":230716500.5342,"LastXDaysWinlossRM":-72850.5761,"LastXDaysBetCount":830,"LastYDaysTurnoverRM":23071650.5342,"LastYDaysWinlossRM":-82850.5761,"LastYDaysBetCount":7300,"PerformanceTime":"2024-10-02T02:32:57.063"}]');
 			
 		Revisions: 
-			- 20240927@Thomas.Nguyen:		Created [Redmine ID: #185799]
-            - 20250725@Casey.Huynh:			Agent CC, Considerable Danger [Redmine ID: #219679]
+			- 20240927@Thomas.Nguyen: Created [Redmine ID: #185799]
+            - 20250725@Casey.Huynh: Agent CC, Considerable Danger [Redmine ID: #219679]
 */
 
 	DECLARE CONST_AGENCY_CATEID_ROBOT								INT;
@@ -57,15 +57,15 @@ BEGIN
 	DECLARE lv_IsMarkedDirectly										TINYINT(1);
 	DECLARE	lv_CurrentDateTime										DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3); 
 	
-	SET CONST_AGENCY_CATEID_ROBOT 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
-	SET CONST_AGENCY_CATEID_ROBOTLOSING 							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
-	SET CONST_AGENCY_PARENTID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
-	SET CONST_AGENCY_PARENTID_PA 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
-	SET CONST_AGENCY_PARENTID_CONSIDERABLEDANGER					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_CONSIDERABLEDANGER');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
+	SET CONST_AGENCY_CATEID_ROBOT 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
+	SET CONST_AGENCY_CATEID_ROBOTLOSING 							= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
+	SET CONST_AGENCY_PARENTID_VVIP 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
+	SET CONST_AGENCY_PARENTID_PA 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
+	SET CONST_AGENCY_PARENTID_CONSIDERABLEDANGER					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_CONSIDERABLEDANGER');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 	CREATE TEMPORARY TABLE Temp_NewClassification(	  	
@@ -339,9 +339,6 @@ BEGIN
 											, 	IsFromCTS					TINYINT(1) 			PATH "$.IsFromCTS"
 											, 	CreatedDate					DATETIME			PATH "$.CreatedDate"
 											, 	PerformanceTime				DATETIME			PATH "$.PerformanceTime"
-											,	IsFromTW					TINYINT(1)			PATH "$.IsFromTW"
-											,	TWRobotCounter				INT UNSIGNED		PATH "$.RobotCounter"
-											,	IsFromAI					TINYINT(1)			PATH "$.IsFromAI"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0 AND cus.RoleID IN (CONST_ROLEID_AGENT)
 				LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = tmpJs.DWCategoryID
@@ -364,6 +361,14 @@ BEGIN
 								LIMIT 1) AS ltr
 			SET temp.Remark = src.PAMemberRatio
 			;
+            
+            UPDATE Temp_NewClassification AS temp
+			SET temp.IsExistPA = 1
+			WHERE EXISTS (	SELECT 1
+							FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
+							WHERE temp.CustID = cls.CustID
+								AND cls.ParentID = CONST_AGENCY_PARENTID_PA
+						 );
 
 		/*Normal*/
 		ELSEIF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL THEN 
