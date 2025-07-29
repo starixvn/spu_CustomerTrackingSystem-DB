@@ -75,13 +75,13 @@ BEGIN
     WHERE CustID IS NOT NULL
         AND CustID > 0;
     
-    INSERT INTO CTS_DataCenter.Customer_ConsiderableDanger(CustID, CTSCustID, TotalMember, PAMember, PAMemberRatio, InsertedTime)
+    INSERT INTO CTS_DataCenter.Customer_ConsiderableDanger(CustID, CTSCustID, TotalMember, TotalPAMember, PAMemberRatio, InsertedTime)
     SELECT CustID, CTSCustID, TotalCust, TotalPACust, PAMemberRatio, CURRENT_TIMESTAMP(3) AS InsertedTime
     FROM Temp_AgentConsiderable AS tac
     WHERE IsPassRuleRatio = 1;
 
-    INSERT INTO CTS_DataCenter.Customer_ConsiderableDanger(CustID, CTSCustID, TotalMember, PAMember, PAMemberRatio, InsertedTime)
-    SELECT CustID, CTSCustID, TotalCust, TotalPACust, PAMemberRatio, CURRENT_TIMESTAMP(3) AS InsertedTime
+    INSERT INTO CTS_DataCenter.Customer_ConsiderableDanger_Log(CustID, CTSCustID, TotalMember, PAMember, PAMemberRatio, InsertedTime)
+    SELECT CustID, CTSCustID, TotalCust, TotalPACust, PAMemberRatio, CURRENT_TIMESTAMP(4) AS InsertedTime
     FROM Temp_AgentConsiderable AS tac
     WHERE IsPassRuleRatio = 1;
 

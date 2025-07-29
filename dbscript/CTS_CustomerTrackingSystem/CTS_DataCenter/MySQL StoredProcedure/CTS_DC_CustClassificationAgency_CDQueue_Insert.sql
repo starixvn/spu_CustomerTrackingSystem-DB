@@ -28,7 +28,7 @@ BEGIN
     SELECT sys.ParameterValue
     INTO lv_MinQueueID
     FROM CTS_DataCenter.SystemParameter AS sys
-    WHERE ParameterID = 194;  
+    WHERE ParameterID = 192;  
 
     DROP TEMPORARY TABLE IF EXISTS Temp_AgentCredit;
     CREATE TEMPORARY TABLE Temp_AgentCredit(

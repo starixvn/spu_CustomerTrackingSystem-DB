@@ -25,7 +25,7 @@ BEGIN
     SELECT sys.ParameterValue
     INTO lv_LastQueueID
     FROM CTS_DataCenter.SystemParameter AS sys
-    WHERE ParameterID = 194;  
+    WHERE ParameterID = 192;  
 
     SELECT MAX(dq.ID)
     INTO lv_NewQueueID
@@ -34,7 +34,7 @@ BEGIN
 	
 	UPDATE  CTS_DataCenter.SystemParameter 
 	SET ParameterValue = lv_NewQueueID
-	WHERE ParameterID = 194;
+	WHERE ParameterID = 192;
 
 END$$
 DELIMITER ;

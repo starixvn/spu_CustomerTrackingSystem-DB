@@ -33,7 +33,7 @@ BEGIN
     SELECT sys.ParameterValue
     INTO lv_MaxScanQueueID
     FROM CTS_DataCenter.SystemParameter AS sys
-    WHERE ParameterID = 194;  
+    WHERE ParameterID = 192;  
 
 	INSERT INTO Temp_AgentComplete (ID, CustID, ScanType)	
 	SELECT ccdq.ID, ccdq.CustID, ccdq.ScanType

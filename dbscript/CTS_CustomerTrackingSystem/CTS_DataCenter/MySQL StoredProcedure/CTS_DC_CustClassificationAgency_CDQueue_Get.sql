@@ -26,7 +26,7 @@ BEGIN
     SELECT sys.ParameterValue
     INTO lv_MaxScanQueueID
     FROM CTS_DataCenter.SystemParameter AS sys
-    WHERE ParameterID = 194;  
+    WHERE ParameterID = 192;  
 
     DROP TEMPORARY TABLE IF EXISTS Temp_AgentQueue;
     CREATE TEMPORARY TABLE Temp_AgentQueue(
@@ -47,6 +47,10 @@ BEGIN
 	SELECT MAX(ID)
     INTO op_LastID
     FROM Temp_AgentQueue AS tAq;
+
+    IF op_LastID IS NULL THEN
+        SET op_LastID = 0;
+    END IF;
 
 	SELECT DISTINCT tAq.CustID, cus.CTSCustID, cus.RoleID, cus.SubscriberID, cate.CategoryID, cus.IsLicensee, tAq.ScanType
     FROM Temp_AgentQueue AS tAq
