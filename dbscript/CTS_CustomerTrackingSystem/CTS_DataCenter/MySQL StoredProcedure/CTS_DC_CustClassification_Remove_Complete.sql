@@ -89,7 +89,7 @@ BEGIN
 	INSERT INTO Temp_PACustStart(CustID, Recommend)
     SELECT	cls.CustID
 		,	cus.Recommend
-	FROM Temp_NewClassification AS temp 
+	FROM Temp_Customer AS temp 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = temp.CustID AND cus.IsLicensee = 0
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
@@ -655,7 +655,7 @@ BEGIN
 	INSERT INTO Temp_PACustEnd(CustID, Recommend)
     SELECT	cls.CustID
 		,	cus.Recommend
-	FROM Temp_NewClassification AS temp 
+	FROM Temp_Customer AS temp 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = temp.CustID AND cus.IsLicensee = 0
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID
         INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
