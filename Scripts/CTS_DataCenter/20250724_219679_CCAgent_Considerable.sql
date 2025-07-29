@@ -66,7 +66,7 @@ CREATE TABLE Customer_ConsiderableDanger(
     	CustID 			BIGINT	
 	,	CTSCustID		BIGINT UNSIGNED
     ,	TotalMember		INT
-    ,	PAMember		INT
+    ,	TotalPAMember	INT
     ,	PAMemberRatio	DECIMAL(2,2)
     ,	IsDisable		BOOLEAN
     ,	InsertedTime	DATETIME(3)
@@ -81,7 +81,7 @@ CREATE TABLE Customer_ConsiderableDanger_Log(
     ,	CustID 			BIGINT	
 	,	CTSCustID		BIGINT UNSIGNED
     ,	TotalMember		INT
-    ,	PAMember		INT
+    ,	TotalPAMember	INT
     ,	PAMemberRatio	DECIMAL(2,2)  
     ,	InsertedTime	DATETIME(3)
     
@@ -99,9 +99,9 @@ ALTER TABLE CustomerCategorySettings
 ;
 
 #==============CTS_DataCenter.CustomerCategoryAgency===========================	
-INSERT INTO CTS_DataCenter.CustomerCategoryAgency (CategoryID, CategoryName, CategorySpec, CustomerClassNameCN,  ParentID, RoleID, CustomerClass, CustomerClassName, CategoryGroupID, CategoryPriority, CustomerClassPriority, IsActive, RelevantCategoryID, IsPAProbation, ColorTypeID, Ext_CategoryGroupID) 
-VALUES ('130100', 'Considerable Danger Low-value', 'Considerable Danger Low-value', '危险', '130000', '2', '30001', 'Dangerous', '130100', '600', '600', '1', '135100', '0', '6', '130100')
-	,	('135100', 'Considerable Danger High-value', 'Considerable Danger High-value', '危险 -', '130000', '2', '31001', 'Dangerous -', '135100', '600', '600', '1', '130100', '1', '7', '135100');																															
+INSERT INTO CTS_DataCenter.CustomerCategoryAgency (CategoryID, CategoryName, CategorySpec, CategoryNameCN, CustomerClassNameCN,  ParentID, RoleID, CustomerClass, CustomerClassName, CategoryGroupID, CategoryPriority, CustomerClassPriority, IsActive, RelevantCategoryID, IsPAProbation, ColorTypeID, Ext_CategoryGroupID) 
+VALUES ('130100', 'Considerable Danger Low-value', 'Considerable Danger Low-value','低价值潜在风险代理', '危险', '130000', '2', '30001', 'Dangerous', '130100', '600', '600', '1', '135100', '0', '6', '130100')
+	,	('135100', 'Considerable Danger High-value', 'Considerable Danger High-value','	高价值潜在风险代理', '危险 -', '130000', '2', '31001', 'Dangerous -', '135100', '600', '600', '1', '130100', '1', '7', '135100');																															
 
 SELECT * FROM CTS_DataCenter.CustomerCategoryAgency WHERE ParentID = 130000; 
 #==============CTS_DataCenter.CustomerCategorySettingsAgency===========================	
@@ -144,8 +144,7 @@ SELECT * FROM CTS_DataCenter.StaticList WHERE ListID = 24;
 #=========================CTS_DataCenter.SystemParameter===================================
 
 INSERT INTO CTS_DataCenter.SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue) 
-VALUES ('192', 'ConsiderableDangeDailyScan Daily Queue Max ID', 'Queue Max ID at Daily RunTime (CustomerConsiderableDangerQueue.ID)', 'BIGINT UNSIGNED', '0')
-	, ('193', 'ConsiderableDangeDailyScan Batch Last ID', 'Batch Last ID (CustomerConsiderableDangerQueue.ID)', 'BIGINT UNSIGNED', '0');
+VALUES ('192', 'ConsiderableDangeDailyScan Daily Queue Max ID', 'Queue Max ID at Daily RunTime (CustomerConsiderableDangerQueue.ID)', 'BIGINT UNSIGNED', '0');
 
 SELECT * FROM CTS_DataCenter.SystemParameter WHERe ParameterID IN (192,193);
 #===============================================================================================================
