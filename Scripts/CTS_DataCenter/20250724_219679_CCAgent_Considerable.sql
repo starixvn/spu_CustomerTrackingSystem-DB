@@ -21,45 +21,6 @@ CREATE TABLE CustomerConsiderableDangerQueue(
     ,	InsertedTime DATETIME(3)   
 );
 #================================================================================
-DROP TABLE CTSCustomerClassificationAgency_History_Archive;
-CREATE TABLE CTSCustomerClassificationAgency_History_Archive(
-		ID BIGINT UNSIGNED NOT NULL
-	,	CustID BIGINT UNSIGNED
-	,	CTSCustID BIGINT UNSIGNED
-	,	RoleID TINYINT
-	,	ParentID INT UNSIGNED
-	,	CategoryID INT
-	,	OldCategoryID INT UNSIGNED
-	,	DWCategoryID INT UNSIGNED
-	,	TargetCC INT
-	,	SourceTypeID SMALLINT UNSIGNED
-	,	IsDataChanged TINYINT(1)
-	,	ActionType TINYINT
-	,	IsAuto TINYINT(1)
-	,	LastModifiedDate DATETIME 
-	,	LastModifiedBy INT UNSIGNED
-	,	InsertDate DATETIME
-	,	TargetDangerLevel1 SMALLINT
-	,	Remark VARCHAR(500) 
-	,	IsMarkedDirectly TINYINT(1)
-	,	IsFromTW TINYINT(1)
-	,	IsFromCTS TINYINT(1)
-	,	IsFromAI TINYINT(1)
-	,	TurnoverRM DECIMAL(20,4) 
-	,	WinlossRM DECIMAL(20,4)
-	,	BetCount BIGINT
-	,	LastXDaysTurnoverRM DECIMAL(20,4)
-	,	LastXDaysWinlossRM DECIMAL(20,4)
-	,	LastXDaysBetCount BIGINT
-	,	LastYDaysTurnoverRM DECIMAL(20,4) 
-	,	LastYDaysWinlossRM DECIMAL(20,4)
-	,	LastYDaysBetCount BIGINT 
-	,	PerformanceTime DATETIME 
-	,	RobotCounter SMALLINT
-	,	PRIMARY KEY(ID) 
-	,	KEY IX_CTSCustomerClassificationAgency_History_Archive_CustID(CustID) 
-) ENGINE=InnoDB;
-
 #2. New table Customer_ConsiderableDanger
 #DROP TABLE Customer_ConsiderableDanger;
 CREATE TABLE Customer_ConsiderableDanger(
@@ -144,7 +105,10 @@ SELECT * FROM CTS_DataCenter.StaticList WHERE ListID = 24;
 #=========================CTS_DataCenter.SystemParameter===================================
 
 INSERT INTO CTS_DataCenter.SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue) 
-VALUES ('192', 'ConsiderableDangeDailyScan Daily Queue Max ID', 'Queue Max ID at Daily RunTime (CustomerConsiderableDangerQueue.ID)', 'BIGINT UNSIGNED', '0');
+VALUES ('192', 'ConsiderableDangeDailyScan Daily Queue Max ID', 'Queue Max ID at Daily RunTime (CustomerConsiderableDangerQueue.ID)', 'BIGINT UNSIGNED', '0')
+	  ,('193', 'ClassificationAgency_History_DataChanged_LatestID', 'Classification Agency History DataChanged LatestID', 'BIGINT UNSIGNED', '0')
+	  ,('194', 'ClassificationAgency_History_CleanUp_BatchSize', 'Classification Agency History CleanUp', 'INT', '500')
+	  ,('195', 'ClassificationAgency_History_CleanUp_TakeDays', 'Classification Agency History CleanUp Take Days', 'INT', '179');;
 
 SELECT * FROM CTS_DataCenter.SystemParameter WHERe ParameterID IN (192,193);
 #===============================================================================================================
