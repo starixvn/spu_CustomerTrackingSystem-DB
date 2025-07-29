@@ -14,19 +14,26 @@ BEGIN
 		DB:			CTS_DataCenter
 		
 		Revisions: 
-			-	20240927@Thomas.Nguyen: 		Created [Redmine ID: #185799]
+			- 20240927@Thomas.Nguyen: Created [Redmine ID: #185799]
+            - 20250725@Casey.Huynh: Agent CC, Insert Considerable Agency [Redmine ID: #219679]
 			
 		Param's Expanation:
 			- CALL CTS_DC_CustClassificationAgency_Remove_GetInfo (1225,'[{"CustID":24150964,"RoleID":2,"SubscriberID":168,"CTSCustID":11059,"CreatedBy":8,"Remark":"Thomas unmark PA","IsExceptDirectDownline":false,"IsMarkedDirectly":true}]');
 */
 	
-	DECLARE CONST_AGENCY_PARENTID_VVIP 								INT;
-	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP 			INT;
-	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA 				INT;
+	DECLARE CONST_AGENCY_PARENTID_VVIP 									INT;
+    DECLARE CONST_AGENCY_PARENTID_PA 									INT;
+    DECLARE CONST_AGENCY_PARENTID_CONSIDERABLEDANGER					INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP 				INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA 					INT;
+    DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_CONSIDERABLEDANGER	INT;
 
-	SET CONST_AGENCY_PARENTID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA');
+	SET CONST_AGENCY_PARENTID_VVIP 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
+    SET CONST_AGENCY_PARENTID_PA 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
+	SET CONST_AGENCY_PARENTID_CONSIDERABLEDANGER					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_CONSIDERABLEDANGER');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA');
+    SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_CONSIDERABLEDANGER	= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_CONSIDERABLEDANGER');
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustomerClassification;
 	CREATE TEMPORARY TABLE Temp_CustomerClassification (
@@ -40,6 +47,7 @@ BEGIN
 		,	IsExceptDirectDownline				TINYINT(1) DEFAULT NULL
         ,	IsMarkedDirectly					TINYINT(1) DEFAULT NULL
 		,	IsRemovedPA							TINYINT(1) DEFAULT 0
+		,	IsRemovedConsiderableDanger			TINYINT(1) DEFAULT 0
 		,	CategoryID 							INT UNSIGNED
 		,	Ext_EvidenceID_Credit				SMALLINT UNSIGNED
 		,	IsCleanPA							TINYINT(1) DEFAULT 1
@@ -102,6 +110,25 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cls ON temp.CustID = cls.CustID 
 																			AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP
 		WHERE cls.CustID IS NULL;    
+        
+	ELSEIF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_CONSIDERABLEDANGER THEN #CONSIDERABLEDANGER    
+		
+        INSERT INTO Temp_CustomerClassification(CustID, CTSCustID, CreatedBy, CategoryID, IsRemovedConsiderableDanger, IsReturnData)
+		SELECT DISTINCT temp.CustID
+			, 	temp.CTSCustID
+            , 	temp.CreatedBy
+			, 	cls.CategoryID
+            ,	1 AS IsRemovedConsiderableDanger
+			,	1 AS IsReturnData
+		FROM JSON_TABLE(ip_CustInfo,
+						"$[*]" COLUMNS(
+											CustID 				BIGINT UNSIGNED				PATH "$.CustID"
+										,	CTSCustID 			BIGINT UNSIGNED				PATH "$.CTSCustID"
+										,	CreatedBy 			INT UNSIGNED				PATH "$.CreatedBy"
+										)) AS temp
+			INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cls ON temp.CustID = cls.CustID AND cls.ParentID = CONST_AGENCY_PARENTID_CONSIDERABLEDANGER
+		;     
+        
 	END IF;
 
 END$$

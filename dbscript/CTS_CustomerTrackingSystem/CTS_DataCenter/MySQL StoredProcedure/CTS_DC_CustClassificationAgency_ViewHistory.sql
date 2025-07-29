@@ -13,7 +13,8 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original:
 		Revisions:
-			- 20241008@Thomas.Nguyen:			Created [Redmine ID: #185799]
+			- 20241008@Thomas.Nguyen: Created [Redmine ID: #185799]
+            - 20250725@Casey.Huynh: Agent CC, Insert Considerable Agency [Redmine ID: #219679]
 			
 		Param's Explanation (filtered by):		
         Example:
