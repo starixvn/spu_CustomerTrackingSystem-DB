@@ -101,7 +101,7 @@ ALTER TABLE CustomerCategorySettings
 #==============CTS_DataCenter.CustomerCategoryAgency===========================	
 INSERT INTO CTS_DataCenter.CustomerCategoryAgency (CategoryID, CategoryName, CategorySpec, ParentID, RoleID, CustomerClass, CustomerClassName, CategoryGroupID, CategoryPriority, CustomerClassPriority, IsActive, RelevantCategoryID, IsPAProbation, ColorTypeID, Ext_CategoryGroupID) 
 VALUES ('130100', 'Considerable Danger Low-value', 'Considerable Danger Low value', '130000', '2', '30001', 'Dangerous', '130100', '600', '600', '1', '135100', '0', '6', '130100')
-	,	('135100', 'Considerable Danger Hight-value', 'Considerable Danger High value', '130000', '2', '31001', 'Dangerous -', '135100', '600', '600', '1', '130100', '1', '7', '135100');																															
+	,	('135100', 'Considerable Danger High-value', 'Considerable Danger High value', '130000', '2', '31001', 'Dangerous -', '135100', '600', '600', '1', '130100', '1', '7', '135100');																															
 
 SELECT * FROM CTS_DataCenter.CustomerCategoryAgency WHERE ParentID = 130000; 
 #==============CTS_DataCenter.CustomerCategorySettingsAgency===========================	
@@ -117,7 +117,7 @@ UPDATE CTS_DataCenter.CustomerCategorySettings AS cs
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = cs.CategoryID
 SET cs.FlowConsiderableDangerScan = 1
 WHERE cs.ParentID = 20000
-	AND cat.CustomerClass NOT IN (3101, 3201, 305,  300, 3000, 3100, 3200, 2600, 2601, 2700, 2701, 2800, 2801);
+	AND cat.CustomerClass NOT IN (3101, 3201, 305, 3005, 300, 3000, 3100, 3200, 2600, 2601, 2700, 2701, 2800, 2801);
 
 #==============CTS_DataCenter.CustomerClassificationAgency_Remark===============================================
 
@@ -142,9 +142,10 @@ VALUES(@ListID:=24,@ItemID:=28,@ListName:='Flow Classification Insert',@ListName
 SELECT * FROM CTS_DataCenter.StaticList WHERE ListID = 24;
 
 #=========================CTS_DataCenter.SystemParameter===================================
-SELECT * FROM CTS_DataCenter.SystemParameter WHERe ParameterID IN (192,193);
+
 INSERT INTO CTS_DataCenter.SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue) 
-VALUES ('192', 'ConsiderableDangeDailyScan Last ID', 'Max Queue ID at Daily RunTime (CustomerConsiderableDangerQueue.ID)', 'BIGINT UNSIGNED', '0')
+VALUES ('192', 'ConsiderableDangeDailyScan Daily Queue Max ID', 'Queue Max ID at Daily RunTime (CustomerConsiderableDangerQueue.ID)', 'BIGINT UNSIGNED', '0')
 	, ('193', 'ConsiderableDangeDailyScan Batch Last ID', 'Batch Last ID (CustomerConsiderableDangerQueue.ID)', 'BIGINT UNSIGNED', '0');
 
+SELECT * FROM CTS_DataCenter.SystemParameter WHERe ParameterID IN (192,193);
 #===============================================================================================================
