@@ -29,7 +29,8 @@ sp: BEGIN
 
     DECLARE CONST_INPUTFLOWID_INSERT_NORMAL			INT DEFAULT 1009;
 	DECLARE	CONST_INPUTFLOWID_RESCAN_PA				INT DEFAULT 1115;
-	DECLARE	CONST_INPUTFLOWID_RESCAN_CONSIDERABLE	INT DEFAULT 1220;
+	DECLARE	CONST_INPUTFLOWID_RESCAN_CD   	        INT DEFAULT 1220;
+    DECLARE CONST_AGENCY_CATEID_CD_LOW				INT DEFAULT 121800;
 	DECLARE lv_AgentCDList 				            LONGTEXT DEFAULT NULL;
       
 	DECLARE CONST_CREATEDBY_STARIXITID				INT DEFAULT 10278938;
@@ -205,38 +206,31 @@ sp: BEGIN
     
     SELECT  GROUP_CONCAT(DISTINCT CustID) AS CustJson 
 	INTO lv_AgentCDList	
-	FROM Temp_CustInfo AS tmpCus
-	WHERE tmpCus.IsLicensee = 0; 
+	FROM Temp_CustInfo AS tmpCus; 
 
 	IF lv_AgentCDList IS NOT NULL THEN        
 		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_DetectCD(lv_AgentCDList,1);
         
         INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, LastModifiedDate, InputFlowID)
-        SELECT tmp.CTSCustID					AS CTSCustID
-            ,	tmp.CustID						AS CustID
-            ,	CASE WHEN cate.IsPAProbation THEN cate.RelevantCategoryID ELSE s.CategoryID END AS CategoryID
-            ,	tmp.RoleID 						AS RoleID
-            ,	tmp.SubscriberID				AS SubscriberID
-            ,	tmp.IsLicensee					AS IsLicensee
-            ,	s.Remark						AS Remark
-            ,	NULL		 					AS CreatedBy
-            ,	0               				AS IsMarkedDirectly
-            ,	0        						AS IsFromTW
-            ,   s.IsFromCTS 					AS IsFromCTS
-            ,	s.IsFromAI 						AS IsFromAI
-            ,	s.CreatedDate 					AS CreatedDate
-            ,	s.LastModifiedDate				AS LastModifiedDate
-            ,   CONST_INPUTFLOWID_RESCAN_PA		AS InputFlowID
-        FROM Temp_AgentConsiderable AS tmp    
-            STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS s USE INDEX (PRIMARY) ON s.CustID = tmp.CustID AND s.ParentID = CONST_AGENCY_PARENTID_PA 
-            INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = s.CategoryID
-        ON DUPLICATE KEY UPDATE  Remark = CASE WHEN  s.LastModifiedDate < Temp_CustCategory.LastModifiedDate THEN s.Remark ELSE Temp_CustCategory.Remark END
-                            ,	CreatedDate = CASE WHEN s.CreatedDate < Temp_CustCategory.CreatedDate THEN s.CreatedDate ELSE Temp_CustCategory.CreatedDate END
-                            ,	IsMarkedDirectly = CASE WHEN s.IsMarkedDirectly = 1 THEN s.IsMarkedDirectly ELSE Temp_CustCategory.IsMarkedDirectly END
-                            ,	IsFromCTS = CASE WHEN s.IsFromCTS = 1 THEN s.IsFromCTS ELSE Temp_CustCategory.IsFromCTS END
-                            ,	IsFromTW = CASE WHEN s.IsFromTW = 1 THEN s.IsFromTW ELSE Temp_CustCategory.IsFromTW END
-                            ,	IsFromAI = CASE WHEN s.IsFromAI = 1 THEN s.IsFromAI ELSE Temp_CustCategory.IsFromAI END;
-        
+        SELECT tmp.CTSCustID				AS CTSCustID
+            ,	tmp.CustID					AS CustID
+            ,	CONST_AGENCY_CATEID_CD_LOW  AS CategoryID
+            ,	tmp.RoleID 					AS RoleID
+            ,	tmp.SubscriberID			AS SubscriberID
+            ,	tmp.IsLicensee				AS IsLicensee
+            ,	NULL    					AS Remark
+            ,	NULL		 				AS CreatedBy
+            ,	1               			AS IsMarkedDirectly
+            ,	0        					AS IsFromTW
+            ,   1            				AS IsFromCTS
+            ,	0        					AS IsFromAI
+            ,	s.CreatedDate 				AS CreatedDate
+            ,	s.LastModifiedDate			AS LastModifiedDate
+            ,   CONST_INPUTFLOWID_RESCAN_CD	AS InputFlowID
+        FROM Temp_CustInfo AS tmp    
+            INNER JOIN Temp_AgentConsiderable AS tacd ON tacd.CustID = tmp.CustID
+            LEFT JOIN Temp_CustCategory AS tcc ON tcc.CustID = tmp.CustID
+        WHERE tcc.CustID IS NULL;
     END IF; 
 
 	/***********************Return****************************/ 
