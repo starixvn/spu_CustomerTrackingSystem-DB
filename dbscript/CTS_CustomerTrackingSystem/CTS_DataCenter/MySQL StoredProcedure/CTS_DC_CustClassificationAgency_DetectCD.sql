@@ -1,9 +1,9 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_DetectConsiderable`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_DetectCD`;
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_DetectConsiderable`(		
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_DetectCD`(		
 		IN 	ip_Cust	 LONGTEXT
-        ,IN ip_IsRescan BIT = 0
+        ,IN ip_IsRescan BIT 
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation :
         
 		Example:
-			CALL CTS_DC_CustClassificationAgency_DetectConsiderable(@ip_BatchSize:=100,OUT op_LastID :=@op_LastID);
+			CALL CTS_DC_CustClassificationAgency_DetectCD(@ip_BatchSize:=100,OUT op_LastID :=@op_LastID);
 	*/
     DECLARE	CONST_AGENCY_CATEID_CONSIDERABLE_DANGER_LOW INT DEFAULT 121800;;
     DECLARE	CONST_AGENCY_CATEID_CONSIDERABLE_DANGER_HIGHT INT DEFAULT 126800;;

@@ -14,6 +14,7 @@ sp: BEGIN
 		Original: 
 		Revisions:  
 			- 20241010@Jonas.Huynh: 	Created [Redmine ID: #185799]
+			- 20250725@Winfred.Pham:  rescan Queue Considerable for Agent (Redmine ID: #186799)
             
         Param's Explanation:
 
@@ -28,6 +29,8 @@ sp: BEGIN
 
     DECLARE CONST_INPUTFLOWID_INSERT_NORMAL			INT DEFAULT 1009;
 	DECLARE	CONST_INPUTFLOWID_RESCAN_PA				INT DEFAULT 1115;
+	DECLARE	CONST_INPUTFLOWID_RESCAN_CONSIDERABLE	INT DEFAULT 1220;
+	DECLARE lv_AgentConsiderableList 				LONGTEXT DEFAULT NULL;
       
 	DECLARE CONST_CREATEDBY_STARIXITID				INT DEFAULT 10278938;
     
@@ -170,7 +173,7 @@ sp: BEGIN
                     AND s.CategoryID NOT IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING)
 		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = s.CategoryID 
     WHERE NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls WHERE cls.CustID = s.CustID AND cls.ParentID = CONST_AGENCY_PARENTID_VVIP);
-	
+    
     /***********************Check PA from main table ****************************/   
     INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, LastModifiedDate, InputFlowID)
     SELECT tmp.CTSCustID					AS CTSCustID
@@ -197,7 +200,20 @@ sp: BEGIN
                         ,	IsFromCTS = CASE WHEN s.IsFromCTS = 1 THEN s.IsFromCTS ELSE Temp_CustCategory.IsFromCTS END
                         ,	IsFromTW = CASE WHEN s.IsFromTW = 1 THEN s.IsFromTW ELSE Temp_CustCategory.IsFromTW END
                         ,	IsFromAI = CASE WHEN s.IsFromAI = 1 THEN s.IsFromAI ELSE Temp_CustCategory.IsFromAI END;
+	
+    /***********************Check Considerable Danger ****************************/   
     
+    SELECT  GROUP_CONCAT(DISTINCT CustID) AS CustJson 
+	INTO lv_AgentCreditList	
+	FROM Temp_CustInfo AS tmpCus
+	WHERE tmpCus.IsLicensee = 0; 
+
+	IF lv_AgentCreditList IS NOT NULL THEN        
+		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_DetectCD(lv_AgentCreditList,1);
+
+        
+    END IF; 
+
 	/***********************Return****************************/ 
 	SELECT cust.CTSCustID
 		,	cust.CustID

@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_Considerable_Queue_Insert`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_CDQueue_Insert`;
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_Considerable_Queue_Insert`(		
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_CDQueue_Insert`(		
 		IN 	ip_ScanType 	TINYINT
     ,	IN 	ip_Cust		        LONGTEXT
 )
@@ -20,8 +20,8 @@ BEGIN
 			@ip_ScanType: '1: Total Member Change , 2: Only Scan WL, PA Member change'
         
 		Example:
-			CALL CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=1, @ip_Cust:='1,2,3,4,5,6,9,10,11,12]');
-            CALL CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=2, @ip_Cust:='1,2,3,4,5,6,9,10,11,12]');
+			CALL CTS_DC_CustClassificationAgency_CDQueue_Insert(@ip_ScanType:=1, @ip_Cust:='1,2,3,4,5,6,9,10,11,12]');
+            CALL CTS_DC_CustClassificationAgency_CDQueue_Insert(@ip_ScanType:=2, @ip_Cust:='1,2,3,4,5,6,9,10,11,12]');
 	*/
     DECLARE lv_MinQueueID	BIGINT UNSIGNED DEFAULT 0;
 

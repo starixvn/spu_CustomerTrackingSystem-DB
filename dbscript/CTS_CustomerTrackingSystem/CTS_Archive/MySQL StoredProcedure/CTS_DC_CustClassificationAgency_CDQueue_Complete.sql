@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_Considerable_Queue_Complete`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_CDQueue_Complete`;
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_Considerable_Queue_Complete`(		
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_CDQueue_Complete`(		
 		IN op_LastID BIGINT
 )
 SQL SECURITY INVOKER
@@ -18,7 +18,7 @@ BEGIN
 		Param's Explanation :
         
 		Example:
-			CALL CTS_DC_CustClassificationAgency_Considerable_Queue_Complete(@op_LastID:=100);
+			CALL CTS_DC_CustClassificationAgency_CDQueue_Complete(@op_LastID:=100);
 	*/
 
 	DECLARE lv_MaxScanQueueID	BIGINT UNSIGNED DEFAULT 0;

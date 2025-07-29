@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_Considerable_Queue_Get`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_CDQueue_Get`;
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_Considerable_Queue_Get`(		
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_CDQueue_Get`(		
 		IN ip_BatchSize INT 
 	,	OUT op_LastID BIGINT
 )
@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation :
         
 		Example:
-			CALL CTS_DC_CustClassificationAgency_Considerable_Queue_Get(@ip_BatchSize:=100,OUT op_LastID :=@op_LastID);
+			CALL CTS_DC_CustClassificationAgency_CDQueue_Get(@ip_BatchSize:=100,OUT op_LastID :=@op_LastID);
 	*/
     DECLARE lv_MaxScanQueueID	BIGINT UNSIGNED DEFAULT 0;
 

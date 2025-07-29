@@ -382,7 +382,7 @@ BEGIN
 	WHERE	tmpCus.DuplicateType = 0 AND tmpCus.IsLicensee = 0; 
 
 	IF lv_AgentCreditList IS NOT NULL THEN        
-		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Considerable_Queue_Insert(@ip_ScanType:=1, @ip_Cust:=lv_AgentCreditList);
+		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_CDQueue_Insert(@ip_ScanType:=1, @ip_Cust:=lv_AgentCreditList);
     END IF;   
 
 	#=====UPDATE CTSCustomerClassification====================
