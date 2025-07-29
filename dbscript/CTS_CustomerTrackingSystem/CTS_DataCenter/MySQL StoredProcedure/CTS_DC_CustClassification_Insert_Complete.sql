@@ -129,7 +129,8 @@ BEGIN
 	FROM Temp_NewClassification AS temp 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = temp.CustID AND cus.IsLicensee = 0
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
+        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID AND cs.FlowConsiderableDangerScan = 1
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID AND cc.IsActive = 1        
 	WHERE cls.ParentID = CONST_PARENTID_PA
 		AND NOT EXISTS (SELECT 1			
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls2	
@@ -1148,7 +1149,8 @@ BEGIN
 	FROM Temp_NewClassification AS temp 
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = temp.CustID AND cus.IsLicensee = 0
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cls.CategoryID AND cc.IsActive = 1	
+		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID AND cs.FlowConsiderableDangerScan = 1
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID AND cc.IsActive = 1 	
 	WHERE cls.ParentID = CONST_PARENTID_PA
 		AND NOT EXISTS (SELECT 1			
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls2	
