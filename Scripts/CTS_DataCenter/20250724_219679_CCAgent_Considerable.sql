@@ -145,6 +145,6 @@ SELECT * FROM CTS_DataCenter.StaticList WHERE ListID = 24;
 SELECT * FROM CTS_DataCenter.SystemParameter WHERe ParameterID IN (192,193);
 INSERT INTO CTS_DataCenter.SystemParameter (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue) 
 VALUES ('192', 'ConsiderableDangeDailyScan Last ID', 'Max Queue ID at Daily RunTime (CustomerConsiderableDangerQueue.ID)', 'BIGINT UNSIGNED', '0')
-	, ('193', 'ConsiderableDangeDailyScan Previous ID', 'Last ID (CustomerConsiderableDangerQueue.ID)', 'BIGINT UNSIGNED', '0');
+	, ('193', 'ConsiderableDangeDailyScan Batch Last ID', 'Batch Last ID (CustomerConsiderableDangerQueue.ID)', 'BIGINT UNSIGNED', '0');
 
 #===============================================================================================================
