@@ -44,6 +44,7 @@ sp: BEGIN
     DECLARE lv_Table 					VARCHAR(100);
     DECLARE lv_Count				    INT DEFAULT 0;
 	DECLARE lv_AgentCreditList 					LONGTEXT DEFAULT NULL;
+	DECLARE	CONST_ROLEID_AGENT 				TINYINT DEFAULT 2;
     
 	SET CONST_PARENTID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_PARENTID_WRAPPER			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
@@ -1856,12 +1857,13 @@ sp: BEGIN
         
 		SET lv_Table = 'CTS_DataCenter.CTSCustomer';
 	 END IF; 
-    /*************************************** 42. CTS_DataCenter.CTSCustomer ************************************/
+    /*************************************** 43. CTS_DataCenter.CTSCustomer ************************************/
 	
 	SELECT  GROUP_CONCAT(DISTINCT tmpCus.Recommend) AS CustJson 
 	INTO lv_AgentCreditList	
 	FROM CTS_DataCenter.CTSCustomer AS tmpCus
-	WHERE tmpCus.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp) AND tmpCus.IsLicensee = 0 ; 
+	WHERE tmpCus.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp) AND tmpCus.CustSubID = 0 
+	AND tmpCus.IsLicensee = 0  AND tmpCus.RoleID = CONST_ROLEID_AGENT; 
 
     DELETE cus
 	FROM CTS_DataCenter.CTSCustomer AS cus

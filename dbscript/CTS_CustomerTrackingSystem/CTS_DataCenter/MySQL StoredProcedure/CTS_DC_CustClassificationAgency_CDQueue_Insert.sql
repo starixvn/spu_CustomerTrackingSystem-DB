@@ -35,7 +35,7 @@ BEGIN
 			CustID	BIGINT UNSIGNED PRIMARY KEY
     ); 
     
-	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_AgentCredit (CustID) VALUES ('", REPLACE(ip_ListArchiveID, ",", "'),('"),"');");
+	SET @sql = 	CONCAT("INSERT IGNORE INTO Temp_AgentCredit (CustID) VALUES ('", REPLACE(ip_Cust, ",", "'),('"),"');");
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1; 	
 
