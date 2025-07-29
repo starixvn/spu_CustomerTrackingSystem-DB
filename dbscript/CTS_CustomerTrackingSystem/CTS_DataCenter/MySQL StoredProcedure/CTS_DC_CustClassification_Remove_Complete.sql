@@ -86,7 +86,7 @@ BEGIN
         , 	Recommend	BIGINT
 	);  
 
-	INSERT INTO Temp_PACustStart(CustID, Recommend)
+	INSERT IGNORE INTO Temp_PACustStart(CustID, Recommend)
     SELECT	cls.CustID
 		,	cus.Recommend
 	FROM Temp_Customer AS temp 
@@ -653,7 +653,7 @@ BEGIN
 	END IF;
 
     #=================CONSIDERABLE_BEGIN: GET PA AFTER==================    
-	INSERT INTO Temp_PACustEnd(CustID, Recommend)
+	INSERT IGNORE INTO Temp_PACustEnd(CustID, Recommend)
     SELECT	cls.CustID
 		,	cus.Recommend
 	FROM Temp_Customer AS temp 

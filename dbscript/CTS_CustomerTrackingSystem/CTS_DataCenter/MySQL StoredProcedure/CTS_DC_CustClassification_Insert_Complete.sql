@@ -123,7 +123,7 @@ BEGIN
         , 	Recommend	BIGINT
 	);  
 
-	INSERT INTO Temp_PACustStart(CustID, Recommend)
+	INSERT IGNORE INTO Temp_PACustStart(CustID, Recommend)
     SELECT	cls.CustID
 		,	cus.Recommend
 	FROM Temp_NewClassification AS temp 
@@ -138,6 +138,7 @@ BEGIN
 						WHERE cls.CustID = cls2.CustID
 							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
 							AND cc2.ParentID <> cc.ParentID);
+                            
     #=================CONSIDERABLE_END: GET PA BEFORE==================
    
     /*1 - VVIP*/
@@ -1142,7 +1143,7 @@ BEGIN
 	END IF;
     
 	#=================CONSIDERABLE_BEGIN: GET PA AFTER==================   
-	INSERT INTO Temp_PACustEnd(CustID, Recommend)
+	INSERT IGNORE INTO Temp_PACustEnd(CustID, Recommend)
     SELECT	cls.CustID
 		,	cus.Recommend
 	FROM Temp_NewClassification AS temp 
