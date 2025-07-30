@@ -49,17 +49,18 @@ BEGIN
 	PREPARE 	stmt1 FROM @sql;
 	EXECUTE 	stmt1; 	
      
-	INSERT IGNORE INTO Temp_AgentConsiderableDanger (CustID, CTSCustID, TotalCust, TotalPACust) 
-	SELECT AgentID, cus.CTSCustID,  COUNT(cus.CTSCustID) AS TotalCust, 
+	INSERT IGNORE INTO Temp_AgentConsiderableDanger (CustID, TotalCust, TotalPACust) 
+	SELECT AgentID, COUNT(cus.CTSCustID) AS TotalCust, 
 			SUM(CASE WHEN EXISTS (SELECT 1  FROM CTS_DataCenter.CustomerCategorySettings AS cls WHERE cls.CategoryID = ccc.CategoryID AND cls.FlowConsiderableDangerScan = 1) 
 					 THEN 1 ELSE 0 END ) AS TotalPA 
 	FROM Temp_AgentList AS tac
 	INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.Recommend = tac.AgentID
 	LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS ccc ON cus.CustID = ccc.CustID
 	WHERE cus.RoleID = 1
-    GROUP BY tac.AgentID, cus.CTSCustID;
+    GROUP BY tac.AgentID;
 
 	UPDATE Temp_AgentConsiderableDanger AS tac
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tac.CustID = cus.CustID AND cus.IsLicensee = 0 AND cus.RoleID = 2 AND cus.CustSubID = 0
 		,LATERAL	(
 							SELECT cls.CategoryID
 							FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
@@ -72,8 +73,9 @@ BEGIN
 	SET tac.IsPassRuleConsiderable = (CASE WHEN cate.CategoryID IN (CONST_AGENCY_CATEID_CD_LOW,CONST_AGENCY_CATEID_CD_HIGHT) THEN 1 ELSE 0 END)
         ,tac.IsPassRuleRatio = (CASE WHEN CAST(tac.TotalPACust*100/tac.TotalCust AS DECIMAL(5,2)) >= 50 THEN 1 ELSE 0 END)
         ,tac.PAMemberRatio = CAST(tac.TotalPACust*100/tac.TotalCust AS DECIMAL(5,2))
-    WHERE CustID IS NOT NULL
-        AND CustID > 0;
+        ,tac.CTSCustID = cus.CTSCustID
+    WHERE tac.CustID IS NOT NULL
+        AND tac.CustID > 0;
     
     INSERT INTO CTS_DataCenter.Customer_ConsiderableDanger(CustID, CTSCustID, TotalMember, TotalPAMember, PAMemberRatio, InsertedTime)
     SELECT CustID, CTSCustID, TotalCust, TotalPACust, PAMemberRatio, CURRENT_TIMESTAMP(3) AS InsertedTime
