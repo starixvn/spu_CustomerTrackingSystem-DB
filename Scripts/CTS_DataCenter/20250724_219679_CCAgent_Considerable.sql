@@ -108,7 +108,7 @@ INSERT INTO CTS_DataCenter.SystemParameter (ParameterID, ParameterName, Paramete
 VALUES ('192', 'ConsiderableDangeDailyScan Daily Queue Max ID', 'Queue Max ID at Daily RunTime (CustomerConsiderableDangerQueue.ID)', 'BIGINT UNSIGNED', '0')
 	  ,('193', 'ClassificationAgency_History_DataChanged_LatestID', 'Classification Agency History DataChanged LatestID', 'BIGINT UNSIGNED', '0')
 	  ,('194', 'ClassificationAgency_History_CleanUp_BatchSize', 'Classification Agency History CleanUp', 'INT', '500')
-	  ,('195', 'ClassificationAgency_History_CleanUp_TakeDays', 'Classification Agency History CleanUp Take Days', 'INT', '179');;
+	  ,('195', 'ClassificationAgency_History_CleanUp_TakeDays', 'Classification Agency History CleanUp Take Days', 'INT', '179');
 
 SELECT * FROM CTS_DataCenter.SystemParameter WHERe ParameterID IN (192,193);
 #===============================================================================================================

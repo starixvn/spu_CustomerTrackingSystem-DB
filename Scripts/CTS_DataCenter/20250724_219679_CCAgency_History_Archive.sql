@@ -13,7 +13,7 @@ Reviewer:
 USE CTS_Archive;
 
 #================================================================================
-DROP TABLE CTSCustomerClassificationAgency_History_Archive;
+DROP TABLE IF EXISTS CTSCustomerClassificationAgency_History_Archive;
 CREATE TABLE CTSCustomerClassificationAgency_History_Archive(
 		ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	,	HistoryID BIGINT UNSIGNED NOT NULL

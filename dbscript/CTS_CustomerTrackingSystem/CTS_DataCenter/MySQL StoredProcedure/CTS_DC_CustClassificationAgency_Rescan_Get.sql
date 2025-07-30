@@ -206,7 +206,8 @@ sp: BEGIN
     
     SELECT  GROUP_CONCAT(DISTINCT CustID) AS CustJson 
 	INTO lv_AgentCDList	
-	FROM Temp_CustInfo AS tmpCus; 
+	FROM Temp_CustInfo AS tmpCus
+    WHERE tmpCus.RoleID = 2; 
 
 	IF lv_AgentCDList IS NOT NULL THEN        
 		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_DetectCD(lv_AgentCDList,1);
