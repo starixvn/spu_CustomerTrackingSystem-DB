@@ -262,7 +262,7 @@ BEGIN
 						ORDER BY cd.InsertedTime DESC
                         LIMIT 1
 						) AS ltr
-        SET temp.Remark = ltr.PAMemberRatio;
+        SET temp.Remark = CONCAT('PARatio:',ltr.PAMemberRatio);
         
 		UPDATE IGNORE CTS_DataCenter.CTSCustomerClassificationAgency AS cls
 			INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID AND cls.CategoryID = temp.OldCategoryID 
@@ -271,8 +271,7 @@ BEGIN
 			,	cls.CategoryID 			=  temp.NewCategoryID
 			, 	cls.LastModifiedDate 	=  lv_CurrentDateTime
 			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime)
-			; 
-        
+			;         
         
         INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency(
 				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, ParentID, CreatedDate, CreatedBy, LastModifiedDate

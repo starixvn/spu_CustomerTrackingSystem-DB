@@ -16,10 +16,11 @@ USE CTS_DataCenter;
 #DROP TABLE CustomerConsiderableDangerQueue;
 CREATE TABLE CustomerConsiderableDangerQueue(
 		ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
-    ,	CustID BIGINT
-    ,	ScanType TINYINT
-    ,	InsertedTime DATETIME(3)   
+    ,	CustID BIGINT NOT NULL
+    ,	ScanType TINYINT NOT NULL
+    ,	InsertedTime DATETIME(3) NOT NULL
 );
+
 #================================================================================
 #2. New table Customer_ConsiderableDanger
 #DROP TABLE Customer_ConsiderableDanger;
@@ -82,8 +83,8 @@ WHERE cs.ParentID = 20000
 
 #==============CTS_DataCenter.CustomerClassificationAgency_Remark===============================================
 
-INSERT INTO `CTS_DataCenter`.`CustomerClassificationAgency_Remark` (`RemarkID`, `RemarkTemplate`, `Description`, `CreatedDate`) 
-VALUES ('39', 'PA Ratio: [Remark] | Win loss: [Winloss] | Margin: [Margin]', 'Considerable Danger', '2025-07-18 02:45:52');
+INSERT INTO CTS_DataCenter.CustomerClassificationAgency_Remark (RemarkID, RemarkTemplate, Description, CreatedDate) 
+VALUES ('39', 'PA Ratio: [PARatio] | Win loss: [Winloss] | Margin: [Margin]', 'Considerable Danger', '2025-07-18 02:45:52');
 
 SELECT * FROM CTS_DataCenter.CustomerClassificationAgency_Remark where RemarkID = 39;
 #========================================CTS_DataCenter.StaticList===============================================================================

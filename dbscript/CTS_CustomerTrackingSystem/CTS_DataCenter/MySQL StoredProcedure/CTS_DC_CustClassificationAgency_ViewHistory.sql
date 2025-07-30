@@ -62,7 +62,7 @@ BEGIN
         ,   (CASE WHEN temp.CategoryID IS NULL THEN '-' ELSE cate.CategoryName END) AS CategoryName
         ,   (CASE WHEN temp.TargetCC IN (-1, -99) THEN '-' /* -1: Remove, -99: No mapping CC */ ELSE temp.TargetCC END) AS CustomerClass
         ,   IFNULL(u.UserName, temp.LastModifiedBy) AS CreatedBy
-        ,	TRIM(TRAILING '|' FROM TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
+        ,	TRIM(TRAILING '|' FROM TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
                             '[Winloss]', IFNULL(FORMAT(temp.WinlossRM, 2),0))
                         ,   '[2mWinloss]', IFNULL(FORMAT(temp.LastXDaysWinlossRM, 2),0))
                         ,   '[1yWinloss]', IFNULL(FORMAT(temp.LastYDaysWinlossRM, 2),0))                         
@@ -73,6 +73,7 @@ BEGIN
                         ,   '[2mBetCount]', IFNULL(temp.LastXDaysBetCount,0))
                         ,   '[1yBetCount]', IFNULL(temp.LastYDaysBetCount,0))
                         ,   '[TWRobotCounter]', IFNULL(temp.RobotCounter,0))
+                        ,   '[PARatio]', CASE WHEN temp.Remark LIKE 'PARatio:%' THEN REPLACE(temp.Remark,'PARatio:','') ELSE '' END)
                         ,   '[Remark]', IFNULL(temp.Remark,''))
                         )) AS Remark
     FROM 	CTS_DataCenter.CTSCustomerClassificationAgency_History AS temp
@@ -81,5 +82,6 @@ BEGIN
         LEFT JOIN CTS_Admin.CTSUser AS u ON temp.LastModifiedBy = u.UserID
     WHERE 	temp.CTSCustID = ip_CTSCustID AND temp.IsDataChanged = 1
     ORDER BY temp.ID DESC; 
+    
 END$$
 DELIMITER ;
