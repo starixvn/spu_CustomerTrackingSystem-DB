@@ -60,7 +60,7 @@ BEGIN
 
 	/*VVIP*/
 	IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP THEN
-		
+	
 		SET lv_IsAuto = 0;
 	
 		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CustomerClassPriority
@@ -68,7 +68,7 @@ BEGIN
 		FROM CTS_DataCenter.CustomerCategorySettingsAgency AS ccs
 			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = ccs.CategoryID
 		WHERE ccs.CategoryID = CONST_AGENCY_CATEID_VVIP;
-		
+	
 		IF lv_IsParallelParentID = 0 THEN
 			/*Remove all categories which IsKeepOldCateID = 0*/							
 			DELETE cls							
@@ -250,20 +250,20 @@ BEGIN
 		FROM 	Temp_NewClassification AS temp;
         
 	ELSEIF ip_InputFlowID IN (CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_CONSIDERABLEDANGER,CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER) THEN 
-		
+
         IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER THEN
 			SET lv_IsRescan = 1;
 		END IF;
-        
+
         UPDATE Temp_NewClassification AS temp
 			, LATERAL ( SELECT cd.PAMemberRatio
 						FROM CTS_DataCenter.Customer_ConsiderableDanger AS cd
-						WHERE cd.CustID = cls.CustID AND cd.InsertedTime < lv_CurrentDateTime
+						WHERE cd.CustID = temp.CustID AND cd.InsertedTime < lv_CurrentDateTime
 						ORDER BY cd.InsertedTime DESC
                         LIMIT 1
 						) AS ltr
         SET temp.Remark = CONCAT('PARatio:',ltr.PAMemberRatio);
-        
+
 		UPDATE IGNORE CTS_DataCenter.CTSCustomerClassificationAgency AS cls
 			INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID AND cls.CategoryID = temp.OldCategoryID 
 																						AND temp.DataChangeType = 1
