@@ -74,8 +74,7 @@ BEGIN
         ,tac.IsPassRuleRatio = (CASE WHEN CAST(tac.TotalPACust*100/tac.TotalCust AS DECIMAL(5,2)) >= 50 THEN 1 ELSE 0 END)
         ,tac.PAMemberRatio = CAST(tac.TotalPACust*100/tac.TotalCust AS DECIMAL(5,2))
         ,tac.CTSCustID = cus.CTSCustID
-    WHERE tac.CustID IS NOT NULL
-        AND tac.CustID > 0;
+  	;
     
     INSERT INTO CTS_DataCenter.Customer_ConsiderableDanger(CustID, CTSCustID, TotalMember, TotalPAMember, PAMemberRatio, InsertedTime)
     SELECT CustID, CTSCustID, TotalCust, TotalPACust, PAMemberRatio, CURRENT_TIMESTAMP(3) AS InsertedTime
