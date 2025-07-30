@@ -21,6 +21,7 @@ BEGIN
 		Example:
 			CALL CTS_DC_CustClassificationAgency_CDQueue_Get(@ip_BatchSize:=100,OUT op_LastID :=@op_LastID);
 	*/
+    DECLARE	CONST_AGENCY_CATEID_CD_LOW INT DEFAULT 121800;
     DECLARE lv_MaxScanQueueID	BIGINT UNSIGNED DEFAULT 0;
 
     SELECT sys.ParameterValue
@@ -33,14 +34,14 @@ BEGIN
 			ID 			BIGINT 
 		,	CustID		BIGINT
 		,	ScanType	TINYINT 
+        ,   row_num		TINYINT 
     ); 
             
-	INSERT IGNORE INTO Temp_AgentQueue (ID, CustID, ScanType) 
-	SELECT ID, CustID, ip_ScanType 
+	INSERT IGNORE INTO Temp_AgentQueue (ID, CustID, ScanType, row_num) 
+	SELECT ID, CustID, ScanType , 
+    ROW_NUMBER() OVER(PARTITION BY CustID ORDER BY ScanType ASC) AS row_num  
 	FROM CTS_DataCenter.CustomerConsiderableDangerQueue
 	WHERE ID <= lv_MaxScanQueueID
-		AND CustID IS NOT NULL
-		AND CustID > 0
 	ORDER BY ID
 	LIMIT ip_BatchSize;   
 
@@ -52,34 +53,15 @@ BEGIN
         SET op_LastID = 0;
     END IF;
 
-	SELECT DISTINCT tAq.CustID, cus.CTSCustID, cus.RoleID, cus.SubscriberID, cate.CategoryID, cus.IsLicensee, tAq.ScanType
+	SELECT DISTINCT tAq.CustID, cus.CTSCustID, cus.RoleID, cus.SubscriberID, CONST_AGENCY_CATEID_CD_LOW AS CategoryID, cus.IsLicensee, tAq.ScanType
     FROM Temp_AgentQueue AS tAq
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tAq.CustID
-        ,LATERAL	(
-                        SELECT cls.CustID, cls.ParentID, cls.CategoryID
-                        FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
-                            INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cls.CategoryID = cate.CategoryID AND cate.IsActive = 1
-                        WHERE cls.CustID = cus.CustID
-                        ORDER BY  cate.CustomerClassPriority ASC 
-                                , cls.LastModifiedDate DESC
-                        LIMIT 1
-                    ) AS cate
-	WHERE tAq.ScanType = 1;
+	WHERE tAq.ScanType = 1 AND tAq.row_num = 1 AND cus.RoleID = 2 AND cus.CustSubID = 0 AND cus.IsLicensee = 0;
 		
-	SELECT DISTINCT tAq.CustID, cus.CTSCustID, cus.RoleID, cus.SubscriberID, cate.CategoryID, cus.IsLicensee, tAq.ScanType
+	SELECT DISTINCT tAq.CustID, cus.CTSCustID, cus.RoleID, cus.SubscriberID, CONST_AGENCY_CATEID_CD_LOW AS CategoryID, cus.IsLicensee, tAq.ScanType
     FROM Temp_AgentQueue AS tAq
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tAq.CustID
-        ,LATERAL	(
-                        SELECT cls.CustID, cls.ParentID, cls.CategoryID
-                        FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
-                            INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cls.CategoryID = cate.CategoryID AND cate.IsActive = 1
-                        WHERE cls.CustID = cus.CustID
-                        ORDER BY  cate.CustomerClassPriority ASC 
-                                , cls.LastModifiedDate DESC
-                        LIMIT 1
-                    ) AS cate
-	WHERE tAq.ScanType = 2 AND 
-		NOT EXISTS (SELECT 1 FROM Temp_AgentQueue AS tmp WHERE tmp.CustID = tAq.CustID AND tmp.ScanType = 1);
+	WHERE tAq.ScanType = 2 AND tAq.row_num = 1 AND cus.RoleID = 2 AND cus.CustSubID = 0 AND cus.IsLicensee = 0;
 
 END$$
 DELIMITER ;
