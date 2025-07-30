@@ -59,6 +59,7 @@ BEGIN
 	DECLARE lv_IsDataChanged								TINYINT(1);
 	DECLARE lv_TargetCC										INT;
 	DECLARE lv_CCPriority									SMALLINT UNSIGNED;  
+    DECLARE lv_ConsiderableDangerAgentList					TEXT;
 
 	SET CONST_PARENTID_VVIP 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_VVIP');
 	SET CONST_PARENTID_WRAPPER 								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
@@ -85,7 +86,12 @@ BEGIN
 			CustID		BIGINT PRIMARY KEY		
         , 	Recommend	BIGINT
 	);  
-
+	
+    DROP TEMPORARY TABLE IF EXISTS Temp_PAAgent;    
+	CREATE TEMPORARY TABLE Temp_PAAgent(		
+		 CustID	BIGINT PRIMARY KEY
+	);  
+    
 	INSERT IGNORE INTO Temp_PACustStart(CustID, Recommend)
     SELECT	cls.CustID
 		,	cus.Recommend
@@ -703,24 +709,25 @@ BEGIN
 							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
 							AND cc2.ParentID <> cc.ParentID);
     
-    INSERT INTO CustomerConsiderableDangerQueue(CustID, ScanType, InsertedTime)
+    INSERT INTO Temp_PAAgent(CustID)
     SELECT DISTINCT en.Recommend
-		,	CONST_CONSIDERABLEDANGERQUEUE_SCANTYPE AS  ScanType
-        ,	CURRENT_TIMESTAMP(3) AS InsertedTime
 	FROM Temp_PACustEnd AS en
 		LEFT JOIN Temp_PACustStart AS st ON st.CustID = en.CustID 
 	WHERE st.CustID IS NULL;
     
-    INSERT IGNORE INTO CustomerConsiderableDangerQueue(CustID, ScanType, InsertedTime)
+    INSERT IGNORE INTO Temp_PAAgent(CustID)
     SELECT DISTINCT st.Recommend
-		,	CONST_CONSIDERABLEDANGERQUEUE_SCANTYPE AS  ScanType
-        ,	CURRENT_TIMESTAMP(3) AS InsertedTime
 	FROM Temp_PACustStart AS st
 		LEFT JOIN Temp_PACustEnd AS en ON en.CustID = st.CustID 
 	WHERE en.CustID IS NULL;
     
-    SELECT 'DEBUG_Temp_PACustEnd', t.* FROM Temp_PACustEnd AS t;
+    SELECT GROUP_CONCAT(tmp.CustID)
+    INTO lv_ConsiderableDangerAgentList 
+	FROM Temp_PAAgent AS tmp;
     
+    IF (lv_ConsiderableDangerAgentList IS NOT NULL) THEN		
+		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_CDQueue_Insert(CONST_CONSIDERABLEDANGERQUEUE_SCANTYPE, lv_ConsiderableDangerAgentList);
+    END IF;    
     
    #=================CONSIDERABLE_END: GET PA AFTER==================   
 	
