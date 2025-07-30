@@ -105,6 +105,7 @@ BEGIN
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls2	
 							INNER JOIN CTS_DataCenter.CustomerCategory AS cc2 ON cc2.CategoryID = cls2.CategoryID AND cc2.IsActive = 1				
 						WHERE cls.CustID = cls2.CustID
+							AND cls2.ParentID <> CONST_PARENTID_WRAPPER
 							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
 							AND cc2.ParentID <> cc.ParentID)
     ;
@@ -122,6 +123,7 @@ BEGIN
 						FROM CTS_DataCenter.CTSCustomerClassification AS cls2	
 							INNER JOIN CTS_DataCenter.CustomerCategory AS cc2 ON cc2.CategoryID = cls2.CategoryID AND cc2.IsActive = 1				
 						WHERE cls.CustID = cls2.CustID
+							AND cls2.ParentID <> CONST_PARENTID_WRAPPER
 							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
 							AND cc2.ParentID <> cc.ParentID)
     ;
