@@ -25,13 +25,12 @@ CREATE TABLE CustomerConsiderableDangerQueue(
 #2. New table Customer_ConsiderableDanger
 #DROP TABLE Customer_ConsiderableDanger;
 CREATE TABLE Customer_ConsiderableDanger(
-    	CustID 			BIGINT	
+    	CustID 			BIGINT	NOT NULL
 	,	CTSCustID		BIGINT UNSIGNED
-    ,	TotalMember		INT
-    ,	TotalPAMember	INT
-    ,	PAMemberRatio	DECIMAL(2,2)
-    ,	IsDisable		BOOLEAN
-    ,	InsertedTime	DATETIME(3)
+    ,	TotalMember		INT NOT NULL
+    ,	TotalPAMember	INT NOT NULL
+    ,	PAMemberRatio	DECIMAL(5,2) NOT NULL
+    ,	InsertedTime	DATETIME(3) NOT NULL
     
     ,	PRIMARY KEY PK_Customer_ConsiderableDanger(CustID,InsertedTime)    
 );
@@ -40,12 +39,12 @@ CREATE TABLE Customer_ConsiderableDanger(
 #DROP TABLE Customer_ConsiderableDanger_Log;
 CREATE TABLE Customer_ConsiderableDanger_Log(
 		ID				BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
-    ,	CustID 			BIGINT	
-	,	CTSCustID		BIGINT UNSIGNED
-    ,	TotalMember		INT
-    ,	TotalPAMember	INT
-    ,	PAMemberRatio	DECIMAL(2,2)  
-    ,	InsertedTime	DATETIME(3)
+    ,	CustID 			BIGINT NOT NULL
+	,	CTSCustID		BIGINT UNSIGNED 
+    ,	TotalMember		INT NOT NULL
+    ,	TotalPAMember	INT NOT NULL
+    ,	PAMemberRatio	DECIMAL(5,2) NOT NULL 
+    ,	InsertedTime	DATETIME(3)  NOT NULL
     
     ,	INDEX	IX_Customer_ConsiderableDanger_Log(CustID)
 );
