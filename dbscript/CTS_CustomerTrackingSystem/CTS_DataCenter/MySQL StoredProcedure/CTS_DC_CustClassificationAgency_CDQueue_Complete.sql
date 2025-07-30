@@ -2,7 +2,7 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_CDQueue_Complete`;
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_CDQueue_Complete`(		
-		IN op_LastID BIGINT
+		IN ip_LastID BIGINT
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -38,12 +38,12 @@ BEGIN
 	INSERT INTO Temp_AgentComplete (ID, CustID, ScanType)	
 	SELECT ccdq.ID, ccdq.CustID, ccdq.ScanType
 	FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS ccdq
-	WHERE ccdq.ID <= op_LastID   
+	WHERE ccdq.ID <= ip_LastID   
     UNION
 	SELECT ccdq.ID, ccdq.CustID, ccdq.ScanType 
 	FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS ccdq
-	WHERE ccdq.ID > op_LastID AND ccdq.ID <= lv_MaxScanQueueID AND
-	EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS cls WHERE  ccdq.ID <= op_LastID 
+	WHERE ccdq.ID > ip_LastID AND ccdq.ID <= lv_MaxScanQueueID AND
+	EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS cls WHERE  ccdq.ID <= ip_LastID 
     AND cls.CustID = ccdq.CustID AND cls.ScanType = ccdq.ScanType);   
 
 	DELETE ccdq
