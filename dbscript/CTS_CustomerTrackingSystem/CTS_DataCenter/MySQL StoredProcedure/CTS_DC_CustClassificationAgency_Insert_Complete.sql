@@ -249,11 +249,20 @@ BEGIN
 			,	temp.ActionType
 		FROM 	Temp_NewClassification AS temp;
         
-	ELSEIF ip_InputFlowID IN (CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL,CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_NORMAL) THEN 
+	ELSEIF ip_InputFlowID IN (CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_CONSIDERABLEDANGER,CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER) THEN 
 		
-        IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY THEN
+        IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER THEN
 			SET lv_IsRescan = 1;
 		END IF;
+        
+        UPDATE Temp_NewClassification AS temp
+			, LATERAL ( SELECT cd.PAMemberRatio
+						FROM CTS_DataCenter.Customer_ConsiderableDanger AS cd
+						WHERE cd.CustID = cls.CustID AND cd.InsertedTime < lv_CurrentDateTime
+						ORDER BY cd.InsertedTime DESC
+                        LIMIT 1
+						) AS ltr
+        SET temp.Remark = ltr.PAMemberRatio;
         
 		UPDATE IGNORE CTS_DataCenter.CTSCustomerClassificationAgency AS cls
 			INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID AND cls.CategoryID = temp.OldCategoryID 
@@ -263,6 +272,7 @@ BEGIN
 			, 	cls.LastModifiedDate 	=  lv_CurrentDateTime
 			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime)
 			; 
+        
         
         INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency(
 				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, ParentID, CreatedDate, CreatedBy, LastModifiedDate
