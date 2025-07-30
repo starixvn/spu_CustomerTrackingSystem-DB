@@ -34,7 +34,7 @@ BEGIN
 	
 	UPDATE  CTS_DataCenter.SystemParameter 
 	SET ParameterValue = lv_NewQueueID
-	WHERE ParameterID = 192;
+	WHERE ParameterID = 192 AND lv_NewQueueID IS NOT NULL;
 
 END$$
 DELIMITER ;
