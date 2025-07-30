@@ -1,7 +1,7 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_CDQueue_MaxID`;
+DROP PROCEDURE IF EXISTS `CTS_DC_CustClassificationAgency_CDQueue_SetMaxIDDaily`;
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_CDQueue_MaxID`(		
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationAgency_CDQueue_SetMaxIDDaily`(		
 )
 SQL SECURITY INVOKER
 BEGIN
@@ -17,7 +17,7 @@ BEGIN
 		Param's Explanation: 
         
 		Example:
-			CALL CTS_DC_CustClassificationAgency_CDQueue_MaxID();
+			CALL CTS_DC_CustClassificationAgency_CDQueue_SetMaxIDDaily();
 	*/
     DECLARE lv_LastQueueID	BIGINT UNSIGNED DEFAULT 0;
 	DECLARE lv_NewQueueID	BIGINT UNSIGNED DEFAULT 0;
