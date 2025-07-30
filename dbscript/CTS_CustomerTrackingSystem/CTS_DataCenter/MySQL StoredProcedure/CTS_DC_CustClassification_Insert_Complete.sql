@@ -1178,9 +1178,9 @@ BEGIN
 		LEFT JOIN Temp_PACustEnd AS en ON en.CustID = st.CustID 
 	WHERE en.CustID IS NULL;
     
-    SELECT GROUP_CONCAT(st.CustID)
-    INTO lv_ConsiderableDangerAgentList
-	FROM Temp_PAAgent;
+    SELECT GROUP_CONCAT(tmp.CustID)
+    INTO lv_ConsiderableDangerAgentList 
+	FROM Temp_PAAgent AS tmp;
     
     IF (lv_ConsiderableDangerAgentList IS NOT NULL) THEN		
 		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_CDQueue_Insert(CONST_CONSIDERABLEDANGERQUEUE_SCANTYPE, lv_ConsiderableDangerAgentList);
