@@ -66,8 +66,6 @@ sp:BEGIN
 		,	LastYDaysBetCount BIGINT 
 		,	PerformanceTime DATETIME 
 		,	RobotCounter SMALLINT
-		,	CustomerCategorySettingsAgency TINYINT 
-		,	SystemRemark VARCHAR(255)
 		,	PRIMARY KEY (ID)
 		,	KEY IX_CTSCustomerClassificationAgency_History_Archive_CustID (CustID)
 	);
@@ -116,7 +114,7 @@ sp:BEGIN
 		AND his.IsDataChanged = 1
         AND his.InsertDate < lv_DateValid;
      
-    INSERT INTO Temp_ArchiveHistory(ID,CustID,CTSCustID,RoleID,ParentID,CategoryID,OldCategoryID,DWCategoryID,TargetCC,SourceTypeID,IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TargetDangerLevel1,Remark,IsMarkedDirectly,IsFromTW,IsFromCTS,IsFromAI,TurnoverRM,WinlossRM,BetCount,LastXDaysTurnoverRM,LastXDaysWinlossRM,LastXDaysBetCount,LastYDaysTurnoverRM,LastYDaysWinlossRM,LastYDaysBetCount,PerformanceTime,RobotCounter,CustomerCategorySettingsAgency,SystemRemark)
+    INSERT INTO Temp_ArchiveHistory(ID,CustID,CTSCustID,RoleID,ParentID,CategoryID,OldCategoryID,DWCategoryID,TargetCC,SourceTypeID,IsDataChanged,ActionType,IsAuto,LastModifiedDate,LastModifiedBy,InsertDate,TargetDangerLevel1,Remark,IsMarkedDirectly,IsFromTW,IsFromCTS,IsFromAI,TurnoverRM,WinlossRM,BetCount,LastXDaysTurnoverRM,LastXDaysWinlossRM,LastXDaysBetCount,LastYDaysTurnoverRM,LastYDaysWinlossRM,LastYDaysBetCount,PerformanceTime,RobotCounter)
 	SELECT 	his.ID
 		,	his.CustID
 		,	his.CTSCustID
@@ -150,8 +148,6 @@ sp:BEGIN
 		,	his.LastYDaysBetCount
 		,	his.PerformanceTime
 		,	his.RobotCounter
-		,	his.CustomerCategorySettingsAgency
-		,	his.SystemRemark
 	FROM CTS_DataCenter.CTSCustomerClassificationAgency_History AS his
 		INNER JOIN Temp_Cust AS cus ON his.CustID = cus.CustID
     WHERE his.ID <= lv_MaxArchiveID
@@ -227,8 +223,6 @@ sp:BEGIN
 			,	arc.LastYDaysBetCount
 			,	arc.PerformanceTime
 			,	arc.RobotCounter
-			,	arc.CustomerCategorySettingsAgency
-			,	arc.SystemRemark
 		FROM Temp_ArchiveHistory AS arc;
 
 END$$

@@ -54,8 +54,6 @@ BEGIN
         ,	LastYDaysBetCount
         ,	PerformanceTime
         ,	RobotCounter
-        ,	CustomerCategorySettingsAgency
-        ,	SystemRemark
 
 	)
 	SELECT	HistoryID
@@ -91,8 +89,6 @@ BEGIN
         ,	LastYDaysBetCount
         ,	PerformanceTime
         ,	RobotCounter
-        ,	CustomerCategorySettingsAgency
-        ,	SystemRemark
 
 	FROM JSON_TABLE(
 			ip_HistoryJson,
@@ -130,8 +126,6 @@ BEGIN
 							,	LastYDaysBetCount 		        BIGINT UNSIGNED  	PATH "$.LastYDaysBetCount"
                             ,	PerformanceTime			        DATETIME			PATH "$.PerformanceTime"  
                             ,	RobotCounter			        INT					PATH "$.RobotCounter"
-							,	CustomerCategorySettingsAgency	TINYINT				PATH "$.CustomerCategorySettingsAgency" 
-                            ,	SystemRemark		            VARCHAR(255) 		PATH "$.SystemRemark" 
 							)
 		   ) AS  tbl; 
 

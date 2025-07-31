@@ -49,8 +49,6 @@ CREATE TABLE CTSCustomerClassificationAgency_History_Archive(
 	,	LastYDaysBetCount BIGINT 
 	,	PerformanceTime DATETIME 
 	,	RobotCounter SMALLINT
-	,	CustomerCategorySettingsAgency TINYINT 
-	,	SystemRemark VARCHAR(255)
 	,	PRIMARY KEY(ID,InsertDate) 
 	,	KEY IX_CTSCustomerClassificationAgency_History_Archive_CustID(CustID) 
 ) ENGINE=InnoDB;
