@@ -291,6 +291,15 @@ BEGIN
 								,	TWRobotCounter = IFNULL(Temp_NewClassification.TWRobotCounter, tmpJs.TWRobotCounter)
 								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_NewClassification.IsFromAI END
 								;
+			
+            UPDATE Temp_NewClassification AS temp
+			SET temp.IsExistCD = 1
+			WHERE EXISTS (	SELECT 1
+							FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
+							WHERE temp.CustID = cls.CustID
+								AND cls.ParentID = CONST_AGENCY_PARENTID_CONSIDERABLEDANGER
+						 );
+            
 		ELSEIF ip_InputFlowID IN (CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_CONSIDERABLEDANGER, CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER) THEN 
 
 			INSERT INTO Temp_NewClassification(
@@ -417,7 +426,7 @@ BEGIN
 							WHERE temp.CustID = cls.CustID
 								AND cls.ParentID = CONST_AGENCY_PARENTID_PA
 						 );
-			
+     
 			UPDATE Temp_NewClassification AS temp
 			SET temp.IsExistCD = 1
 			WHERE EXISTS (	SELECT 1
@@ -425,7 +434,7 @@ BEGIN
 							WHERE temp.CustID = cls.CustID
 								AND cls.ParentID = CONST_AGENCY_PARENTID_CONSIDERABLEDANGER
 						 );
-			
+
 		END IF;
 		
 		UPDATE Temp_NewClassification AS temp
