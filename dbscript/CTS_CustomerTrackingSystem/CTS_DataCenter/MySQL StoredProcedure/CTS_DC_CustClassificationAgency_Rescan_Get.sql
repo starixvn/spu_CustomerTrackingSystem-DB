@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb,ctsService,ctsAPI" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWebAdmin,ctsServiceAdmin,ctsAPIAdmin" isFunction="0" isNested="0"></info>*/
 DROP procedure IF EXISTS `CTS_DC_CustClassificationAgency_Rescan_Get`;
 
 DELIMITER $$
