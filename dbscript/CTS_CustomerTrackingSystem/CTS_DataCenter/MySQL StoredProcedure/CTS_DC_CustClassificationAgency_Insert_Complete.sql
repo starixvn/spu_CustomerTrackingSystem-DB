@@ -273,6 +273,13 @@ BEGIN
 			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime)
 			;         
         
+		/*delete Normal - IsKeepOldCateID = 0*/
+		DELETE cls
+		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
+			INNER JOIN Temp_CTSCustomerClassificationAgency_Old AS temp_old ON temp_old.CustID = cls.CustID
+																			AND temp_old.ExistCategoryID = cls.CategoryID
+		WHERE temp_old.IsNew = 0 AND temp_old.IsRemove = 1;
+        
         INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency(
 				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, ParentID, CreatedDate, CreatedBy, LastModifiedDate
 			, 	LastModifiedBy, LastScannedDate, IsMarkedDirectly, Remark, IsFromCTS, IsFromAI, IsFromTW)
