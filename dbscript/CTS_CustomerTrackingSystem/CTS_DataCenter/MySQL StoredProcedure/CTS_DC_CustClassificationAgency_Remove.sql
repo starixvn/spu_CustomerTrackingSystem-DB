@@ -34,7 +34,7 @@ BEGIN
 
 		Revisions: 
 			- 20240927@Thomas.Nguyen: Created [Redmine ID: #185799]
-            - 20250725@Casey.Huynh: Agent CC, Insert Considerable Agency [Redmine ID: #219679]
+            - 20250725@Casey.Huynh: Agent CC, Insert Considerable Agency[Redmine ID: #219679]
 */
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP 			INT;
     DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA 				INT;
@@ -53,7 +53,7 @@ BEGIN
 	/*STEP 1: Parse raw data and get custinfo*/
 	CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Remove_GetInfo (ip_InputFlowID,ip_CustInfo);
 	
-	/*STEP 2: Process and Complete*/
+	/*STEP 2: Process and Complete */
 	CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Remove_Complete (ip_InputFlowID,ip_FromAction,ip_UplineRoleID,ip_IsFromQueue,ip_CustInfo);
 
 	IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP AND ip_FromAction = 3 AND ip_QueueID IS NOT NULL THEN
