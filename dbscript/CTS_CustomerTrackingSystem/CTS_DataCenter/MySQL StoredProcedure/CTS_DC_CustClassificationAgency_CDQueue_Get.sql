@@ -21,7 +21,7 @@ BEGIN
 		Example:
 			CALL CTS_DC_CustClassificationAgency_CDQueue_Get(@ip_BatchSize:=100,OUT op_LastID :=@op_LastID);
 	*/
-    DECLARE	CONST_AGENCY_CATEID_CD_LOW INT DEFAULT 121800;
+    DECLARE	CONST_AGENCY_CATEID_CD_LOW INT DEFAULT 130100;
     DECLARE lv_MaxScanQueueID	BIGINT UNSIGNED DEFAULT 0;
 
     SELECT sys.ParameterValue
