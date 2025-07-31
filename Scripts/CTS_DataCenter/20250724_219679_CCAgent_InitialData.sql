@@ -14,7 +14,7 @@ USE CTS_DataCenter;
 
 #================================================================================
 	
-	SET @CONST_AGENCY_PARENTID_NORMAL := CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
+	SET @CONST_AGENCY_PARENTID_NORMAL := 140000;
 	SET @lv_MinQueueID	:= 0;
 
     SELECT sys.ParameterValue

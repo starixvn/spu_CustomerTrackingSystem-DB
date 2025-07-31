@@ -61,7 +61,7 @@ BEGIN
 
 	UPDATE Temp_AgentConsiderableDanger AS tac
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tac.CustID = cus.CustID AND cus.IsLicensee = 0 AND cus.RoleID = 2 AND cus.CustSubID = 0
-		,LATERAL	(
+		LEFT JOIN LATERAL (
 							SELECT cls.CategoryID
 							FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
 								INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cls.CategoryID = cate.CategoryID AND cate.IsActive = 1
@@ -69,7 +69,7 @@ BEGIN
 							ORDER BY  cate.CustomerClassPriority ASC 
 									, cls.LastModifiedDate DESC
 							LIMIT 1
-						) AS cate
+						) AS cate ON TRUE
 	SET tac.IsPassRuleConsiderable = (CASE WHEN cate.CategoryID IN (CONST_AGENCY_CATEID_CD_LOW,CONST_AGENCY_CATEID_CD_HIGHT) THEN 1 ELSE 0 END)
         ,tac.IsPassRuleRatio = CASE WHEN tac.TotalCust > 0 THEN (CASE WHEN CAST(tac.TotalPACust*100/tac.TotalCust AS DECIMAL(5,2)) >= 50 THEN 1 ELSE 0 END) ELSE 0 END
 		,tac.PAMemberRatio = CASE WHEN tac.TotalCust > 0 THEN CAST(tac.TotalPACust*100/tac.TotalCust AS DECIMAL(5,2)) ELSE 0 END
