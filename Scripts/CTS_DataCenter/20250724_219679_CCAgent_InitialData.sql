@@ -15,12 +15,7 @@ USE CTS_DataCenter;
 #================================================================================
 	
 	SET @CONST_AGENCY_PARENTID_NORMAL := 140000;
-	SET @lv_MinQueueID	:= 0;
-
-    SELECT sys.ParameterValue
-    INTO @lv_MinQueueID
-    FROM CTS_DataCenter.SystemParameter AS sys
-    WHERE ParameterID = 192;  
+    SET	@CONST_PARENTID_VVIP := 1000;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_AgentList;
     CREATE TEMPORARY TABLE Temp_AgentList(
@@ -40,28 +35,26 @@ USE CTS_DataCenter;
 	INSERT IGNORE INTO Temp_AgentList (AgentID)
 	SELECT cus.CustID
 	FROM CTS_DataCenter.CTSCustomer AS cus
-		,	LATERAL (
-			SELECT cus.CustID, cls.ParentID
-			FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
-				INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cate ON cate.CategoryID = cls.CategoryID
-			WHERE cls.CustID = cus.CustID AND cate.IsActive = 1
-			ORDER BY cate.CustomerClassPriority ASC, cls.LastModifiedDate DESC
-			LIMIT 1
-		) AS clss
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS cls 
-				ON cls.CustID = clss.CustID AND cls.ParentID = clss.ParentID 
+				ON cls.CustID = cus.CustID  
 				AND cls.ParentID IN (@CONST_AGENCY_PARENTID_NORMAL)
 	WHERE cus.RoleID = 2
 		AND cus.IsLicensee = 0
 		AND cus.CustSubID = 0;
      
 	INSERT IGNORE INTO Temp_AgentConsiderableDanger (CustID, TotalCust, TotalPACust) 
-	SELECT AgentID, COUNT(cus.CTSCustID) AS TotalCust, 
-			SUM(CASE WHEN EXISTS (SELECT 1  FROM CTS_DataCenter.CustomerCategorySettings AS cls WHERE cls.CategoryID = ccc.CategoryID AND cls.FlowConsiderableDangerScan = 1) 
-					 THEN 1 ELSE 0 END ) AS TotalPA 
+	SELECT AgentID, COUNT( Distinct cus.CTSCustID) AS TotalCust, 
+			SUM(CASE WHEN cate.IsPA > 0 AND cate.IsVVIP = 0 THEN 1 ELSE 0 END) AS TotalPA 
 	FROM Temp_AgentList AS tac
 	INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.Recommend = tac.AgentID
-	LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS ccc ON cus.CustID = ccc.CustID
+	LEFT JOIN LATERAL	(SELECT cls.CustID
+								, SUM(CASE WHEN ccs.FlowConsiderableDangerScan = 1 THEN 1 ELSE 0 END) AS IsPA 
+                                , SUM(CASE WHEN ccs.ParentID = CONST_PARENTID_VVIP THEN 1 ELSE 0 END) AS IsVVIP
+							FROM CTS_DataCenter.CTSCustomerClassification AS cls
+								INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cls.CategoryID = ccs.CategoryID
+							WHERE cls.CustID = cus.CustID
+                            GROUP BY cls.CustID
+						) AS cate ON TRUE
 	WHERE cus.RoleID = 1
     GROUP BY tac.AgentID;
 
@@ -84,5 +77,4 @@ USE CTS_DataCenter;
 		,	CURRENT_TIMESTAMP(3) AS InsertedTime
 	FROM Temp_AgentConsiderableDanger AS js 
     WHERE js.IsPassRuleRatio = 1 AND
-	NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS clss WHERE clss.ID > @lv_MinQueueID 
-	 								AND clss.CustID = js.CustID AND clss.ScanType = 1);
+	NOT EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS clss WHERE clss.CustID = js.CustID AND clss.ScanType = 1);
