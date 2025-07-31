@@ -23,6 +23,7 @@ BEGIN
 	*/
     DECLARE	CONST_AGENCY_CATEID_CD_LOW INT DEFAULT 130100;
     DECLARE	CONST_AGENCY_CATEID_CD_HIGHT INT DEFAULT 135100;
+    DECLARE	CONST_PARENTID_VVIP INT DEFAULT 1000;
 
     IF ip_IsRescan IS NULL THEN
         SET ip_IsRescan = 0;
@@ -50,12 +51,18 @@ BEGIN
 	EXECUTE 	stmt1; 	
      
 	INSERT IGNORE INTO Temp_AgentConsiderableDanger (CustID, TotalCust, TotalPACust) 
-	SELECT AgentID, COUNT(cus.CTSCustID) AS TotalCust, 
-			SUM(CASE WHEN EXISTS (SELECT 1  FROM CTS_DataCenter.CustomerCategorySettings AS cls WHERE cls.CategoryID = ccc.CategoryID AND cls.FlowConsiderableDangerScan = 1) 
-					 THEN 1 ELSE 0 END ) AS TotalPA 
+	SELECT AgentID, COUNT( Distinct cus.CTSCustID) AS TotalCust, 
+			SUM(CASE WHEN cate.IsPA > 0 AND cate.IsVVIP = 0 THEN 1 ELSE 0 END) AS TotalPA 
 	FROM Temp_AgentList AS tac
 	INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.Recommend = tac.AgentID
-	LEFT JOIN CTS_DataCenter.CTSCustomerClassification AS ccc ON cus.CustID = ccc.CustID
+	LEFT JOIN LATERAL	(SELECT cls.CustID
+								, SUM(CASE WHEN ccs.FlowConsiderableDangerScan = 1 THEN 1 ELSE 0 END) AS IsPA 
+                                , SUM(CASE WHEN ccs.ParentID = CONST_PARENTID_VVIP THEN 1 ELSE 0 END) AS IsVVIP
+							FROM CTS_DataCenter.CTSCustomerClassification AS cls
+								INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cls.CategoryID = ccs.CategoryID
+							WHERE cls.CustID = cus.CustID
+                            GROUP BY cls.CustID
+						) AS cate ON TRUE
 	WHERE cus.RoleID = 1
     GROUP BY tac.AgentID;
 
