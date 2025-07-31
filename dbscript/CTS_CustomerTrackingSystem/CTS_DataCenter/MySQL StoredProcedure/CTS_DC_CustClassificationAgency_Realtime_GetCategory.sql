@@ -20,10 +20,12 @@ BEGIN
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_CustClassificationAgency_Realtime_GetCategory('761925')
 	*/  
-    DECLARE	CONST_AGENCY_PARENTID_NORMAL	INT;
-    DECLARE	CONST_ROLEID_AGENT 				TINYINT DEFAULT 2;
+    DECLARE	CONST_AGENCY_PARENTID_NORMAL				INT;
+    DECLARE	CONST_ROLEID_AGENT 							TINYINT DEFAULT 2;
+    DECLARE CONST_AGENCY_PARENTID_CONSIDERABLEDANGER	INT;
     
-	SET CONST_AGENCY_PARENTID_NORMAL	 		= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
+	SET CONST_AGENCY_PARENTID_NORMAL	 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
+    SET CONST_AGENCY_PARENTID_CONSIDERABLEDANGER	= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_CONSIDERABLEDANGER');
        
     DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
 	CREATE TEMPORARY TABLE Temp_Customers(
@@ -79,7 +81,9 @@ BEGIN
     -- #4: Return Considerable Insert to CD Queue Insert
 	SELECT DISTINCT tmp.CustID
     FROM Temp_CustomerCategory AS tmp
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID = 0 AND IsLicensee = 0 AND cus.RoleID = CONST_ROLEID_AGENT;
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.CustID AND cus.CustSubID = 0 
+														AND IsLicensee = 0 AND cus.RoleID = CONST_ROLEID_AGENT
+        INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID AND cls.ParentID = CONST_AGENCY_PARENTID_CONSIDERABLEDANGER;
 
 END$$
 DELIMITER ;
