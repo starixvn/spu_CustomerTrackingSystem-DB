@@ -21,16 +21,17 @@ sp: BEGIN
 		Example:
 			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Rescan_Get("1,2,3,4");
 	*/ 
-    DECLARE	CONST_AGENCY_CATEID_ROBOT				INT;
-    DECLARE	CONST_AGENCY_CATEID_ROBOTLOSING			INT;
-    DECLARE	CONST_AGENCY_PARENTID_PA				INT;
-    DECLARE CONST_AGENCY_PARENTID_VVIP				INT;
+    DECLARE	CONST_AGENCY_CATEID_ROBOT				    INT;
+    DECLARE	CONST_AGENCY_CATEID_ROBOTLOSING			    INT;
+    DECLARE	CONST_AGENCY_PARENTID_PA				    INT;
+    DECLARE CONST_AGENCY_PARENTID_VVIP				    INT;
+	DECLARE	CONST_AGENCY_PARENTID_CONSIDERABLEDANGER 	INT;
 
 
     DECLARE CONST_INPUTFLOWID_INSERT_NORMAL			INT DEFAULT 1009;
 	DECLARE	CONST_INPUTFLOWID_RESCAN_PA				INT DEFAULT 1115;
 	DECLARE	CONST_INPUTFLOWID_RESCAN_CD   	        INT DEFAULT 1220;
-    DECLARE CONST_AGENCY_CATEID_CD_LOW				INT DEFAULT 121800;
+    DECLARE CONST_AGENCY_CATEID_CD_LOW				INT DEFAULT 130100;
 	DECLARE lv_AgentCDList 				            LONGTEXT DEFAULT NULL;
       
 	DECLARE CONST_CREATEDBY_STARIXITID				INT DEFAULT 10278938;
@@ -39,7 +40,14 @@ sp: BEGIN
     SET CONST_AGENCY_CATEID_ROBOTLOSING	 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
     SET CONST_AGENCY_PARENTID_PA 					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
     SET CONST_AGENCY_PARENTID_VVIP				    = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
-
+    SET CONST_AGENCY_PARENTID_CONSIDERABLEDANGER   = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_CONSIDERABLEDANGER');
+ 
+    DROP TEMPORARY TABLE IF EXISTS Temp_AgentCD;    
+	CREATE TEMPORARY TABLE Temp_AgentCD (	  
+			CustID          BIGINT UNSIGNED PRIMARY KEY 	  
+		,   IsPassRuleRatio  BIT DEFAULT 0 
+     );
+     
     DROP TEMPORARY TABLE IF EXISTS Temp_CustID;    
 	CREATE TEMPORARY TABLE Temp_CustID (	  
 			CustID          BIGINT UNSIGNED PRIMARY KEY 	
@@ -212,6 +220,12 @@ sp: BEGIN
 	IF lv_AgentCDList IS NOT NULL THEN        
 		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_DetectCD(lv_AgentCDList,1);
         
+        INSERT INTO Temp_AgentCD(CustID, IsPassRuleRatio)
+        SELECT tmp.CustID, tmp.IsPassRuleRatio
+        FROM Temp_AgentConsiderableDanger AS tmp
+			LEFT JOIN Temp_CustCategory AS tcc ON tcc.CustID = tmp.CustID
+        WHERE tcc.CustID IS NULL AND tmp.IsPassRuleRatio = 1;
+
         INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, LastModifiedDate, InputFlowID)
         SELECT tmp.CTSCustID				AS CTSCustID
             ,	tmp.CustID					AS CustID
@@ -228,10 +242,9 @@ sp: BEGIN
             ,	s.CreatedDate 				AS CreatedDate
             ,	s.LastModifiedDate			AS LastModifiedDate
             ,   CONST_INPUTFLOWID_RESCAN_CD	AS InputFlowID
-        FROM Temp_CustInfo AS tmp    
-            INNER JOIN Temp_AgentConsiderable AS tacd ON tacd.CustID = tmp.CustID
-            LEFT JOIN Temp_CustCategory AS tcc ON tcc.CustID = tmp.CustID
-        WHERE tcc.CustID IS NULL AND tacd.IsPassRuleRatio = 1;
+        FROM Temp_CustInfo AS tmp   
+		    STRAIGHT_JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS s USE INDEX (PRIMARY) ON s.CustID = tmp.CustID AND s.ParentID = CONST_AGENCY_PARENTID_CONSIDERABLEDANGER 
+            INNER JOIN Temp_AgentCD AS tcc ON tcc.CustID = tmp.CustID;
     END IF; 
 
 	/***********************Return****************************/ 
