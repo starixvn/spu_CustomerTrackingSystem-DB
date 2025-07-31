@@ -29,7 +29,6 @@ USE CTS_DataCenter;
 		,	TotalPACust	INT DEFAULT 0
 		,	PAMemberRatio	DECIMAL(5,2) DEFAULT 0
 		,   IsPassRuleRatio  BIT DEFAULT 0 
-        ,	INDEX	IX_Temp_AgentConsiderableDanger_CustID(CustID)  
     ); 
 	
 	INSERT IGNORE INTO Temp_AgentList (AgentID)
