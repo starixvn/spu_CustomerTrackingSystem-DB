@@ -19,15 +19,15 @@ USE CTS_DataCenter;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_AgentList;
     CREATE TEMPORARY TABLE Temp_AgentList(
-			AgentID	BIGINT UNSIGNED
+			AgentID	BIGINT UNSIGNED PRIMARY KEY
     ); 
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_AgentConsiderableDanger;
     CREATE TEMPORARY TABLE Temp_AgentConsiderableDanger(
-			CustID	BIGINT UNSIGNED 
-		,	TotalCust	INT
-		,	TotalPACust	INT
-		,	PAMemberRatio	DECIMAL(5,2)
+			CustID	BIGINT UNSIGNED PRIMARY KEY
+		,	TotalCust	INT DEFAULT 0
+		,	TotalPACust	INT DEFAULT 0
+		,	PAMemberRatio	DECIMAL(5,2) DEFAULT 0
 		,   IsPassRuleRatio  BIT DEFAULT 0 
         ,	INDEX	IX_Temp_AgentConsiderableDanger_CustID(CustID)  
     ); 
@@ -49,7 +49,7 @@ USE CTS_DataCenter;
 	INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.Recommend = tac.AgentID
 	LEFT JOIN LATERAL	(SELECT cls.CustID
 								, SUM(CASE WHEN ccs.FlowConsiderableDangerScan = 1 THEN 1 ELSE 0 END) AS IsPA 
-                                , SUM(CASE WHEN ccs.ParentID = CONST_PARENTID_VVIP THEN 1 ELSE 0 END) AS IsVVIP
+                                , SUM(CASE WHEN ccs.ParentID = @CONST_PARENTID_VVIP THEN 1 ELSE 0 END) AS IsVVIP
 							FROM CTS_DataCenter.CTSCustomerClassification AS cls
 								INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cls.CategoryID = ccs.CategoryID
 							WHERE cls.CustID = cus.CustID
