@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation :
         
 		Example:
-			CALL CTS_DC_CustClassificationAgency_CDQueue_Get(@ip_BatchSize:=100,OUT op_LastID :=@op_LastID);
+			CALL CTS_DC_CustClassificationAgency_CDQueue_Get(100,@op_LastID);
 	*/
     DECLARE	CONST_AGENCY_CATEID_CD_LOW INT DEFAULT 130100;
     DECLARE lv_MaxScanQueueID	BIGINT UNSIGNED DEFAULT 0;
@@ -34,7 +34,8 @@ BEGIN
 			ID 			BIGINT 
 		,	CustID		BIGINT
 		,	ScanType	TINYINT 
-        ,   row_num		TINYINT 
+        ,   row_num		TINYINT
+		,	INDEX	IX_Temp_AgentQueue_CustID(CustID)   
     ); 
             
 	INSERT IGNORE INTO Temp_AgentQueue (ID, CustID, ScanType, row_num) 

@@ -18,7 +18,7 @@ BEGIN
 		Param's Explanation :
         
 		Example:
-			CALL CTS_DC_CustClassificationAgency_CDQueue_Complete(@op_LastID:=100);
+			CALL CTS_DC_CustClassificationAgency_CDQueue_Complete(100);
 	*/
 
 	DECLARE lv_MaxScanQueueID	BIGINT UNSIGNED DEFAULT 0;
@@ -28,6 +28,7 @@ BEGIN
 			ID 			BIGINT 
 		,	CustID		BIGINT
 		,	ScanType	TINYINT 
+		,	INDEX	IX_Temp_AgentComplete_ID(ID)  
     ); 
 
     SELECT sys.ParameterValue
@@ -43,7 +44,7 @@ BEGIN
 	SELECT ccdq.ID, ccdq.CustID, ccdq.ScanType 
 	FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS ccdq
 	WHERE ccdq.ID > ip_LastID AND ccdq.ID <= lv_MaxScanQueueID AND
-	EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS cls WHERE  cls.ID <= ip_LastID 
+	EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS cls WHERE cls.ID <= ip_LastID 
     AND cls.CustID = ccdq.CustID AND cls.ScanType = ccdq.ScanType);   
 
 	DELETE ccdq
