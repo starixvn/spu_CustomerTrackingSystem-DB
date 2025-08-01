@@ -27,7 +27,7 @@ BEGIN
 			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
 			- 20240923@Jonas.Huynh:	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
             - 20241017@Casey.Huynh: Return Agency Category [Redmine ID: #185799]
-			- 20250731@Adam.Tran: Agent CC, Considerable Danger - Return PareParentCategoryName [Redmine ID: #219679]
+			- 20250731@Adam.Tran: Agent CC, Considerable Danger - Return ParentCategoryName [Redmine ID: #219679]
             
 		Param's Explanation:
         
