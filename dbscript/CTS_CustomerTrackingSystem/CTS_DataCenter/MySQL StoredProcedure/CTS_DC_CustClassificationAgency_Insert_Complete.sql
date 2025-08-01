@@ -258,7 +258,7 @@ BEGIN
         UPDATE Temp_NewClassification AS temp
 			, LATERAL ( SELECT cd.PAMemberRatio
 						FROM CTS_DataCenter.Customer_ConsiderableDanger AS cd
-						WHERE cd.CustID = temp.CustID AND cd.InsertedTime < lv_CurrentDateTime
+						WHERE cd.CustID = temp.CustID AND cd.InsertedTime < CURRENT_TIMESTAMP(3)
 						ORDER BY cd.InsertedTime DESC
                         LIMIT 1
 						) AS ltr
@@ -271,6 +271,8 @@ BEGIN
 			,	cls.CategoryID 			=  temp.NewCategoryID
 			, 	cls.LastModifiedDate 	=  lv_CurrentDateTime
 			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime)
+            ,	cls.CreatedBy			=  tmp.CreatedBy
+            ,	cls.Remark				=  tmp.Remark
 			;         
         
 		/*delete Normal - IsKeepOldCateID = 0*/
