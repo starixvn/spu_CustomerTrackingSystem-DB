@@ -271,8 +271,8 @@ BEGIN
 			,	cls.CategoryID 			=  temp.NewCategoryID
 			, 	cls.LastModifiedDate 	=  lv_CurrentDateTime
 			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime)
-            ,	cls.CreatedBy			=  tmp.CreatedBy
-            ,	cls.Remark				=  tmp.Remark
+            ,	cls.CreatedBy			=  temp.CreatedBy
+            ,	cls.Remark				=  temp.Remark
 			;         
         
 		/*delete Normal - IsKeepOldCateID = 0*/
