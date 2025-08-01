@@ -410,7 +410,7 @@ BEGIN
 			, 	temp.RoleID
 			, 	temp.NewCategoryGroupID AS CategoryID
 			, 	temp.ParentID
-			, 	CASE WHEN lv_IsRescan = 1 THEN temp.CreatedDate ELSE lv_CurrentDateTime END AS CreatedDate
+			, 	lv_CurrentDateTime AS CreatedDate
 			, 	temp.CreatedBy
 			, 	lv_CurrentDateTime AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
