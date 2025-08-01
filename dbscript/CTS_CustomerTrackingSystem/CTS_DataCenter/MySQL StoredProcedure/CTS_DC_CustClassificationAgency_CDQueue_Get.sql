@@ -54,15 +54,29 @@ BEGIN
         SET op_LastID = 0;
     END IF;
 
-	SELECT DISTINCT tAq.CustID, cus.CTSCustID, cus.RoleID, cus.SubscriberID, CONST_AGENCY_CATEID_CD_LOW AS CategoryID, cus.IsLicensee, tAq.ScanType
+	SELECT DISTINCT tAq.CustID, cus.CTSCustID, cus.RoleID, cus.SubscriberID, CONST_AGENCY_CATEID_CD_LOW AS CategoryID, cus.IsLicensee, clss.ScanType AS ScanType
     FROM Temp_AgentQueue AS tAq
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tAq.CustID
-	WHERE tAq.ScanType = 1 AND tAq.row_num = 1 AND cus.RoleID = 2 AND cus.CustSubID = 0 AND cus.IsLicensee = 0;
+		,   LATERAL (
+            SELECT cdq.CustID, MIN(cdq.ScanType) AS ScanType
+            FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS cdq
+            WHERE cdq.CustID = tAq.CustID AND cdq.ID <= lv_MaxScanQueueID
+            GROUP BY cdq.CustID
+			HAVING MIN(cdq.ScanType) = 1
+        ) AS clss
+	WHERE tAq.row_num = 1 AND cus.RoleID = 2 AND cus.CustSubID = 0 AND cus.IsLicensee = 0;
 		
-	SELECT DISTINCT tAq.CustID, cus.CTSCustID, cus.RoleID, cus.SubscriberID, CONST_AGENCY_CATEID_CD_LOW AS CategoryID, cus.IsLicensee, tAq.ScanType
+	SELECT DISTINCT tAq.CustID, cus.CTSCustID, cus.RoleID, cus.SubscriberID, CONST_AGENCY_CATEID_CD_LOW AS CategoryID, cus.IsLicensee, clss.ScanType AS ScanType
     FROM Temp_AgentQueue AS tAq
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tAq.CustID
-	WHERE tAq.ScanType = 2 AND tAq.row_num = 1 AND cus.RoleID = 2 AND cus.CustSubID = 0 AND cus.IsLicensee = 0;
+		,   LATERAL (
+            SELECT cdq.CustID, MIN(cdq.ScanType) AS ScanType
+            FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS cdq
+            WHERE cdq.CustID = tAq.CustID AND cdq.ID <= lv_MaxScanQueueID
+            GROUP BY cdq.CustID
+			HAVING MIN(cdq.ScanType) = 2
+        ) AS clss
+	WHERE tAq.row_num = 1 AND cus.RoleID = 2 AND cus.CustSubID = 0 AND cus.IsLicensee = 0;
 
 END$$
 DELIMITER ;

@@ -19,6 +19,7 @@ CREATE TABLE CustomerConsiderableDangerQueue(
     ,	CustID BIGINT NOT NULL
     ,	ScanType TINYINT NOT NULL
     ,	InsertedTime DATETIME(3) NOT NULL
+	,	INDEX	IX_CustomerConsiderableDangerQueue_CustID(CustI, ScanType)  
 );
 
 #================================================================================

@@ -29,7 +29,13 @@ BEGIN
 		,	CustID		BIGINT
 		,	ScanType	TINYINT 
 		,	INDEX	IX_Temp_AgentComplete_ID(ID)  
-    ); 
+    );
+
+	
+	DROP TEMPORARY TABLE IF EXISTS Temp_AgentIDRemove;
+    CREATE TEMPORARY TABLE Temp_AgentIDRemove(
+			ID 			BIGINT NOT NULL PRIMARY KEY
+    );  
 
     SELECT sys.ParameterValue
     INTO lv_MaxScanQueueID
@@ -39,17 +45,25 @@ BEGIN
 	INSERT INTO Temp_AgentComplete (ID, CustID, ScanType)	
 	SELECT ccdq.ID, ccdq.CustID, ccdq.ScanType
 	FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS ccdq
-	WHERE ccdq.ID <= ip_LastID   
-    UNION
-	SELECT ccdq.ID, ccdq.CustID, ccdq.ScanType 
-	FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS ccdq
-	WHERE ccdq.ID > ip_LastID AND ccdq.ID <= lv_MaxScanQueueID AND
-	EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS cls WHERE cls.ID <= ip_LastID 
-    AND cls.CustID = ccdq.CustID AND cls.ScanType = ccdq.ScanType);   
+	WHERE ccdq.ID <= ip_LastID;   
+    	
+	INSERT INTO Temp_AgentIDRemove(ID)
+	SELECT ac.ID
+	FROM Temp_AgentComplete AS ac;   
+
+    INSERT INTO Temp_AgentIDRemove(ID)
+	SELECT clss.ID
+	FROM Temp_AgentComplete AS AC
+	,LATERAL (
+            SELECT ccdq.ID
+            FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS ccdq
+            WHERE ccdq.CustID = AC.CustID AND  ccdq.ID > ip_LastID AND ccdq.ID <= lv_MaxScanQueueID
+			AND AC.ScanType <= ccdq.ScanType
+        ) AS clss;  
 
 	DELETE ccdq
 	FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS ccdq
-	WHERE  EXISTS (SELECT 1 FROM Temp_AgentComplete AS cln WHERE cln.ID = ccdq.ID);
+	WHERE  EXISTS (SELECT 1 FROM Temp_AgentIDRemove AS cln WHERE cln.ID = ccdq.ID);
 
 END$$
 DELIMITER ;
