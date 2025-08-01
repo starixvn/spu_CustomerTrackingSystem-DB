@@ -19,7 +19,8 @@ BEGIN
 		Revisions: 
 			-	20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
             - 	20241210@Casey.Huynh:		New Robot AI-Bot Login Pattern, Update Disable for Member Only [Redmine ID: #214655]
-			
+			- 	20250725@Casey.Huynh:		Agent CC, Insert Considerable Agency Queue [Redmine ID: #219679]
+            
 		Param's Expanation:
 			- CTS_DC_CustClassification_Remove_Complete (225,'');
 */
