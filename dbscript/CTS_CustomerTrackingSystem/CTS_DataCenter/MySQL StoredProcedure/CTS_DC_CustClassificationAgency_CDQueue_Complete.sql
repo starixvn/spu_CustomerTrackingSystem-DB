@@ -43,7 +43,7 @@ BEGIN
 	SELECT ccdq.ID, ccdq.CustID, ccdq.ScanType 
 	FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS ccdq
 	WHERE ccdq.ID > ip_LastID AND ccdq.ID <= lv_MaxScanQueueID AND
-	EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS cls WHERE  ccdq.ID <= ip_LastID 
+	EXISTS (SELECT 1 FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS cls WHERE  cls.ID <= ip_LastID 
     AND cls.CustID = ccdq.CustID AND cls.ScanType = ccdq.ScanType);   
 
 	DELETE ccdq

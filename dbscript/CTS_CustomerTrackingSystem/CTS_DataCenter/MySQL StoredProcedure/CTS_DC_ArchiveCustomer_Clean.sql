@@ -1862,8 +1862,7 @@ sp: BEGIN
 	SELECT  GROUP_CONCAT(DISTINCT tmpCus.Recommend) AS CustJson 
 	INTO lv_AgentCreditList	
 	FROM CTS_DataCenter.CTSCustomer AS tmpCus
-	WHERE tmpCus.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp) AND tmpCus.CustSubID = 0 
-	AND tmpCus.IsLicensee = 0  AND tmpCus.RoleID = CONST_ROLEID_AGENT; 
+	WHERE tmpCus.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp); 
 
     DELETE cus
 	FROM CTS_DataCenter.CTSCustomer AS cus

@@ -29,7 +29,7 @@ sp : BEGIN
             - 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add ParentID = 150 [Redmine ID: #200854]
 			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode ParentID [Redmine ID: #205317]
 			- 20241017@Thomas.Nguyen: CC Agent [Redmine ID: #185799]
-			- 20250725@Winfred.Pham: Agent Considerable Range (Redmine ID: #219679)
+			- 20250725@Winfred.Pham: Agent Considerable Danger (Redmine ID: #219679)
 
 		Param's Explanation (filtered by):
             - ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual
