@@ -41,7 +41,7 @@ BEGIN
 		,	TotalCust	INT UNSIGNED DEFAULT 0
 		,	TotalPACust	INT UNSIGNED DEFAULT 0
 		,	PAMemberRatio	DECIMAL(5,2) UNSIGNED DEFAULT 0
-		,   IsPassRuleConsiderable  BIT DEFAULT 0 
+		,   IsExitingCD   BIT DEFAULT 0 
 		,   IsPassRuleRatio  BIT DEFAULT 0 
         ,	INDEX	IX_Temp_AgentConsiderableDanger_CustID(CustID)  
     ); 
@@ -77,7 +77,7 @@ BEGIN
 									, cls.LastModifiedDate DESC
 							LIMIT 1
 						) AS cate ON TRUE
-	SET tac.IsPassRuleConsiderable = (CASE WHEN cate.CategoryID IN (CONST_AGENCY_CATEID_CD_LOW,CONST_AGENCY_CATEID_CD_HIGHT) THEN 1 ELSE 0 END)
+	SET tac.IsExitingCD = (CASE WHEN cate.CategoryID IN (CONST_AGENCY_CATEID_CD_LOW,CONST_AGENCY_CATEID_CD_HIGHT) THEN 1 ELSE 0 END)
         ,tac.IsPassRuleRatio = CASE WHEN tac.TotalCust > 0 THEN (CASE WHEN CAST(tac.TotalPACust*100/tac.TotalCust AS DECIMAL(5,2)) >= 50 THEN 1 ELSE 0 END) ELSE 0 END
 		,tac.PAMemberRatio = CASE WHEN tac.TotalCust > 0 THEN CAST(tac.TotalPACust*100/tac.TotalCust AS DECIMAL(5,2)) ELSE 0 END
         ,tac.CTSCustID = cus.CTSCustID
@@ -96,7 +96,7 @@ BEGIN
         SELECT CustID	
 		,	TotalCust	
 		,	TotalPACust	
-		,   IsPassRuleConsiderable  
+		,   IsExitingCD  
 		,   IsPassRuleRatio
 	    FROM Temp_AgentConsiderableDanger AS tac;
     END IF;
