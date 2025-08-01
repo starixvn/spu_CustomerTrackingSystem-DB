@@ -227,7 +227,7 @@ sp: BEGIN
 			LEFT JOIN Temp_CustCategory AS tcc ON tcc.CustID = tmp.CustID 
         WHERE tcc.CustID IS NULL AND tmp.IsPassRuleRatio = 1;
 
-        INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, CreatedDate, LastModifiedDate, InputFlowID)
+        INSERT IGNORE INTO Temp_CustCategory(CTSCustID, CustID, CategoryID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTW, IsFromCTS, IsFromAI, InputFlowID)
         SELECT tmp.CTSCustID				AS CTSCustID
             ,	tmp.CustID					AS CustID
             ,	CONST_AGENCY_CATEID_CD_LOW  AS CategoryID
@@ -240,11 +240,8 @@ sp: BEGIN
             ,	0        					AS IsFromTW
             ,   1            				AS IsFromCTS
             ,	0        					AS IsFromAI
-            ,	s.CreatedDate 				AS CreatedDate
-            ,	s.LastModifiedDate			AS LastModifiedDate
             ,   CONST_INPUTFLOWID_RESCAN_CD	AS InputFlowID
         FROM Temp_CustInfo AS tmp   
-		    LEFT JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS s USE INDEX (PRIMARY) ON s.CustID = tmp.CustID AND s.ParentID = CONST_AGENCY_PARENTID_CONSIDERABLEDANGER 
             INNER JOIN Temp_AgentCD AS tcc ON tcc.CustID = tmp.CustID;
     END IF; 
 
