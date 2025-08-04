@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSMain-CTS_Archive" databaseType="2"></info>*/
+/*<info serverAlias="CTSARC-CTS_Archive" databaseType="2"></info>*/
 /*
 Creator:	20250725@Winfred.Pham
 Task:	 	
