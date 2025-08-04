@@ -13,7 +13,6 @@ Reviewer:
 USE CTS_DataCenter;
 
 #1. New staging table: Customer_ConsiderableDanger_Queue (ID, CustID, ScanType, InsertedTime)
-#DROP TABLE CustomerConsiderableDangerQueue;
 CREATE TABLE CustomerConsiderableDangerQueue(
 		ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
     ,	CustID BIGINT NOT NULL
