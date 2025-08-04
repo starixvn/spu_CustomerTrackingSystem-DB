@@ -276,6 +276,8 @@ BEGIN
 		FROM Temp_Customer AS temp;
         
 	ELSEIF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_CONSIDERABLEDANGER THEN
+		SET lv_IsDataChanged	= 1;
+        
 		DELETE cls
 		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
 			INNER JOIN Temp_CustomerClassification AS temp ON temp.CustID = cls.CustID
@@ -284,7 +286,7 @@ BEGIN
         
         INSERT INTO CTS_DataCenter.CTSCustomerClassificationAgency_Log(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto
-			, 	InsertDate, TargetCC, SourceTypeID, IsDataChanged)
+			, 	InsertDate, IsDataChanged)
 		SELECT 	temp.CustID
 			, 	temp.CTSCustID
 			,   temp.CategoryID
@@ -294,8 +296,6 @@ BEGIN
 			,   CONST_ACTIONTYPE_REMOVE AS ActionType
 			,   lv_IsAuto AS IsAuto
 			,   DATE(lv_CurrentDateTime) AS InsertDate
-			,   lv_TargetCC AS TargetCC
-			,   lv_SourceTypeID AS SourceTypeID
 			,	lv_IsDataChanged AS IsDataChanged
 		FROM Temp_CustomerClassification AS temp
 		WHERE temp.IsRemovedConsiderableDanger = 1;	
