@@ -6,25 +6,25 @@ Server:  	Master
 DBName:		CTS_DataCenter
 
 Revisions: 
-		- 20250724@Casey.Huynh: Created [Redmine ID: #219679]
+		- 20250724@Casey.Huynh: Created  [Redmine ID: #219679]
 Reviewer:
 */
 
 USE CTS_DataCenter;
 
 #1. New staging table: Customer_ConsiderableDanger_Queue (ID, CustID, ScanType, InsertedTime)
-
+#DROP TABLE CustomerConsiderableDangerQueue;
 CREATE TABLE CustomerConsiderableDangerQueue(
 		ID BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
     ,	CustID BIGINT NOT NULL
     ,	ScanType TINYINT NOT NULL
     ,	InsertedTime DATETIME(3) NOT NULL
-	,	INDEX	IX_CustomerConsiderableDangerQueue_CustID(CustI, ScanType)  
+	,	INDEX	IX_CustomerConsiderableDangerQueue_CustID(CustID, ScanType)  
 );
 
 #================================================================================
 #2. New table Customer_ConsiderableDanger
-
+#DROP TABLE Customer_ConsiderableDanger;
 CREATE TABLE Customer_ConsiderableDanger(
     	CustID 			BIGINT	NOT NULL
 	,	CTSCustID		BIGINT UNSIGNED
@@ -37,7 +37,7 @@ CREATE TABLE Customer_ConsiderableDanger(
 );
 
 #3.New table Customer_ConsiderableDanger_Log
-
+#DROP TABLE Customer_ConsiderableDanger_Log;
 CREATE TABLE Customer_ConsiderableDanger_Log(
 		ID				BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
     ,	CustID 			BIGINT NOT NULL
@@ -49,6 +49,11 @@ CREATE TABLE Customer_ConsiderableDanger_Log(
     
     ,	INDEX	IX_Customer_ConsiderableDanger_Log(CustID)
 );
+
+#4.Add Column SystemRemark CTSCustomerClassificationAgency_History
+ALTER TABLE CTSCustomerClassificationAgency_History
+	ADD COLUMN SystemRemark VARCHAR(255)
+;
 
 #5.Add Column SystemRemark CustomerCategorySettings: FlowConsiderableDangerScan
 ALTER TABLE CustomerCategorySettings
