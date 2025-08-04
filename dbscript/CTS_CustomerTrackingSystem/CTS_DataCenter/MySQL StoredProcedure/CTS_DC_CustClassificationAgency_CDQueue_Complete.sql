@@ -31,7 +31,6 @@ BEGIN
 		,	INDEX	IX_Temp_AgentComplete_ID(ID)  
     );
 
-	
 	DROP TEMPORARY TABLE IF EXISTS Temp_AgentIDRemove;
     CREATE TEMPORARY TABLE Temp_AgentIDRemove(
 			ID 			BIGINT NOT NULL PRIMARY KEY
@@ -57,7 +56,7 @@ BEGIN
 	,LATERAL (
             SELECT ccdq.ID
             FROM CTS_DataCenter.CustomerConsiderableDangerQueue AS ccdq
-            WHERE ccdq.CustID = AC.CustID AND  ccdq.ID > ip_LastID AND ccdq.ID <= lv_MaxScanQueueID
+            WHERE ccdq.CustID = AC.CustID AND ccdq.ID > ip_LastID AND ccdq.ID <= lv_MaxScanQueueID
 			AND AC.ScanType <= ccdq.ScanType
         ) AS clss;  
 
