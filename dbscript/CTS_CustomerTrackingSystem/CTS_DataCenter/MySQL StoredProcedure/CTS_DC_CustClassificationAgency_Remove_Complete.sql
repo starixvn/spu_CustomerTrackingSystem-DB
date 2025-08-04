@@ -110,7 +110,7 @@ BEGIN
 		WHERE temp.IsExistVVIP = 1;	
 	
 	ELSEIF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA THEN
-		SET lv_IsDataChanged		= 1;
+		SET lv_IsDataChanged = 0;
 	
 		INSERT IGNORE INTO Temp_CustomerClassification (
 				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, Remark, IsMarkedDirectly
