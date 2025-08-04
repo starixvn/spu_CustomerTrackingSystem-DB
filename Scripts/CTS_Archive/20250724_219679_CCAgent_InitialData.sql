@@ -39,7 +39,16 @@ USE CTS_DataCenter;
 				AND cls.ParentID IN (@CONST_AGENCY_PARENTID_NORMAL)
 	WHERE cus.RoleID = 2
 		AND cus.IsLicensee = 0
-		AND cus.CustSubID = 0;
+		AND cus.CustSubID = 0
+		AND cus.CustID > 0
+		AND EXISTS (SELECT 1 
+                    FROM CTS_DataCenter.CTSCustomer AS cus1 
+                         INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls1 ON cus1.CustID = cls1.CustID
+						 INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs1 ON cls1.CategoryID = ccs1.CategoryID
+                     WHERE cus1.Recommend = cus.CustID AND cus1.RoleID = 1 AND cus1.IsLicensee = 0 AND cus1.isInternal = 0    
+                         AND ccs1.FlowConsiderableDangerScan = 1
+                       LIMIT 1
+                         );
      
 	INSERT IGNORE INTO Temp_AgentConsiderableDanger (CustID, TotalCust, TotalPACust) 
 	SELECT AgentID, COUNT( Distinct cus.CTSCustID) AS TotalCust, 

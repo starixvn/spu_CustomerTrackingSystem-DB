@@ -34,13 +34,11 @@ BEGIN
 			ID 			BIGINT 
 		,	CustID		BIGINT
 		,	ScanType	TINYINT 
-        ,   row_num		TINYINT
 		,	INDEX	IX_Temp_AgentQueue_CustID(CustID)   
     ); 
             
-	INSERT IGNORE INTO Temp_AgentQueue (ID, CustID, ScanType, row_num) 
-	SELECT ID, CustID, ScanType , 
-    ROW_NUMBER() OVER(PARTITION BY CustID ORDER BY ScanType ASC) AS row_num  
+	INSERT IGNORE INTO Temp_AgentQueue (ID, CustID, ScanType) 
+	SELECT ID, CustID, ScanType 
 	FROM CTS_DataCenter.CustomerConsiderableDangerQueue
 	WHERE ID <= lv_MaxScanQueueID
 	ORDER BY ID
@@ -64,7 +62,7 @@ BEGIN
             GROUP BY cdq.CustID
 			HAVING MIN(cdq.ScanType) = 1
         ) AS clss
-	WHERE tAq.row_num = 1 AND cus.RoleID = 2 AND cus.CustSubID = 0 AND cus.IsLicensee = 0;
+	WHERE cus.RoleID = 2 AND cus.CustSubID = 0 AND cus.IsLicensee = 0;
 		
 	SELECT DISTINCT tAq.CustID, cus.CTSCustID, cus.RoleID, cus.SubscriberID, CONST_AGENCY_CATEID_CD_LOW AS CategoryID, cus.IsLicensee, clss.ScanType AS ScanType
     FROM Temp_AgentQueue AS tAq
@@ -76,7 +74,7 @@ BEGIN
             GROUP BY cdq.CustID
 			HAVING MIN(cdq.ScanType) = 2
         ) AS clss
-	WHERE tAq.row_num = 1 AND cus.RoleID = 2 AND cus.CustSubID = 0 AND cus.IsLicensee = 0;
+	WHERE cus.RoleID = 2 AND cus.CustSubID = 0 AND cus.IsLicensee = 0;
 
 END$$
 DELIMITER ;
