@@ -18,10 +18,12 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_PreProcess(1009);
 				
 		Revisions: 
-			- 20240927@Thomas.Nguyen:			Created [Redmine ID: #185799]
+			-	20240927@Thomas.Nguyen: Created [Redmine ID: #185799]
+            -	20250725@Casey.Huynh: Agent CC, Considerable Danger [Redmine ID: #219679]
 */ 
     DECLARE CONST_ACTIONTYPE_EXISTEDPA 						INT DEFAULT 3;
     DECLARE CONST_ACTIONTYPE_EXISTEDVVIP					INT DEFAULT 4;
+    DECLARE CONST_ACTIONTYPE_EXISTEDCD						INT DEFAULT 9;
 
 	/*EXCLUDE INTERNAL CUSTOMERS*/      
 	CALL CTS_DataCenter.CTS_DC_ExcludeCustByCondition('Temp_NewClassification');
@@ -42,6 +44,11 @@ BEGIN
     SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_EXISTEDPA, 0 AS IsReturnData
     FROM Temp_NewClassification AS temp
     WHERE temp.IsExistPA = 1;
+    
+    INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, ActionType, IsReturnData)
+    SELECT DISTINCT temp.CustID, CONST_ACTIONTYPE_EXISTEDCD, 0 AS IsReturnData
+    FROM Temp_NewClassification AS temp
+    WHERE temp.IsExistCD = 1;
     
     /* NO ACTION + VIEW LOG FOR IGNORE CASES*/ 
     UPDATE Temp_NewClassification AS temp 

@@ -25,6 +25,7 @@ BEGIN
 			- 20240618@Victoria.Le:			Remove columns: SportGroupID_arc,CategoryID_arc [Redmine ID: #212240]
 			- 20250327@Thomas.Nguyen:		Add to source table for the first time classify TW GroupBetting or HighRejected [Redmine ID: #221508]
 			- 20250519@Thomas.Nguyen:		Set IsDisabled = 1 for Special Lic Sub source table when having CustomerClassPriority greater than [Redmine ID: #226847]
+            - 20250725@Casey.Huynh:			Agent CC, Insert Considerable Agency Queue [Redmine ID: #219679]
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -40,6 +41,7 @@ BEGIN
 	DECLARE CONST_CC_LICVIPDANGEROUS						INT;	
 	DECLARE CONST_PARENTID_WRAPPER 							INT;
 	DECLARE CONST_PARENTID_NORMAL							INT;
+    DECLARE CONST_PARENTID_PA								INT;
 	DECLARE CONST_REMARKID_PAMARKEDDIRECTLY					INT;
 	DECLARE CONST_REMARKID_ROBOTMARKEDDIRECTLY				INT;
 	DECLARE CONST_REMARKID_RESCANROBOT						INT;
@@ -64,7 +66,8 @@ BEGIN
 	DECLARE	CONST_SCANTAGGINGTYPE_EXISTONLY 				TINYINT DEFAULT 2;
 	DECLARE CONST_TWTAGGINGID_GROUPBETTING					INT DEFAULT 7;
 	DECLARE CONST_TWTAGGINGID_HIGHREJECTED					INT DEFAULT 8;
-
+    DECLARE CONST_CONSIDERABLEDANGERQUEUE_SCANTYPE			TINYINT	DEFAULT 1;
+	
     DECLARE lv_CreatedBy 									INT DEFAULT 10278938;
 	DECLARE	lv_CurrentDateTime								DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE	lv_InsertedCount								INT DEFAULT 0;
@@ -76,7 +79,8 @@ BEGIN
 	DECLARE lv_SourceTypeID									INT;  
 	DECLARE lv_ActionType									INT;
 	DECLARE lv_IsMarkedDirectly								TINYINT(1);  
-	DECLARE lv_IsRescan										TINYINT(1) DEFAULT 0;  
+	DECLARE lv_IsRescan										TINYINT(1) DEFAULT 0;     
+    DECLARE lv_ConsiderableDangerAgentList					TEXT;
 
 	SET CONST_CATEID_VVIP 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_CATEID_SPECIALCC								= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
@@ -90,6 +94,7 @@ BEGIN
 	SET CONST_CC_LICVIPDANGEROUS							= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CC_LICVIPDANGEROUS');
 	SET CONST_PARENTID_WRAPPER 								= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_PARENTID_NORMAL 								= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
+    SET CONST_PARENTID_PA 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_REMARKID_PAMARKEDDIRECTLY 					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_PAMARKEDDIRECTLY');
 	SET CONST_REMARKID_ROBOTMARKEDDIRECTLY 					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_ROBOTMARKEDDIRECTLY');
 	SET CONST_REMARKID_RESCANROBOT 							= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_RESCANROBOT');
@@ -105,8 +110,46 @@ BEGIN
 	SET CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL');
 	SET CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL');
 	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
+	
+	#=================CONSIDERABLE_BEGIN: GET PA BEFORE==================   
+    DROP TEMPORARY TABLE IF EXISTS Temp_PACustStart;    
+	CREATE TEMPORARY TABLE Temp_PACustStart(	  	
+			CustID		BIGINT PRIMARY KEY		
+        , 	Recommend	BIGINT
+	);  
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_PACustEnd;    
+	CREATE TEMPORARY TABLE Temp_PACustEnd(	  	
+			CustID		BIGINT PRIMARY KEY		
+        , 	Recommend	BIGINT
+	);  
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_PAAgent;    
+	CREATE TEMPORARY TABLE Temp_PAAgent(		
+		 CustID	BIGINT PRIMARY KEY
+	);  
 
-	/*1 - VVIP*/
+
+	INSERT IGNORE INTO Temp_PACustStart(CustID, Recommend)
+    SELECT	cls.CustID
+		,	cus.Recommend
+	FROM Temp_NewClassification AS temp 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = temp.CustID AND cus.IsLicensee = 0
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID AND cs.FlowConsiderableDangerScan = 1
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID AND cc.IsActive = 1        
+	WHERE cls.ParentID = CONST_PARENTID_PA
+		AND NOT EXISTS (SELECT 1			
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls2	
+							INNER JOIN CTS_DataCenter.CustomerCategory AS cc2 ON cc2.CategoryID = cls2.CategoryID AND cc2.IsActive = 1				
+						WHERE cls.CustID = cls2.CustID
+							AND cls2.ParentID <> CONST_PARENTID_WRAPPER
+							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
+							AND cc2.ParentID <> cc.ParentID );
+                            
+    #=================CONSIDERABLE_END: GET PA BEFORE==================
+   
+    /*1 - VVIP*/
 	IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_INSERT_VVIP THEN
 		
 		SET lv_IsAuto = 0;
@@ -1106,6 +1149,46 @@ BEGIN
 							WHERE cls.CustID = temp.CustID AND cls.ParentID = CONST_PARENTID_WRAPPER);
 
 	END IF;
-	
+    
+	#=================CONSIDERABLE_BEGIN: GET PA AFTER==================   
+	INSERT IGNORE INTO Temp_PACustEnd(CustID, Recommend)
+    SELECT	cls.CustID
+		,	cus.Recommend
+	FROM Temp_NewClassification AS temp 
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = temp.CustID AND cus.IsLicensee = 0
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON cls.CustID = cus.CustID
+		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS cs ON cs.CategoryID = cls.CategoryID AND cs.FlowConsiderableDangerScan = 1
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cs.CategoryID AND cc.IsActive = 1 	
+	WHERE cls.ParentID = CONST_PARENTID_PA
+		AND NOT EXISTS (SELECT 1			
+						FROM CTS_DataCenter.CTSCustomerClassification AS cls2	
+							INNER JOIN CTS_DataCenter.CustomerCategory AS cc2 ON cc2.CategoryID = cls2.CategoryID AND cc2.IsActive = 1				
+						WHERE cls.CustID = cls2.CustID
+							AND cls2.ParentID <> CONST_PARENTID_WRAPPER
+							AND cc.CustomerClassPriority > cc2.CustomerClassPriority
+							AND cc2.ParentID <> cc.ParentID);       
+
+    INSERT INTO Temp_PAAgent(CustID)
+    SELECT DISTINCT en.Recommend
+	FROM Temp_PACustEnd AS en
+		LEFT JOIN Temp_PACustStart AS st ON st.CustID = en.CustID 
+	WHERE st.CustID IS NULL;
+    
+    INSERT IGNORE INTO Temp_PAAgent(CustID)
+    SELECT DISTINCT st.Recommend
+	FROM Temp_PACustStart AS st
+		LEFT JOIN Temp_PACustEnd AS en ON en.CustID = st.CustID 
+	WHERE en.CustID IS NULL;
+    
+    SELECT GROUP_CONCAT(tmp.CustID)
+    INTO lv_ConsiderableDangerAgentList 
+	FROM Temp_PAAgent AS tmp;
+    
+    IF (lv_ConsiderableDangerAgentList IS NOT NULL) THEN		
+		CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_CDQueue_Insert(CONST_CONSIDERABLEDANGERQUEUE_SCANTYPE, lv_ConsiderableDangerAgentList);
+    END IF;
+    
+   #=================CONSIDERABLE_END: GET PA AFTER==================      
+
 END$$
 DELIMITER ;

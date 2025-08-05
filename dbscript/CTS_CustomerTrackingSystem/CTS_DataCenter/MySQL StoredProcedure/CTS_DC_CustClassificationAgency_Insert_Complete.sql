@@ -23,15 +23,19 @@ BEGIN
 		Revisions: 
 			- 20240927@Thomas.Nguyen: Created [Redmine ID: #185799]
 			- 20250303@Thomas.Nguyen: Set default value for CONST_AGENCY_REMARKID [Redmine ID: #218588]
+            - 20250725@Casey.Huynh: Agent CC, Insert Considerable Agency [Redmine ID: #219679]
 */
 
-	DECLARE CONST_AGENCY_CATEID_VVIP 								INT;
-	DECLARE CONST_AGENCY_PARENTID_NORMAL							INT;
-	DECLARE CONST_AGENCY_REMARKID_PAMARKEDDIRECTLY					INT DEFAULT 31;
-	DECLARE CONST_AGENCY_REMARKID_PAAFFECTEDBYUPLINE				INT DEFAULT 32;
-	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP			INT;
-	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL			INT;
-	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY		INT;
+	DECLARE CONST_AGENCY_CATEID_VVIP 									INT;
+	DECLARE CONST_AGENCY_PARENTID_NORMAL								INT;
+	DECLARE CONST_AGENCY_REMARKID_PAMARKEDDIRECTLY						INT DEFAULT 31;
+	DECLARE CONST_AGENCY_REMARKID_PAAFFECTEDBYUPLINE					INT DEFAULT 32;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP				INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL				INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			INT;    
+    DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_CONSIDERABLEDANGER	INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER	INT;
+    
 	DECLARE CONST_ACTIONTYPE_INSERT 						        INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 						        INT DEFAULT 1;
 
@@ -45,15 +49,18 @@ BEGIN
 	DECLARE lv_IsAuto										        TINYINT(1);  
 	DECLARE lv_IsRescan										        TINYINT(1) DEFAULT 0;  
 
-	SET CONST_AGENCY_CATEID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_VVIP');
-	SET CONST_AGENCY_PARENTID_NORMAL 								= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
+	SET CONST_AGENCY_CATEID_VVIP 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_VVIP');
+	SET CONST_AGENCY_PARENTID_NORMAL 								= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_NORMAL');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_CONSIDERABLEDANGER	= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_CONSIDERABLEDANGER');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER	= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER');
+
 
 	/*VVIP*/
 	IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP THEN
-		
+	
 		SET lv_IsAuto = 0;
 	
 		SELECT  ccs.IsParallelParentID, cc.ParentID, cc.CustomerClassPriority
@@ -61,7 +68,7 @@ BEGIN
 		FROM CTS_DataCenter.CustomerCategorySettingsAgency AS ccs
 			INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cc ON cc.CategoryID = ccs.CategoryID
 		WHERE ccs.CategoryID = CONST_AGENCY_CATEID_VVIP;
-		
+	
 		IF lv_IsParallelParentID = 0 THEN
 			/*Remove all categories which IsKeepOldCateID = 0*/							
 			DELETE cls							
@@ -241,7 +248,127 @@ BEGIN
 			,	temp.PerformanceTime
 			,	temp.ActionType
 		FROM 	Temp_NewClassification AS temp;
+        
+	ELSEIF ip_InputFlowID IN (CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_CONSIDERABLEDANGER,CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER) THEN 
 
+        IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER THEN
+			SET lv_IsRescan = 1;
+		END IF;
+
+        UPDATE Temp_NewClassification AS temp
+			, LATERAL ( SELECT cd.PAMemberRatio
+						FROM CTS_DataCenter.Customer_ConsiderableDanger AS cd
+						WHERE cd.CustID = temp.CustID AND cd.InsertedTime < CURRENT_TIMESTAMP(3)
+						ORDER BY cd.InsertedTime DESC
+                        LIMIT 1
+						) AS ltr
+        SET temp.Remark = CONCAT('PARatio:',ltr.PAMemberRatio);
+
+		UPDATE IGNORE CTS_DataCenter.CTSCustomerClassificationAgency AS cls
+			INNER JOIN Temp_NewClassification AS temp ON cls.CustID = temp.CustID AND cls.CategoryID = temp.OldCategoryID 
+																						AND temp.DataChangeType = 1
+		SET 	cls.CTSCustID 			=  temp.CTSCustID
+			,	cls.CategoryID 			=  temp.NewCategoryID
+			, 	cls.LastModifiedDate 	=  lv_CurrentDateTime
+			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime)
+            ,	cls.CreatedBy			=  temp.CreatedBy
+            ,	cls.Remark				=  temp.Remark
+			;         
+        
+		/*delete Normal - IsKeepOldCateID = 0*/
+		DELETE cls
+		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
+			INNER JOIN Temp_CTSCustomerClassificationAgency_Old AS temp_old ON temp_old.CustID = cls.CustID
+																			AND temp_old.ExistCategoryID = cls.CategoryID
+		WHERE temp_old.IsNew = 0 AND temp_old.IsRemove = 1;
+        
+        INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency(
+				CustID, CTSCustID, SubscriberID, RoleID, CategoryID, ParentID, CreatedDate, CreatedBy, LastModifiedDate
+			, 	LastModifiedBy, LastScannedDate, IsMarkedDirectly, Remark, IsFromCTS, IsFromAI, IsFromTW)
+		SELECT 	temp.CustID
+			,	temp.CTSCustID
+			, 	temp.SubscriberID
+			, 	temp.RoleID
+			, 	temp.NewCategoryGroupID AS CategoryID
+			, 	temp.ParentID
+			, 	lv_CurrentDateTime AS CreatedDate
+			, 	temp.CreatedBy
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	temp.CreatedBy AS LastModifiedBy
+			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
+			,	temp.IsMarkedDirectly
+			,	temp.Remark
+			,	temp.IsFromCTS
+			,	temp.IsFromAI
+			,	temp.IsFromTW
+		FROM Temp_NewClassification AS temp 
+		WHERE 	(temp.DataChangeType = 0 AND temp.IsDataChanged = 1) 
+			OR 	(temp.IsFromOldPA 	= 1 AND lv_IsRescan = 0);
+        
+        INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassificationAgency_History(
+				CustID, CTSCustID, RoleID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1
+			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, IsFromTW, IsFromCTS, IsFromAI, OldCategoryID, DWCategoryID, RobotCounter, PerformanceTime)
+		SELECT 	temp.CustID
+			, 	temp.CTSCustID
+			,	temp.RoleID
+			, 	temp.NewCategoryID AS CategoryID
+			,	temp.ParentID
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	temp.CreatedBy AS LastModifiedBy
+			, 	temp.ActionType
+			, 	DATE(lv_CurrentDateTime) AS InsertDate
+			, 	temp.TargetCC
+			, 	(CASE	WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID END) AS SourceTypeID
+			,  	temp.IsDataChanged
+			,	temp.TargetDangerLevel AS TargetDangerLevel1
+			,	temp.TurnoverRM
+			,	temp.WinlossRM
+			, 	temp.BetCount
+			,	temp.IsMarkedDirectly
+			,	temp.Remark
+			,	temp.IsFromTW
+			,	temp.IsFromCTS
+			,	temp.IsFromAI
+			,	temp.OldCategoryID
+			,	temp.DWCategoryID
+			,	temp.TWRobotCounter AS RobotCounter
+			,	temp.PerformanceTime
+		FROM Temp_NewClassification AS temp
+			LEFT JOIN CTS_DataCenter.CustomerCategorySettingsAgency AS ccs ON ccs.CategoryID = temp.NewCategoryID 
+		WHERE temp.IsDataChanged = 1 
+		ORDER BY temp.LastModifiedDate ASC, temp.NewCategoryID ASC;
+		
+		INSERT INTO CTS_DataCenter.CTSCustomerClassificationAgency_Log(
+				CustID, CTSCustID, RoleID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1
+			,	TurnoverRM, WinlossRM, BetCount, IsMarkedDirectly, Remark, IsFromTW, IsFromCTS, IsFromAI, OldCategoryID, DWCategoryID, RobotCounter, PerformanceTime)
+		SELECT 	temp.CustID
+			,	temp.CTSCustID
+			,	temp.RoleID
+			,	temp.NewCategoryID
+			,	temp.ParentID
+			,	lv_CurrentDateTime AS LastModifiedDate
+			,	temp.CreatedBy AS LastModifiedBy
+			,	temp.ActionType
+			,	lv_IsAuto
+			,	DATE(lv_CurrentDateTime) AS InsertDate
+			,	temp.TargetCC
+			, 	(CASE	WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID END) AS SourceTypeID
+			,	temp.IsDataChanged
+			,	temp.TargetDangerLevel AS TargetDangerLevel1
+			,	temp.TurnoverRM
+			,	temp.WinlossRM
+			,	temp.BetCount
+			,	temp.IsMarkedDirectly
+			,	temp.Remark
+			,	temp.IsFromTW
+			,	temp.IsFromCTS
+			,	temp.IsFromAI
+			,	temp.OldCategoryID
+			,	temp.DWCategoryID
+			,	temp.TWRobotCounter AS RobotCounter
+			,	temp.PerformanceTime
+		FROM Temp_NewClassification AS temp
+			LEFT JOIN CTS_DataCenter.CustomerCategorySettingsAgency AS ccs ON ccs.CategoryID = temp.NewCategoryID ;
 	ELSE
 		SET lv_InsertedCount = 0;
 		SET lv_UpdatedCount = 0;

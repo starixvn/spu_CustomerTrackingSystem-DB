@@ -17,17 +17,20 @@ BEGIN
 		DB:			CTS_DataCenter
 		
 		Revisions: 
-			-	20240927@Thomas.Nguyen: 		Created [Redmine ID: #185799]
+			- 20240927@Thomas.Nguyen: Created [Redmine ID: #185799]
+            - 20250725@Casey.Huynh: Agent CC, Insert Considerable Agency [Redmine ID: #219679]
 			
 		Param's Expanation:
 			- CALL CTS_DC_CustClassificationAgency_Remove_Complete(1225, 1, 0, false, '[{"CustID":24150964,"RoleID":2,"SubscriberID":168,"CTSCustID":11059,"CreatedBy":8,"Remark":"Thomas unmark PA","IsExceptDirectDownline":false,"IsMarkedDirectly":true}]');
 */
-	DECLARE CONST_AGENCY_CATEID_ROBOT								INT;
-	DECLARE CONST_AGENCY_CATEID_ROBOTLOSING							INT;
-	DECLARE CONST_AGENCY_PARENTID_VVIP 							    INT;
-	DECLARE CONST_AGENCY_PARENTID_PA	 							INT;
-	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP 			INT;
-	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA 			    INT;
+	DECLARE CONST_AGENCY_CATEID_ROBOT									INT;
+	DECLARE CONST_AGENCY_CATEID_ROBOTLOSING								INT;
+	DECLARE CONST_AGENCY_PARENTID_VVIP 							    	INT;
+	DECLARE CONST_AGENCY_PARENTID_PA	 								INT;
+    DECLARE CONST_AGENCY_PARENTID_CONSIDERABLEDANGER					INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP 				INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA 			    	INT;
+    DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_CONSIDERABLEDANGER	INT;
 
 	DECLARE CONST_ACTIONTYPE_REMOVE 						        INT DEFAULT 2;
 	DECLARE CONST_ACTIONTYPE_UNMARKPA 						        INT DEFAULT 4;
@@ -36,7 +39,7 @@ BEGIN
 	DECLARE CONST_SOURCETYPE_VVIP_UNMARK_AFFECTED_MASTER	        INT DEFAULT 28;
 	DECLARE CONST_SOURCETYPE_PA_UNMARK_DIRECTLY				        INT DEFAULT 33;
 	DECLARE CONST_SOURCETYPE_PA_UNMARK_AFFECTED_UPLINE		        INT DEFAULT 34;
-	
+
 	DECLARE lv_SourceTypeID									        INT;
 	DECLARE lv_CurrentDateTime 								        DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_IsAuto										        TINYINT(1);
@@ -44,14 +47,17 @@ BEGIN
 	DECLARE lv_TargetCC										        INT;
 	DECLARE lv_CCPriority									        SMALLINT UNSIGNED;  
 
-	SET CONST_AGENCY_CATEID_ROBOT 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
-	SET CONST_AGENCY_CATEID_ROBOTLOSING 							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
-	SET CONST_AGENCY_PARENTID_VVIP 								    = CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
-	SET CONST_AGENCY_PARENTID_PA	 								= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA					= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA');
+	SET CONST_AGENCY_CATEID_ROBOT 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
+	SET CONST_AGENCY_CATEID_ROBOTLOSING 							= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
+	SET CONST_AGENCY_PARENTID_VVIP 								    = CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
+	SET CONST_AGENCY_PARENTID_PA	 								= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
+    SET CONST_AGENCY_PARENTID_CONSIDERABLEDANGER					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_CONSIDERABLEDANGER');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA');
+    SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_CONSIDERABLEDANGER	= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_CONSIDERABLEDANGER');
 
 	IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP THEN
+    
 		SET lv_IsAuto 				= 0;
 		SET lv_TargetCC				= -1;
 		SET lv_IsDataChanged		= 1;
@@ -104,7 +110,7 @@ BEGIN
 		WHERE temp.IsExistVVIP = 1;	
 	
 	ELSEIF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA THEN
-		SET lv_IsDataChanged		= 1;
+		SET lv_IsDataChanged	= 1;
 	
 		INSERT IGNORE INTO Temp_CustomerClassification (
 				CustID, CTSCustID, SubscriberID, RoleID, CreatedBy, Remark, IsMarkedDirectly
@@ -268,7 +274,32 @@ BEGIN
 			, 	NULL AS BetCount
 			,	NULL AS IsMarkedDirectly
 		FROM Temp_Customer AS temp;
-
+        
+	ELSEIF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_CONSIDERABLEDANGER THEN
+		SET lv_IsDataChanged	= 0;
+        
+		DELETE cls
+		FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
+			INNER JOIN Temp_CustomerClassification AS temp ON temp.CustID = cls.CustID
+		WHERE cls.ParentID = CONST_AGENCY_PARENTID_CONSIDERABLEDANGER
+			AND temp.IsRemovedConsiderableDanger = 1;
+        
+        INSERT INTO CTS_DataCenter.CTSCustomerClassificationAgency_Log(
+				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto
+			, 	InsertDate, IsDataChanged)
+		SELECT 	temp.CustID
+			, 	temp.CTSCustID
+			,   temp.CategoryID
+			,   CONST_AGENCY_PARENTID_CONSIDERABLEDANGER AS ParentID
+			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	temp.CreatedBy AS LastModifiedBy
+			,   CONST_ACTIONTYPE_REMOVE AS ActionType
+			,   lv_IsAuto AS IsAuto
+			,   DATE(lv_CurrentDateTime) AS InsertDate
+			,	lv_IsDataChanged AS IsDataChanged
+		FROM Temp_CustomerClassification AS temp
+		WHERE temp.IsRemovedConsiderableDanger = 1;	
+        
 	END IF;
 
 END$$

@@ -33,9 +33,11 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Remove(1225, 1, 0, 0, false, false, '[{"CustID":24150964,"RoleID":2,"SubscriberID":168,"CTSCustID":11059,"CreatedBy":8,"Remark":"Thomas unmark PA","IsExceptDirectDownline":false,"IsMarkedDirectly":true}]', @outParam7);
 
 		Revisions: 
-			- 20240927@Thomas.Nguyen:	        Created [Redmine ID: #185799]
+			- 20240927@Thomas.Nguyen: Created [Redmine ID: #185799]
+            - 20250725@Casey.Huynh: Agent CC, Insert Considerable Agency[Redmine ID: #219679]
 */
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP 			INT;
+    DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA 				INT;
 	
 	DECLARE lv_CurrentDateTime 										DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_LogTypeID											INT;
@@ -45,12 +47,13 @@ BEGIN
 	DECLARE lv_LogInfo 												VARCHAR(500);
 	DECLARE lv_MaxCTSCustID											BIGINT;
 	
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP');
-
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA');
+    
 	/*STEP 1: Parse raw data and get custinfo*/
 	CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Remove_GetInfo (ip_InputFlowID,ip_CustInfo);
 	
-	/*STEP 2: Process and Complete*/
+	/*STEP 2: Process and Complete */
 	CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Remove_Complete (ip_InputFlowID,ip_FromAction,ip_UplineRoleID,ip_IsFromQueue,ip_CustInfo);
 
 	IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_VVIP AND ip_FromAction = 3 AND ip_QueueID IS NOT NULL THEN
@@ -75,7 +78,7 @@ BEGIN
             , 	temp.CreatedBy
         FROM Temp_CustomerClassification AS temp;
 	
-	ELSEIF ip_IsFromQueue = 0 THEN /*PA*/
+	ELSEIF ip_IsFromQueue = 0 AND ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_REMOVE_PA THEN /*PA*/
 		SET lv_LogTypeID = 33;
 	
 		SELECT temp.CreatedBy, temp.IsExceptDirectDownline
@@ -95,7 +98,7 @@ BEGIN
 				,	lv_CurrentDateTime AS CreatedDate
 				,	lv_CreatedBy AS CreatedBy;
 		
-		END IF;
+		END IF;    
     END IF;
 	
 	/*STEP N: Return data*/

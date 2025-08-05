@@ -41,6 +41,7 @@ BEGIN
 		Revisions: 
 			- 20240618@Victoria.Le: 	Initial Writing [Redmine ID: #205317]
             - 20241210@Casey.Huynh:		No Change, Update SubSP "CTS_DC_CustClassification_Remove_Complete" [Redmine ID: #214655]
+            - 20250725@Casey.Huynh:		Agent CC, Insert Considerable Agency Queue [Redmine ID: #219679]
 */
 	DECLARE CONST_INPUTFLOWID_GENERAL_REMOVE_VVIP 			INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_REMOVE_SPECIALCC		INT;

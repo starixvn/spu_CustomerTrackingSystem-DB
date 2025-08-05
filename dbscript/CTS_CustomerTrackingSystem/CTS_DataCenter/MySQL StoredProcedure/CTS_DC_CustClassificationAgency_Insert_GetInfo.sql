@@ -25,24 +25,29 @@ BEGIN
 			- CALL CTS_DataCenter.CTS_DC_CustClassificationAgency_Insert_GetInfo (1009, 3, 0,'[{"CustID":24181831,"CategoryID":140300,"CategoryGroupID":140300,"CreatedTime":"2024-10-02T02:32:57.063","TurnoverRM":2307165.5342 ,"WinlossRM":-62850.5761,"BetCount":8300,"LastXDaysTurnoverRM":230716500.5342,"LastXDaysWinlossRM":-72850.5761,"LastXDaysBetCount":830,"LastYDaysTurnoverRM":23071650.5342,"LastYDaysWinlossRM":-82850.5761,"LastYDaysBetCount":7300,"PerformanceTime":"2024-10-02T02:32:57.063"}]');
 			
 		Revisions: 
-			- 20240927@Thomas.Nguyen:			Created [Redmine ID: #185799]
+			- 20240927@Thomas.Nguyen: Created [Redmine ID: #185799]
+            - 20250725@Casey.Huynh: Agent CC, Considerable Danger [Redmine ID: #219679]
 */
 
 	DECLARE CONST_AGENCY_CATEID_ROBOT								INT;
 	DECLARE CONST_AGENCY_CATEID_ROBOTLOSING							INT;
 	DECLARE CONST_AGENCY_PARENTID_VVIP 								INT;
 	DECLARE CONST_AGENCY_PARENTID_PA 								INT;
+	DECLARE CONST_AGENCY_PARENTID_CONSIDERABLEDANGER				INT;
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP			INT;
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY		INT;
 	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL			INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_CONSIDERABLEDANGER	INT;
 	
-	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY		INT;
-	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL		INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			INT;
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL			INT;	
+	DECLARE CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER	INT;
 	
 	DECLARE CONST_SOURCETYPE_VVIP_MANUAL 							INT DEFAULT 13;
 	DECLARE CONST_SOURCETYPE_VVIP_AFFECTED_SUPER					INT DEFAULT 24;
 	DECLARE CONST_SOURCETYPE_VVIP_AFFECTED_MASTER					INT DEFAULT 25;
 	DECLARE CONST_SOURCETYPE_VVIP_AFFECTED_DIRECTUPLINE				INT DEFAULT 30;
+
 	
 	DECLARE CONST_ROLEID_AGENT										SMALLINT DEFAULT 2;
     DECLARE CONST_ROLEID_MASTER										SMALLINT DEFAULT 3;
@@ -52,14 +57,17 @@ BEGIN
 	DECLARE lv_IsMarkedDirectly										TINYINT(1);
 	DECLARE	lv_CurrentDateTime										DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3); 
 	
-	SET CONST_AGENCY_CATEID_ROBOT 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
-	SET CONST_AGENCY_CATEID_ROBOTLOSING 							= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
-	SET CONST_AGENCY_PARENTID_VVIP 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
-	SET CONST_AGENCY_PARENTID_PA 									= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL');
-	SET CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
+	SET CONST_AGENCY_CATEID_ROBOT 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
+	SET CONST_AGENCY_CATEID_ROBOTLOSING 							= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
+	SET CONST_AGENCY_PARENTID_VVIP 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
+	SET CONST_AGENCY_PARENTID_PA 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_PA');
+	SET CONST_AGENCY_PARENTID_CONSIDERABLEDANGER					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_CONSIDERABLEDANGER');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_CONSIDERABLEDANGER	= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_CONSIDERABLEDANGER');
+	SET CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER	= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER');
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 	CREATE TEMPORARY TABLE Temp_NewClassification(	  	
@@ -70,6 +78,7 @@ BEGIN
 		,	IsLicensee					TINYINT(1) DEFAULT 0
 		,	IsExistVVIP					TINYINT(1) DEFAULT 0
 		,	IsExistPA					TINYINT(1) DEFAULT 0
+		, 	IsExistCD					TINYINT(1) DEFAULT 0
 		,	IsFromOldPA					TINYINT(1) DEFAULT 0
 		,	IsFromOld					TINYINT(1) DEFAULT 0
 		
@@ -174,6 +183,7 @@ BEGIN
 	
 	/*VVIP*/
 	IF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_VVIP THEN 
+    
 		SET lv_SourceTypeID = CASE 	WHEN ip_FromAction = 1 THEN CONST_SOURCETYPE_VVIP_MANUAL
 									WHEN ip_FromAction = 3 AND ip_UplineRoleID = 4 THEN CONST_SOURCETYPE_VVIP_AFFECTED_SUPER
 									WHEN ip_FromAction = 3 AND ip_UplineRoleID = 3 THEN CONST_SOURCETYPE_VVIP_AFFECTED_MASTER
@@ -216,7 +226,7 @@ BEGIN
 		
 		/*PA-Category*/
 		IF ip_InputFlowID IN (CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_PACATEGORY,CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY) THEN 
-			
+
 			INSERT INTO Temp_NewClassification(
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount,	IsFromCTS, IsPAProbation, RelevantCategoryID, CreatedDate, IsFromTW
@@ -281,6 +291,91 @@ BEGIN
 								,	TWRobotCounter = IFNULL(Temp_NewClassification.TWRobotCounter, tmpJs.TWRobotCounter)
 								,	IsFromAI = CASE WHEN tmpJs.IsFromAI = 1 THEN 1 ELSE Temp_NewClassification.IsFromAI END
 								;
+			
+            UPDATE Temp_NewClassification AS temp
+			SET temp.IsExistCD = 1
+			WHERE EXISTS (	SELECT 1
+							FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
+							WHERE temp.CustID = cls.CustID
+								AND cls.ParentID = CONST_AGENCY_PARENTID_CONSIDERABLEDANGER
+						 );
+            
+		ELSEIF ip_InputFlowID IN (CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_CONSIDERABLEDANGER, CONST_AGENCY_INPUTFLOWID_GENERAL_RESCAN_CONSIDERABLEDANGER) THEN 
+
+			INSERT INTO Temp_NewClassification(
+					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, CreatedBy, Remark, IsMarkedDirectly
+				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount,	IsFromCTS, IsPAProbation, RelevantCategoryID, CreatedDate, CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, IsRobot)
+			SELECT 	tmpJs.CustID
+				,	CASE WHEN tmpJs.CTSCustID = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
+				,	CASE WHEN tmpJs.RoleID = 0 THEN cus.RoleID ELSE tmpJs.RoleID END
+				,	CASE WHEN tmpJs.SubscriberID = 0 THEN cus.SubscriberID ELSE tmpJs.SubscriberID END
+				,	tmpJs.DWCategoryID
+				,	cat.CategoryGroupID
+				,	CASE WHEN tmpJs.IsLicensee = 0 THEN cus.IsLicensee ELSE tmpJs.IsLicensee END
+				,	tmpJs.CreatedBy 
+				,	tmpJs.Remark AS Remark
+				,	tmpJs.IsMarkedDirectly
+				, 	IFNULL(tmpJs.WinlossStatus,2) AS  WinlossStatus
+				, 	tmpJs.TurnoverRM
+				, 	tmpJs.WinlossRM 
+				, 	tmpJs.BetCount 
+				,	tmpJs.IsFromCTS
+				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
+				,	cat.RelevantCategoryID
+				,	tmpJs.CreatedDate
+				,	cat.CategoryPriority
+				,	cat.CustomerClassPriority
+				,	cat.ParentID
+				,	0 AS IsDataChanged
+				,	tmpJs.PerformanceTime
+				,	CASE WHEN cat.CategoryID IN (CONST_AGENCY_CATEID_ROBOT, CONST_AGENCY_CATEID_ROBOTLOSING) THEN 1 ELSE 0 END AS IsRobot
+			FROM JSON_TABLE(ip_CustInfo,
+							"$[*]" COLUMNS(
+												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
+											,	CTSCustID 					BIGINT UNSIGNED		PATH "$.CTSCustID"
+											,	RoleID 						INT					PATH "$.RoleID" 
+											,	SubscriberID 				INT UNSIGNED		PATH "$.SubscriberID"
+											,	DWCategoryID				INT UNSIGNED		PATH "$.CategoryID"
+											,	IsLicensee					TINYINT(1)			PATH "$.IsLicensee"
+											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
+											, 	Remark						VARCHAR(500)		PATH "$.Remark"
+											, 	IsMarkedDirectly			TINYINT(1)			PATH "$.IsMarkedDirectly"
+											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
+											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
+											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
+											, 	BetCount					BIGINT 				PATH "$.BetCount"
+											, 	IsFromCTS					TINYINT(1) 			PATH "$.IsFromCTS"
+											, 	CreatedDate					DATETIME			PATH "$.CreatedDate"
+											, 	PerformanceTime				DATETIME			PATH "$.PerformanceTime"
+											)) AS tmpJs
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0 AND cus.RoleID IN (CONST_ROLEID_AGENT)
+				LEFT JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = tmpJs.DWCategoryID
+			ON DUPLICATE KEY UPDATE TurnoverRM = IFNULL(Temp_NewClassification.TurnoverRM, tmpJs.TurnoverRM) 
+								,	WinlossRM = IFNULL(Temp_NewClassification.WinlossRM, tmpJs.WinlossRM)
+								,	BetCount = IFNULL(Temp_NewClassification.BetCount, tmpJs.BetCount)
+								,	IsFromCTS = CASE WHEN tmpJs.IsFromCTS = 1 THEN 1 ELSE Temp_NewClassification.IsFromCTS END
+								,	IsMarkedDirectly = CASE WHEN tmpJs.IsMarkedDirectly = 1 THEN 1 ELSE Temp_NewClassification.IsMarkedDirectly END
+							
+			;
+
+
+			UPDATE Temp_NewClassification AS temp
+				,	LATERAL (
+								SELECT PAMemberRatio 
+								FROM CTS_DataCenter.Customer_ConsiderableDanger AS src
+								WHERE src.CustID = temp.CustID
+								ORDER BY src.InsertedTime DESC
+								LIMIT 1) AS ltr
+			SET temp.Remark = ltr.PAMemberRatio
+			;
+            
+            UPDATE Temp_NewClassification AS temp
+			SET temp.IsExistPA = 1
+			WHERE EXISTS (	SELECT 1
+							FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
+							WHERE temp.CustID = cls.CustID
+								AND cls.ParentID = CONST_AGENCY_PARENTID_PA
+						 );
 
 		/*Normal*/
 		ELSEIF ip_InputFlowID = CONST_AGENCY_INPUTFLOWID_GENERAL_INSERT_NORMAL THEN 
@@ -331,7 +426,15 @@ BEGIN
 							WHERE temp.CustID = cls.CustID
 								AND cls.ParentID = CONST_AGENCY_PARENTID_PA
 						 );
-			
+     
+			UPDATE Temp_NewClassification AS temp
+			SET temp.IsExistCD = 1
+			WHERE EXISTS (	SELECT 1
+							FROM CTS_DataCenter.CTSCustomerClassificationAgency AS cls
+							WHERE temp.CustID = cls.CustID
+								AND cls.ParentID = CONST_AGENCY_PARENTID_CONSIDERABLEDANGER
+						 );
+
 		END IF;
 		
 		UPDATE Temp_NewClassification AS temp
