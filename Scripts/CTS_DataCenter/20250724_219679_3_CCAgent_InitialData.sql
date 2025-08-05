@@ -81,7 +81,7 @@ USE CTS_DataCenter;
 
 	INSERT IGNORE INTO CTS_DataCenter.CustomerConsiderableDangerQueue(CustID, ScanType, InsertedTime)
     SELECT DISTINCT js.CustID
-		,	2 AS ScanType	
+		,	1 AS ScanType	
 		,	CURRENT_TIMESTAMP(3) AS InsertedTime
 	FROM Temp_AgentConsiderableDanger AS js 
     WHERE js.IsPassRuleRatio = 1 AND
