@@ -25,7 +25,7 @@ BEGIN
 			- 20240621@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
 			- 20241023@Lando.Vu: Integrate Mobile App [Redmine ID: #199300]
 			- 20241121@Jonathan.Doan: Insert MBRawTransaction [Redmine ID: #213401]
-			- 20250804@Lando.Vu: Add MBDeviceDetail table [Redmine ID: #233405]
+			- 20250804@Lando.Vu: Add MBDeviceDetails table [Redmine ID: #233405]
 
 		Param's Explanation (filtered by):
 			
@@ -84,7 +84,7 @@ BEGIN
 		,	MBTimezone					VARCHAR(32)					NULL
 		,	MBLanguage					VARCHAR(32)					NULL
 		,	MBCountry					VARCHAR(32)					NULL
-		,	MBDeviceDetail				JSON						NULL
+		,	MBDeviceDetails				JSON						NULL
     );
     
     CREATE TEMPORARY TABLE Temp_MBTransaction(
@@ -109,7 +109,7 @@ BEGIN
 		,	CountryName					VARCHAR(32)					NULL
 		,	Timezone					VARCHAR(32)					NULL
 		,	Language					VARCHAR(32)					NULL
-		,	DeviceDetail				JSON						NULL
+		,	DeviceDetails				JSON						NULL
     );
 
 	CREATE TEMPORARY TABLE Temp_BotDetection(
@@ -125,7 +125,7 @@ BEGIN
 		,	IsNewRecord					TINYINT		 				DEFAULT 1
     );
 		
-	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode, ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode, ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry, MBDeviceDetails)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -165,7 +165,7 @@ BEGIN
 		,	rt.MBTimezone
 		,	rt.MBLanguage
 		,	rt.MBCountry
-		,	rt.MBDeviceDetail
+		,	rt.MBDeviceDetails
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
@@ -207,7 +207,7 @@ BEGIN
 							,	MBTimezone					VARCHAR(32)		PATH "$.MBTimezone"
 							,	MBLanguage					VARCHAR(32)		PATH "$.MBLanguage"
 							,	MBCountry					VARCHAR(32)		PATH "$.MBCountry"
-							,	MBDeviceDetail				JSON			PATH "$.MBDeviceDetail"
+							,	MBDeviceDetails				JSON			PATH "$.MBDeviceDetails"
 				)
 		   ) AS rt; 
            
@@ -217,7 +217,7 @@ BEGIN
 	ADD INDEX IX_Temp_Transaction_BotComponentCode (BotComponentCode);
            
 	/******* Insert Temp Mobile RawTransaction ********************/
-    INSERT INTO Temp_MBTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, FlaggedCode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language)
+    INSERT INTO Temp_MBTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, FlaggedCode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language, DeviceDetails)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -238,7 +238,7 @@ BEGIN
 		,	rt.MBCountry			AS CountryName
 		,	rt.MBTimezone			AS Timezone
 		,	rt.MBLanguage			AS Language
-		,	rt.MBDeviceDetail		AS DeviceDetail
+		,	rt.MBDeviceDetails		AS DeviceDetails
 	FROM Temp_Transaction AS rt
     WHERE rt.MBIsMobileApp = 1;
     
@@ -317,7 +317,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     
     /*******Mobile RawTransaction********************/
-    INSERT INTO DCS_DataCenter.MBRawTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language)
+    INSERT INTO DCS_DataCenter.MBRawTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language, DeviceDetails)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -338,7 +338,7 @@ BEGIN
 		,	rt.CountryName
 		,	rt.Timezone
 		,	rt.Language
-		,	rt.DeviceDetail
+		,	rt.DeviceDetails
 	FROM Temp_MBTransaction AS rt
 		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
 													AND sl.ItemCode = rt.FlaggedCode;
