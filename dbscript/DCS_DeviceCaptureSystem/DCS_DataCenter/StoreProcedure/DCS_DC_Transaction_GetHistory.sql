@@ -24,6 +24,7 @@ proc_label: BEGIN
 		- 20230406@Casey.Huynh: 	Show trans cross subscriber [Redmine ID: 186086]
 		- 20230512@Jonas.Huynh: 	BOTD transactions [Redmine ID: 185792]
 		- 20230512@Victoria.Le:		Add option "Last 5 weeks" for ip_DateRange [Redmine ID: 187979]
+		- 20250805@Long.Luu:		Cast IPID in case of data is too long [Redmine ID: 0000]
             
 		Param's Explanation (filtered by):
 			- ip_DateRange
@@ -73,7 +74,7 @@ proc_label: BEGIN
 				,	trs.TransTime
 				,	trs.FirstDeviceCode
 				,	trs.IP
-				,	trs.IPID
+				,	CAST(trs.IPID AS CHAR) AS IPID
 				,	s.ItemName
 				,	ar.Action
 				,	ar.ActionResult
