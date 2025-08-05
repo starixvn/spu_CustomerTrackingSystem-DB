@@ -55,6 +55,7 @@ BEGIN
 		,	CountryName					VARCHAR(32)
 		,	Timezone 					VARCHAR(32)
 		,	Language 					VARCHAR(32)
+		,	DeviceDetail 				JSON
         , 	MBAccountID					BIGINT UNSIGNED
         ,	MBDeviceCodeMediaDRMID		BIGINT UNSIGNED
         ,	MBDeviceCodeMachineID		BIGINT UNSIGNED
@@ -65,7 +66,7 @@ BEGIN
         ,	ActionResultID				INT
 	);
         
-	INSERT INTO Temp_MBRawTransaction(ID, LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language)
+	INSERT INTO Temp_MBRawTransaction(ID, LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language, DeviceDetail)
     SELECT 	rt.ID
         ,   rt.LoginName
         ,   rt.SubscriberName
@@ -87,6 +88,7 @@ BEGIN
         ,   rt.CountryName
         ,   rt.Timezone
         ,   rt.Language
+		,   rt.DeviceDetail
 	FROM DCS_DataCenter.MBRawTransaction AS rt
     WHERE ID BETWEEN ip_FromTransID AND ip_ToTransID;
     
@@ -345,7 +347,7 @@ BEGIN
 	FROM Temp_MBRawTransaction AS trt;
     
     /* ======= INSERT MBProcessedTransaction ========= */
-	INSERT IGNORE INTO DCS_DataCenter.MBProcessedTransaction(ID, CreatedDate, LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, Country, Timezone, Language, InsertedTime)
+	INSERT IGNORE INTO DCS_DataCenter.MBProcessedTransaction(ID, CreatedDate, LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, Country, Timezone, Language, InsertedTime, DeviceDetail)
 	SELECT  ID
 		,   DATE(rt.TransTime) AS CreatedDate
 		,   rt.LoginName
@@ -369,6 +371,7 @@ BEGIN
 		,   rt.Timezone
 		,   rt.Language
 		,   lv_CurrentDatetime AS InsertedTime
+		,	rt.DeviceDetail
 	FROM Temp_MBRawTransaction AS rt;
         
 	DELETE rt
