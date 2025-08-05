@@ -8,3 +8,6 @@ USE DCS_DataCenter;
 
 ALTER TABLE DCS_DataCenter.MBRawTransaction
 ADD DeviceDetail JSON;
+
+ALTER TABLE DCS_DataCenter.MBProcessedTransaction
+ADD DeviceDetail JSON;
