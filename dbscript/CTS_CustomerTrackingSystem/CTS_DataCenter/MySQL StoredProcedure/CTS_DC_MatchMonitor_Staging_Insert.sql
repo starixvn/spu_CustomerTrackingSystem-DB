@@ -177,7 +177,7 @@ sp: BEGIN
 			,	js.BettypeID
             ,	CASE 
     				WHEN js.SportType = CONST_SPORTTYPE_CRICKET 
-         				AND js.BetTypeID NOT IN (9608, 9607, 9411, 9410, 9429, 9428)
+         				AND js.BetTypeID  IN (501, 9404, 9405)
     				THEN 0 
     				ELSE IFNULL(js.BetID, 0) 
 				END AS BetID
