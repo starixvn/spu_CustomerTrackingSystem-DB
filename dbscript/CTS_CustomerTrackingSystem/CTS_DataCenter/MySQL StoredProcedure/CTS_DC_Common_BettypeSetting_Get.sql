@@ -117,7 +117,7 @@ BEGIN
 				,	sbs.SportTypeID
 				,	sbs.SportName
 				,	bs.BetTypeID
-				,	(CASE WHEN js.NameDetailsX <> '' AND sbs.BetTypeNameDetailsX IS NOT NULL AND bs.BetTypeNameDetailsX IS NOT NULL THEN REPLACE(bs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
+				,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
 								ELSE bs.BettypeNameDisplay END) AS BettypeNameDisplay
 				,	bs.BetChoiceType            
 				,	bs.BetIDPattern
@@ -136,7 +136,7 @@ BEGIN
 				INNER JOIN CTS_DataCenter.BettypeSetting AS bs ON bs.BettypeID = sbs.BetTypeID
 				INNER JOIN Temp_SportTypeID AS tmpSt ON IFNULL(tmpSt.SportTypeID,sbs.SportTypeID) = sbs.SportTypeID
 				INNER JOIN Temp_BettypeID AS tmpBt ON IFNULL(tmpBt.BettypeID,sbs.BettypeID) = sbs.BettypeID
-				, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(sbs.BetTypeNameDetailsX,sbs.BetTypeNameDetailsX), ',', '","'), '"]'),
+				, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(sbs.BetTypeNameDetailsX,''), ',', '","'), '"]'),
 							  '$[*]' COLUMNS (NameDetailsX VARCHAR(1) PATH '$')) js
 			WHERE 	sbs.Status = ip_Status
 				AND	sbs.FunctionID = ip_FunctionID			
@@ -153,10 +153,8 @@ BEGIN
 				,	bs.BetIDPattern
 				,	js.NameDetailsX
 				,	bs.BettypeNameDisplay
-                , 	sbs.BetTypeNameDetailsX
-                , 	bs.BetTypeNameDetailsX
 				,	sbs.SportOrder
-			ORDER BY LeagueGroupID, bs.BettypeOrder, js.NameDetailsX; 
+			ORDER BY LeagueGroupID, bs.BettypeOrder, js.NameDetailsX;  
 		ELSE	
 		
 			SELECT  (CASE WHEN sbs.LeagueGroupID = 0 THEN NULL ELSE LeagueGroupID END) AS LeagueGroupID
