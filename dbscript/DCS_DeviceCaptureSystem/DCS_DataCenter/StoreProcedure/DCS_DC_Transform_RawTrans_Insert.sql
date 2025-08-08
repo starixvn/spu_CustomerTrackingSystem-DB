@@ -26,6 +26,7 @@ BEGIN
 			- 20241023@Lando.Vu: Integrate Mobile App [Redmine ID: #199300]
 			- 20241121@Jonathan.Doan: Insert MBRawTransaction [Redmine ID: #213401]
 			- 20250804@Lando.Vu: Add MBDeviceDetails table [Redmine ID: #233405]
+			- 20250808@Jonathan.Doan: Separate iOS trans [Redmine ID: #235457]
 
 		Param's Explanation (filtered by):
 			
@@ -110,6 +111,8 @@ BEGIN
 		,	Timezone					VARCHAR(32)					NULL
 		,	Language					VARCHAR(32)					NULL
 		,	DeviceDetails				JSON						NULL
+
+        ,   INDEX IX_Temp_MBTransaction_OSName(OSName)
     );
 
 	CREATE TEMPORARY TABLE Temp_BotDetection(
@@ -316,6 +319,35 @@ BEGIN
 	
     DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     
+    
+    /*******Mobile RawTransaction IOS********************/
+    INSERT INTO DCS_DataCenter.MBRawTransactionIOS(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language, DeviceDetails)
+	SELECT	rt.LoginName
+		,	rt.SubscriberName
+		,	rt.TransTime
+		,	rt.IP
+        ,	rt.IPID
+        ,	rt.Action
+		,	rt.ActionResult
+        ,	sl.ItemID AS Flagged
+		,	rt.MBDeviceCodeMediaDRM
+        ,	rt.MBDeviceCodeMachine
+		,	rt.MBDeviceCodeTagging
+		,	rt.IsEmulator
+		,	rt.ModelName
+		,	rt.Manufacturer
+		,	rt.Brand
+		,	rt.SDKVersion
+		,	rt.OSName
+		,	rt.CountryName
+		,	rt.Timezone
+		,	rt.Language
+		,	rt.DeviceDetails
+	FROM Temp_MBTransaction AS rt
+		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
+													AND sl.ItemCode = rt.FlaggedCode
+    WHERE rt.OSName = 'IOS';
+
     /*******Mobile RawTransaction********************/
     INSERT INTO DCS_DataCenter.MBRawTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language, DeviceDetails)
 	SELECT	rt.LoginName
@@ -341,7 +373,9 @@ BEGIN
 		,	rt.DeviceDetails
 	FROM Temp_MBTransaction AS rt
 		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
-													AND sl.ItemCode = rt.FlaggedCode;
+													AND sl.ItemCode = rt.FlaggedCode
+    WHERE rt.OSName <> 'IOS';
+
     DROP TEMPORARY TABLE IF EXISTS Temp_MBTransaction;
 END$$
 
