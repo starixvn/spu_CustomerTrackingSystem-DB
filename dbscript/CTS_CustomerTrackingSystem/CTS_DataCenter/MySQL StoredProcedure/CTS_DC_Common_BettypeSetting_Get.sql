@@ -25,6 +25,7 @@ BEGIN
             -	20240822@Casey.Huynh: Seperate BettypeSetting to New Table [Redmine ID: #207397]
             -	20250214@Casey.Huynh: Update Bettype Order for MM [Redmine ID: #217782]
             -	20250319@Thomas.Nguyen: Return SportOrder [Redmine ID: #219681]
+            -	20250807@Winfred.Pham: Get BetTypeNameDetailsX from SportBettypeSetting [Redmine ID: #202508 ]
 
 		Param's Explanation (filtered by):
         	ip_FunctionID: 1, 2
@@ -135,7 +136,7 @@ BEGIN
 				INNER JOIN CTS_DataCenter.BettypeSetting AS bs ON bs.BettypeID = sbs.BetTypeID
 				INNER JOIN Temp_SportTypeID AS tmpSt ON IFNULL(tmpSt.SportTypeID,sbs.SportTypeID) = sbs.SportTypeID
 				INNER JOIN Temp_BettypeID AS tmpBt ON IFNULL(tmpBt.BettypeID,sbs.BettypeID) = sbs.BettypeID
-				, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(bs.BetTypeNameDetailsX,''), ',', '","'), '"]'),
+				, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(sbs.BetTypeNameDetailsX,''), ',', '","'), '"]'),
 							  '$[*]' COLUMNS (NameDetailsX VARCHAR(1) PATH '$')) js
 			WHERE 	sbs.Status = ip_Status
 				AND	sbs.FunctionID = ip_FunctionID			
