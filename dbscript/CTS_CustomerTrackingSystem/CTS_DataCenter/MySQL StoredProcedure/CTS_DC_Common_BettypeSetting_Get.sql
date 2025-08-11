@@ -25,6 +25,7 @@ BEGIN
             -	20240822@Casey.Huynh: Seperate BettypeSetting to New Table [Redmine ID: #207397]
             -	20250214@Casey.Huynh: Update Bettype Order for MM [Redmine ID: #217782]
             -	20250319@Thomas.Nguyen: Return SportOrder [Redmine ID: #219681]
+            -   20250811@Casey.Huynh: Update Return BettypeDetails X > 9 [Redmine ID: #235043]
 
 		Param's Explanation (filtered by):
         	ip_FunctionID: 1, 2
@@ -35,13 +36,13 @@ BEGIN
         
 		Example:        
 		#Service MM Detection Single Ticket:
-		 CALL CTS_DC_Common_BettypeSetting_Get_xtest(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=1, @ip_IsFilterMMParlayDetection:=1, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
+		 CALL CTS_DC_Common_BettypeSetting_Get(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=1, @ip_IsFilterMMParlayDetection:=0, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
 		#Service MM Detection Parlay Ticket: 
-		CALL CTS_DC_Common_BettypeSetting_Get_xtest(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=1, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
+		CALL CTS_DC_Common_BettypeSetting_Get(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=1, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
 		#Filter MM: 
-		CALL CTS_DC_Common_BettypeSetting_Get_xtest(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=0, @ip_IsShowDetailsX:=1,@ip_Status:=1);	
+		CALL CTS_DC_Common_BettypeSetting_Get(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=0, @ip_IsShowDetailsX:=1,@ip_Status:=1);	
         #WEB MM Detection Parlay Ticket: 
-		CALL CTS_DC_Common_BettypeSetting_Get_xtest(@ip_FunctionID:=NULL,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=1, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
+		CALL CTS_DC_Common_BettypeSetting_Get(@ip_FunctionID:=NULL,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=1, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
 		
 */
     
@@ -136,7 +137,7 @@ BEGIN
 				INNER JOIN Temp_SportTypeID AS tmpSt ON IFNULL(tmpSt.SportTypeID,sbs.SportTypeID) = sbs.SportTypeID
 				INNER JOIN Temp_BettypeID AS tmpBt ON IFNULL(tmpBt.BettypeID,sbs.BettypeID) = sbs.BettypeID
 				, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(bs.BetTypeNameDetailsX,''), ',', '","'), '"]'),
-							  '$[*]' COLUMNS (NameDetailsX VARCHAR(1) PATH '$')) js
+							  '$[*]' COLUMNS (NameDetailsX VARCHAR(2) PATH '$')) js
 			WHERE 	sbs.Status = ip_Status
 				AND	sbs.FunctionID = ip_FunctionID			
 				AND	sbs.IsMMDetection = IFNULL(ip_IsFilterMMDetection,sbs.IsMMDetection) 
