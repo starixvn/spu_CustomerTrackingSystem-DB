@@ -18,6 +18,8 @@ USE CTS_DataCenter;
 ALTER TABLE CTS_DataCenter.BettypeSetting 
 MODIFY COLUMN BetTypeNameDetailsX VARCHAR(200);
 
+ ALTER TABLE CTS_DataCenter.BettypeSetting
+ ADD COLUMN BetTypeNameDetailsPattern VARCHAR(250) AFTER BettypeName; 
 /*******************************ALTER Table SportBettypeSetting*********************************/
 USE CTS_DataCenter;
 
@@ -29,58 +31,63 @@ MODIFY COLUMN BetTypeNameDetailsX VARCHAR(200);
 USE CTS_DataCenter;
 
 /* Initial Cricket BettypeSetting */
+
+UPDATE BettypeSetting
+SET BettypeName = REPLACE(BettypeName, ' [X] ', ' [X] ')
+WHERE BetTypeNameDetailsX IS NOT NULL;
+
 INSERT INTO CTS_DataCenter.BettypeSetting (
     BetTypeID, BetteamOrder, BetteamName, BetChoiceType, BetTypeName, BetTypeNameDetailsX, 
     BetTypeNameDisplay, BetIDPattern, BetTeamDB, BetteamShortName, Status, BettypeOrder
 )
 VALUES
-    /* Away Over X Runs (X = 1–50) */
-    (@lv_BetTypeID := 9608, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Away Over X Runs',
+    /* Away Over [X] Runs (X = 1–50) */
+    (@lv_BetTypeID := 9608, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Away Over [X] Runs',
         @lv_BetTypeNameDetailsX := '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50',
-        @lv_BetTypeNameDisplay := 'Away Over X Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20300'),
-    (@lv_BetTypeID := 9608, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Away Over X Runs',
+        @lv_BetTypeNameDisplay := 'Away Over [X] Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20300'),
+    (@lv_BetTypeID := 9608, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Away Over [X] Runs',
         @lv_BetTypeNameDetailsX := '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50',
-        @lv_BetTypeNameDisplay := 'Away Over X Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20400'),
+        @lv_BetTypeNameDisplay := 'Away Over [X] Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20400'),
 
-    /* Home Over X Runs (X = 1–50) */
-    (@lv_BetTypeID := 9607, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Home Over X Runs',
+    /* Home Over [X] Runs (X = 1–50) */
+    (@lv_BetTypeID := 9607, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Home Over [X] Runs',
         @lv_BetTypeNameDetailsX := '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50',
-        @lv_BetTypeNameDisplay := 'Home Over X Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20100'),
-    (@lv_BetTypeID := 9607, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Home Over X Runs',
+        @lv_BetTypeNameDisplay := 'Home Over [X] Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20100'),
+    (@lv_BetTypeID := 9607, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Home Over [X] Runs',
         @lv_BetTypeNameDetailsX := '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50',
-        @lv_BetTypeNameDisplay := 'Home Over X Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20200'),
+        @lv_BetTypeNameDisplay := 'Home Over [X] Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20200'),
 
-    /* Away Group 1-X Runs (X = 5,6,10,12,15,20,25,30,35,40,45) */
-    (@lv_BetTypeID := 9411, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Away Group 1-X Runs',
+    /* Away Group 1-[X] Runs (X = 5,6,10,12,15,20,25,30,35,40,45) */
+    (@lv_BetTypeID := 9411, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Away Group 1-[X] Runs',
         @lv_BetTypeNameDetailsX := '5,6,10,12,15,20,25,30,35,40,45',
-        @lv_BetTypeNameDisplay := 'Away Group 1-X Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20540'),
-    (@lv_BetTypeID := 9411, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Away Group 1-X Runs',
+        @lv_BetTypeNameDisplay := 'Away Group 1-[X] Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20540'),
+    (@lv_BetTypeID := 9411, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Away Group 1-[X] Runs',
         @lv_BetTypeNameDetailsX := '5,6,10,12,15,20,25,30,35,40,45',
-        @lv_BetTypeNameDisplay := 'Away Group 1-X Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20560'),
+        @lv_BetTypeNameDisplay := 'Away Group 1-[X] Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20560'),
 
-    /* Home Group 1-X Runs (X = 5,6,10,12,15,20,25,30,35,40,45) */
-    (@lv_BetTypeID := 9410, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Home Group 1-X Runs',
+    /* Home Group 1-[X] Runs (X = 5,6,10,12,15,20,25,30,35,40,45) */
+    (@lv_BetTypeID := 9410, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Home Group 1-[X] Runs',
         @lv_BetTypeNameDetailsX := '5,6,10,12,15,20,25,30,35,40,45',
-        @lv_BetTypeNameDisplay := 'Home Group 1-X Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20500'),
-    (@lv_BetTypeID := 9410, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Home Group 1-X Runs',
+        @lv_BetTypeNameDisplay := 'Home Group 1-[X] Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20500'),
+    (@lv_BetTypeID := 9410, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Home Group 1-[X] Runs',
         @lv_BetTypeNameDetailsX := '5,6,10,12,15,20,25,30,35,40,45',
-        @lv_BetTypeNameDisplay := 'Home Group 1-X Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20520'),
+        @lv_BetTypeNameDisplay := 'Home Group 1-[X] Runs', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20520'),
 
-    /* Away Fall of Wicket X (X = 1–10) */
-    (@lv_BetTypeID := 9429, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Away Fall of Wicket X',
+    /* Away Fall of Wicket [X] (X = 1–10) */
+    (@lv_BetTypeID := 9429, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Away Fall of Wicket [X]',
         @lv_BetTypeNameDetailsX := '1,2,3,4,5,6,7,8,9,10',
-        @lv_BetTypeNameDisplay := 'Away Fall of Wicket X', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20640'),
-    (@lv_BetTypeID := 9429, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Away Fall of Wicket X',
+        @lv_BetTypeNameDisplay := 'Away Fall of Wicket [X]', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20640'),
+    (@lv_BetTypeID := 9429, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Away Fall of Wicket [X]',
         @lv_BetTypeNameDetailsX := '1,2,3,4,5,6,7,8,9,10',
-        @lv_BetTypeNameDisplay := 'Away Fall of Wicket X', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20660'),
+        @lv_BetTypeNameDisplay := 'Away Fall of Wicket [X]', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20660'),
 
-    /* Home Fall of Wicket X (X = 1–10) */
-    (@lv_BetTypeID := 9428, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Home Fall of Wicket X',
+    /* Home Fall of Wicket [X] (X = 1–10) */
+    (@lv_BetTypeID := 9428, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Home Fall of Wicket [X]',
         @lv_BetTypeNameDetailsX := '1,2,3,4,5,6,7,8,9,10',
-        @lv_BetTypeNameDisplay := 'Home Fall of Wicket X', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20600'),
-    (@lv_BetTypeID := 9428, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Home Fall of Wicket X',
+        @lv_BetTypeNameDisplay := 'Home Fall of Wicket [X]', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20600'),
+    (@lv_BetTypeID := 9428, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Home Fall of Wicket [X]',
         @lv_BetTypeNameDetailsX := '1,2,3,4,5,6,7,8,9,10',
-        @lv_BetTypeNameDisplay := 'Home Fall of Wicket X', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20620');
+        @lv_BetTypeNameDisplay := 'Home Fall of Wicket [X]', @lv_BetIDPattern := '80XX', @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20620');
 
 SELECT * FROM BettypeSetting WHERE BettypeID IN (9608,9607,9411,9410,9429,9428);
 
@@ -92,45 +99,45 @@ INSERT INTO CTS_DataCenter.SportBettypeSetting
 (FunctionID, LeagueGroupID, SportTypeID, BetTypeID, SportName, BetTypeName, BetTypeNameDetailsX, BettypeNameDisplay,
  BetChoicePattern, BetChoiceType, BetIDPattern, IsMMDetection, IsMMParlayDetection, MMReason, IsDefaultSelected, Status, SportOrder)
 VALUES
-    -- Away Over X Runs (9608)
-    (@FunctionID:=1, @LeagueGroupID:=0, @SportTypeID:=50, @BetTypeID:=9608, @SportName:='Cricket', @BetTypeName:='Away Over X Runs',
+    -- Away Over [X] Runs (9608)
+    (@FunctionID:=1, @LeagueGroupID:=0, @SportTypeID:=50, @BetTypeID:=9608, @SportName:='Cricket', @BetTypeName:='Away Over [X] Runs',
      @BetTypeNameDetailsX:='1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50',
-     @BettypeNameDisplay:='Away Over X Runs',
+     @BettypeNameDisplay:='Away Over [X] Runs',
      @BetChoicePattern:='{"BetChoiceOver": "o", "BetChoiceUnder": "u", "BetChoiceOverDisplay": "o", "BetChoiceUnderDisplay": "u"}',
      @BetChoiceType:=2, @BetIDPattern:='80XX', @IsMMDetection:=1, @IsMMParlayDetection:=0, @MMReason:=0, @IsDefaultSelected:=0, @Status:=1, @SportOrder:=300),
 
-    -- Home Over X Runs (9607)
-    (@FunctionID:=1, @LeagueGroupID:=0, @SportTypeID:=50, @BetTypeID:=9607, @SportName:='Cricket', @BetTypeName:='Home Over X Runs',
+    -- Home Over [X] Runs (9607)
+    (@FunctionID:=1, @LeagueGroupID:=0, @SportTypeID:=50, @BetTypeID:=9607, @SportName:='Cricket', @BetTypeName:='Home Over [X] Runs',
      @BetTypeNameDetailsX:='1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50',
-     @BettypeNameDisplay:='Home Over X Runs',
+     @BettypeNameDisplay:='Home Over [X] Runs',
      @BetChoicePattern:='{"BetChoiceOver": "o", "BetChoiceUnder": "u", "BetChoiceOverDisplay": "o", "BetChoiceUnderDisplay": "u"}',
      @BetChoiceType:=2, @BetIDPattern:='80XX', @IsMMDetection:=1, @IsMMParlayDetection:=0, @MMReason:=0, @IsDefaultSelected:=0, @Status:=1, @SportOrder:=300),
 
-    -- Away Group 1-X Runs (9411)
-    (@FunctionID:=1, @LeagueGroupID:=0, @SportTypeID:=50, @BetTypeID:=9411, @SportName:='Cricket', @BetTypeName:='Away Group 1-X Runs',
+    -- Away Group 1-[X] Runs (9411)
+    (@FunctionID:=1, @LeagueGroupID:=0, @SportTypeID:=50, @BetTypeID:=9411, @SportName:='Cricket', @BetTypeName:='Away Group 1-[X] Runs',
      @BetTypeNameDetailsX:='5,6,10,12,15,20,25,30,35,40,45',
-     @BettypeNameDisplay:='Away Group 1-X Runs',
+     @BettypeNameDisplay:='Away Group 1-[X] Runs',
      @BetChoicePattern:='{"BetChoiceOver": "o", "BetChoiceUnder": "u", "BetChoiceOverDisplay": "o", "BetChoiceUnderDisplay": "u"}',
      @BetChoiceType:=2, @BetIDPattern:='80XX', @IsMMDetection:=1, @IsMMParlayDetection:=0, @MMReason:=0, @IsDefaultSelected:=0, @Status:=1, @SportOrder:=300),
 
-    -- Home Group 1-X Runs (9410)
-    (@FunctionID:=1, @LeagueGroupID:=0, @SportTypeID:=50, @BetTypeID:=9410, @SportName:='Cricket', @BetTypeName:='Home Group 1-X Runs',
+    -- Home Group 1-[X] Runs (9410)
+    (@FunctionID:=1, @LeagueGroupID:=0, @SportTypeID:=50, @BetTypeID:=9410, @SportName:='Cricket', @BetTypeName:='Home Group 1-[X] Runs',
      @BetTypeNameDetailsX:='5,6,10,12,15,20,25,30,35,40,45',
-     @BettypeNameDisplay:='Home Group 1-X Runs',
+     @BettypeNameDisplay:='Home Group 1-[X] Runs',
      @BetChoicePattern:='{"BetChoiceOver": "o", "BetChoiceUnder": "u", "BetChoiceOverDisplay": "o", "BetChoiceUnderDisplay": "u"}',
      @BetChoiceType:=2, @BetIDPattern:='80XX', @IsMMDetection:=1, @IsMMParlayDetection:=0, @MMReason:=0, @IsDefaultSelected:=0, @Status:=1, @SportOrder:=300),
 
-    -- Away Fall of Wicket X (9429)
-    (@FunctionID:=1, @LeagueGroupID:=0, @SportTypeID:=50, @BetTypeID:=9429, @SportName:='Cricket', @BetTypeName:='Away Fall of Wicket X',
+    -- Away Fall of Wicket [X] (9429)
+    (@FunctionID:=1, @LeagueGroupID:=0, @SportTypeID:=50, @BetTypeID:=9429, @SportName:='Cricket', @BetTypeName:='Away Fall of Wicket [X]',
      @BetTypeNameDetailsX:='1,2,3,4,5,6,7,8,9,10',
-     @BettypeNameDisplay:='Away Fall of Wicket X',
+     @BettypeNameDisplay:='Away Fall of Wicket [X]',
      @BetChoicePattern:='{"BetChoiceOver": "o", "BetChoiceUnder": "u", "BetChoiceOverDisplay": "o", "BetChoiceUnderDisplay": "u"}',
      @BetChoiceType:=2, @BetIDPattern:='80XX', @IsMMDetection:=1, @IsMMParlayDetection:=0, @MMReason:=0, @IsDefaultSelected:=0, @Status:=1, @SportOrder:=300),
 
-    -- Home Fall of Wicket X (9428)
-    (@FunctionID:=1, @LeagueGroupID:=0, @SportTypeID:=50, @BetTypeID:=9428, @SportName:='Cricket', @BetTypeName:='Home Fall of Wicket X',
+    -- Home Fall of Wicket [X] (9428)
+    (@FunctionID:=1, @LeagueGroupID:=0, @SportTypeID:=50, @BetTypeID:=9428, @SportName:='Cricket', @BetTypeName:='Home Fall of Wicket [X]',
      @BetTypeNameDetailsX:='1,2,3,4,5,6,7,8,9,10',
-     @BettypeNameDisplay:='Home Fall of Wicket X',
+     @BettypeNameDisplay:='Home Fall of Wicket [X]',
      @BetChoicePattern:='{"BetChoiceOver": "o", "BetChoiceUnder": "u", "BetChoiceOverDisplay": "o", "BetChoiceUnderDisplay": "u"}',
      @BetChoiceType:=2, @BetIDPattern:='80XX', @IsMMDetection:=1, @IsMMParlayDetection:=0, @MMReason:=0, @IsDefaultSelected:=0, @Status:=1, @SportOrder:=300);
 
