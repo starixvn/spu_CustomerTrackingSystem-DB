@@ -17,6 +17,7 @@ BEGIN
 	    Revisions:
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
 			- 20250804@Lando.Vu: Add MBDeviceDetails table [Redmine ID: #233405]
+		    - 20250811@Jonathan.Doan: Update new rule [Redmine ID: #235457]
 
 	    Param's Explanation (filtered by):
 		Example:
@@ -356,6 +357,11 @@ BEGIN
 		CALL DCS_DC_Transform_MBDeviceCodeMachineAccount_Insert(lv_MBDeviceCodeMachineAccountJson);
 	END IF;
     
+	UPDATE Temp_MBRawTransaction AS tmp
+		INNER JOIN DCS_DataCenter.MBDeviceCodeMachineAccount AS dcma ON dcma.MBDeviceCodeMachineID = tmp.MBDeviceCodeMachineID 
+															AND dcma.MBAccountID = tmp.MBAccountID
+	SET tmp.MBDeviceCodeMachineAccountID = dcma.ID;
+    
     /* === Insert new MBDeviceCodeMachineMedia === */
     WITH CTE_DistinctData AS (
 		SELECT	MBDeviceCodeMachineID
@@ -379,6 +385,11 @@ BEGIN
     IF lv_MBDeviceCodeMachineMediaJson IS NOT NULL THEN
 		CALL DCS_DC_Transform_MBDeviceCodeMachineMedia_Insert(lv_MBDeviceCodeMachineMediaJson);
 	END IF;
+    
+	UPDATE Temp_MBRawTransaction AS tmp
+		INNER JOIN DCS_DataCenter.MBDeviceCodeMachineMedia AS dcmm ON dcmm.MBDeviceCodeMachineID = tmp.MBDeviceCodeMachineID 
+															AND dcmm.MBDeviceCodeMediaDRMID = tmp.MBDeviceCodeMediaDRMID
+	SET tmp.MBDeviceCodeMachineMediaID = dcmm.ID;
     
 
 	/* ======= INSERT MBTransaction ========= */
@@ -431,7 +442,7 @@ BEGIN
         
 	DELETE rt
 	FROM DCS_DataCenter.MBRawTransaction AS rt
-	    INNER JOIN Temp_MBRawTransaction AS tmp_rm ON rt.ID = tmp_rm.ID;
+		INNER JOIN Temp_MBRawTransaction AS tmp_rm ON rt.ID = tmp_rm.ID;
     
 END$$
 DELIMITER ;
