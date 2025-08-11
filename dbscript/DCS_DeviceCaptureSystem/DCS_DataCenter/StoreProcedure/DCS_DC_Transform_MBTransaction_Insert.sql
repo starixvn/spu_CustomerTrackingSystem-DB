@@ -23,49 +23,53 @@ BEGIN
 			CALL DCS_DC_Transform_MBTransaction_Insert(1,200);
     */
     
-    DECLARE lv_CurrentDatetime 				DATETIME DEFAULT NOW();
-    DECLARE lv_MBDeviceCodeMediaDRMJson 	LONGTEXT;
-    DECLARE lv_MBDeviceCodeTaggingJson	 	LONGTEXT;
-    DECLARE lv_MBAccountJson 				LONGTEXT;
-    DECLARE lv_ActionResultJson 			LONGTEXT;
-    DECLARE lv_MBDeviceCodeMachineJson 		LONGTEXT;
-    DECLARE lv_MBOSJson 					LONGTEXT;
-    DECLARE lv_MBDeviceModelJson 			LONGTEXT;
-    DECLARE lv_MBUserSettingJson 			LONGTEXT;
+    DECLARE lv_CurrentDatetime 				    DATETIME DEFAULT NOW();
+    DECLARE lv_MBDeviceCodeMediaDRMJson 	    LONGTEXT;
+    DECLARE lv_MBDeviceCodeTaggingJson	 	    LONGTEXT;
+    DECLARE lv_MBAccountJson 				    LONGTEXT;
+    DECLARE lv_ActionResultJson 			    LONGTEXT;
+    DECLARE lv_MBDeviceCodeMachineJson 		    LONGTEXT;
+    DECLARE lv_MBOSJson 					    LONGTEXT;
+    DECLARE lv_MBDeviceModelJson 			    LONGTEXT;
+    DECLARE lv_MBUserSettingJson 			    LONGTEXT;
+    DECLARE lv_MBDeviceCodeMachineAccountJson   LONGTEXT;
+    DECLARE lv_MBDeviceCodeMachineMediaJson     LONGTEXT;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_MBRawTransaction;
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_MBRawTransaction (
-			ID 							BIGINT UNSIGNED PRIMARY KEY
-		,	LoginName 					VARCHAR(100)
-		,	SubscriberID 				INT
-		,	SubscriberName 				VARCHAR(50)
-		,	TransTime 					DATETIME(4)
-		,	IP 							VARCHAR(50)
-		,	IPID 						DECIMAL(50)
-		,	Action 						VARCHAR(100)
-		,	ActionResult 				VARCHAR(100)
-		,	Flagged 					SMALLINT
-		,	MBDeviceCodeMediaDRM 		VARCHAR(32)
-		,	MBDeviceCodeMachine 		VARCHAR(32)
-		,	MBDeviceCodeTagging 		VARCHAR(32)
-		,	IsEmulator 					TINYINT
-		,	ModelName 					VARCHAR(32)
-		,	Manufacturer 				VARCHAR(32)
-		,	Brand 						VARCHAR(32)
-		,	SDKVersion 					VARCHAR(32)
-		,	OSName 						VARCHAR(32)
-		,	CountryName					VARCHAR(32)
-		,	Timezone 					VARCHAR(32)
-		,	Language 					VARCHAR(32)
-		,	DeviceDetails 				JSON
-        , 	MBAccountID					BIGINT UNSIGNED
-        ,	MBDeviceCodeMediaDRMID		BIGINT UNSIGNED
-        ,	MBDeviceCodeMachineID		BIGINT UNSIGNED
-        ,	MBDeviceCodeTaggingID		BIGINT UNSIGNED
-        ,	MBDeviceModelID				BIGINT UNSIGNED
-        ,	MBOSID						BIGINT UNSIGNED
-        ,	MBUserSettingID				BIGINT UNSIGNED
-        ,	ActionResultID				INT
+			ID 							    BIGINT UNSIGNED PRIMARY KEY
+		,	LoginName 					    VARCHAR(100)
+		,	SubscriberID 				    INT
+		,	SubscriberName 				    VARCHAR(50)
+		,	TransTime 					    DATETIME(4)
+		,	IP 							    VARCHAR(50)
+		,	IPID 						    DECIMAL(50)
+		,	Action 						    VARCHAR(100)
+		,	ActionResult 				    VARCHAR(100)
+		,	Flagged 					    SMALLINT
+		,	MBDeviceCodeMediaDRM 		    VARCHAR(32)
+		,	MBDeviceCodeMachine 		    VARCHAR(32)
+		,	MBDeviceCodeTagging 		    VARCHAR(32)
+		,	IsEmulator 					    TINYINT
+		,	ModelName 					    VARCHAR(32)
+		,	Manufacturer 				    VARCHAR(32)
+		,	Brand 						    VARCHAR(32)
+		,	SDKVersion 					    VARCHAR(32)
+		,	OSName 						    VARCHAR(32)
+		,	CountryName					    VARCHAR(32)
+		,	Timezone 					    VARCHAR(32)
+		,	Language 					    VARCHAR(32)
+		,	DeviceDetails 				    JSON
+        , 	MBAccountID					    BIGINT UNSIGNED
+        ,	MBDeviceCodeTaggingID		    BIGINT UNSIGNED
+        ,	MBDeviceCodeMediaDRMID		    BIGINT UNSIGNED
+        ,	MBDeviceCodeMachineID		    BIGINT UNSIGNED
+        ,	MBDeviceModelID				    BIGINT UNSIGNED
+        ,	MBOSID						    BIGINT UNSIGNED
+        ,	MBUserSettingID				    BIGINT UNSIGNED
+        ,	ActionResultID				    INT
+        ,	MBDeviceCodeMachineAccountID	BIGINT UNSIGNED
+        ,	MBDeviceCodeMachineMediaID		BIGINT UNSIGNED
 	);
         
 	INSERT INTO Temp_MBRawTransaction(ID, LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language, DeviceDetails)
@@ -100,13 +104,13 @@ BEGIN
     
     /* === Insert new MBAccount === */ 
     WITH CTE_DistinctData AS (
-		SELECT	DISTINCT
-				SubscriberID
+		SELECT	SubscriberID
 			,	LoginName
-			,	TransTime
+			,	MIN(TransTime) AS TransTime
 		FROM Temp_MBRawTransaction
 		WHERE SubscriberID IS NOT NULL
 			AND LoginName IS NOT NULL
+        GROUP BY SubscriberID, LoginName
     )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
@@ -144,12 +148,12 @@ BEGIN
     
     /* === Insert new MBDeviceCodeMediaDRM === */
     WITH CTE_DistinctData AS (
-		SELECT	DISTINCT
-				MBDeviceCodeMediaDRM
-            ,	TransTime
+		SELECT	MBDeviceCodeMediaDRM
+			,	MIN(TransTime) AS TransTime
 		FROM Temp_MBRawTransaction
 		WHERE SubscriberID IS NOT NULL
 			AND LoginName IS NOT NULL
+        GROUP BY MBDeviceCodeMediaDRM
     )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
@@ -167,13 +171,13 @@ BEGIN
     
     /* === Insert new MBDeviceCodeMachine === */ -- [{"Code":"Code4", "MachineOSType":"2"},{"Code":"Code2"},{"Code":"Code3", "MachineOSType":""}]
     WITH CTE_DistinctData AS (
-		SELECT	DISTINCT
-				MBDeviceCodeMachine
+		SELECT	MBDeviceCodeMachine
             ,	OSName
-            ,	TransTime
+			,	MIN(TransTime) AS TransTime
 		FROM Temp_MBRawTransaction
 		WHERE SubscriberID IS NOT NULL
 			AND LoginName IS NOT NULL
+        GROUP BY MBDeviceCodeMachine, OSName
     )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
@@ -192,12 +196,12 @@ BEGIN
     
     /* === Insert new MBDeviceCodeTagging === */
     WITH CTE_DistinctData AS (
-		SELECT	DISTINCT
-				MBDeviceCodeTagging
-            ,	TransTime
+		SELECT	MBDeviceCodeTagging
+			,	MIN(TransTime) AS TransTime
 		FROM Temp_MBRawTransaction
 		WHERE SubscriberID IS NOT NULL
 			AND LoginName IS NOT NULL
+        GROUP BY MBDeviceCodeTagging
     )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
@@ -215,15 +219,15 @@ BEGIN
     
     /* === Insert new MBDeviceModel === */ -- {"ModelName":"sdk_gphone64_x86_64", "Manufacturer":"Google", "Brand": "google"}
     WITH CTE_DistinctData AS (
-		SELECT	DISTINCT
-				ModelName
+		SELECT	ModelName
 			,	Manufacturer
             ,	Brand
-            ,	TransTime
+			,	MIN(TransTime) AS TransTime
 		FROM Temp_MBRawTransaction
 		WHERE ModelName IS NOT NULL
 			OR Manufacturer IS NOT NULL
 			OR Brand IS NOT NULL
+        GROUP BY ModelName, Manufacturer, Brand
     )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
@@ -242,15 +246,15 @@ BEGIN
     
     /* === Insert new MBUserSetting === */ -- {"CountryName":"CountryName1", "TimeZone":"TimeZone1", "LanguageName":"LanguageName1"}
     WITH CTE_DistinctData AS (
-		SELECT	DISTINCT
-				CountryName
+		SELECT	CountryName
 			,	TimeZone
 			,	Language
-			,	TransTime
+			,	MIN(TransTime) AS TransTime
 		FROM Temp_MBRawTransaction
 		WHERE CountryName IS NOT NULL
 			OR TimeZone IS NOT NULL
 			OR Language IS NOT NULL
+        GROUP BY CountryName, TimeZone, Language
     )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
@@ -269,12 +273,12 @@ BEGIN
     
     /* === Insert new MBOS === */ -- {"OSName":"OSName1", "Version":"1.1.3"}
     WITH CTE_DistinctData AS (
-		SELECT	DISTINCT
-				OSName
-			,	SDKVersion
-			,	TransTime
+		SELECT	OSName
+			,	IFNULL(SDKVersion, '') AS SDKVersion
+			,	MIN(TransTime) AS TransTime
 		FROM Temp_MBRawTransaction
 		WHERE OSName IS NOT NULL
+        GROUP BY OSName, SDKVersion
     )
 	SELECT JSON_ARRAYAGG(
 			JSON_OBJECT(
@@ -328,8 +332,57 @@ BEGIN
 											AND os.Version = tmp.SDKVersion
 	SET tmp.MBOSID = os.ID;
     
+    /* === Insert new MBDeviceCodeMachineAccount === */
+    WITH CTE_DistinctData AS (
+		SELECT	MBDeviceCodeMachineID
+			,	MBAccountID
+			,	MIN(TransTime) AS TransTime
+		FROM Temp_MBRawTransaction
+		WHERE MBDeviceCodeMachineID IS NOT NULL
+            AND MBAccountID IS NOT NULL
+        GROUP BY MBDeviceCodeMachineID, MBAccountID
+    )
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+					'MBDeviceCodeMachineID'	    , MBDeviceCodeMachineID
+				,	'MBAccountID'	            , MBAccountID
+				,	'TransTime'		            , TransTime
+			)
+		) AS json_data
+	INTO lv_MBDeviceCodeMachineAccountJson
+	FROM CTE_DistinctData;
+
+    IF lv_MBDeviceCodeMachineAccountJson IS NOT NULL THEN
+		CALL DCS_DC_Transform_MBDeviceCodeMachineAccount_Insert(lv_MBDeviceCodeMachineAccountJson);
+	END IF;
+    
+    /* === Insert new MBDeviceCodeMachineMedia === */
+    WITH CTE_DistinctData AS (
+		SELECT	MBDeviceCodeMachineID
+			,	MBDeviceCodeMediaDRMID
+			,	MIN(TransTime) AS TransTime
+		FROM Temp_MBRawTransaction
+		WHERE MBDeviceCodeMachineID IS NOT NULL
+            AND MBDeviceCodeMediaDRMID IS NOT NULL
+        GROUP BY MBDeviceCodeMachineID, MBDeviceCodeMediaDRMID
+    )
+	SELECT JSON_ARRAYAGG(
+			JSON_OBJECT(
+					'MBDeviceCodeMachineID'	    , MBDeviceCodeMachineID
+				,	'MBDeviceCodeMediaDRMID'	, MBDeviceCodeMediaDRMID
+				,	'TransTime'		            , TransTime
+			)
+		) AS json_data
+	INTO lv_MBDeviceCodeMachineMediaJson
+	FROM CTE_DistinctData;
+
+    IF lv_MBDeviceCodeMachineMediaJson IS NOT NULL THEN
+		CALL DCS_DC_Transform_MBDeviceCodeMachineMedia_Insert(lv_MBDeviceCodeMachineMediaJson);
+	END IF;
+    
+
 	/* ======= INSERT MBTransaction ========= */
-    INSERT IGNORE INTO DCS_DataCenter.MBTransaction(MBRawTransactionID, TransTime, LoginName, SubscriberID, MBAccountID, IP, IPID, ActionResultID, Flagged, MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID, MBDeviceModelID, MBOSID, MBUserSettingID, InsertedTime)
+    INSERT IGNORE INTO DCS_DataCenter.MBTransaction(MBRawTransactionID, TransTime, LoginName, SubscriberID, MBAccountID, IP, IPID, ActionResultID, Flagged, MBDeviceCodeTaggingID, MBDeviceCodeMachineAccountID, MBDeviceCodeMachineMediaID, MBDeviceModelID, MBOSID, MBUserSettingID, InsertedTime)
    	SELECT  trt.ID
 		,   trt.TransTime
 		,   trt.LoginName
@@ -339,9 +392,9 @@ BEGIN
 		,   trt.IPID
 		,   trt.ActionResultID
 		,   trt.Flagged
-		,   trt.MBDeviceCodeMediaDRMID
-		,   trt.MBDeviceCodeMachineID
 		,   trt.MBDeviceCodeTaggingID
+		,   trt.MBDeviceCodeMachineAccountID
+		,   trt.MBDeviceCodeMachineMediaID
 		,   trt.MBDeviceModelID
 		,   trt.MBOSID
 		,   trt.MBUserSettingID
