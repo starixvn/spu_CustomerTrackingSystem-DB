@@ -136,8 +136,8 @@ BEGIN
 				INNER JOIN CTS_DataCenter.BettypeSetting AS bs ON bs.BettypeID = sbs.BetTypeID
 				INNER JOIN Temp_SportTypeID AS tmpSt ON IFNULL(tmpSt.SportTypeID,sbs.SportTypeID) = sbs.SportTypeID
 				INNER JOIN Temp_BettypeID AS tmpBt ON IFNULL(tmpBt.BettypeID,sbs.BettypeID) = sbs.BettypeID
-				, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(bs.BetTypeNameDetailsX,''), ',', '","'), '"]'),
-							  '$[*]' COLUMNS (NameDetailsX VARCHAR(2) PATH '$')) js
+				, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(sbs.BetTypeNameDetailsX,''), ',', '","'), '"]'),
+							  '$[*]' COLUMNS (NameDetailsX SMALLINT PATH '$')) js
 			WHERE 	sbs.Status = ip_Status
 				AND	sbs.FunctionID = ip_FunctionID			
 				AND	sbs.IsMMDetection = IFNULL(ip_IsFilterMMDetection,sbs.IsMMDetection) 
