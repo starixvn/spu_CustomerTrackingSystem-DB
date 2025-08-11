@@ -117,8 +117,8 @@ BEGIN
 				,	sbs.SportTypeID
 				,	sbs.SportName
 				,	bs.BetTypeID
-				,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,'[X]', js.NameDetailsX)   
-								ELSE bs.BettypeNameDisplay END) AS BettypeNameDisplay
+				,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(sbs.BettypeNameDisplay,'[X]', js.NameDetailsX)   
+								ELSE REPLACE(sbs.BettypeNameDisplay,'[X]', 'X')  END) AS BettypeNameDisplay
 				,	bs.BetChoiceType            
 				,	bs.BetIDPattern
 				,	sbs.IsMMDetection
@@ -152,7 +152,7 @@ BEGIN
 				,	bs.BetChoiceType
 				,	bs.BetIDPattern
 				,	js.NameDetailsX
-				,	bs.BettypeNameDisplay
+				,	sbs.BettypeNameDisplay
 				,	sbs.SportOrder
 			ORDER BY LeagueGroupID, bs.BettypeOrder, js.NameDetailsX; 
 		ELSE	
