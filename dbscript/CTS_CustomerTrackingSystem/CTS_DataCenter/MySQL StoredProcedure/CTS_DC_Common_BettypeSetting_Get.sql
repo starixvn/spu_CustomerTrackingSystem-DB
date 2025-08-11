@@ -60,7 +60,7 @@ BEGIN
 	IF ip_FunctionID IS NULL THEN
 
 		SELECT DISTINCT bs.BetTypeID
-					, 	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
+					, 	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,'[X]', js.NameDetailsX)  
 									ELSE bs.BettypeNameDisplay END) AS BettypeNameDisplay					
 					,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BetIDPattern,'X',js.NameDetailsX)  
 									ELSE 0 END) AS BetID 
@@ -117,7 +117,7 @@ BEGIN
 				,	sbs.SportTypeID
 				,	sbs.SportName
 				,	bs.BetTypeID
-				,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
+				,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,'[X]', js.NameDetailsX)   
 								ELSE bs.BettypeNameDisplay END) AS BettypeNameDisplay
 				,	bs.BetChoiceType            
 				,	bs.BetIDPattern

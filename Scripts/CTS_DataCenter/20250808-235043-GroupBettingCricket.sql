@@ -18,20 +18,16 @@ USE CTS_DataCenter;
 ALTER TABLE CTS_DataCenter.BettypeSetting 
 MODIFY COLUMN BetTypeNameDetailsX VARCHAR(200);
 
- ALTER TABLE CTS_DataCenter.BettypeSetting
- ADD COLUMN BetTypeNameDetailsPattern VARCHAR(250) AFTER BettypeName; 
 /*******************************ALTER Table SportBettypeSetting*********************************/
 USE CTS_DataCenter;
 
 ALTER TABLE CTS_DataCenter.SportBettypeSetting 
 MODIFY COLUMN BetTypeNameDetailsX VARCHAR(200);
 
-
 /*******************************INITIAL BettypeSetting*********************************/
 USE CTS_DataCenter;
 
 /* Initial Cricket BettypeSetting */
-
 UPDATE BettypeSetting
 SET BettypeName = REPLACE(BettypeName, ' [X] ', ' [X] ')
 WHERE BetTypeNameDetailsX IS NOT NULL;
