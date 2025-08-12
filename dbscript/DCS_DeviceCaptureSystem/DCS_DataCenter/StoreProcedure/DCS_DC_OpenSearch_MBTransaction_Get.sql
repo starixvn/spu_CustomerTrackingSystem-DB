@@ -21,8 +21,8 @@ BEGIN
 	Example:
         CALL DCS_DataCenter.DCS_DC_OpenSearch_MBTransaction_Get(100);
 	*/
-    DECLARE CONST_DEVICETRANSFORM_MAXMBTRANSACTION07IDCOMPLETED	INT			DEFAULT 3;
-	DECLARE CONST_OPENSEARCH_MBTRANSACTION07_TRANSID 			INT 		DEFAULT 101;
+    DECLARE CONST_DEVICETRANSFORM_MAXMBTRANSACTION07IDCOMPLETED	INT			DEFAULT 4;
+	DECLARE CONST_OPENSEARCH_MBTRANSACTION07_TRANSID 			INT 		DEFAULT 102;
     
 	DECLARE lv_MaxTransID  				BIGINT UNSIGNED;
 	DECLARE lv_MaxTransIDCompleted		BIGINT UNSIGNED;
@@ -35,7 +35,7 @@ BEGIN
     
     #======GET DATA FROM MBTRANSACTION07===========================
 	CREATE TEMPORARY TABLE Temp_MBTrans07(
-			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY
+			ID				    		BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	MBRawTransactionID			BIGINT UNSIGNED
 		,	TransTime 					DATETIME(4)
 		,	SubscriberID 				INT
@@ -51,8 +51,8 @@ BEGIN
 		,	MBUserSettingID  			BIGINT UNSIGNED
 	);
 
-	INSERT IGNORE INTO Temp_MBTrans07(TransID, MBRawTransactionID, TransTime, SubscriberID, MBAccountID, MBDeviceMappingID, MBDeviceID, DeviceStatus, IP, IPID, Flagged, MBDeviceModelID, MBOSID, MBUserSettingID)
-		SELECT 	trans.ID AS TransID
+	INSERT IGNORE INTO Temp_MBTrans07(ID, MBRawTransactionID, TransTime, SubscriberID, MBAccountID, MBDeviceMappingID, MBDeviceID, DeviceStatus, IP, IPID, Flagged, MBDeviceModelID, MBOSID, MBUserSettingID)
+		SELECT 	trans.ID
             ,	trans.MBRawTransactionID
             ,	trans.TransTime
             ,	trans.SubscriberID
@@ -66,7 +66,7 @@ BEGIN
             ,	trans.MBDeviceModelID
             ,	trans.MBOSID
             ,	trans.MBUserSettingID
-	FROM DCS_DataCenter.Transaction07 AS trans
+	FROM DCS_DataCenter.MBTransaction07 AS trans
 	WHERE trans.ID > lv_MaxTransID
 		AND trans.ID <= lv_MaxTransIDCompleted
 	ORDER BY trans.ID ASC
