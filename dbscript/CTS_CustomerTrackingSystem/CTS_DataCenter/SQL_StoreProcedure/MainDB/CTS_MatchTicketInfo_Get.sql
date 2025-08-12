@@ -37,6 +37,7 @@ AS
 		- 20250103@Casey.Huynh:	Tunning Phase 2, REMOVE(Max Dop,Force Index) enhance logic get data, switch sp to WASAVerse [Redmine ID: #214663]	
 		- 20250320@Jonas.Huynh:	Danger Monitor - Handle BetID for Cricket [Redmine ID: #217765]
 		- 20250506@Casey.Huynh:	Danger Monitor - Fix LeagueGroup Filter [Redmine ID: #226078]
+        - 20250807@Winfred.Pham: Get Data for Sum betType [Redmine ID: #202508 ]
 
 	Params Explaination:
 		,@BettypeList='[	{"BetType":1, "BetChoiceType":2}
@@ -517,7 +518,7 @@ BEGIN
 						SELECT	b.MatchId
 							,	b.liveindicator
 							,	b.bettype
-							,	CASE WHEN m.SportType = @SPORTTYPE_CRICKET THEN 0 ELSE b.BetId END AS BetID
+							,	CASE WHEN m.SportType = @SPORTTYPE_CRICKET OR t.BetID = 0 THEN 0 ELSE b.BetId END AS BetID
 							,	b.betteam
 							,	b.stake
 							,	b.actualrate
@@ -533,7 +534,7 @@ BEGIN
 								FROM #tmpBetType AS bt WITH(NOLOCK)
 								WHERE b.Bettype = bt.Bettype 
 							) AS t
-						WHERE b.BetID = CASE WHEN m.SportType = @SPORTTYPE_CRICKET THEN b.BetID ELSE t.BetId END)
+						WHERE b.BetID = CASE WHEN m.SportType = @SPORTTYPE_CRICKET OR t.BetID = 0 THEN b.BetID ELSE t.BetId END)
 			INSERT INTO #tmpMatchSum(MatchId, LiveIndicator,BetChoiceType, Bettype,BetID, TotalAmountHome, TotalAmountAway, TotalTicketHome, TotalTicketAway)
 			SELECT 	tmpCust.MatchId
 				,	tmpCust.LiveIndicator
@@ -736,7 +737,7 @@ BEGIN
 						,	tmp.LiveIndicator
 						,	t.BetChoiceType
 						,	tmp.Bettype
-						,	tmp.BetID
+						,	CASE WHEN t.BetID = 0 THEN 0 ELSE tmp.BetID END AS BetID
 						,	SUM(CASE WHEN t.BetChoiceType = 2 AND tmp.betteam = t.BetChoiceHome THEN tmp.stake * tmp.actualrate 
 									 WHEN t.BetChoiceType = 1 THEN tmp.stake * tmp.actualrate 
 									 ELSE 0 END) AS CustAmountHome
@@ -754,11 +755,11 @@ BEGIN
 								WHERE tmp.Bettype = bt.Bettype 
 							) AS t
 				
-					WHERE tmp.BetID = t.BetID
+					WHERE tmp.BetID = CASE WHEN t.BetID = 0 THEN tmp.BetID ELSE t.BetID END
 						AND (CASE WHEN @MarketList = '' THEN 1
 								  WHEN @MarketList <> '' AND tmp.LiveIndicator IN (SELECT ssk.value FROM STRING_SPLIT (@MarketList, ',') AS ssk) THEN 1
 								  ELSE 0 END = 1)
-					GROUP BY tmp.MatchId, t.BetChoiceType, tmp.Bettype, tmp.LiveIndicator, tmp.BetId, tmp.CustID
+					GROUP BY tmp.MatchId, t.BetChoiceType, tmp.Bettype, tmp.LiveIndicator, tmp.BetId, t.BetID, tmp.CustID
 				) AS tmpCust
 				WHERE tmpCust.CustAmountHome >= @UserAmount
 					OR tmpCust.CustAmountAway >= @UserAmount
