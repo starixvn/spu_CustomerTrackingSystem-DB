@@ -415,7 +415,8 @@ BEGIN
             ,	t.FraudTrans
             ,	t.FraudRefno
             ,	t.FraudTransm
-            ,	tmpMm.TicketType;
+            ,	tmpMm.TicketType
+			,	sbs.BetIDPattern;
 
 	END IF;
 
@@ -484,7 +485,8 @@ BEGIN
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
             ,	sbs.BettypeNameDisplay
-            ,	tmpMm.TicketType;
+            ,	tmpMm.TicketType
+			,	sbs.BetIDPattern;
 	END IF;
     
     IF (ip_IsVerified = 1)
@@ -553,7 +555,8 @@ BEGIN
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
             ,	sbs.BettypeNameDisplay
-            ,	tmpMm.TicketType;
+            ,	tmpMm.TicketType
+			,	sbs.BetIDPattern;
 	END IF;
                    
 END$$
