@@ -361,7 +361,21 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', (CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+            ,	(CASE 
+					WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON 
+						THEN sbs.BettypeNameDisplay 
+					ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', 
+						(CASE 
+    						WHEN LOCATE('X', sbs.BetIDPattern) > 0 
+    							THEN CAST(
+    								SUBSTRING(
+        								LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
+            							LOCATE('X', sbs.BetIDPattern),
+            							LENGTH(REPEAT('X', LENGTH(sbs.BetIDPattern) - LOCATE('X', sbs.BetIDPattern) + 1))
+        							) AS UNSIGNED
+    							)
+    						ELSE 0
+						END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
         	,	-- DetailsX
 				CASE 
     				WHEN LOCATE('X', sbs.BetIDPattern) > 0 
@@ -433,7 +447,21 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', (CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+            ,	(CASE 
+					WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON 
+						THEN sbs.BettypeNameDisplay 
+					ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', 
+						(CASE 
+    						WHEN LOCATE('X', sbs.BetIDPattern) > 0 
+    							THEN CAST(
+    								SUBSTRING(
+        								LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
+            							LOCATE('X', sbs.BetIDPattern),
+            							LENGTH(REPEAT('X', LENGTH(sbs.BetIDPattern) - LOCATE('X', sbs.BetIDPattern) + 1))
+        							) AS UNSIGNED
+    							)
+    						ELSE 0
+						END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
             ,	-- DetailsX
 				CASE 
     				WHEN LOCATE('X', sbs.BetIDPattern) > 0 
@@ -503,7 +531,21 @@ BEGIN
             ,	tmpMm.SporttypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', (CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+            ,	(CASE 
+					WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON 
+						THEN sbs.BettypeNameDisplay 
+					ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', 
+						(CASE 
+    						WHEN LOCATE('X', sbs.BetIDPattern) > 0 
+    							THEN CAST(
+    								SUBSTRING(
+        								LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
+            							LOCATE('X', sbs.BetIDPattern),
+            							LENGTH(REPEAT('X', LENGTH(sbs.BetIDPattern) - LOCATE('X', sbs.BetIDPattern) + 1))
+        							) AS UNSIGNED
+    							)
+    						ELSE 0
+						END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
             ,	-- DetailsX
 				CASE 
     				WHEN LOCATE('X', sbs.BetIDPattern) > 0 
