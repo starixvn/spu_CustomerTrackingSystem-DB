@@ -361,8 +361,8 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
-           ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
+            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', (CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+        	,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY		
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	NOT EXISTS(SELECT 1 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
@@ -410,7 +410,7 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', (CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
@@ -457,7 +457,7 @@ BEGIN
             ,	tmpMm.SporttypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', (CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
             ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
