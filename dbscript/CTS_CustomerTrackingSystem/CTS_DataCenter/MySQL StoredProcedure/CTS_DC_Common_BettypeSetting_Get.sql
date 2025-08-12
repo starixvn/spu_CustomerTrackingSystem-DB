@@ -161,7 +161,7 @@ BEGIN
 				,	sbs.SportTypeID
 				,	sbs.SportName
 				,	sbs.BetTypeID
-				, 	bs.BetTypeNameDisplay
+				, 	REPLACE(bs.BettypeNameDisplay,'[X]', 'X') AS BetTypeNameDisplay
 				,	bs.BetChoiceType
 				,	bs.BetIDPattern
 				,	sbs.IsMMDetection
