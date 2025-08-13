@@ -470,7 +470,7 @@ BEGIN
         				SUBSTRING(
             				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
             				LOCATE('X', sbs.BetIDPattern),
-            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X','')))
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X',''))
         				) AS UNSIGNED
     				)
     				ELSE 0
