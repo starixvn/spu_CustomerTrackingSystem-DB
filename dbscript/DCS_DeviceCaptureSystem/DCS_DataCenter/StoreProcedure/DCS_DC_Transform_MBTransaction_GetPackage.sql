@@ -3,22 +3,22 @@ DROP PROCEDURE IF EXISTS `DCS_DC_Transform_MBTransaction_GetPackage`;
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_MBTransaction_GetPackage`(
-        IN ip_LimitTotalRecord 	INT
-    ,   IN ip_NoOfBatch 		INT
+		IN ip_LimitTotalRecord 	INT
+	,   IN ip_NoOfBatch 		INT
 )
-    SQL SECURITY INVOKER
+	SQL SECURITY INVOKER
 BEGIN
 	/*
-	    Created: 20241205@Jonathan.Doan
-	    Task : Transform Transaction
-	    DB: DCS_DataCenter
-	    Original:
+		Created: 20241205@Jonathan.Doan
+		Task : Transform Transaction
+		DB: DCS_DataCenter
+		Original:
 
-	    Revisions:
-            - 20241205@Jonathan.Doan: Integrate Mobile App (Phase 2) [Redmine ID: #213401]
-		    - 20250811@Jonathan.Doan: Update new rule [Redmine ID: #235457]
+		Revisions:
+			- 20241205@Jonathan.Doan: Integrate Mobile App (Phase 2) [Redmine ID: #213401]
+			- 20250811@Jonathan.Doan: Update new rule [Redmine ID: #235457]
 
-	    Param's Explanation (filtered by):
+		Param's Explanation (filtered by):
 			CALL DCS_DC_Transform_MBTransaction_GetPackage(1, 30);
 	*/
 	DECLARE lv_NoOfBatch 	INT;
@@ -49,8 +49,8 @@ BEGIN
 	);
 
 	CREATE TEMPORARY TABLE Temp_SetBatchID(
-			SameDeviceID				    BIGINT UNSIGNED NOT NULL PRIMARY KEY
-		,	BatchID						    INT 			DEFAULT 0
+			SameDeviceID					BIGINT UNSIGNED NOT NULL PRIMARY KEY
+		,	BatchID							INT 			DEFAULT 0
 	);
 	
 	/********************** Check Same Device ***********************************/
