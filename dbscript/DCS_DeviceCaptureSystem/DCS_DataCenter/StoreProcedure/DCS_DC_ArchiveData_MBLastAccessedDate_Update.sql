@@ -16,6 +16,7 @@ BEGIN
       Revisions:
         - 20241204@Jonathan.Doan: Created [Redmine ID: #213401]
         - 20250514@Jonathan.Doan: Update field value LastLoginTime [Redmine ID: #221973]
+		- 20250811@Jonathan.Doan: Update new rule [Redmine ID: #235457]
       Param's Explanation (filtered by):
     Example:
       CALL DCS_DC_ArchiveData_MBLastAccessedDate_Update(100);

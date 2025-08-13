@@ -38,7 +38,7 @@ CREATE TABLE `MBDeviceCodeMachineAccount` (
   KEY `IX_MBDeviceCodeMachineAccount_CreatedDate` (`CreatedDate`)
 ) ENGINE=InnoDB;
 
-DROP TABLE IF EXISTS MBDeviceCodeMachineAccount;
+DROP TABLE IF EXISTS MBDeviceCodeMachineMedia;
 CREATE TABLE `MBDeviceCodeMachineMedia` (
   `ID` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `MBDeviceCodeMachineID` BIGINT UNSIGNED NOT NULL,
