@@ -35,18 +35,20 @@ BEGIN
     /*******INIT TEMPORARY TABLE************/
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBTransaction07;
 	CREATE TEMPORARY TABLE Temp_MBTransaction07(
-		  ID            			BIGINT UNSIGNED PRIMARY KEY
-		, MBAccountID       		BIGINT UNSIGNED
-		, CreatedDate       		DATE
-		, TransTime       			DATETIME(4)
-		, MBDeviceCodeMediaDRMID  	BIGINT UNSIGNED
-		, MBDeviceCodeMachineID 	BIGINT UNSIGNED
-		, MBDeviceCodeTaggingID 	BIGINT UNSIGNED
-		, MBDeviceModelID     		BIGINT UNSIGNED
-		, MBOSID          			BIGINT UNSIGNED
-		, MBUserSettingID     		BIGINT UNSIGNED
-		, MBDeviceID        		BIGINT UNSIGNED
-		, MBAssociationID        	BIGINT UNSIGNED
+		  ID            			    BIGINT UNSIGNED PRIMARY KEY
+		, MBAccountID       		    BIGINT UNSIGNED
+		, CreatedDate       		    DATE
+		, TransTime       			    DATETIME(4)
+		, MBDeviceCodeTaggingID 	    BIGINT UNSIGNED
+		, MBDeviceCodeMachineAccountID  BIGINT UNSIGNED
+		, MBDeviceCodeMachineMediaID  	BIGINT UNSIGNED
+		, MBDeviceCodeMediaDRMID  	    BIGINT UNSIGNED
+		, MBDeviceCodeMachineID 	    BIGINT UNSIGNED
+		, MBDeviceModelID     		    BIGINT UNSIGNED
+		, MBOSID          			    BIGINT UNSIGNED
+		, MBUserSettingID     		    BIGINT UNSIGNED
+		, MBDeviceID        		    BIGINT UNSIGNED
+		, MBAssociationID        	    BIGINT UNSIGNED
 	);
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBAccount;
@@ -104,13 +106,13 @@ BEGIN
 	);
     
     /*******GET DATA Transaction07********************/
-	INSERT INTO Temp_MBTransaction07(ID, MBAccountID, CreatedDate, TransTime, MBDeviceCodeMediaDRMID, MBDeviceCodeMachineID, MBDeviceCodeTaggingID, MBDeviceModelID, MBOSID, MBUserSettingID, MBDeviceID)
+	INSERT INTO Temp_MBTransaction07(ID, MBAccountID, CreatedDate, TransTime, MBDeviceCodeMachineAccountID, MBDeviceCodeMachineMediaID, MBDeviceCodeTaggingID, MBDeviceModelID, MBOSID, MBUserSettingID, MBDeviceID)
 	SELECT  trans.ID
 		,	IFNULL(trans.MBAccountID, 0) AS MBAccountID
 		,	trans.CreatedDate
 		,	trans.TransTime
-		,	IFNULL(dm.MBDeviceCodeMediaDRMID, 0) AS MBDeviceCodeMediaDRMID
-		,	IFNULL(dm.MBDeviceCodeMachineID, 0) AS MBDeviceCodeMachineID
+		,	IFNULL(dm.MBDeviceCodeMachineAccountID, 0) AS MBDeviceCodeMachineAccountID
+		,	IFNULL(dm.MBDeviceCodeMachineMediaID, 0) AS MBDeviceCodeMachineMediaID
 		,	IFNULL(dm.MBDeviceCodeTaggingID, 0) AS MBDeviceCodeTaggingID
 		,	IFNULL(trans.MBDeviceModelID, 0) AS MBDeviceModelID
 		,	IFNULL(trans.MBOSID, 0) AS MBOSID
@@ -120,8 +122,17 @@ BEGIN
 		LEFT JOIN DCS_DataCenter.MBDeviceMapping AS dm ON dm.ID = trans.MBDeviceMappingID
 	WHERE trans.ID > lv_MaxID
 	LIMIT ip_BatchSize;
-    
-    
+
+    UPDATE Temp_MBTransaction07 AS tmp
+        INNER JOIN DCS_DataCenter.MBDeviceCodeMachineAccount AS dcma ON dcma.ID = tmp.MBDeviceCodeMachineAccountID
+		INNER JOIN DCS_DataCenter.MBDeviceCodeMachine AS dcm ON dcm.ID = dcma.MBDeviceCodeMachineID
+    SET tmp.MBDeviceCodeMachineID = dcm.ID;
+
+    UPDATE Temp_MBTransaction07 AS tmp
+        INNER JOIN DCS_DataCenter.MBDeviceCodeMachineMedia AS dcmm ON dcmm.ID = tmp.MBDeviceCodeMachineMediaID
+		INNER JOIN DCS_DataCenter.MBDeviceCodeMediaDRM AS drm ON drm.ID = dcmm.MBDeviceCodeMediaDRMID
+    SET tmp.MBDeviceCodeMediaDRMID = drm.ID;
+
     /*******GET LastAccessedDate ********************/
     INSERT INTO Temp_MBAccount(ID, LastLoginTime)
     SELECT	MBAccountID AS ID
