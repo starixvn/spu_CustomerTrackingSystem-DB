@@ -47,11 +47,10 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeMachineInsert;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeMachineInsert(
-			Code					VARCHAR(32) 	NOT NULL
+			Code					VARCHAR(32) 	NOT NULL PRIMARY KEY
 		,	MachineOSType	 		SMALLINT 		NOT NULL COMMENT 'DCS_DataCenter.StaticList.ListID = 5'
 		,	TransTime				DATETIME(4)
 		,	IsNewRecord				TINYINT			DEFAULT 1
-        ,	PRIMARY KEY (Code, MachineOSType)
     );
     
 	INSERT IGNORE INTO Temp_MBDeviceCodeMachineInsert(Code, MachineOSType, TransTime)
