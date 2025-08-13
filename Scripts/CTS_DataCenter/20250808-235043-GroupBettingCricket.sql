@@ -144,7 +144,7 @@ VALUES
      @BetChoicePattern:='{"BetChoiceOver": "o", "BetChoiceUnder": "u", "BetChoiceOverDisplay": "o", "BetChoiceUnderDisplay": "u"}',
      @BetChoiceType:=2, @BetIDPattern:='80XX', @IsMMDetection:=1, @IsMMParlayDetection:=0, @MMReason:=0, @IsDefaultSelected:=0, @Status:=1, @SportOrder:=300);
 
-SELECT * FROM CaseySportBettypeSetting WHERE BettypeID IN (9608,9607,9411,9410,9429,9428);
+SELECT * FROM SportBettypeSetting WHERE BettypeID IN (9608,9607,9411,9410,9429,9428);
 
 #=====================================FOR DANGER MONITOR FEATURE==============================================
 INSERT INTO CTS_DataCenter.SportBettypeSetting

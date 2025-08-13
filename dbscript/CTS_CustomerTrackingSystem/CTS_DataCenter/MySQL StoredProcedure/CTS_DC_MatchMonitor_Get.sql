@@ -372,7 +372,7 @@ BEGIN
     								SUBSTRING(
         								LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
             							LOCATE('X', sbs.BetIDPattern),
-            							LENGTH(REPEAT('X', LENGTH(sbs.BetIDPattern) - LOCATE('X', sbs.BetIDPattern) + 1))
+            							LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X',''))
         							) AS UNSIGNED
     							)
     						ELSE 0
@@ -384,7 +384,7 @@ BEGIN
         				SUBSTRING(
             				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
             				LOCATE('X', sbs.BetIDPattern),
-            				LENGTH(REPEAT('X', LENGTH(sbs.BetIDPattern) - LOCATE('X', sbs.BetIDPattern) + 1))
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X',''))
         				) AS UNSIGNED
     				)
     				ELSE 0
@@ -396,7 +396,7 @@ BEGIN
         				SUBSTRING(
             				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
             				LOCATE('Y', sbs.BetIDPattern),
-            				LENGTH(REPEAT('Y', LENGTH(sbs.BetIDPattern) - LOCATE('Y', sbs.BetIDPattern) + 1))
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('Y', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('Y', sbs.BetIDPattern)), 'Y',''))
         				) AS UNSIGNED
     				)
     				ELSE 0
@@ -458,7 +458,7 @@ BEGIN
     								SUBSTRING(
         								LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
             							LOCATE('X', sbs.BetIDPattern),
-            							LENGTH(REPEAT('X', LENGTH(sbs.BetIDPattern) - LOCATE('X', sbs.BetIDPattern) + 1))
+            							LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X',''))
         							) AS UNSIGNED
     							)
     						ELSE 0
@@ -470,7 +470,7 @@ BEGIN
         				SUBSTRING(
             				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
             				LOCATE('X', sbs.BetIDPattern),
-            				LENGTH(REPEAT('X', LENGTH(sbs.BetIDPattern) - LOCATE('X', sbs.BetIDPattern) + 1))
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X','')))
         				) AS UNSIGNED
     				)
     				ELSE 0
@@ -482,7 +482,7 @@ BEGIN
         				SUBSTRING(
             				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
             				LOCATE('Y', sbs.BetIDPattern),
-            				LENGTH(REPEAT('Y', LENGTH(sbs.BetIDPattern) - LOCATE('Y', sbs.BetIDPattern) + 1))
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('Y', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('Y', sbs.BetIDPattern)), 'Y',''))
         				) AS UNSIGNED
     				)
     				ELSE 0
@@ -542,7 +542,7 @@ BEGIN
     								SUBSTRING(
         								LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
             							LOCATE('X', sbs.BetIDPattern),
-            							LENGTH(REPEAT('X', LENGTH(sbs.BetIDPattern) - LOCATE('X', sbs.BetIDPattern) + 1))
+            							LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X',''))
         							) AS UNSIGNED
     							)
     						ELSE 0
@@ -554,7 +554,7 @@ BEGIN
         				SUBSTRING(
             				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
             				LOCATE('X', sbs.BetIDPattern),
-            				LENGTH(REPEAT('X', LENGTH(sbs.BetIDPattern) - LOCATE('X', sbs.BetIDPattern) + 1))
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X',''))
         				) AS UNSIGNED
     				)
     				ELSE 0
@@ -566,7 +566,7 @@ BEGIN
         				SUBSTRING(
             				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
             				LOCATE('Y', sbs.BetIDPattern),
-            				LENGTH(REPEAT('Y', LENGTH(sbs.BetIDPattern) - LOCATE('Y', sbs.BetIDPattern) + 1))
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('Y', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('Y', sbs.BetIDPattern)), 'Y',''))
         				) AS UNSIGNED
     				)
     				ELSE 0
