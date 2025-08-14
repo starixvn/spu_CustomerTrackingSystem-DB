@@ -124,7 +124,7 @@ BEGIN
 				,	sbs.IsMMDetection
 				,	sbs.IsDefaultSelected
 				,	bs.BettypeOrder
-				,	ISNULL(js.NameDetailsX,'') AS  NameDetailsX
+				,	IFNULL(js.NameDetailsX,'') AS  NameDetailsX
 				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceHome
 				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceHomeDisplay
 				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceHomeFullName
