@@ -31,7 +31,7 @@ USE CTS_DataCenter;
 /* Initial Cricket BettypeSetting */
 UPDATE BettypeSetting
 SET BetTypeNameDisplay = REPLACE(BetTypeNameDisplay, ' X ', ' [X] ')
-WHERE BetTypeNameDetailsX IS NOT NULL;
+WHERE BetTypeID NOT IN (707,708);
 
 SELECT * FROM BettypeSetting;
 
