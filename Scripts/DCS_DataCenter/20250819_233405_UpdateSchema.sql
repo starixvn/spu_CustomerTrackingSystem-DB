@@ -5,7 +5,43 @@
 	DB: DCS_DataCenter
 */
 
+USE CTS_Adhoc;
+
+DROP TABLE IF EXISTS MBProcessedTransaction_bk;
+CREATE TABLE `MBProcessedTransaction_bk` (
+  `ID` bigint unsigned NOT NULL PRIMARY KEY,
+  `CreatedDate` datetime NOT NULL,
+  `LoginName` varchar(100) NOT NULL,
+  `SubscriberName` varchar(50) NOT NULL,
+  `TransTime` datetime(4) NOT NULL,
+  `IP` varchar(50) DEFAULT NULL,
+  `IPID` decimal(50,0) DEFAULT NULL,
+  `Action` varchar(100) DEFAULT NULL,
+  `ActionResult` varchar(100) DEFAULT NULL,
+  `Flagged` smallint DEFAULT NULL,
+  `MBDeviceCodeMediaDRM` varchar(32) DEFAULT NULL,
+  `MBDeviceCodeMachine` varchar(32) DEFAULT NULL,
+  `MBDeviceCodeTagging` varchar(32) DEFAULT NULL,
+  `IsEmulator` tinyint DEFAULT NULL,
+  `ModelName` varchar(32) DEFAULT NULL,
+  `Manufacturer` varchar(32) DEFAULT NULL,
+  `Brand` varchar(32) DEFAULT NULL,
+  `SDKVersion` varchar(32) DEFAULT NULL,
+  `OSName` varchar(32) DEFAULT NULL,
+  `Timezone` varchar(32) DEFAULT NULL,
+  `Language` varchar(32) DEFAULT NULL,
+  `Country` varchar(32) DEFAULT NULL,
+  `InsertedTime` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+
 USE DCS_DataCenter;
+
+ALTER TABLE DCS_DataCenter.MBRawTransaction
+ADD DeviceDetails JSON;
+
+ALTER TABLE DCS_DataCenter.MBProcessedTransaction
+ADD DeviceDetails JSON;
 
 DROP TABLE IF EXISTS MBDeviceMapping;
 CREATE TABLE `MBDeviceMapping` (
