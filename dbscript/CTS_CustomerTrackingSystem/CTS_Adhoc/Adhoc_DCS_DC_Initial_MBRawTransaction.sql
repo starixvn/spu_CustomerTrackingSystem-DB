@@ -33,12 +33,12 @@ BEGIN
     DECLARE lv_CurrentDate 						TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
     
 	SET lv_LastTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_SYSTEMSETTING_LASTTRANSID);
-	SET lv_MaxTransID = (SELECT MAX(ID) FROM CTS_Adhoc.MBProcessedTransaction_bk);
+	SET lv_MaxTransID = (SELECT MAX(ID) FROM DCS_DataCenter.MBProcessedTransaction_bk);
 
     WHILE lv_LastTransID < lv_MaxTransID DO
 		WITH cte AS (
 			SELECT ID
-            FROM CTS_Adhoc.MBProcessedTransaction_bk
+            FROM DCS_DataCenter.MBProcessedTransaction_bk
 			WHERE ID > lv_LastTransID
 			ORDER BY ID ASC
 			LIMIT ip_BatchSize
@@ -71,7 +71,7 @@ BEGIN
 			,	Language
 			,	Country AS CountryName
 			,	InsertedTime
-		FROM CTS_Adhoc.MBProcessedTransaction_bk
+		FROM DCS_DataCenter.MBProcessedTransaction_bk
         WHERE ID BETWEEN lv_From_TransID AND lv_To_TransID
 			AND OSName <> 'IOS'
 		ORDER BY ID ASC;
@@ -98,7 +98,7 @@ BEGIN
 			,	Country AS CountryName
 			,	Timezone
 			,	Language
-		FROM CTS_Adhoc.MBProcessedTransaction_bk
+		FROM DCS_DataCenter.MBProcessedTransaction_bk
 		WHERE ID BETWEEN lv_From_TransID AND lv_To_TransID
 			AND OSName = 'IOS'
 		ORDER BY ID ASC;
