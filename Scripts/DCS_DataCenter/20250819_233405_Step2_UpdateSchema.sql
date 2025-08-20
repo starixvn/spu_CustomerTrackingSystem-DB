@@ -48,7 +48,7 @@ CREATE TABLE MBDeviceCodeMachineMedia (
   CreatedDate DATE NULL,
   InsertedTime DATETIME NULL,
   PRIMARY KEY (ID),
-  UNIQUE KEY UX_MBDeviceCodeMachineMedia_Unique (MBDeviceCodeMachineID,MBDeviceCodeMediaDRMID)
+  UNIQUE KEY UX_MBDeviceCodeMachineMedia_Group (MBDeviceCodeMachineID,MBDeviceCodeMediaDRMID)
 ) ENGINE=InnoDB;
 
 

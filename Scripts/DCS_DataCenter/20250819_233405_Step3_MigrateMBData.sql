@@ -11,7 +11,6 @@ DROP TABLE IF EXISTS DCS_DataCenter.MBProcessedTransaction_bk;
 RENAME TABLE DCS_DataCenter.MBProcessedTransaction
 TO DCS_DataCenter.MBProcessedTransaction_bk;
 
-DROP TABLE IF EXISTS DCS_DataCenter.MBProcessedTransaction;
 CREATE TABLE MBProcessedTransaction (
   ID bigint unsigned NOT NULL,
   CreatedDate datetime NOT NULL,

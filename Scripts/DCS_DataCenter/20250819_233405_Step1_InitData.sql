@@ -9,8 +9,7 @@ USE DCS_DataCenter;
 
 INSERT IGNORE INTO DCS_DataCenter.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
 VALUES 	(4, 'DCS_MBDevice_Transform', 'MaxMBTransaction07IDCompleted', 0, NOW())
-	,	(1002, 'AdhocInitialMBData', 'LastMBProcessedTransactionID', 0, NOW())
-	,	(1003, 'AdhocInitialMBData', 'LastMBProcessedTransaction_bkID', 0, NOW());
+	,	(1002, 'AdhocInitialMBData', 'LastMBProcessedTransaction_bkID', 0, NOW());
 
 UPDATE DCS_DataCenter.SystemSetting
 SET VValue = 0,
