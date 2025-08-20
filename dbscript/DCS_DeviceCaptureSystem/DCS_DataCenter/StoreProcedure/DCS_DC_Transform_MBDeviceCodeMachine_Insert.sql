@@ -16,6 +16,7 @@ BEGIN
 	    Revisions:
 		    - 20241121@Jonathan.Doan: Transform to MBTransaction [Redmine ID: #213401]
 		    - 20250425@Jonathan.Doan: Add field CreatedDate, CreatedTime [Redmine ID: #221973]
+		    - 20250811@Jonathan.Doan: Update new rule [Redmine ID: #235457]
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_MBDeviceCodeMachine_Insert('[{"Code":"Code4","MachineOS":"Android","TransTime":"2025-05-12 01:02:03"},{"Code":"Code2","TransTime":"2025-05-12 01:02:04"},{"Code":"Code3","MachineOS":""}]');
@@ -47,11 +48,10 @@ BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceCodeMachineInsert;
 	CREATE TEMPORARY TABLE Temp_MBDeviceCodeMachineInsert(
-			Code					VARCHAR(32) 	NOT NULL
+			Code					VARCHAR(32) 	NOT NULL PRIMARY KEY
 		,	MachineOSType	 		SMALLINT 		NOT NULL COMMENT 'DCS_DataCenter.StaticList.ListID = 5'
 		,	TransTime				DATETIME(4)
 		,	IsNewRecord				TINYINT			DEFAULT 1
-        ,	PRIMARY KEY (Code, MachineOSType)
     );
     
 	INSERT IGNORE INTO Temp_MBDeviceCodeMachineInsert(Code, MachineOSType, TransTime)
