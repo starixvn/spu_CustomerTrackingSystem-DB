@@ -44,6 +44,7 @@ sp: BEGIN
             - 	20250527@Casey.Huynh: Detect Volleyball Group Betting(Bettype 704,705,219,220) [Redmine ID: #226408]
             - 	20250610@Casey.Huynh: Detect Tennis Group Betting(Bettype 153,154,155,156) [Redmine ID: #229855]
 			- 	20250718@Logan.Nguyen: Saba Group Betting - Classify Saba Soccer Group Betting into CC3101-3201 [Redmine ID: #227848]
+			-	20250808@Logan.Nguyen: 	Match Monitor Group Betting - Cricket [Redmine ID: #235043]
             
 		Param's Explanation (filtered by):		
 			ip_PoolType: 
@@ -175,7 +176,12 @@ sp: BEGIN
 			,	(CASE WHEN js.SportType IN (CONST_SPORTTYPE_BASKETBALL, CONST_SPORTTYPE_CRICKET, CONST_SPORTTYPE_BADMINTON, CONST_SPORTTYPE_TABLETENNIS, CONST_SPORTTYPE_VOLLEYBALL, CONST_SPORTTYPE_TENNIS) THEN 0 ELSE js.LiveAwayScore END) AS LiveAwayScore
 			,	(CASE WHEN js.SportType IN (CONST_SPORTTYPE_BASKETBALL, CONST_SPORTTYPE_CRICKET, CONST_SPORTTYPE_BADMINTON, CONST_SPORTTYPE_TABLETENNIS, CONST_SPORTTYPE_VOLLEYBALL, CONST_SPORTTYPE_TENNIS) THEN 0 ELSE (js.LiveHomeScore*10000) + js.LiveAwayScore END) AS ScoreDiff
 			,	js.BettypeID
-            ,	CASE WHEN js.SportType = CONST_SPORTTYPE_CRICKET THEN 0 ELSE IFNULL(js.BetID,0) END
+            ,	CASE 
+    				WHEN js.SportType = CONST_SPORTTYPE_CRICKET 
+         				AND js.BetTypeID  IN (501, 9404, 9405)
+    				THEN 0 
+    				ELSE IFNULL(js.BetID, 0) 
+				END AS BetID
 			,	js.CustID
 			,	js.Stake
             ,	js.Betteam

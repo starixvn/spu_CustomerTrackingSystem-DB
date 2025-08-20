@@ -25,6 +25,7 @@ BEGIN
             -	20240822@Casey.Huynh: Seperate BettypeSetting to New Table [Redmine ID: #207397]
             -	20250214@Casey.Huynh: Update Bettype Order for MM [Redmine ID: #217782]
             -	20250319@Thomas.Nguyen: Return SportOrder [Redmine ID: #219681]
+            -   20250811@Casey.Huynh: Update Return BettypeDetails X > 9 [Redmine ID: #235043]
 
 		Param's Explanation (filtered by):
         	ip_FunctionID: 1, 2
@@ -35,13 +36,13 @@ BEGIN
         
 		Example:        
 		#Service MM Detection Single Ticket:
-		 CALL CTS_DC_Common_BettypeSetting_Get_xtest(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=1, @ip_IsFilterMMParlayDetection:=1, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
+		 CALL CTS_DC_Common_BettypeSetting_Get(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=1, @ip_IsFilterMMParlayDetection:=0, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
 		#Service MM Detection Parlay Ticket: 
-		CALL CTS_DC_Common_BettypeSetting_Get_xtest(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=1, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
+		CALL CTS_DC_Common_BettypeSetting_Get(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=1, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
 		#Filter MM: 
-		CALL CTS_DC_Common_BettypeSetting_Get_xtest(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=0, @ip_IsShowDetailsX:=1,@ip_Status:=1);	
+		CALL CTS_DC_Common_BettypeSetting_Get(@ip_FunctionID:=1,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=0, @ip_IsShowDetailsX:=1,@ip_Status:=1);	
         #WEB MM Detection Parlay Ticket: 
-		CALL CTS_DC_Common_BettypeSetting_Get_xtest(@ip_FunctionID:=NULL,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=1, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
+		CALL CTS_DC_Common_BettypeSetting_Get(@ip_FunctionID:=NULL,@ip_SportTypeIDList:=NULL,@ip_BettypeIDList:=NULL,@ip_IsFilterMMDetection:=0, @ip_IsFilterMMParlayDetection:=1, @ip_IsShowDetailsX:=0,@ip_Status:=1); 
 		
 */
     
@@ -59,7 +60,7 @@ BEGIN
 	IF ip_FunctionID IS NULL THEN
 
 		SELECT DISTINCT bs.BetTypeID
-					, 	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
+					, 	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,'[X]', js.NameDetailsX)  
 									ELSE bs.BettypeNameDisplay END) AS BettypeNameDisplay					
 					,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BetIDPattern,'X',js.NameDetailsX)  
 									ELSE 0 END) AS BetID 
@@ -116,14 +117,14 @@ BEGIN
 				,	sbs.SportTypeID
 				,	sbs.SportName
 				,	bs.BetTypeID
-				,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(bs.BettypeNameDisplay,' X ', CONCAT(' ',js.NameDetailsX,' '))  
-								ELSE bs.BettypeNameDisplay END) AS BettypeNameDisplay
+				,	(CASE WHEN js.NameDetailsX <> '' THEN REPLACE(sbs.BettypeNameDisplay,'[X]', js.NameDetailsX)   
+								ELSE REPLACE(sbs.BettypeNameDisplay,'[X]', 'X')  END) AS BettypeNameDisplay
 				,	bs.BetChoiceType            
 				,	bs.BetIDPattern
 				,	sbs.IsMMDetection
 				,	sbs.IsDefaultSelected
 				,	bs.BettypeOrder
-				,	js.NameDetailsX
+				,	IFNULL(js.NameDetailsX,'') AS  NameDetailsX
 				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamDB ELSE NULL END) AS BetChoiceHome
 				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamShortName ELSE NULL END) AS BetChoiceHomeDisplay
 				,	MAX(CASE WHEN bs.BetteamOrder = 1 THEN bs.BetTeamName ELSE NULL END) AS BetChoiceHomeFullName
@@ -135,8 +136,8 @@ BEGIN
 				INNER JOIN CTS_DataCenter.BettypeSetting AS bs ON bs.BettypeID = sbs.BetTypeID
 				INNER JOIN Temp_SportTypeID AS tmpSt ON IFNULL(tmpSt.SportTypeID,sbs.SportTypeID) = sbs.SportTypeID
 				INNER JOIN Temp_BettypeID AS tmpBt ON IFNULL(tmpBt.BettypeID,sbs.BettypeID) = sbs.BettypeID
-				, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(bs.BetTypeNameDetailsX,''), ',', '","'), '"]'),
-							  '$[*]' COLUMNS (NameDetailsX VARCHAR(1) PATH '$')) js
+				, JSON_TABLE(CONCAT('["', REPLACE(IFNULL(sbs.BetTypeNameDetailsX,''), ',', '","'), '"]'),
+							  '$[*]' COLUMNS (NameDetailsX SMALLINT PATH '$')) js
 			WHERE 	sbs.Status = ip_Status
 				AND	sbs.FunctionID = ip_FunctionID			
 				AND	sbs.IsMMDetection = IFNULL(ip_IsFilterMMDetection,sbs.IsMMDetection) 
@@ -151,7 +152,7 @@ BEGIN
 				,	bs.BetChoiceType
 				,	bs.BetIDPattern
 				,	js.NameDetailsX
-				,	bs.BettypeNameDisplay
+				,	sbs.BettypeNameDisplay
 				,	sbs.SportOrder
 			ORDER BY LeagueGroupID, bs.BettypeOrder, js.NameDetailsX; 
 		ELSE	
@@ -160,7 +161,7 @@ BEGIN
 				,	sbs.SportTypeID
 				,	sbs.SportName
 				,	sbs.BetTypeID
-				, 	bs.BetTypeNameDisplay
+				, 	REPLACE(bs.BettypeNameDisplay,'[X]', 'X') AS BetTypeNameDisplay
 				,	bs.BetChoiceType
 				,	bs.BetIDPattern
 				,	sbs.IsMMDetection

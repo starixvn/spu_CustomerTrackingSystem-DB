@@ -41,6 +41,7 @@ BEGIN
             - 	20240829@Casey.Huynh:	Handle TicketType (Single or Parlay) [Redmine ID: #152883]
             - 	20250218@Thomas.Nguyen:	Fix issue not filter by Bettype in Scan Date mode [Redmine ID: #217782]
             -	20250317@Casey.Huynh: 	Match Monitor Badminton [Redmine ID: #219681]
+			-	20250812@Logan.Nguyen: 	Match Monitor Group Betting - Cricket [Redmine ID: #235043]
 
 		Param's Explanation (filtered by):
 			- ip_Market: 		0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
@@ -361,9 +362,45 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
-           ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
-            ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY		
+            ,	(CASE 
+					WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON 
+						THEN sbs.BettypeNameDisplay 
+					ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', 
+						(CASE 
+    						WHEN LOCATE('X', sbs.BetIDPattern) > 0 
+    							THEN CAST(
+    								SUBSTRING(
+        								LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
+            							LOCATE('X', sbs.BetIDPattern),
+            							LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X',''))
+        							) AS UNSIGNED
+    							)
+    						ELSE 0
+						END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+        	,	-- DetailsX
+				CASE 
+    				WHEN LOCATE('X', sbs.BetIDPattern) > 0 
+    				THEN CAST(
+        				SUBSTRING(
+            				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
+            				LOCATE('X', sbs.BetIDPattern),
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X',''))
+        				) AS UNSIGNED
+    				)
+    				ELSE 0
+				END AS DetailsX
+            ,	-- DetailsY
+				CASE 
+    				WHEN LOCATE('Y', sbs.BetIDPattern) > 0 
+    				THEN CAST(
+        				SUBSTRING(
+            				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
+            				LOCATE('Y', sbs.BetIDPattern),
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('Y', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('Y', sbs.BetIDPattern)), 'Y',''))
+        				) AS UNSIGNED
+    				)
+    				ELSE 0
+				END AS DetailsY		
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	NOT EXISTS(SELECT 1 FROM Temp_MatchGroup_NotVerified AS tmpNv WHERE tmpMm.MatchID = tmpNv.MatchID AND tmpMm.LiveIndicator = tmpNv.LiveIndicator 
 					AND tmpMm.BettypeID = tmpNv.BettypeID AND tmpMm.BetID = tmpNv.BetID AND tmpMm.TicketType = tmpNv.TicketType LIMIT 1) IsVerified
@@ -393,7 +430,8 @@ BEGIN
             ,	t.FraudTrans
             ,	t.FraudRefno
             ,	t.FraudTransm
-            ,	tmpMm.TicketType;
+            ,	tmpMm.TicketType
+			,	sbs.BetIDPattern;
 
 	END IF;
 
@@ -410,9 +448,45 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
-            ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
-            ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY
+            ,	(CASE 
+					WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON 
+						THEN sbs.BettypeNameDisplay 
+					ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', 
+						(CASE 
+    						WHEN LOCATE('X', sbs.BetIDPattern) > 0 
+    							THEN CAST(
+    								SUBSTRING(
+        								LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
+            							LOCATE('X', sbs.BetIDPattern),
+            							LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X',''))
+        							) AS UNSIGNED
+    							)
+    						ELSE 0
+						END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+            ,	-- DetailsX
+				CASE 
+    				WHEN LOCATE('X', sbs.BetIDPattern) > 0 
+    				THEN CAST(
+        				SUBSTRING(
+            				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
+            				LOCATE('X', sbs.BetIDPattern),
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X',''))
+        				) AS UNSIGNED
+    				)
+    				ELSE 0
+				END AS DetailsX
+            ,	-- DetailsY
+				CASE 
+    				WHEN LOCATE('Y', sbs.BetIDPattern) > 0 
+    				THEN CAST(
+        				SUBSTRING(
+            				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
+            				LOCATE('Y', sbs.BetIDPattern),
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('Y', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('Y', sbs.BetIDPattern)), 'Y',''))
+        				) AS UNSIGNED
+    				)
+    				ELSE 0
+				END AS DetailsY	
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	0 AS IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
@@ -440,7 +514,8 @@ BEGIN
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
             ,	sbs.BettypeNameDisplay
-            ,	tmpMm.TicketType;
+            ,	tmpMm.TicketType
+			,	sbs.BetIDPattern;
 	END IF;
     
     IF (ip_IsVerified = 1)
@@ -457,9 +532,45 @@ BEGIN
             ,	tmpMm.SporttypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN sbs.BettypeNameDisplay ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, ' X ', CONCAT(' ',(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END), ' ')), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
-            ,	(CASE WHEN (tmpMm.BetID > 999) THEN ((tmpMm.BetID MOD 10000) DIV 100) ELSE tmpMm.BetID MOD 100 END) AS DetailsX
-            ,	(CASE WHEN (tmpMm.BetID > 999) THEN (tmpMm.BetID MOD 100) ELSE 0 END) AS DetailsY
+            ,	(CASE 
+					WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON 
+						THEN sbs.BettypeNameDisplay 
+					ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', 
+						(CASE 
+    						WHEN LOCATE('X', sbs.BetIDPattern) > 0 
+    							THEN CAST(
+    								SUBSTRING(
+        								LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
+            							LOCATE('X', sbs.BetIDPattern),
+            							LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X',''))
+        							) AS UNSIGNED
+    							)
+    						ELSE 0
+						END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+            ,	-- DetailsX
+				CASE 
+    				WHEN LOCATE('X', sbs.BetIDPattern) > 0 
+    				THEN CAST(
+        				SUBSTRING(
+            				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
+            				LOCATE('X', sbs.BetIDPattern),
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('X', sbs.BetIDPattern)), 'X',''))
+        				) AS UNSIGNED
+    				)
+    				ELSE 0
+				END AS DetailsX
+            ,	-- DetailsY
+				CASE 
+    				WHEN LOCATE('Y', sbs.BetIDPattern) > 0 
+    				THEN CAST(
+        				SUBSTRING(
+            				LPAD(tmpMm.BetID, LENGTH(sbs.BetIDPattern), '0'),
+            				LOCATE('Y', sbs.BetIDPattern),
+            				LENGTH(SUBSTRING(sbs.BetIDPattern, LOCATE('Y', sbs.BetIDPattern))) - LENGTH(REPLACE(SUBSTRING(sbs.BetIDPattern, LOCATE('Y', sbs.BetIDPattern)), 'Y',''))
+        				) AS UNSIGNED
+    				)
+    				ELSE 0
+				END AS DetailsY	
 			,	GROUP_CONCAT(DISTINCT tmpMm.Reason)	AS Reason		
 			,	1 AS IsVerified
             ,	GROUP_CONCAT(DISTINCT tmpMg.VerifiedBy)	AS VerifiedBy
@@ -487,7 +598,8 @@ BEGIN
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
             ,	sbs.BettypeNameDisplay
-            ,	tmpMm.TicketType;
+            ,	tmpMm.TicketType
+			,	sbs.BetIDPattern;
 	END IF;
                    
 END$$
