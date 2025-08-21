@@ -88,7 +88,7 @@ BEGIN
         ,	trans.MBDeviceID
         ,	trans.DeviceStatus
         ,	trans.IP
-        ,	trans.IPID
+        ,	CAST(trans.IPID AS CHAR) AS IPID
         ,	trans.Flagged
         ,	pt.IsEmulator
         ,	trans.MBDeviceModelID
