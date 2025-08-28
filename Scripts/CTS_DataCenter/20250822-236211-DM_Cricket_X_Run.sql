@@ -7,8 +7,6 @@ DBName:		CTS_DataCenter
 
 Revisions: 
 		- 20250822@Logan.Nguyen: Created [Redmine ID: #236211]
-
-
 Reviewer:
 */
 
