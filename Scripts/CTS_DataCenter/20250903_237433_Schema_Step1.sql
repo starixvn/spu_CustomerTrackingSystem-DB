@@ -51,11 +51,11 @@ INSERT INTO CTS_DataCenter.Adhoc_HF237433_AssociatedGroupAccount_Group(GroupID, 
 SELECT ass.GroupID, ass.Created, COUNT(1), 0
 FROM CTS_DataCenter.AssociatedGroupAccount AS ass
 	INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON ag.GroupID = ass.GroupID
-WHERE ag.IsDisable = 0 AND ag.HasAI = 1 AND ass.Created >= '2025-07-15 00:00:00'
+WHERE ag.IsDisable = 0 AND ag.HasAI = 1 AND ass.Created >= '2025-07-13 00:00:00'
 GROUP BY ass.GroupID, ass.Created;
 
 INSERT INTO CTS_DataCenter.Adhoc_HF237433_AssociatedGroupAccount_Target(GroupID,CTSCustID,IsAuto,Remark,Created,CreatedBy,LastModifiedDate,LastModifiedBy,IsScaned)
 SELECT ass.GroupID, ass.CTSCustID, ass.IsAuto, ass.Remark, ass.Created, ass.CreatedBy, ass.LastModifiedDate, ass.LastModifiedBy, 0
 FROM CTS_DataCenter.AssociatedGroupAccount AS ass
 	INNER JOIN CTS_DataCenter.AssociatedGroup AS ag ON ag.GroupID = ass.GroupID
-WHERE ag.IsDisable = 0 AND ag.HasAI = 1 AND ass.Created < '2025-07-15 00:00:00';
+WHERE ag.IsDisable = 0 AND ag.HasAI = 1 AND ass.Created < '2025-07-13 00:00:00';
