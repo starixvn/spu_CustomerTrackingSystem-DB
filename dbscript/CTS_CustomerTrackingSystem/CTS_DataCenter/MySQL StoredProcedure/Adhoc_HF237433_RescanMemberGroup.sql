@@ -97,7 +97,7 @@ sp : BEGIN
         TRUNCATE TABLE Temp_CustDetected;
         
 		SELECT 	HasDevice
-			,	1 AS HasIP
+			,	HasIP
 			,	HasAI
 		INTO 	lv_HasDevice
 			,	lv_HasIP
