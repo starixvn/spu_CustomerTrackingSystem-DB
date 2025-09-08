@@ -18,6 +18,7 @@ sp: BEGIN
 			- 	20210804@Casey.Huynh: Created [Redmine ID: #152883]
 			-	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: #158946]
             -	20210929@Aries.Nguyen: Enhance performance [Redmine ID: #162277]
+            -	20250905@Thomas.Nguyen: Enhance flow for Reactivating Customer [Redmine ID: #237406]
             
 		Param's Explanation (filtered by):	
 
@@ -89,7 +90,7 @@ sp: BEGIN
    INNER JOIN Temp_ArchiveCustDCSAccount AS ac ON ac.CTSCustID = cust.CTSCustID
    SET cust.AccountID =  ac.AccountID;
    
-    INSERT IGNORE INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer(ArchivedDate, CTSCustID, AccountID, SubscriberID, CustID, CustSubID, UserName, UserName2, RoleID, InsertTime)
+    INSERT IGNORE INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer(ArchivedDate, CTSCustID, AccountID, SubscriberID, CustID, CustSubID, UserName, UserName2, RoleID, InsertTime, IsReactivated, ProcessedDate)
     SELECT	cus.ArchivedDate
 		,	cus.CTSCustID
         ,	cus.AccountID
@@ -100,7 +101,10 @@ sp: BEGIN
         ,	cus.UserName2
         ,	cus.RoleID
         ,	CURRENT_TIMESTAMP(3)
-    FROM Temp_ArchiveCTSCustomer AS cus;
+        ,	CASE WHEN arc.CustID IS NOT NULL THEN 1 ELSE 0 END AS IsReactivated
+        ,	CASE WHEN arc.CustID IS NOT NULL THEN NOW() ELSE NULL END AS ProcessedDate
+    FROM Temp_ArchiveCTSCustomer AS cus
+        LEFT JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc ON arc.CustID = cus.CustID AND arc.CTSCustID = 0 AND arc.IsReactivated = 1 AND arc.ReactivateDate > cus.ArchivedDate;
 	
     IF EXISTS(SELECT 1 FROM  Temp_InputCustomer)
     THEN
