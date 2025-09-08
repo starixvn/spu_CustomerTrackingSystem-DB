@@ -23,6 +23,7 @@ sp: BEGIN
 		Param's Explanation (filtered by):	
 
 		Example:
+            CALL CTS_DataCenter.CTS_DC_ArchiveCustomer('[{"CustID":98456422,"ArchivedDate":"2023-10-05 03:23:36.293"}]', 0);
 			
 	*/
     DECLARE lv_MaxArchiveTime 	DATETIME(3);
