@@ -1,6 +1,6 @@
 /*<info serverAlias="DBVR2-bodb_VR2Model" executers="bodbSPUNet" isFunction="0" isNested="0"></info>*/
-ALTER PROCEDURE [dbo].[CTS_ProblemAccountsClassification_Daily]
-	@ListCustIds			VARCHAR(MAX),
+CREATE PROCEDURE [dbo].[CTS_ProblemAccountsClassification_Daily]
+	@ListCustInfo			VARCHAR(MAX),
 	@FunctionId				SMALLINT = 12
 AS
 /*
@@ -16,8 +16,13 @@ AS
 		- 20230627@Jonas.Huynh: Reset Balance for Credit with Inactive Normal with new place-bet [Redmine ID: #189876]
 		- 20230807@Jonas.Huynh: HF exclude Non-sport for General [Redmine ID: #192388]
 		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
+		- 20250908@Thomas.Nguyen: CC 2900/2901 - Add logic for SportGroup [Redmine ID: #237405]
 
 	Param's Explanation:
+
+	Example:
+		EXEC CTS_ProblemAccountsClassification_Daily @ListCustInfo = '[{"CustID":1096006, "SportGroup":0},{"CustID":1096006, "SportGroup":2},{"CustID":1277, "SportGroup":0},{"CustID":249550995, "SportGroup":1},{"CustID":43290047, "SportGroup":1},{"CustID":43290027, "SportGroup":1}]';
+
 */
 BEGIN
 	
@@ -32,7 +37,10 @@ BEGIN
 
 	DECLARE @SportGroup_SabaVRSoccer	 SMALLINT = 145,
 			@SportGroup_SabaVRBasketball SMALLINT = 912,
-			@SportGroup_NonSport		 SMALLINT = 229;
+			@SportGroup_NonSport		 SMALLINT = 229,
+			@SportGroup_General			 SMALLINT = 0;
+
+	DECLARE @ListCustIds				VARCHAR(MAX);
 
 	IF	OBJECT_ID('tempdb..#tmpRawData') IS NOT NULL
 		DROP TABLE	#tmpRawData;
@@ -58,32 +66,41 @@ BEGIN
 
 	CREATE TABLE #tmpCustomerAccummulatedInfo(
 		[CustId]			INT NOT NULL,
+		[SportGroup]		INT NOT NULL,
 		[TurnoverRM]		MONEY NULL,
 		[WinlossRM]			MONEY NULL,
 		[BetCount]			BIGINT NULL,
 		[ActiveDays]		INT NULL
 	);
 
-	IF OBJECT_ID('tempdb..#tmpCustomers') IS NOT NULL
+	IF OBJECT_ID('tempdb..#tmpCustInfo') IS NOT NULL
 	BEGIN
-		DROP TABLE	#tmpCustomers;
+		DROP TABLE	#tmpCustInfo;
 	END
 	
-	CREATE TABLE #tmpCustomers(
+	CREATE TABLE #tmpCustInfo(
 			CustId			INT
+		,	SportGroup		INT
 	);
 
-	CREATE CLUSTERED INDEX IX_#mpCustomers_CustId ON #tmpCustomers(
-		[CustId]			ASC
+	CREATE CLUSTERED INDEX IX_#tmpCustInfo_CustId_SportGroup ON #tmpCustInfo(
+		[CustId]			ASC,
+		[SportGroup]		ASC
 	);
 
 	-- #0: Distinct custid
-	INSERT INTO #tmpCustomers(CustId)
-	SELECT val FROM dbo.SPU_StrSplit(@ListCustIds, ',');
+	INSERT INTO #tmpCustInfo (CustId, SportGroup)
+	SELECT	js.CustID
+		,	js.SportGroup
+	FROM	OPENJSON(@ListCustInfo) WITH (
+					CustID			INT			'$.CustID'
+				,	SportGroup		INT			'$.SportGroup'
+	) AS js;
 
-	SELECT @ListCustIds = STUFF((SELECT ',', CONVERT(VARCHAR(15), t.CustId) 
-								FROM (SELECT DISTINCT CustId FROM #tmpCustomers WITH (NOLOCK)) AS t
-								FOR XML PATH('')), 1, 1, '');
+	WITH CTE_CustIds AS (
+		SELECT DISTINCT CustId FROM #tmpCustInfo
+	)
+	SELECT @ListCustIds = STRING_AGG(CustId, ',') FROM CTE_CustIds;
 
 	-- #1: GetCustomer Accummulated data
 	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
@@ -94,17 +111,33 @@ BEGIN
 	WHERE a.SportGroup IN (@SportGroup_NonSport, @SportGroup_SabaVRSoccer, @SportGroup_SabaVRBasketball);
 
 	-- #2: Sum data by custid
-	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportGroup, TurnoverRM, WinlossRM, BetCount, ActiveDays)
 	SELECT	a.CustId
+		,	@SportGroup_General AS SportGroup
 		,	SUM(a.TurnoverRM)
 		,	SUM(a.WinlossRM)
 		,	SUM(a.BetCount)
 		,	MAX(a.ActiveDaysCustID)
 	FROM #tmpRawData AS a WITH(NOLOCK)
+		INNER JOIN #tmpCustInfo AS cus ON a.CustId = cus.CustId
+	WHERE cus.SportGroup = @SportGroup_General
 	GROUP BY a.CustId;
+
+	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportGroup, TurnoverRM, WinlossRM, BetCount, ActiveDays)
+	SELECT	a.CustId
+		,	a.SportGroup
+		,	SUM(a.TurnoverRM)
+		,	SUM(a.WinlossRM)
+		,	SUM(a.BetCount)
+		,	MAX(a.ActiveDaysCustID)
+	FROM #tmpRawData AS a WITH(NOLOCK)
+		INNER JOIN #tmpCustInfo AS cus ON a.CustId = cus.CustId AND a.SportGroup = cus.SportGroup
+	WHERE cus.SportGroup <> @SportGroup_General
+	GROUP BY a.CustId, a.SportGroup;
 
 	-- #3: Classify new members
 	SELECT	r.CustId
+		,	r.SportGroup
 		,	CASE
 				WHEN (r.WinlossRM < -10000) THEN @PROBLEMACCOUNT_LOSING
 				WHEN (r.WinlossRM >= -5000) THEN @PROBLEMACCOUNT_WINNING
@@ -114,5 +147,5 @@ BEGIN
 		,	r.WinlossRM
 		,	r.BetCount
 		,	r.ActiveDays
-	FROM #tmpCustomerAccummulatedInfo AS r WITH(NOLOCK)
+	FROM #tmpCustomerAccummulatedInfo AS r WITH(NOLOCK);
 END;

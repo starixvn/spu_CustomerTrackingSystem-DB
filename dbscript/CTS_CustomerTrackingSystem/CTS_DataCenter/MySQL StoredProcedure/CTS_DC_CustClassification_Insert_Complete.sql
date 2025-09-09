@@ -26,6 +26,7 @@ BEGIN
 			- 20250327@Thomas.Nguyen:		Add to source table for the first time classify TW GroupBetting or HighRejected [Redmine ID: #221508]
 			- 20250519@Thomas.Nguyen:		Set IsDisabled = 1 for Special Lic Sub source table when having CustomerClassPriority greater than [Redmine ID: #226847]
             - 20250725@Casey.Huynh:			Agent CC, Insert Considerable Agency Queue [Redmine ID: #219679]
+			- 20250908@Thomas.Nguyen:		No need to save SportType for CC 2900/2901 [Redmine ID: #237405]
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -953,9 +954,10 @@ BEGIN
 			,	temp.IsFromTW
 			,	temp.TVSRequestID
 			,	temp.IsTVSParlay AS IsParlay
-			,	temp.SportType
+			,	CASE WHEN IFNULL(ccs.SportType,0) <> 0 THEN NULL ELSE temp.SportType END AS SportType
 			,	temp.TVSIssueTypeID AS IssueTypeID
 		FROM Temp_NewClassification AS temp 
+			LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryGroupID 
 		WHERE 	(temp.DataChangeType = 0 AND temp.IsDataChanged = 1) 
 			OR 	(temp.IsFromOldPA 	= 1 AND lv_IsRescan = 0); /*temp.IsDataChanged = 0*/
 		
@@ -997,7 +999,7 @@ BEGIN
 			,	temp.IsFromAI
 			,	temp.IsFromImperva
 			,	temp.IsTVSParlay AS IsParlay
-			,	temp.SportType
+			,	CASE WHEN IFNULL(ccs.SportType,0) <> 0 THEN NULL ELSE temp.SportType END AS SportType
 			,	temp.TVSIssueTypeID AS IssueTypeID
 			,	temp.TWRobotCounter AS RobotCounter
 			,	temp.OldCategoryID
@@ -1045,7 +1047,7 @@ BEGIN
 			,	temp.IsFromAI
 			,	temp.IsFromImperva
 			,	temp.IsTVSParlay AS IsParlay
-			,	temp.SportType
+			,	CASE WHEN IFNULL(ccs.SportType,0) <> 0 THEN NULL ELSE temp.SportType END AS SportType
 			,	temp.TVSIssueTypeID AS IssueTypeID
 			,	temp.TWRobotCounter AS RobotCounter
 			,	temp.OldCategoryID
