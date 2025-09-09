@@ -28,9 +28,10 @@ BEGIN
 			- 20240423@Thomas.Nguyen: Classify Initial Group Betting - Add Remark [RedmineID: #200854]
 			- 20240703@Victoria.Le:   Renovate CC phase 2 - Remove Table PinCustomerCategory  [Redmine ID: #205317]
 			- 20241205@Victoria.Le:   Incorect Datatype for ActiveDays [Redmine ID: #214567]
+			- 20250909@Thomas.Nguyen: CC 2900/2901 - Update logic to map DW Performance by DWSportType [Redmine ID: #237405]
 
 		Param's Explanation (filtered by):      
-			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 123,"WinlossStatus": 1,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10}]');
+			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 224340007,"DWSportType": 0,"WinlossStatus": 2,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10},{"CustID": 224340007,"DWSportType": 2,"WinlossStatus": 0,"TurnoverRM":150,"WinlossRM":-15000,"BetCount":15,"ActiveDays":10}]');
 	*/ 
 	DECLARE CONST_CATEID_VVIP 					INT;
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 		INT;
@@ -81,6 +82,7 @@ BEGIN
         , 	IsDataChanged			BIT(1)
         ,	PerformanceTime		    DATETIME(3)
 		,	IsRobot					BIT(1)
+		,	DWSportType				SMALLINT
         , 	PRIMARY KEY(CustID,CategoryID)  
     );  
     
@@ -100,7 +102,7 @@ BEGIN
     /* START */
     INSERT IGNORE INTO Temp_PA(
 			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetDangerLevel1, IsDangerProbation
-		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsMarkedDirectly,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime, IsRobot)
+		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsMarkedDirectly,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime, IsRobot, DWSportType)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
@@ -125,6 +127,7 @@ BEGIN
 			END AS IsDataChanged
         ,   js.PerformanceTime
 		,	CASE WHEN cate.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot
+		,	js.DWSportType
 	FROM JSON_TABLE(ip_ProblemAccount,
 		"$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED			PATH "$.CustID"
@@ -134,15 +137,17 @@ BEGIN
 			,	BetCount		BIGINT 					PATH "$.BetCount"	
             ,	ActiveDays		INT 					PATH "$.ActiveDays"
             ,   PerformanceTime DATETIME(3)            	PATH "$.PerformanceTime"	
+			,   DWSportType		SMALLINT 				PATH "$.DWSportType"
 		 )) AS js
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON js.CustID = cust.CustID AND cust.CustSubID = 0 AND cust.IsInternal = 0
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = js.CustID
-        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1 AND cate.RelevantCategoryID IS NOT NULL,
-        LATERAL (SELECT CASE WHEN cust.IsLicensee = 1 THEN tbl.Ext_ABIDangerLevel_Licensee  ELSE tbl.Ext_ABIDangerLevel_Credit END AS TargetDangerLevel1
-					,	tbl.CustomerClass AS TargetCC
-                 FROM CTS_DataCenter.CustomerCategory AS tbl 
-                 WHERE cate.RelevantCategoryID = tbl.CategoryID AND tbl.IsActive = 1
-                 LIMIT 1) AS desCate; 
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1 AND cate.RelevantCategoryID IS NOT NULL
+		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = cate.CategoryID AND ccs.SportType = js.DWSportType
+	,	LATERAL (SELECT CASE WHEN cust.IsLicensee = 1 THEN tbl.Ext_ABIDangerLevel_Licensee  ELSE tbl.Ext_ABIDangerLevel_Credit END AS TargetDangerLevel1
+				,	tbl.CustomerClass AS TargetCC
+				FROM CTS_DataCenter.CustomerCategory AS tbl 
+				WHERE cate.RelevantCategoryID = tbl.CategoryID AND tbl.IsActive = 1
+				LIMIT 1) AS desCate; 
     
     DELETE pa
     FROM Temp_PA AS pa
@@ -152,7 +157,8 @@ BEGIN
 						AND clss.CategoryID = CONST_CATEID_VVIP); 
         
     UPDATE CTS_DataCenter.CTSCustomerClassification AS clss
-    INNER JOIN Temp_PA AS tmp ON tmp.CustID = clss.CustID AND tmp.ParentID = clss.ParentID AND tmp.CategoryID = clss.CategoryID 
+		INNER JOIN Temp_PA AS tmp ON tmp.CustID = clss.CustID AND tmp.ParentID = clss.ParentID AND tmp.CategoryID = clss.CategoryID
+		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.CategoryID AND ccs.SportType = tmp.DWSportType
     SET 	clss.CategoryID = tmp.RelevantCategoryID
         ,	clss.LastModifiedBy = lv_CreatedBy
         ,	tmp.CategoryID = tmp.RelevantCategoryID 

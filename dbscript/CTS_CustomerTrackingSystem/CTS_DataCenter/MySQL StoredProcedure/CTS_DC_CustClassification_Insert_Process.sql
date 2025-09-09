@@ -22,6 +22,7 @@ BEGIN
 			- 20240618@Victoria.Le: Initial Writing [Redmine ID: #205317]
            	- 20240923@Jonas.Huynh: Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
 			- 20250519@Thomas.Nguyen: Add ActionType to ignore lower priority for Special Lic Sub CC [Redmine ID: #226847]	
+			- 20250908@Thomas.Nguyen: CC 2900/2901 - Update logic to map DW Performance by DWSportType [Redmine ID: #237405]
 */
 
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL		INT;
@@ -326,14 +327,17 @@ BEGIN
 	
 		DROP TEMPORARY TABLE IF EXISTS Temp_PAWinlossStatus;    
 		CREATE TEMPORARY TABLE Temp_PAWinlossStatus(	
-				CustID					BIGINT UNSIGNED PRIMARY KEY
+				CustID					BIGINT UNSIGNED
+			,	DWSportType				SMALLINT
 			, 	WinlossStatus			SMALLINT /*LOSING  = 0 (PROBATION), WINNING = 2 (NOT PROBATION);*/
+			,	PRIMARY KEY (CustID, DWSportType)
 		);
 		
 		DROP TEMPORARY TABLE IF EXISTS Temp_CustProbationStatus ;
 		CREATE TEMPORARY TABLE Temp_CustProbationStatus(
-				CustID 					BIGINT UNSIGNED PRIMARY KEY
+				CustID 					BIGINT UNSIGNED
 			,	CTSCustID 				BIGINT UNSIGNED
+			,	DWSportType				SMALLINT
 			,	IsPAProbation			TINYINT(1)
 			,	TurnoverRM				DECIMAL(20,4)
 			,	WinlossRM				DECIMAL(20,4)
@@ -342,6 +346,7 @@ BEGIN
 			,	WinlossStatus			TINYINT
 			,	IsLicensee				TINYINT(1)
 			,	IsLicenseeVIP			TINYINT(1)
+			,	PRIMARY KEY (CustID, DWSportType)
 		); 
 		
 		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY THEN
@@ -349,9 +354,10 @@ BEGIN
 		END IF;
         
 		IF lv_IsRescan = 0 THEN 
-			INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
+			INSERT INTO Temp_PAWinlossStatus(CustID, DWSportType, WinlossStatus)
 			SELECT DISTINCT 
 					temp.CustID
+				,	temp.DWSportType
 				,	CASE WHEN cc.IsDangerProbation = 1 THEN 0 ELSE 2 END AS WinlossStatus
 			FROM Temp_NewClassification AS temp
 				INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
@@ -359,9 +365,10 @@ BEGIN
 			WHERE cls.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
 		
 		ELSE
-			INSERT INTO Temp_PAWinlossStatus(CustID, WinlossStatus)
+			INSERT INTO Temp_PAWinlossStatus(CustID, DWSportType, WinlossStatus)
 			SELECT DISTINCT 
 					temp.CustID
+				,	temp.DWSportType
 				,	CASE WHEN cc.IsDangerProbation = 1 THEN 0 ELSE 2 END AS WinlossStatus
 			FROM Temp_NewClassification AS temp
 				INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
@@ -375,6 +382,7 @@ BEGIN
         		
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN Temp_PAWinlossStatus AS r ON temp.CustID = r.CustID
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON (ccs.CategoryID = temp.DWCategoryID OR ccs.CategoryID = temp.RelevantCategoryID) AND ccs.SportType = IFNULL(temp.DWSportType, 0)
 		SET temp.WinlossStatus 		= r.WinlossStatus,
 			temp.IsPAProbation 		= (CASE WHEN r.WinlossStatus = 0 THEN 1 ELSE 0 END)
 		WHERE temp.WinlossStatus 	= 1;
@@ -602,10 +610,11 @@ BEGIN
 															AND temp_old.IsNew = 0
 															AND temp.WinlossStatus <> 1;
 		
-		INSERT IGNORE INTO Temp_CustProbationStatus(CustID, CTSCustID, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsPAProbation, WinlossStatus, IsLicensee, IsLicenseeVIP)
+		INSERT IGNORE INTO Temp_CustProbationStatus(CustID, CTSCustID, DWSportType, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsPAProbation, WinlossStatus, IsLicensee, IsLicenseeVIP)
 		SELECT DISTINCT 
 				temp.CustID
 			,	temp.CTSCustID
+			,	IFNULL(temp.DWSportType, 0)
 			,	temp.TurnoverRM
 			,	temp.WinlossRM
 			,	temp.BetCount
@@ -651,7 +660,7 @@ BEGIN
 			,	temp_old.IsFromAI
 			,	temp_old.IsFromImperva
 			,	1 AS IsDataChanged
-			,	(CASE WHEN tmpCp.WinlossStatus = NULL THEN NULL ELSE 1 END) AS DataChangeType
+			,	(CASE WHEN tmpCp.WinlossStatus IS NULL THEN NULL ELSE 1 END) AS DataChangeType
 			,	tmpLt.CustomerClassPriority
 			,	temp_old.SpecialCC 
 			,	tmpCp.IsLicenseeVIP 
@@ -663,10 +672,12 @@ BEGIN
 			,	temp_old.SportType
 			,	temp_old.TVSIssueTypeID
 		FROM Temp_CTSCustomerClassification_Old AS temp_old
+			INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp_old.RelevantCategoryID
 			INNER JOIN Temp_CustProbationStatus AS tmpCp ON temp_old.ParentID IS NOT NULL AND temp_old.IsNew = 0 AND temp_old.IsRemove <> 1
 																AND tmpCp.CustID = temp_old.CustID 
 																AND tmpCp.IsPAProbation <> temp_old.IsPAProbation
 																AND tmpCp.WinlossStatus <> 1 
+																AND tmpCp.DWSportType = ccs.SportType
 		, 	LATERAL (SELECT cat.CategoryGroupID
 						,	cat.CustomerClass
 						,	cat.Ext_ABIDangerLevel_Licensee

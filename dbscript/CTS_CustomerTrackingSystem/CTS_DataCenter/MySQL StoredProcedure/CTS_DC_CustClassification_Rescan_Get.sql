@@ -26,7 +26,8 @@ sp: BEGIN
             - 20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
             - 20241030@Thomas.Nguyen: 	CC Agent - Change source tables when checking affected PA from Upline [RedmineID: #185799]
 			- 20241210@Casey.Huynh:		New Robot AI, Bot Login Pattern [Redmine ID: #214655]
-            
+            - 20250909@Thomas.Nguyen:	Rescan for CC 2900/2901 [Redmine ID: #237405]
+
         Param's Explanation:
 
 		Example:
@@ -39,6 +40,7 @@ sp: BEGIN
     DECLARE	CONST_CATEID_EARLYWARNING				INT;
     DECLARE	CONST_CATEID_INITIALGB					INT;
     DECLARE CONST_CATEID_INITIALSMART				INT;
+    DECLARE CONST_CATEID_INITIALSMART_B				INT DEFAULT 30400;
     DECLARE	CONST_PARENTID_PA						INT;
     DECLARE	CONST_AGENCY_CATEID_ROBOT				INT;
     DECLARE	CONST_AGENCY_CATEID_ROBOTLOSING			INT;
@@ -516,6 +518,34 @@ sp: BEGIN
 					  WHERE cc.CustID = tmp.CustID 
 						AND cc.CategoryID = CONST_CATEID_INITIALSMART);
 
+    /***********************Check Initial Smart (B)****************************/
+    INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID, SportType)
+    SELECT tmp.CTSCustID					AS CTSCustID
+		,	tmp.CustID						AS CustID
+        ,	CONST_CATEID_INITIALSMART_B 	AS CategoryID
+        , 	NULL 							AS TVSReasonID
+        ,	tmp.RoleID 						AS RoleID
+        ,	tmp.SubscriberID				AS SubscriberID
+		,	tmp.IsLicensee					AS IsLicensee
+        ,	NULL 							AS Remark
+        ,	NULL 							AS CreatedBy
+        ,	1 								AS IsMarkedDirectly
+		,	0 								AS IsFromTVS
+        ,	1 								AS IsFromTW
+        ,   0 								AS IsFromCTS
+        ,	0 								AS IsFromAI
+        ,	0 								AS IsFromImperva
+        , 	s.InsertedTime 					AS CreatedDate
+        ,	s.InsertedTime 					AS LastModifiedDate
+        ,   CONST_INPUTFLOWID_POTENTIALPA	AS InputFlowID
+        ,   s.SportType                     AS SportType
+    FROM  Temp_CustInfo AS tmp
+		INNER JOIN CTS_DataCenter.Customer_InitialSmart_BySport AS s ON s.CustID = tmp.CustID
+	WHERE NOT EXISTS (SELECT 1 
+					  FROM Temp_CustCategory AS cc 
+					  WHERE cc.CustID = tmp.CustID 
+						AND cc.CategoryID = CONST_CATEID_INITIALSMART_B);
+
     /***********************Rescan Potential Category****************************/        
     INSERT IGNORE INTO Temp_CustCategory (CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, SportType, CreatedDate, LastModifiedDate, InputFlowID)       
     SELECT tmppc.CTSCustID, tmppc.CustID, tmppc.CategoryID, tmppc.TVSReasonID, tmppc.RoleID, tmppc.SubscriberID, tmppc.IsLicensee, tmppc.Remark, tmppc.CreatedBy, tmppc.IsMarkedDirectly, tmppc.IsFromTVS, tmppc.IsFromTW, tmppc.IsFromCTS, tmppc.IsFromAI, tmppc.IsFromImperva, tmppc.SportType, tmppc.CreatedDate, tmppc.LastModifiedDate, tmppc.InputFlowID
@@ -546,9 +576,11 @@ sp: BEGIN
         ,   cc.SportType
         ,   cc.IssueTypeID
 		, 	CASE WHEN cc.CategoryID IS NULL THEN CONST_INPUTFLOWID_NORMAL ELSE cc.InputFlowID END AS InputFlowID
+        ,   ccs.SportType AS DWSportType
 	FROM Temp_CustInfo AS cust
 		LEFT JOIN Temp_CustCategory AS cc ON cc.CustID = cust.CustID
-        LEFT JOIN CustomerCategory AS cat ON cc.CategoryID = cat.CategoryID
+        LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cc.CategoryID = cat.CategoryID
+        LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cc.CategoryID = ccs.CategoryID
 	WHERE cc.CustID IS NOT NULL
 		OR (cc.CategoryID IS NULL AND cust.RoleID = 1);
     
