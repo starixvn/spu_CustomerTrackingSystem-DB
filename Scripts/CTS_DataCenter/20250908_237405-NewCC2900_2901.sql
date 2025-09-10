@@ -22,7 +22,7 @@ CREATE TABLE Customer_InitialSmart_BySport (
 ,   Probability         DECIMAL(8,4)
 ,   SourceCreatedDate   DATETIME(3)
 ,   InsertedTime        DATETIME(3)
-,   PRIMARY KEY (InsertedTime, CustID, SportType)
+,   PRIMARY KEY (CustID, SportType)
 );
 
 

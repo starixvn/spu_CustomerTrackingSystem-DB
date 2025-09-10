@@ -35,6 +35,7 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_ExistedCust(
 			CustID 				BIGINT NOT NULL 
         ,   SportType           TINYINT
+		,	PRIMARY KEY (CustID, SportType)
 	);
 
 	INSERT IGNORE INTO Temp_Customer(CustID, SportType, Probability, SourceCreatedDate)
