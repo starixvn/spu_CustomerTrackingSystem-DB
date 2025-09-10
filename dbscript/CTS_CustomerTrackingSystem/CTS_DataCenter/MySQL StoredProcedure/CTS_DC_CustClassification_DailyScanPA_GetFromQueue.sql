@@ -24,7 +24,7 @@ BEGIN
    
     DECLARE lv_BatchSize 			INT;
     DECLARE lv_LastScannedTime		DATETIME;
-	DECLARE lv_ParentID_PA 			INT DEFAULT 20000;
+
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
 	CREATE TEMPORARY TABLE Temp_Customers(
@@ -53,7 +53,7 @@ BEGIN
 		JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CustID = ccdpa.CustID
 		JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cc.CategoryID = ccs.CategoryID
 		WHERE CreatedTime <= lv_LastScannedTime
-			AND cc.ParentID = lv_ParentID_PA
+			AND ccs.FlowPADailyScan = 1
 		ORDER BY ID ASC
 		LIMIT lv_BatchSize)
 	SELECT DISTINCT CustID, SportType

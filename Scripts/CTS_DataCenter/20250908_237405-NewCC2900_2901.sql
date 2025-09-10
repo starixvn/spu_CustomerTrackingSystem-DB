@@ -42,6 +42,9 @@ USE CTS_DataCenter;
 ALTER TABLE CTS_DataCenter.CustomerCategorySettings 
 ADD COLUMN SportType INT DEFAULT '0';
 
+ALTER TABLE CTS_DataCenter.CustomerCategorySettings 
+ADD COLUMN FlowPADailyScan INT DEFAULT '0';
+
 /*******************************INIT Table CustomerCategory*********************************/
 
 INSERT INTO CTS_DataCenter.CustomerCategory
@@ -90,6 +93,10 @@ VALUES
     (30400, 30400, 20000, 0, 1, 1, 47, 2),
     (35400, 35400, 20000, 0, 1, 1, 47, 2);
 
+UPDATE CTS_DataCenter.CustomerCategorySettings AS ccs
+JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CategoryID = ccs.CategoryID
+SET FlowPADailyScan = 1
+WHERE cc.ParentID = 20000;
 
 /*******************************INIT Table system parameters *********************************/
 
