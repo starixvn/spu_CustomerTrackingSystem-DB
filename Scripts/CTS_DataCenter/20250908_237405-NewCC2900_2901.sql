@@ -94,7 +94,7 @@ VALUES
     (35400, 35400, 20000, 0, 1, 1, 47, 2);
 
 UPDATE CTS_DataCenter.CustomerCategorySettings AS ccs
-JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CategoryID = ccs.CategoryID
+JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = ccs.CategoryID
 SET FlowPADailyScan = 1
 WHERE cc.ParentID = 20000;
 
