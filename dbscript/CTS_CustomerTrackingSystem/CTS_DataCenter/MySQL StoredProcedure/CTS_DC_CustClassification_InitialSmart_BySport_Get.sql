@@ -21,14 +21,14 @@ BEGIN
 			CALL CTS_DataCenter.CTS_DC_CustClassification_InitialSmart_BySport_Get(@BatchSize,@NextScannedDateTime,@NextScannedCustID);
             SELECT @NextScannedDateTime,@NextScannedCustID
 	*/
-    DECLARE  CONST_CATEID_INITIALSMART	INT;
+    DECLARE  CONST_CATEID_INITIALSMART_B	INT;
     
 	DECLARE lv_LastScannedDate      DATETIME(3);
 	DECLARE lv_LastScannedCustID    BIGINT UNSIGNED;
     DECLARE lv_SecondBatchSize      SMALLINT;
     DECLARE lv_TotalRow             SMALLINT;
 	
-    SET CONST_CATEID_INITIALSMART   = CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMART');
+    SET CONST_CATEID_INITIALSMART_B = 30400;
 
     SELECT sys.ParameterValue
     INTO lv_LastScannedCustID
@@ -51,17 +51,20 @@ BEGIN
     );
     
     INSERT INTO Temp_Customer(CustID, SportType, Probability, SourceCreatedDate, InsertedTime)
-    SELECT	cs.CustID
-        ,   cs.SportType
-		, 	cs.Probability
-        ,	cs.SourceCreatedDate
-		,	cs.InsertedTime
-    FROM CTS_DataCenter.Customer_InitialSmart_BySport AS cs
+    WITH cte AS (
+        SELECT	cs.CustID
+            ,   cs.SportType
+		    , 	cs.Probability
+            ,	cs.SourceCreatedDate
+	    	,	cs.InsertedTime
+        FROM CTS_DataCenter.Customer_InitialSmart_BySport AS cs
         INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cs.SportType = ccs.SportType
-    WHERE cs.InsertedTime = lv_LastScannedDate
-		AND cs.CustID > lv_LastScannedCustID
-	ORDER BY cs.InsertedTime ASC, cs.CustID ASC
-	LIMIT ip_BatchSize;
+        WHERE cs.InsertedTime = lv_LastScannedDate
+		    AND cs.CustID > lv_LastScannedCustID
+    	ORDER BY cs.InsertedTime ASC, cs.CustID ASC
+	    LIMIT ip_BatchSize)
+        SELECT DISTINCT CustID, SportType, Probability, SourceCreatedDate, InsertedTime
+        FROM cte;
     
     SET lv_TotalRow = (SELECT COUNT(1) FROM Temp_Customer);
     
@@ -69,16 +72,22 @@ BEGIN
         SET lv_SecondBatchSize = ip_BatchSize - lv_TotalRow;
         
         INSERT INTO Temp_Customer(CustID, SportType, Probability, SourceCreatedDate, InsertedTime)
-		SELECT	cs.CustID
-            ,   cs.SportType
-            , 	cs.Probability
-            ,	cs.SourceCreatedDate
-            ,	cs.InsertedTime
-		FROM CTS_DataCenter.Customer_InitialSmart_BySport AS cs
+        WITH ctec AS ( 
+		    SELECT	cs.CustID
+                ,   cs.SportType
+                , 	cs.Probability
+                ,	cs.SourceCreatedDate
+                ,	cs.InsertedTime
+		    FROM CTS_DataCenter.Customer_InitialSmart_BySport AS cs
             INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cs.SportType = ccs.SportType
-		WHERE cs.InsertedTime > lv_LastScannedDate
-		ORDER BY cs.InsertedTime ASC, cs.CustID ASC
-		LIMIT lv_SecondBatchSize;
+		    WHERE cs.InsertedTime > lv_LastScannedDate
+		    ORDER BY cs.InsertedTime ASC, cs.CustID ASC
+		    LIMIT lv_SecondBatchSize)
+	    SELECT DISTINCT CustID, SportType, Probability, SourceCreatedDate, InsertedTime
+        FROM ctec;
+
+        
+		
     END IF;
     
     SET op_NextScannedDateTime = IFNULL((SELECT MAX(InsertedTime) FROM Temp_Customer), lv_LastScannedDate);
@@ -89,8 +98,8 @@ BEGIN
         ,	cus.SubscriberID
         ,	cus.RoleID
         ,   cus.IsLicensee
-        ,	CONST_CATEID_INITIALSMART   AS CategoryID
-        ,	CONST_CATEID_INITIALSMART   AS CategoryGroup
+        ,	CONST_CATEID_INITIALSMART_B   AS CategoryID
+        ,	CONST_CATEID_INITIALSMART_B   AS CategoryGroup
         ,   tmp.Probability
         ,   tmp.SourceCreatedDate       AS DetectedDate
 	FROM Temp_Customer AS tmp
