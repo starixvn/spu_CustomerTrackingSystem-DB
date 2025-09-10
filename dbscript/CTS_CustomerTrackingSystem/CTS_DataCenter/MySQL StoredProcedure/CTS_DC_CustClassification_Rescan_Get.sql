@@ -538,7 +538,7 @@ sp: BEGIN
         , 	s.InsertedTime 					AS CreatedDate
         ,	s.InsertedTime 					AS LastModifiedDate
         ,   CONST_INPUTFLOWID_POTENTIALPA	AS InputFlowID
-        ,   s.SportType                     AS SportType
+        ,   NULL                     AS SportType
     FROM  Temp_CustInfo AS tmp
 		INNER JOIN CTS_DataCenter.Customer_InitialSmart_BySport AS s ON s.CustID = tmp.CustID
 	WHERE NOT EXISTS (SELECT 1 
