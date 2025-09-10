@@ -47,7 +47,7 @@ BEGIN
 		,	Probability		    DECIMAL(8,4)
         ,   SourceCreatedDate 	DATETIME(3)
         ,   InsertedTime        DATETIME(3)
-        ,   PRIMARY KEY (InsertedTime, CustID)
+        ,   PRIMARY KEY (CustID, SportType)
     );
     
     INSERT INTO Temp_Customer(CustID, SportType, Probability, SourceCreatedDate, InsertedTime)
