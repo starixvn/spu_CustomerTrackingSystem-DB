@@ -97,6 +97,6 @@ INSERT INTO CTS_DataCenter.SystemParameter
     (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue) 
 VALUES
     (196, 'InitialSmart_B_LastScanCustID', 'InitialSmart_B_LastScanCustID', 'INT', '0'),
-    (197, 'InitialSmart_B_LastScanDate', 'InitialSmart_B_LastScanDate', 'DATETIME(3)', NULL);
+    (197, 'InitialSmart_B_LastScanDate', 'InitialSmart_B_LastScanDate', 'DATETIME(3)', NOW());
 
 /*******************************INIT Table StaticList *********************************/

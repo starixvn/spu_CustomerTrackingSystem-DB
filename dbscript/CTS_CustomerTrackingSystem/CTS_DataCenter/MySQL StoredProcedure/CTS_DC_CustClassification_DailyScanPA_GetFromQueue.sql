@@ -59,7 +59,7 @@ BEGIN
 	SELECT DISTINCT CustID, SportType
     FROM cte;
     
-	SELECT CustID, SportType
+	SELECT CustID, SportType AS DWSportType
 	FROM Temp_Customers;
 
 END$$

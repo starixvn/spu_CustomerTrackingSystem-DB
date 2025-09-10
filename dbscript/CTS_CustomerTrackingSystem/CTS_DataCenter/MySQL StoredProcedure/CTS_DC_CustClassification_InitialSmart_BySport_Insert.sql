@@ -46,7 +46,7 @@ BEGIN
     FROM JSON_TABLE(ip_CustInfo,
                         "$[*]" COLUMNS (CustID          			BIGINT			UNSIGNED	PATH "$.CustID"
 									,	SportType					TINYINT						PATH "$.SportType"
-									,	Probability					DECIMAL(8,2)				PATH "$.Probability"
+									,	Probability					DECIMAL(8,4)				PATH "$.Probability"
                                     ,   SourceCreatedDate		    DATETIME(3)					PATH "$.PredictTime"                                           
                                 )) AS tmp;
 
