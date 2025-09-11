@@ -362,6 +362,7 @@ BEGIN
 			FROM Temp_NewClassification AS temp
 				INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cls ON temp.CustID = cls.CustID
 				INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cls.CategoryID = cc.CategoryID
+				INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = cc.CategoryID AND ccs.SportType = temp.DWSportType
 			WHERE cls.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
 		
 		ELSE
