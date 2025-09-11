@@ -90,8 +90,8 @@ BEGIN
 
 	-- #0: Distinct custid
 	INSERT INTO #tmpCustInfo (CustId, SportGroup)
-	SELECT	js.CustID
-		,	js.SportGroup
+	SELECT DISTINCT	js.CustID
+				,	js.SportGroup
 	FROM	OPENJSON(@ListCustInfo) WITH (
 					CustID			INT			'$.CustID'
 				,	SportGroup		INT			'$.SportGroup'
