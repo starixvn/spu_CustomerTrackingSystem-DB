@@ -19,8 +19,15 @@ BEGIN
 			CALL CTS_DC_CustClassification_InitialSmart_BySport_Insert (@ip_CustInfo:='[{"CustID":1275, "SportType":2, "Probability":0.1419399977,"PredictTime":"2024-05-30T03:02:26"},{"CustID":1277,"Probability":0.7015600204,"PredictTime":"2024-05-30T03:03:26"},{"CustID":1280,"Probability":0.7505900264,"PredictTime":"2024-05-31T03:02:26"},{"CustID":1282,"Probability":0.7498900294,"PredictTime":"2024-05-30T07:02:26"}]');
 	*/
 	DECLARE lv_CreatedDate DATETIME(3);
+	DECLARE	CONST_SPORTTYPE_GENARAL		 		INT;
+	DECLARE	CONST_SPORTTYPE_SOCCER		 		INT;
+	DECLARE	CONST_SPORTTYPE_BASKETBALL			INT;
     
 	SET lv_CreatedDate = CURRENT_TIMESTAMP(3);
+	SET CONST_SPORTTYPE_GENARAL 	= 0;
+	SET CONST_SPORTTYPE_SOCCER 		= 1;
+	SET CONST_SPORTTYPE_BASKETBALL	= 2;
+
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE Temp_Customer(
@@ -56,18 +63,15 @@ BEGIN
 	FROM CTS_DataCenter.Customer_InitialSmart_BySport AS cs
 		INNER JOIN Temp_Customer AS tmp	ON tmp.CustID = cs.CustID;
 
-	IF EXISTS (	SELECT 1 FROM Temp_ExistedCust) THEN
-		INSERT INTO CTS_DataCenter.Customer_InitialSmart_BySport_Log (CustID, SportType, Probability, SourceCreatedDate, InsertedTime)
-		SELECT	tmp.CustID
-			,	tmp.SportType
-			,	tmp.Probability
-			,	tmp.SourceCreatedDate
-            ,   lv_CreatedDate
-		FROM Temp_ExistedCust AS tec
-			INNER JOIN Temp_Customer AS tmp ON tmp.CustID = tec.CustID AND tec.SportType = tmp.SportType 
-		WHERE tec.CustID IS NOT NULL
-   			OR tmp.SportType NOT IN (0,1,2);
-	END IF;
+	INSERT INTO CTS_DataCenter.Customer_InitialSmart_BySport_Log (CustID, SportType, Probability, SourceCreatedDate, InsertedTime)
+	SELECT	tmp.CustID
+		,	tmp.SportType
+		,	tmp.Probability
+		,	tmp.SourceCreatedDate
+        ,   lv_CreatedDate
+	FROM Temp_Customer AS tmp
+		LEFT JOIN Temp_ExistedCust AS tec ON tmp.CustID = tec.CustID AND tec.SportType = tmp.SportType 
+	WHERE tec.CustID IS NOT NULL OR tmp.SportType NOT IN (CONST_SPORTTYPE_GENARAL,CONST_SPORTTYPE_SOCCER,CONST_SPORTTYPE_BASKETBALL);
 
     INSERT IGNORE INTO CTS_DataCenter.Customer_InitialSmart_BySport (CustID, SportType, Probability, SourceCreatedDate, InsertedTime)
     SELECT	tmp.CustID
@@ -76,7 +80,7 @@ BEGIN
 		,	tmp.SourceCreatedDate
         ,   lv_CreatedDate
 	FROM Temp_Customer AS tmp
-	WHERE tmp.SportType IN (0,1,2);
+	WHERE tmp.SportType IN (CONST_SPORTTYPE_GENARAL,CONST_SPORTTYPE_SOCCER,CONST_SPORTTYPE_BASKETBALL);
 	
 	SELECT tec.CustID, tec.SportType
 	FROM Temp_ExistedCust AS tec;
