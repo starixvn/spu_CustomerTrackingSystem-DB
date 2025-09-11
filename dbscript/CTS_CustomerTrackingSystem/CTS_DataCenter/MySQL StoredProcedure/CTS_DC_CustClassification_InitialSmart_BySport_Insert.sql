@@ -38,7 +38,7 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCust;
 	CREATE TEMPORARY TABLE Temp_ExistedCust(
 			CustID 				BIGINT NOT NULL 
-        ,   SportType           TINYINT
+        ,   SportType           INT
 		,	PRIMARY KEY (CustID, SportType)
 	);
 
