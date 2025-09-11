@@ -34,7 +34,7 @@ CREATE TABLE Customer_InitialSmart_BySport_Log (
     ,   Probability         DECIMAL(8,4)
     ,   SourceCreatedDate   DATETIME(3)
     ,   InsertedTime        DATETIME(3) 
-    ,   KEY IX_Customer_InitialSmart_Log_CustID (CustID,SportType)
+    ,   KEY IX_Customer_InitialSmart_Log_BySport_CustID (CustID,SportType)
 );
 
 
