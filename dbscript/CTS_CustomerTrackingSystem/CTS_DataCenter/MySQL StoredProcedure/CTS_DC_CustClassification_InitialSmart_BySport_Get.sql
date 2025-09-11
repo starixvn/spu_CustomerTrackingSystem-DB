@@ -94,6 +94,7 @@ BEGIN
     SET op_NextScannedCustID = IFNULL((SELECT MAX(CustID) FROM Temp_Customer WHERE InsertedTime = op_NextScannedDateTime), lv_LastScannedCustID);
 
     SELECT	tmp.CustID
+        ,   tmp.SportType
         ,	cus.CTSCustID
         ,	cus.SubscriberID
         ,	cus.RoleID

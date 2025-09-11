@@ -49,36 +49,39 @@ ADD COLUMN FlowPADailyScan INT DEFAULT '0';
 
 INSERT INTO CTS_DataCenter.CustomerCategory
 (
-    CategoryID, CategoryName, CategorySpec, ParentID, CustomerClass, CustomerClassName,
-    CategoryGroupID, CategoryPriority, CustomerClassPriority, BusinessCategoryGroupID,
-    IsActive, ScanIntervalInSecond, ScanTaggingIntervalInSecond, RelevantCategoryID,
-    IsHedgingReasonMM, TVSReasonID, IsPAProbation, IsDangerProbation, AFCFraudID,
-    DataSource, CreatedDate, CategoryNameCN, CategoryNameCN3, CategoryNameTHB, CategoryNameIND,
-    CustomerClassNameCN, SabaSportType, TaggingID, TaggingType, RootTaggingID, OldCategoryID,
-    ColorTypeID, Ext_ABIDangerLevel_Licensee, Ext_ABIDangerLevel_Credit, Ext_DangerLevelType,
-    Ext_CategoryGroupID, Ext_EvidenceID_Licensee, Ext_EvidenceID_Credit,
-    Ext_SabaIntelligentRiskLevel, Ext_SabaIntelligentRiskLevelTCN, Ext_SabaIntelligentRiskLevelSCN,
-    Ext_SabaIntelligentRiskLevelCN3, Ext_SabaIntelligentRiskLevelTHB, Ext_SabaIntelligentRiskLevelIND
+        CategoryID, CategoryName, CategorySpec, ParentID, CustomerClass
+    ,   CustomerClassName, CategoryGroupID, CategoryPriority, CustomerClassPriority, BusinessCategoryGroupID
+    ,   IsActive, ScanIntervalInSecond, ScanTaggingIntervalInSecond, RelevantCategoryID, IsHedgingReasonMM
+    ,   TVSReasonID, IsPAProbation, IsDangerProbation, AFCFraudID, DataSource
+    ,   CreatedDate, CategoryNameCN, CategoryNameCN3, CategoryNameTHB, CategoryNameIND
+    ,   CustomerClassNameCN, SabaSportType, TaggingID, TaggingType, RootTaggingID
+    ,   OldCategoryID, ColorTypeID, Ext_ABIDangerLevel_Licensee, Ext_ABIDangerLevel_Credit, Ext_DangerLevelType
+    ,   Ext_CategoryGroupID, Ext_EvidenceID_Licensee, Ext_EvidenceID_Credit, Ext_SabaIntelligentRiskLevel, Ext_SabaIntelligentRiskLevelTCN
+    ,   Ext_SabaIntelligentRiskLevelSCN, Ext_SabaIntelligentRiskLevelCN3, Ext_SabaIntelligentRiskLevelTHB, Ext_SabaIntelligentRiskLevelIND
 )
 VALUES
     (
-            30400, 'Initial Smart (B)', 'Initial Smart (B)', 20000, 2900, 'Dangerous'
-        ,   30400, 500, 500, 30, 1, NULL, NULL, 35400
-        ,   NULL, NULL, 0, 0, NULL
-        ,   '', NOW(), '初始精明玩家', 'Cược Thông Minh', 'นักเดิมพันฉลาดเบื้องต้น', 'Pemain Pintar Awal'
-        ,   '危险', NULL, NULL, NULL, NULL, NULL
-        ,   2, NULL, NULL, NULL, NULL, NULL, NULL
-        ,   'Dangerous', '危險', '危险', 'Nguy hiểm', 'อันตราย', 'Berbahaya'
+            30400, 'Initial Smart (B)', 'Initial Smart (B)', 20000, 2900
+        ,   'Dangerous', 30400, 500, 500, 30
+        ,   1, NULL, NULL, 35400, NULL
+        ,   NULL, 0, 0, NULL, ''
+        ,   NOW(), '初始精明玩家', 'Cược Thông Minh', 'นักเดิมพันฉลาดเบื้องต้น', 'Pemain Pintar Awal'
+        ,   '危險', NULL, NULL, NULL, NULL
+        ,   NULL, 2, NULL, NULL, NULL
+        ,   NULL, NULL, NULL, 'Dangerous', '危險'
+        ,   '危險', 'Nguy hiểm', 'อันตราย', 'Berbahaya'
     )
     ,
     (
-            35400, 'Initial Smart (B-Losing)', 'Initial Smart (B-Losing)', 20000, 2901, 'Dangerous'
-        ,   35400, 500, 500, 30, 1, NULL, NULL, 30400
-        ,   NULL, NULL, 1, 1, NULL
-        ,   '', NOW(), '初始精明玩家 (输钱)', 'Cược Thông Minh (Thua)', 'นักเดิมพันฉลาดเริ่มต้น (ขาดทุน)', 'Pemain Pintar Awal (Kalah)'
-        ,   '危险', NULL, NULL, NULL, NULL, NULL
-        ,   5, NULL, NULL, NULL, NULL, NULL, NULL
-        ,   'Dangerous', '危險', '危险', 'Nguy hiểm', 'อันตราย', 'Berbahaya'
+            35400, 'Initial Smart (B-Losing)', 'Initial Smart (B-Losing)', 20000, 2901
+        ,   'Dangerous -', 35400, 500, 500, 30
+        ,   1, NULL, NULL, 30400,NULL
+        ,   NULL, 1, 1, NULL,''
+        ,   NOW(), '初始精明玩家 (输钱)', 'Cược Thông Minh (Thua)', 'นักเดิมพันฉลาดเริ่มต้น (ขาดทุน)', 'Pemain Pintar Awal (Kalah)'
+        ,   '危險-', NULL, NULL, NULL, NULL
+        ,   NULL, 5, NULL, NULL, NULL
+        ,   NULL, NULL, NULL, 'Dangerous', '危險'
+        ,   '危險', 'Nguy hiểm', 'อันตราย', 'Berbahaya'
     );
 
   
