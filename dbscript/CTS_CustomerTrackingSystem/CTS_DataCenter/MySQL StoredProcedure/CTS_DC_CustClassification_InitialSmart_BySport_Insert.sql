@@ -19,14 +19,11 @@ BEGIN
 			CALL CTS_DC_CustClassification_InitialSmart_BySport_Insert (@ip_CustInfo:='[{"CustID":1275, "SportType":2, "Probability":0.1419399977,"PredictTime":"2024-05-30T03:02:26"},{"CustID":1277,"Probability":0.7015600204,"PredictTime":"2024-05-30T03:03:26"},{"CustID":1280,"Probability":0.7505900264,"PredictTime":"2024-05-31T03:02:26"},{"CustID":1282,"Probability":0.7498900294,"PredictTime":"2024-05-30T07:02:26"}]');
 	*/
 	DECLARE lv_CreatedDate DATETIME(3);
-	DECLARE	CONST_SPORTTYPE_GENARAL		 		INT;
-	DECLARE	CONST_SPORTTYPE_SOCCER		 		INT;
-	DECLARE	CONST_SPORTTYPE_BASKETBALL			INT;
+	DECLARE	CONST_SPORTTYPE_GENARAL		 		INT DEFAULT 0;
+	DECLARE	CONST_SPORTTYPE_SOCCER		 		INT DEFAULT 1;
+	DECLARE	CONST_SPORTTYPE_BASKETBALL			INT DEFAULT 2;
     
 	SET lv_CreatedDate = CURRENT_TIMESTAMP(3);
-	SET CONST_SPORTTYPE_GENARAL 	= 0;
-	SET CONST_SPORTTYPE_SOCCER 		= 1;
-	SET CONST_SPORTTYPE_BASKETBALL	= 2;
 
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
@@ -61,7 +58,7 @@ BEGIN
 	SELECT	tmp.CustID
 		,	tmp.SportType
 	FROM CTS_DataCenter.Customer_InitialSmart_BySport AS cs
-		INNER JOIN Temp_Customer AS tmp	ON tmp.CustID = cs.CustID;
+		INNER JOIN Temp_Customer AS tmp	ON tmp.CustID = cs.CustID AND cs.SportType = tmp.SportType;
 
 	INSERT INTO CTS_DataCenter.Customer_InitialSmart_BySport_Log (CustID, SportType, Probability, SourceCreatedDate, InsertedTime)
 	SELECT	tmp.CustID
