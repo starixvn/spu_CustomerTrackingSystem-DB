@@ -17,22 +17,24 @@ USE CTS_DataCenter;
 
 #=================================================
 CREATE TABLE Customer_InitialSmart_BySport (
-    CustID              BIGINT UNSIGNED NOT NULL 
-,   SportType           INT
-,   Probability         DECIMAL(8,4)
-,   SourceCreatedDate   DATETIME(3)
-,   InsertedTime        DATETIME(3)
-,   PRIMARY KEY (CustID, SportType)
+        CustID              BIGINT UNSIGNED NOT NULL 
+    ,   SportType           INT
+    ,   Probability         DECIMAL(8,4)
+    ,   SourceCreatedDate   DATETIME(3)
+    ,   InsertedTime        DATETIME(3)
+    ,   PRIMARY KEY (CustID, SportType)
+    ,   KEY IX_Customer_InitialSmart_BySport_InsertedTime_CustID (InsertedTime,CustID,SportType);
 );
 
 
 CREATE TABLE Customer_InitialSmart_BySport_Log (
-    ID                  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
-,   CustID              BIGINT UNSIGNED NOT NULL
-,   SportType           INT
-,   Probability         DECIMAL(8,4)
-,   SourceCreatedDate   DATETIME(3)
-,   InsertedTime        DATETIME(3) 
+        ID                  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY
+    ,   CustID              BIGINT UNSIGNED NOT NULL
+    ,   SportType           INT
+    ,   Probability         DECIMAL(8,4)
+    ,   SourceCreatedDate   DATETIME(3)
+    ,   InsertedTime        DATETIME(3) 
+    ,   KEY IX_Customer_InitialSmart_Log_CustID (CustID,SportType)
 );
 
 
