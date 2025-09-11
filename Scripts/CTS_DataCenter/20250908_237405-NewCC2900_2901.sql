@@ -23,7 +23,7 @@ CREATE TABLE Customer_InitialSmart_BySport (
     ,   SourceCreatedDate   DATETIME(3)
     ,   InsertedTime        DATETIME(3)
     ,   PRIMARY KEY (CustID, SportType)
-    ,   KEY IX_Customer_InitialSmart_BySport_InsertedTime_CustID (InsertedTime,CustID,SportType);
+    ,   KEY IX_Customer_InitialSmart_BySport_InsertedTime_CustID (InsertedTime,CustID,SportType)
 );
 
 
