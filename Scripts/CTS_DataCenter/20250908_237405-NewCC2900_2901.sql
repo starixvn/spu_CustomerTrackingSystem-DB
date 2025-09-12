@@ -67,11 +67,11 @@ VALUES
         ,   'Dangerous', 30400, 500, 500, 30
         ,   1, NULL, NULL, 35400, NULL
         ,   NULL, 0, 0, NULL, ''
-        ,   NOW(), '初始精明玩家', 'Cược Thông Minh', 'นักเดิมพันฉลาดเบื้องต้น', 'Pemain Pintar Awal'
+        ,   NOW(), '初始精明玩家 (篮球)', 'Người chơi khởi đầu thông minh (Bóng rổ)', 'ผู้เล่นเฉียบแหลมเริ่มต้น (บาสเกตบอล)', 'Pemain Cerdas Awal (Basket)'
         ,   '危險', NULL, NULL, NULL, NULL
-        ,   NULL, 2, NULL, NULL, NULL
+        ,   30400, 2, NULL, NULL, NULL
         ,   NULL, NULL, NULL, 'Dangerous', '危險'
-        ,   '危險', 'Nguy hiểm', 'อันตราย', 'Berbahaya'
+        ,   '危险', 'Nguy hiểm', 'อันตราย', 'Berbahaya'
     )
     ,
     (
@@ -79,11 +79,11 @@ VALUES
         ,   'Dangerous -', 35400, 500, 500, 30
         ,   1, NULL, NULL, 30400,NULL
         ,   NULL, 1, 1, NULL,''
-        ,   NOW(), '初始精明玩家 (输钱)', 'Cược Thông Minh (Thua)', 'นักเดิมพันฉลาดเริ่มต้น (ขาดทุน)', 'Pemain Pintar Awal (Kalah)'
+        ,   NOW(), '初始精明玩家 (篮球-输钱)', 'Người chơi khởi đầu thông minh (Bóng rổ - Thua)', 'ผู้เล่นเฉียบแหลมเริ่มต้น (บาสเกตบอล-เสียเงิน)', 'Pemain Cerdas Awal (Basket–Rugi)'
         ,   '危險-', NULL, NULL, NULL, NULL
-        ,   NULL, 5, NULL, NULL, NULL
+        ,   35400, 5, NULL, NULL, NULL
         ,   NULL, NULL, NULL, 'Dangerous', '危險'
-        ,   '危險', 'Nguy hiểm', 'อันตราย', 'Berbahaya'
+        ,   '危险', 'Nguy hiểm', 'อันตราย', 'Berbahaya'
     );
 
   
