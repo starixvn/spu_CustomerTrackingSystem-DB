@@ -603,7 +603,7 @@ BEGIN
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW, IsFromCTS, IsFromAI
 				, 	SpecialCC, IsPAProbation, RelevantCategoryID, CategoryPriority, CustomerClassPriority
-				, 	ParentID, IsDataChanged, PerformanceTime, SportType, SourceCreatedDate, GBTicketCount)
+				, 	ParentID, IsDataChanged, PerformanceTime, SportType, SourceCreatedDate, GBTicketCount, DWSportType)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				,	tmpJs.RoleID
@@ -635,6 +635,7 @@ BEGIN
 				,	tmpJs.SportType
 				,	tmpJs.SourceCreatedDate
 				,	tmpJs.GBTicketCount
+				,	tmpJs.DWSportType
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
@@ -658,6 +659,7 @@ BEGIN
 											,	SportType					SMALLINT 			PATH "$.SportType"
 											, 	SourceCreatedDate			DATETIME(3)			PATH "$.DetectedDate"
 											, 	GBTicketCount				INT					PATH "$.GBTicketCount"
+											, 	DWSportType					SMALLINT 			PATH "$.DWSportType"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
