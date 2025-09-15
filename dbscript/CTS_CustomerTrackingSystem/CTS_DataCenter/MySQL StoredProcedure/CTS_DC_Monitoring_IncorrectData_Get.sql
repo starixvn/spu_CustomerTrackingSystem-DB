@@ -118,7 +118,7 @@ BEGIN
     SELECT ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID,  IsIssueTypeValid
     FROM Temp_IncorrectData;
 
-    SELECT MAX(cibl.ID) AS MAX_ID FROM Customer_InitialSmart_BySport_Log AS cibl
+    SELECT MAX(cibl.ID) AS MAX_ID FROM Customer_InitialSmart_BySport_Log AS cibl;
     
 END$$
 DELIMITER ;
