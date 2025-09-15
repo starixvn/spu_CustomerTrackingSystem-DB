@@ -101,7 +101,7 @@ BEGIN
             ,	1 AS IsIssueTypeValid;
     END IF;
 
-    IF EXISTS (SELECT 1 FROM Customer_InitialSmart_BySport_Log WHERE InsertedTime > DATE_SUB(NOW(), INTERVAL 15 MINUTE)) THEN
+    IF EXISTS (SELECT 1 FROM Customer_InitialSmart_BySport_Log AS cibl) THEN
         INSERT INTO Temp_IncorrectData(ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID, IsIssueTypeValid)
         SELECT  0 AS ID
             ,	NULL AS CustID
