@@ -28,7 +28,7 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE Temp_Customer(
-			CustID 				BIGINT NOT NULL UNSIGNED
+			CustID 				BIGINT UNSIGNED NOT NULL 
         ,   SportType           INT
 		,   Probability 		DECIMAL(8,4)
 		,   SourceCreatedDate 	DATETIME(3)
@@ -37,7 +37,7 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCust;
 	CREATE TEMPORARY TABLE Temp_ExistedCust(
-			CustID 				BIGINT NOT NULL UNSIGNED
+			CustID 				BIGINT UNSIGNED NOT NULL 
         ,   SportType           INT
 		,	PRIMARY KEY (CustID, SportType)
 	);
