@@ -111,10 +111,13 @@ BEGIN
             ,	0 AS IsResolved
             ,	CONST_ISSUETYPEID_INITIALSMART_B AS IssueTypeID
             ,	1 AS IsIssueTypeValid
-        FROM Customer_InitialSmart_BySport_Log
-        WHERE ID > lv_InitialSmart_B_LastLogID;
+        FROM Customer_InitialSmart_BySport_Log AS CIBL
+        WHERE CIBL.ID > lv_InitialSmart_B_LastLogID;
     END IF;
 
+    UPDATE  CTS_DataCenter.SystemParameter 
+    SET ParameterValue = (SELECT MAX(CIBL.ID) FROM Customer_InitialSmart_BySport_Log AS CIBL)
+	WHERE ParameterID = 198;
 
     SELECT ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID,  IsIssueTypeValid
     FROM Temp_IncorrectData;
