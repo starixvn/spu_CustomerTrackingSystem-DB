@@ -112,7 +112,7 @@ BEGIN
             ,	CONST_ISSUETYPEID_INITIALSMART_B AS IssueTypeID
             ,	1 AS IsIssueTypeValid
         FROM Customer_InitialSmart_BySport_Log
-        WHERE ID > lv_LastLogID;
+        WHERE ID > lv_InitialSmart_B_LastLogID;
     END IF;
 
 
