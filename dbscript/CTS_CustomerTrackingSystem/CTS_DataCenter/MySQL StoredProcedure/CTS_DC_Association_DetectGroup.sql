@@ -27,6 +27,7 @@ BEGIN
 			- 20240923@Jonas.Huynh: Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
 			- 20240930@Casey.Huynh: Agent CC [Redmine ID: #185799]
 			- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
+			- 20250915@Thomas.Nguyen: Add LastModifiedDate to Temp_CustCategory2 [Redmine ID: #237405]
 		---------------------------------------------------------------------------------------------------
 		[Before #192172]: CTS_DC_AssociationDetection_DetectGroup 
 			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
@@ -164,6 +165,18 @@ BEGIN
 		,	ParentID				INT UNSIGNED
 		,	CategoryName			VARCHAR(50)
 		,	ColorTypeID				TINYINT
+		,	PRIMARY KEY(CustID, CategoryID)
+	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory2;
+	CREATE TEMPORARY TABLE	Temp_CustCategory2 (
+			CustID 					BIGINT UNSIGNED
+		,	CategoryID				INT UNSIGNED
+        ,	CustomerClassPriority	SMALLINT
+		,	ParentID				INT UNSIGNED
+		,	CategoryName			VARCHAR(50)
+		,	ColorTypeID				TINYINT
+		,	LastModifiedDate		DATETIME
 		,	PRIMARY KEY(CustID, CategoryID)
 	);
 
@@ -579,19 +592,28 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS clss	ON clss.CustID = tmpcls.CustID AND clss.ParentID = tmpcls.ParentID
 		INNER JOIN CTS_DataCenter.CustomerCategoryAgency AS cat ON cat.CategoryID = clss.CategoryID
 	WHERE cus.RoleID IN (CONST_ROLEID_AGENT, CONST_ROLEID_MASTER,CONST_ROLEID_SUPER);
-
-
-    DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory2;    
-    CREATE TEMPORARY TABLE Temp_CustCategory2 LIKE Temp_CustCategory;
     
-    INSERT INTO Temp_CustCategory2(CustID, CategoryID, ParentID, CategoryName, ColorTypeID, CustomerClassPriority)
-	SELECT	CustID
-		,	CategoryID
-		,	ParentID
-		,	CategoryName
-		,	ColorTypeID
-		,	CustomerClassPriority
-    FROM Temp_CustCategory;
+    INSERT INTO Temp_CustCategory2(CustID, CategoryID, ParentID, CategoryName, ColorTypeID, CustomerClassPriority, LastModifiedDate)
+	SELECT	tmp.CustID
+		,	tmp.CategoryID
+		,	tmp.ParentID
+		,	tmp.CategoryName
+		,	tmp.ColorTypeID
+		,	tmp.CustomerClassPriority
+		,	clss.LastModifiedDate
+    FROM Temp_CustCategory AS tmp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CustID = tmp.CustID AND clss.CategoryID = tmp.CategoryID;
+
+	INSERT INTO Temp_CustCategory2(CustID, CategoryID, ParentID, CategoryName, ColorTypeID, CustomerClassPriority, LastModifiedDate)
+	SELECT	tmp.CustID
+		,	tmp.CategoryID
+		,	tmp.ParentID
+		,	tmp.CategoryName
+		,	tmp.ColorTypeID
+		,	tmp.CustomerClassPriority
+		,	clss.LastModifiedDate
+    FROM Temp_CustCategory AS tmp
+		INNER JOIN CTS_DataCenter.CTSCustomerClassificationAgency AS clss ON clss.CustID = tmp.CustID AND clss.CategoryID = tmp.CategoryID;
 	
     /*****************************Handle CustomerClass Info**************************************************/
     SELECT GROUP_CONCAT(DISTINCT CustID) 
@@ -633,7 +655,7 @@ BEGIN
         ,	(SELECT clss.ColorTypeID	
 			 FROM Temp_CustCategory2 AS clss
 			 WHERE clss.CustID = cus.CustID
-			 ORDER BY clss.CustomerClassPriority ASC
+			 ORDER BY clss.CustomerClassPriority ASC, clss.LastModifiedDate DESC
 			 LIMIT 1) AS ColorTypeID
         ,	cusclss.CustomerClass
         ,	cti.CountBotTrans AS BotTransSum
