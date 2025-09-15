@@ -28,7 +28,7 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
 	CREATE TEMPORARY TABLE Temp_Customer(
-			CustID 				BIGINT NOT NULL 
+			CustID 				BIGINT NOT NULL UNSIGNED
         ,   SportType           INT
 		,   Probability 		DECIMAL(8,4)
 		,   SourceCreatedDate 	DATETIME(3)
@@ -37,7 +37,7 @@ BEGIN
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_ExistedCust;
 	CREATE TEMPORARY TABLE Temp_ExistedCust(
-			CustID 				BIGINT NOT NULL 
+			CustID 				BIGINT NOT NULL UNSIGNED
         ,   SportType           INT
 		,	PRIMARY KEY (CustID, SportType)
 	);
@@ -49,7 +49,7 @@ BEGIN
 		,	tmp.SourceCreatedDate
     FROM JSON_TABLE(ip_CustInfo,
                         "$[*]" COLUMNS (CustID          			BIGINT			UNSIGNED	PATH "$.CustID"
-									,	SportType					TINYINT						PATH "$.SportType"
+									,	SportType					INT							PATH "$.SportType"
 									,	Probability					DECIMAL(8,4)				PATH "$.Probability"
                                     ,   SourceCreatedDate		    DATETIME(3)					PATH "$.PredictTime"                                           
                                 )) AS tmp;
