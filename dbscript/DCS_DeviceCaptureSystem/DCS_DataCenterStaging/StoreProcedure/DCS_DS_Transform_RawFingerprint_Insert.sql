@@ -1,8 +1,8 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_RawFingerprint_Insert`;
+/*<info serverAlias="CTSMain-DCS_DataCenterStaging" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DS_Transform_RawFingerprint_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_RawFingerprint_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DS_Transform_RawFingerprint_Insert`(
 		IN ip_RawFPDetails	LONGTEXT
 )
 	SQL SECURITY INVOKER
@@ -105,7 +105,7 @@ BEGIN
         ,	fp.FPPatternCode
 		,	tmpFp.CreatedDate AS NewUsedDate
 	FROM Temp_FPPattern AS tmpFp
-		INNER JOIN DCS_DataCenter.FPPattern AS fp ON fp.FPPatternType = CONST_FPPATTERNTYPE01 AND fp.FPPatternCode = tmpFp.FPPatternCode01
+		INNER JOIN DCS_DataCenterStaging.FPPattern AS fp ON fp.FPPatternType = CONST_FPPATTERNTYPE01 AND fp.FPPatternCode = tmpFp.FPPatternCode01
 	WHERE tmpFp.FPPatternCode01 IS NOT NULL ;        
 
 	INSERT INTO Temp_ExistingFPPattern(FPPatternID, FPPatternType, FPPatternCode, NewUsedDate)
@@ -114,17 +114,17 @@ BEGIN
         ,	fp.FPPatternCode
 		,	tmpFp.CreatedDate AS NewUsedDate
 	FROM Temp_FPPattern AS tmpFp
-		INNER JOIN DCS_DataCenter.FPPattern AS fp ON fp.FPPatternType = CONST_FPPATTERNTYPE02 AND fp.FPPatternCode = tmpFp.FPPatternCode02
+		INNER JOIN DCS_DataCenterStaging.FPPattern AS fp ON fp.FPPatternType = CONST_FPPATTERNTYPE02 AND fp.FPPatternCode = tmpFp.FPPatternCode02
 	WHERE tmpFp.FPPatternCode02 IS NOT NULL ;
 	
 	#======UPDATE FOR EXISTING Pattern LastUsedDate============    
-	UPDATE  DCS_DataCenter.FPPattern AS fp
+	UPDATE  DCS_DataCenterStaging.FPPattern AS fp
 		INNER JOIN Temp_ExistingFPPattern AS tmpEx ON tmpEx.FPPatternID = fp.FPPatternID
 	SET fp.LastUsedDate = tmpEx.NewUsedDate
 	WHERE fp.LastUsedDate < tmpEx.NewUsedDate;     
 
 	#======INSERT FPPattern=============================
-	INSERT IGNORE INTO DCS_DataCenter.FPPattern(FPPatternType, FPPatternCode, CreatedDate, LastUsedDate)
+	INSERT IGNORE INTO DCS_DataCenterStaging.FPPattern(FPPatternType, FPPatternCode, CreatedDate, LastUsedDate)
 	SELECT DISTINCT CONST_FPPATTERNTYPE01 AS FPPatternType
 		,	tmpPt.FPPatternCode01 AS FPPatternCode
 		,	DATE(tmpPt.CreatedDate) AS CreatedDate
@@ -134,7 +134,7 @@ BEGIN
 	WHERE	tmpEx.FPPatternType IS NULL
 	ON DUPLICATE KEY UPDATE LastUsedDate = GREATEST(tmpPt.CreatedDate,LastUsedDate);
 	
-	INSERT IGNORE INTO DCS_DataCenter.FPPattern(FPPatternType, FPPatternCode, CreatedDate, LastUsedDate)
+	INSERT IGNORE INTO DCS_DataCenterStaging.FPPattern(FPPatternType, FPPatternCode, CreatedDate, LastUsedDate)
 	SELECT DISTINCT CONST_FPPATTERNTYPE02 AS FPPatternType
 		,	tmpPt.FPPatternCode02 AS FPPatternCode
 		,	DATE(tmpPt.CreatedDate) AS CreatedDate
@@ -150,7 +150,7 @@ BEGIN
     SET tmpPt.FPPatternID01 = tmpEx.FPPatternID;
     
     UPDATE Temp_FPPattern AS tmpPt
-		INNER JOIN DCS_DataCenter.FPPattern AS pt ON pt.FPPatternType = CONST_FPPATTERNTYPE01 AND pt.FPPatternCode = tmpPt.FPPatternCode01
+		INNER JOIN DCS_DataCenterStaging.FPPattern AS pt ON pt.FPPatternType = CONST_FPPATTERNTYPE01 AND pt.FPPatternCode = tmpPt.FPPatternCode01
     SET tmpPt.FPPatternID01 = pt.FPPatternID
     WHERE tmpPt.FPPatternID01 IS NULL;
     
@@ -159,11 +159,11 @@ BEGIN
     SET tmpPt.FPPatternID02 = tmpEx.FPPatternID;     
     
     UPDATE Temp_FPPattern AS tmpPt
-		INNER JOIN DCS_DataCenter.FPPattern AS pt ON pt.FPPatternType = CONST_FPPATTERNTYPE02 AND pt.FPPatternCode = tmpPt.FPPatternCode02
+		INNER JOIN DCS_DataCenterStaging.FPPattern AS pt ON pt.FPPatternType = CONST_FPPATTERNTYPE02 AND pt.FPPatternCode = tmpPt.FPPatternCode02
     SET tmpPt.FPPatternID02 = pt.FPPatternID
     WHERE tmpPt.FPPatternID02 IS NULL;
 
-	INSERT IGNORE INTO DCS_DataCenter.RawFingerprintQueue(FPPatternID01, FPPatternID02, HardwareCode, GraphicCode, AudioCode, BrowserCode, PreferencesCode,  HardwareDetails, GraphicDetails, AudioDetails, BrowserDetails, PreferencesDetails, CreatedDate)
+	INSERT IGNORE INTO DCS_DataCenterStaging.RawFingerprintQueue(FPPatternID01, FPPatternID02, HardwareCode, GraphicCode, AudioCode, BrowserCode, PreferencesCode,  HardwareDetails, GraphicDetails, AudioDetails, BrowserDetails, PreferencesDetails, CreatedDate)
 	SELECT	tmpPt.FPPatternID01 AS FPPatternID01
 		,	tmpPt.FPPatternID02  AS FPPatternID02
         ,	tmpPt.HardwareCode

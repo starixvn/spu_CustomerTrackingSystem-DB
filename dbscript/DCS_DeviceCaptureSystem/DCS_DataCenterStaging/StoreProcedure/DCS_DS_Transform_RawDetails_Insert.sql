@@ -1,8 +1,8 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_RawDetails_Insert`;
+/*<info serverAlias="CTSMain-DCS_DataCenterStaging" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DS_Transform_RawDetails_Insert`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_RawDetails_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DS_Transform_RawDetails_Insert`(
 		IN ip_DetailsType	TINYINT
 	,	IN ip_Details 		LONGTEXT
 )
@@ -15,13 +15,13 @@ BEGIN
 		Original:
 
 		Revisions:
-            - 20250826@Casey.Huynh: Created, AI Power Device Fingerprint AND Remove FPJs [Redmine ID: #236716]
+            - 20250826@Casey.Huynh: Created [Redmine ID: #236716]
 
 		Param's Explanation (filtered by):
 			ip_DetailsType:
 				1: Insert WebRTCIP
 		Example:
-			CALL DCS_DC_Transform_RawTransDetails_Insert(@ip_DetailsType:=1,'[{"FPGroupCode":"A1B2C3D4E5F6G7H8I9J0KLMNOPQRSTU","FPGroupDetails":"hard_details1","CreatedDate":"2025-09-04"}]');
+			CALL DCS_DS_Transform_RawDetails_Insert(@ip_DetailsType:=1,'[{"FPGroupCode":"A1B2C3D4E5F6G7H8I9J0KLMNOPQRSTU","FPGroupDetails":"hard_details1","CreatedDate":"2025-09-04"}]');
 	*/
 
     DECLARE CONST_WEBRTCIP 	INT DEFAULT 1;
@@ -62,7 +62,7 @@ BEGIN
 			,	fp.WebRTCIPCode
             ,	tmpDt.CreatedDate AS NewUsedDate
         FROM Temp_Details AS tmpDt
-			INNER JOIN DCS_DataCenter.WebRTCIP AS fp ON fp.WebRTCIPCode = tmpDt.Code;
+			INNER JOIN DCS_DataCenterStaging.WebRTCIP AS fp ON fp.WebRTCIPCode = tmpDt.Code;
 		
         #======REMOVE EXISTING CODE============
         DELETE tmpDt
@@ -70,13 +70,13 @@ BEGIN
 			INNER JOIN Temp_ExistingDetails AS tmpEx ON tmpEx.Code = tmpDt.Code;
             
 		#======UPDATE LastUsedDate============
-        UPDATE  DCS_DataCenter.WebRTCIP AS fp
+        UPDATE  DCS_DataCenterStaging.WebRTCIP AS fp
 			INNER JOIN Temp_ExistingDetails AS tmpEx ON tmpEx.ID = fp.WebRTCIPID
 		SET fp.LastUsedDate = tmpEx.NewUsedDate
         WHERE fp.LastUsedDate < tmpEx.NewUsedDate;
 		
         #======INSERT NEW Details=============================
-        INSERT IGNORE INTO DCS_DataCenter.WebRTCIP(WebRTCIPCode, WebRTCIPDetails, CreatedDate,	LastUsedDate)
+        INSERT IGNORE INTO DCS_DataCenterStaging.WebRTCIP(WebRTCIPCode, WebRTCIPDetails, CreatedDate,	LastUsedDate)
         SELECT	tmpDt.Code
 			,	tmpDt.Details
             ,	tmpDt.CreatedDate

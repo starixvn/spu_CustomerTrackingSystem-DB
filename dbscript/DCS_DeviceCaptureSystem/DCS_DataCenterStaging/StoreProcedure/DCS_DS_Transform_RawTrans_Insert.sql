@@ -1,7 +1,8 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `DCS_DC_Transform_RawTrans_Insert`;
+/*<info serverAlias="CTSMain-DCS_DataCenterStaging" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `DCS_DS_Transform_RawTrans_Insert`;
+
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DC_Transform_RawTrans_Insert`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `DCS_DS_Transform_RawTrans_Insert`(
 		IN ip_RawTransJson LONGTEXT
 )
 	SQL SECURITY INVOKER
@@ -13,7 +14,7 @@ BEGIN
 		Original:
 
 		Revisions:
-			- 20201006@CaseyHuynh: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenter" [Redmine ID: #143011]
+			- 20201006@CaseyHuynh: Move New Server, Move table RawTransaction from DB "DCS_RawTransaction" to "DCS_DataCenterStaging" [Redmine ID: #143011]
 			- 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
 			- 20211129@Casey.Huynh: Remove FingerprintMoreInfo Column [Redmine ID: #165167]
 			- 20230327@Terry.Nguyen: Add InsertTime [Redmine ID: #185185]
@@ -26,15 +27,14 @@ BEGIN
 			- 20241121@Jonathan.Doan: Insert MBRawTransaction [Redmine ID: #213401]
 			- 20250804@Lando.Vu: Add MBDeviceDetails table [Redmine ID: #233405]
 			- 20250808@Jonathan.Doan: Separate iOS trans [Redmine ID: #235457]
-            - 20250822@Casey.Huynh: AI Power Device Fingerprint AND Remove FPJs[Redmine ID: #236716]
-
+			- 20250916@Casey.Huynh: AI Power Device Fingerprint AND Remove FPJs[Redmine ID: #236716]
+            
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"LoginName":"test1","SubscriberName":"Alpha","TransTime":"2024-08-05T15:10:59.051","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"464d165f74c441ee924c2c7adedba28f"
-            ,"UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36","IP":"::1","FakeIP":"","IPId":1,"IsIPV6":true,"PluginID":0,"URL":"http://localhost:60207","Action":"Login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FPSTransId":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","FPTagging":"464d165f74c441ee924c2c7adedba28f","FPFingerPrintCode":"8b5ee6dab25b9db5818ad7d5bbd68d6e","FPFingerPrintExtraCode":"b5b2333484fb344440bc31a349e8e1a0","FPFingerPrintOldCode":"5b7c23ba59b230eb5415eb8c4684bf22","ChallengeCode":"6386619f64de47f598576b290e48b170","FPUserAgentCode":"c92baae71318dc81de51a663df2f8b4f","IsIncognitoMode":false,"MBDeviceCodeMachine":"42679e3362cdec47d7d889082e972457","MBDeviceCodeTagging":"ad921d60486366258809553a3db49a4a","MBDeviceCodeMediaDRM":"550714e40b4d3ff77cb888ac94e82ad6","MBIsMobileApp":true,"MBIsEmulator":true,"MBModelName":"sdk_gphone64_x86_64","MBManufacturer":"Google","MBBrand":"google","MBSDKVersion":"35","MBOS":"Android","MBTimezone":"Indochina Time","MBLanguage":"English","MBCountry":"US"}]');
-	*/  
-    
+			CALL DCS_DataCenterStaging.DCS_DS_Transform_RawTrans_Insert('[{"LoginName":"test1","SubscriberName":"Alpha","TransTime":"2024-08-05T15:10:59.051","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"464d165f74c441ee924c2c7adedba28f","FingerprintCode":"45174aef1a33a67c31d443a81a0877f320166613;c5ca1ab37b1378c2626993e2921c8d9d","FingerprintMoreInfo":"6QiqFW9UJpa64drfM/VSENyo7IkHmVlnMxCI8JwitEY=","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36","IP":"::1","FakeIP":"","IPId":1,"IsIPV6":true,"PluginID":0,"URL":"http://localhost:60207","Action":"Login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FPSTransId":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","FPTagging":"464d165f74c441ee924c2c7adedba28f","FPFingerPrintCode":"8b5ee6dab25b9db5818ad7d5bbd68d6e","FPFingerPrintExtraCode":"b5b2333484fb344440bc31a349e8e1a0","FPFingerPrintOldCode":"5b7c23ba59b230eb5415eb8c4684bf22","ChallengeCode":"6386619f64de47f598576b290e48b170","FPUserAgentCode":"c92baae71318dc81de51a663df2f8b4f","IsIncognitoMode":false,"MBDeviceCodeMachine":"42679e3362cdec47d7d889082e972457","MBDeviceCodeTagging":"ad921d60486366258809553a3db49a4a","MBDeviceCodeMediaDRM":"550714e40b4d3ff77cb888ac94e82ad6","MBIsMobileApp":true,"MBIsEmulator":true,"MBModelName":"sdk_gphone64_x86_64","MBManufacturer":"Google","MBBrand":"google","MBSDKVersion":"35","MBOS":"Android","MBTimezone":"Indochina Time","MBLanguage":"English","MBCountry":"US"}]');
+	*/
+	
 	DECLARE lv_FlaggedHuman	INT UNSIGNED DEFAULT 1;
 	DECLARE lv_InsertionTime TIMESTAMP(4) DEFAULT CURRENT_TIMESTAMP(4);
 	
@@ -49,6 +49,7 @@ BEGIN
 		,	SubscriberName				VARCHAR(50) 				NOT NULL
 		,	TransTime					TIMESTAMP(4)	 			NOT NULL
 		,	DeviceCode					VARCHAR(32) 				NULL		COMMENT 'Device Inject Code: 32 characters is auto generated'
+		,	FingerprintCode				VARCHAR(620)				NULL		COMMENT 'Device Fingerprint Codes, the hashcode bases on the set attributes'	
 		,	UserAgent					VARCHAR(1000)				NULL
 		,	IP							VARCHAR(50) 				NULL
 		,	IPID						DECIMAL(50,0)				NULL
@@ -81,12 +82,13 @@ BEGIN
 		,	MBLanguage					VARCHAR(32)					NULL
 		,	MBCountry					VARCHAR(32)					NULL
 		,	MBDeviceDetails				JSON						NULL
-		
         ,	WebRTCIPCode				VARCHAR(32)					NULL    
         ,	FPPatternCode01				VARCHAR(32)   				NULL	# FPPatternType 1
         ,	FPPatternCode02				VARCHAR(32)   				NULL 	# FPPatternType 2
+        ,	FPVersion 					VARCHAR(10) 				NULL
+		,	FPFlow 						TINYINT(1)					NULL
 	);
-
+	
 	CREATE TEMPORARY TABLE Temp_MBTransaction(
 			ID							INT UNSIGNED AUTO_INCREMENT PRIMARY KEY
 		,	LoginName					VARCHAR(100) 				NOT NULL	
@@ -127,14 +129,12 @@ BEGIN
 		,	IsNewRecord					TINYINT		 				DEFAULT 1
 	);
 		
-	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, UserAgent, IP, IPID, PluginID, URL, Action
-    , ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP
-    , ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry, MBDeviceDetails
-    , WebRTCIPCode, FPPatternCode01, FPPatternCode02)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry, MBDeviceDetails, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, FPFlow)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
 		,	(CASE WHEN rt.DeviceCode IS NULL THEN NULL ELSE rt.DeviceCode END) AS DeviceCode
+		,	(CASE WHEN rt.FingerprintCode IS NULL OR rt.DeviceCode IS NULL	THEN NULL ELSE rt.FingerprintCode END) AS FingerprintCode
 		,	LEFT((CASE WHEN rt.UserAgent IS NULL THEN NULL ELSE rt.UserAgent END),1000) AS UserAgent
 		,	(CASE WHEN rt.IP IS NULL THEN NULL ELSE rt.IP END) AS IP
 		,	(CASE WHEN rt.IPID = 0 THEN NULL ELSE rt.IPID END) AS IPID
@@ -168,6 +168,8 @@ BEGIN
         ,	rt.WebRTCIPCode
         ,	rt.FPPatternCode01
         ,	rt.FPPatternCode02
+        ,	rt.FPVersion
+        ,	rt.FPFlow
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
@@ -175,6 +177,7 @@ BEGIN
 							,	SubscriberName				VARCHAR(50) 	PATH "$.SubscriberName"   
 							,	TransTime					TIMESTAMP(4) 	PATH "$.TransTime"
 							,	DeviceCode					VARCHAR(32)		PATH "$.DeviceCode"
+							,	FingerprintCode				VARCHAR(620)	PATH "$.FingerprintCode"
 							,	UserAgent					TEXT 			PATH "$.UserAgent"
 							,	IP							VARCHAR(50) 	PATH "$.IP"
 							,	IPID						DECIMAL(50,0)	PATH "$.IPId"
@@ -204,14 +207,15 @@ BEGIN
 							,	MBLanguage					VARCHAR(32)		PATH "$.MBLanguage"
 							,	MBCountry					VARCHAR(32)		PATH "$.MBCountry"
 							,	MBDeviceDetails				JSON			PATH "$.MBDeviceDetails"
-                            
                             ,	WebRTCIPCode				VARCHAR(32)		PATH "$.WebRTCIPCode"						
 							,	FPPatternCode01				VARCHAR(32)		PATH "$.FPPatternCode01"
 							,	FPPatternCode02				VARCHAR(32)		PATH "$.FPPatternCode02"
+                            ,	FPVersion					VARCHAR(10)		PATH "$.FPVersion"
+							,	FPFlow 						TINYINT(1)		PATH "$.FPFlow"
 				)
 		   ) AS rt; 
-
-    /******* Add index ********************/
+		   
+   /******* Add index ********************/
 	ALTER TABLE Temp_Transaction
 	ADD INDEX IX_Temp_Transaction_MBIsMobileApp (MBIsMobileApp),
 	ADD INDEX IX_Temp_Transaction_BotComponentCode (BotComponentCode);
@@ -250,7 +254,7 @@ BEGIN
 	SELECT 	tmp.ID
 		, 	SUM(bd.Value) AS Value
 	FROM Temp_Transaction AS tmp
-		INNER JOIN DCS_DataCenter.BotDetection AS bd ON FIND_IN_SET(bd.Name, tmp.BotDetection)
+		INNER JOIN DCS_DataCenterStaging.BotDetection AS bd ON FIND_IN_SET(bd.Name, tmp.BotDetection)
 	GROUP BY tmp.ID;
 	
 	UPDATE Temp_Transaction AS tmp
@@ -265,10 +269,10 @@ BEGIN
 	FROM Temp_Transaction;
 	
 	UPDATE Temp_BotComponent AS tmp
-		INNER JOIN DCS_DataCenter.BotComponent AS bc ON bc.Code = tmp.Code
+		INNER JOIN DCS_DataCenterStaging.BotComponent AS bc ON bc.Code = tmp.Code
 	SET tmp.IsNewRecord = 0;
 	
-	INSERT IGNORE INTO DCS_DataCenter.BotComponent(Code, Component, IsHuman, CreatedDate, ModifiedDate)
+	INSERT IGNORE INTO DCS_DataCenterStaging.BotComponent(Code, Component, IsHuman, CreatedDate, ModifiedDate)
 	SELECT 	Code
 		,	Component
 		,	CASE WHEN FlaggedCode = 'Human' THEN 1 ELSE 0 END AS IsHuman
@@ -278,18 +282,17 @@ BEGIN
 	WHERE IsNewRecord = 1;
 	
 	UPDATE Temp_Transaction AS tmp
-		INNER JOIN DCS_DataCenter.BotComponent AS bds ON bds.Code = tmp.BotComponentCode
+		INNER JOIN DCS_DataCenterStaging.BotComponent AS bds ON bds.Code = tmp.BotComponentCode
 	SET tmp.BotComponentID = bds.ID;
-
+	
 	/*******RawTransaction********************/
-	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, UserAgent, IP, IPID, Flagged
-    , PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, ChallengeCode, IsIncognitoMode
-    , WebRTCIPCode, FPPatternCode01, FPPatternCode02)
+	INSERT INTO DCS_DataCenterStaging.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, ChallengeCode, IsIncognitoMode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, FPFlow)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
 		,	DATE(rt.TransTime) AS CreatedDate
 		,	rt.DeviceCode
+		,	rt.FingerprintCode
 		,	rt.UserAgent
 		,	rt.IP
 		,	rt.IPID
@@ -308,15 +311,18 @@ BEGIN
 		,   rt.IsIncognitoMode
         ,	rt.WebRTCIPCode
         ,	rt.FPPatternCode01
-        ,	rt.FPPatternCode02        
+        ,	rt.FPPatternCode02
+        ,	rt.FPVersion
+        ,	rt.FPFlow   
 	FROM Temp_Transaction AS rt
-		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
+		LEFT JOIN DCS_DataCenterStaging.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
 													AND sl.ItemCode = rt.FlaggedCode;
 	
-	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;	
-
+	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
+	
+	
 	/*******Mobile RawTransaction IOS********************/
-	INSERT INTO DCS_DataCenter.MBRawTransactionIOS(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language, DeviceDetails)
+	INSERT INTO DCS_DataCenterStaging.MBRawTransactionIOS(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language, DeviceDetails)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -339,12 +345,12 @@ BEGIN
 		,	rt.Language
 		,	rt.DeviceDetails
 	FROM Temp_MBTransaction AS rt
-		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
+		LEFT JOIN DCS_DataCenterStaging.StaticList AS sl ON sl.ListID = 1 /*Flagged*/   
 													AND sl.ItemCode = rt.FlaggedCode
 	WHERE rt.OSName = 'IOS';
 
 	/*******Mobile RawTransaction********************/
-	INSERT INTO DCS_DataCenter.MBRawTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language, DeviceDetails)
+	INSERT INTO DCS_DataCenterStaging.MBRawTransaction(LoginName, SubscriberName, TransTime, IP, IPID, Action, ActionResult, Flagged, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, IsEmulator, ModelName, Manufacturer, Brand, SDKVersion, OSName, CountryName, Timezone, Language, DeviceDetails)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -367,7 +373,7 @@ BEGIN
 		,	rt.Language
 		,	rt.DeviceDetails
 	FROM Temp_MBTransaction AS rt
-		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
+		LEFT JOIN DCS_DataCenterStaging.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
 													AND sl.ItemCode = rt.FlaggedCode
 	WHERE rt.OSName <> 'IOS';
 
