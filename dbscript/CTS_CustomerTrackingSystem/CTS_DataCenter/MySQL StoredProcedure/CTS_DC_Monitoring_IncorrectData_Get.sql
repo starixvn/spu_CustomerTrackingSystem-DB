@@ -37,6 +37,7 @@ BEGIN
     DECLARE lv_CurrentNextScanID 	                    BIGINT UNSIGNED;
     DECLARE lv_Count_CustLatencyQueue	                INT UNSIGNED;
     DECLARE lv_Threshold_CustLatencyQueue               SMALLINT UNSIGNED;
+    DECLARE lv_InitialSmart_B_LastLogID 			    BIGINT UNSIGNED;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_IncorrectData;    
 	CREATE TEMPORARY TABLE Temp_IncorrectData(
@@ -60,6 +61,11 @@ BEGIN
 	INTO lv_LastScanID
 	FROM CTS_DataCenter.SystemParameter 
 	WHERE ParameterID = 151; 
+
+    SELECT ParameterValue
+	INTO lv_InitialSmart_B_LastLogID
+	FROM CTS_DataCenter.SystemParameter 
+	WHERE ParameterID = 198; 
     
     INSERT INTO Temp_IncorrectData(ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID, IsIssueTypeValid)
     SELECT 		a.ID
@@ -106,7 +112,7 @@ BEGIN
             ,	CONST_ISSUETYPEID_INITIALSMART_B AS IssueTypeID
             ,	1 AS IsIssueTypeValid
         FROM Customer_InitialSmart_BySport_Log
-        WHERE InsertedTime > DATE_SUB(NOW(), INTERVAL 15 MINUTE);
+        WHERE ID > lv_LastLogID;
     END IF;
 
 

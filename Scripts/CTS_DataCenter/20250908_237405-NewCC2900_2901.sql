@@ -108,7 +108,7 @@ WHERE cc.ParentID = 20000;
 INSERT INTO CTS_DataCenter.SystemParameter
     (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue) 
 VALUES
-    (196, 'InitialSmart_B_LastScanCustID', 'InitialSmart_B_LastScanCustID', 'INT', '0'),
-    (197, 'InitialSmart_B_LastScanDate', 'InitialSmart_B_LastScanDate', 'DATETIME(3)', NOW());
+        (196, 'InitialSmart_B_LastScanCustID', 'InitialSmart_B_LastScanCustID', 'INT', '0')
+    ,   (197, 'InitialSmart_B_LastScanDate', 'InitialSmart_B_LastScanDate', 'DATETIME(3)', NOW())
+    ,   (198, 'InitialSmart_B_LastLogID', 'InitialSmart_B_LastLogID', 'INT', '0');
 
-/*******************************INIT Table StaticList *********************************/
