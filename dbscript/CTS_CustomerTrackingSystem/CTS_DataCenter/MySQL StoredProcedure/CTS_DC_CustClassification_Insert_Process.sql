@@ -436,13 +436,20 @@ BEGIN
 			AND lv_IsRescan = 1;
 			
 		INSERT IGNORE INTO Temp_LicVIPCust(CustID, CategoryID, CustomerClass)
+		WITH CTE_LicVIPCust AS (
 		SELECT	temp.CustID
-			,	CASE WHEN cat.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END
-			,	CASE WHEN cat.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS ELSE CONST_CC_LICVIPDANGEROUS END
+			,	CASE WHEN cat.IsDangerProbation = 1 THEN CONST_CATEID_LICVIPSUSPICIOUS ELSE CONST_CATEID_LICVIPDANGEROUS END AS CategoryID
+			,	CASE WHEN cat.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS ELSE CONST_CC_LICVIPDANGEROUS END AS CustomerClass
+			,	cat.CustomerClassPriority
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
 		WHERE temp.IsExistVVIP 	= 0
-			AND temp.IsLicenseeVIP = 1;
+			AND temp.IsLicenseeVIP = 1
+		)
+		SELECT CustID, CategoryID, CustomerClass
+		FROM CTE_LicVIPCust
+		ORDER BY CustomerClassPriority ASC
+		LIMIT 1;
 
 		/*delete: existing VVIP */
 		DELETE temp

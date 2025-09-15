@@ -26,6 +26,7 @@ BEGIN
 			- 20250327@Thomas.Nguyen:		Add to source table for the first time classify TW GroupBetting or HighRejected [Redmine ID: #221508]
 			- 20250519@Thomas.Nguyen:		Set IsDisabled = 1 for Special Lic Sub source table when having CustomerClassPriority greater than [Redmine ID: #226847]
             - 20250725@Casey.Huynh:			Agent CC, Insert Considerable Agency Queue [Redmine ID: #219679]
+			- 20250915@Thomas.Nguyen:		CC 2900/2901 - Use TargetCCHistory to store TargetCC in CC History/Log table [Redmine ID: #237405]						
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -961,6 +962,15 @@ BEGIN
 		
 		SET lv_InsertedCount = FOUND_ROWS();
 
+		UPDATE Temp_NewClassification AS temp
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
+		SET temp.TargetCCForHistory =	CASE	WHEN temp.SpecialCC IS NOT NULL THEN temp.SpecialCC
+												WHEN cat.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS 
+												WHEN cat.IsDangerProbation = 0 THEN CONST_CC_LICVIPDANGEROUS 
+												ELSE temp.TargetCC
+										END
+		WHERE temp.IsLicenseeVIP = 1;
+
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType
 			, 	InsertDate, TargetCC, SourceTypeID, IsDataChanged, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays
@@ -974,7 +984,7 @@ BEGIN
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	temp.ActionType
 			, 	DATE(lv_CurrentDateTime) AS InsertDate
-			, 	temp.TargetCC
+			, 	temp.TargetCCForHistory
 			, 	(CASE	WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
 						WHEN temp.MatchID IS NOT NULL THEN CONST_REMARKID_AUTOMARKGB
 						WHEN temp.GroupName IS NOT NULL THEN CONST_REMARKID_PABYASSOCIATEDGROUP
@@ -1022,7 +1032,7 @@ BEGIN
 			,	temp.ActionType
 			,	lv_IsAuto
 			,	DATE(lv_CurrentDateTime) AS InsertDate
-			,	temp.TargetCC
+			,	temp.TargetCCForHistory
 			, 	(CASE	WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
 						WHEN temp.MatchID IS NOT NULL THEN CONST_REMARKID_AUTOMARKGB
 						WHEN temp.GroupName IS NOT NULL THEN CONST_REMARKID_PABYASSOCIATEDGROUP
