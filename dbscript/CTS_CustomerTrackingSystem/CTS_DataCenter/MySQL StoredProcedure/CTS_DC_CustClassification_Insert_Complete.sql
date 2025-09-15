@@ -965,11 +965,10 @@ BEGIN
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
 		SET temp.TargetCCForHistory =	CASE	WHEN temp.SpecialCC IS NOT NULL THEN temp.SpecialCC
-												WHEN cat.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS 
-												WHEN cat.IsDangerProbation = 0 THEN CONST_CC_LICVIPDANGEROUS 
+												WHEN temp.IsLicenseeVIP = 1 AND cat.IsDangerProbation = 1 THEN CONST_CC_LICVIPSUSPICIOUS 
+												WHEN temp.IsLicenseeVIP = 1 AND cat.IsDangerProbation = 0 THEN CONST_CC_LICVIPDANGEROUS 
 												ELSE temp.TargetCC
-										END
-		WHERE temp.IsLicenseeVIP = 1;
+										END;
 
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType
