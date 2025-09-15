@@ -30,7 +30,7 @@ BEGIN
     DECLARE CONST_BATCHSIZE							    SMALLINT DEFAULT 5000;
 
     DECLARE CONST_ISSUETYPEID_CUSTOMERLATENCYQUEUE		SMALLINT DEFAULT 300;
-    DECLARE CONST_CATEID_INITIALSMART_B         		SMALLINT DEFAULT 301;
+    DECLARE CONST_ISSUETYPEID_INITIALSMART_B         	SMALLINT DEFAULT 301;
     
     DECLARE lv_LastScanID 			                    BIGINT UNSIGNED;
     DECLARE lv_MaxScanID	 		                    BIGINT UNSIGNED;
@@ -103,7 +103,7 @@ BEGIN
             ,   CONCAT('From ID: ', MIN(ID), ' To ID: ', MAX(ID)) AS TrackingInfo
             ,	CURRENT_TIMESTAMP() AS CreatedTime
             ,	0 AS IsResolved
-            ,	CONST_CATEID_INITIALSMART_B AS IssueTypeID
+            ,	CONST_ISSUETYPEID_INITIALSMART_B AS IssueTypeID
             ,	1 AS IsIssueTypeValid
         FROM Customer_InitialSmart_BySport_Log
         WHERE InsertedTime > DATE_SUB(NOW(), INTERVAL 15 MINUTE);

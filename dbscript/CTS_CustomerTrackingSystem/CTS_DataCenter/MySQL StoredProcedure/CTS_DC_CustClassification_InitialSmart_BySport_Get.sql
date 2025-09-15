@@ -51,7 +51,7 @@ BEGIN
     );
     
     INSERT INTO Temp_Customer(CustID, SportType, Probability, SourceCreatedDate, InsertedTime)
-    WITH cte AS (
+    WITH cte_Cus AS (
         SELECT	cs.CustID
             ,   cs.SportType
 		    , 	cs.Probability
@@ -64,7 +64,7 @@ BEGIN
     	ORDER BY cs.InsertedTime ASC, cs.CustID ASC
 	    LIMIT ip_BatchSize)
         SELECT DISTINCT CustID, SportType, Probability, SourceCreatedDate, InsertedTime
-        FROM cte;
+        FROM cte_Cus;
     
     SET lv_TotalRow = (SELECT COUNT(1) FROM Temp_Customer);
     
@@ -72,7 +72,7 @@ BEGIN
         SET lv_SecondBatchSize = ip_BatchSize - lv_TotalRow;
         
         INSERT INTO Temp_Customer(CustID, SportType, Probability, SourceCreatedDate, InsertedTime)
-        WITH ctec AS ( 
+        WITH cte_Cus_BatchSize AS ( 
 		    SELECT	cs.CustID
                 ,   cs.SportType
                 , 	cs.Probability
@@ -84,10 +84,8 @@ BEGIN
 		    ORDER BY cs.InsertedTime ASC, cs.CustID ASC
 		    LIMIT lv_SecondBatchSize)
 	    SELECT DISTINCT CustID, SportType, Probability, SourceCreatedDate, InsertedTime
-        FROM ctec;
-
-        
-		
+        FROM cte_Cus_BatchSize;
+	
     END IF;
     
     SET op_NextScannedDateTime = IFNULL((SELECT MAX(InsertedTime) FROM Temp_Customer), lv_LastScannedDate);
