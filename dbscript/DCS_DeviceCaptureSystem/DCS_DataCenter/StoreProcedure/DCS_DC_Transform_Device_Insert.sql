@@ -51,6 +51,7 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Transaction;
     DROP TEMPORARY TABLE IF EXISTS Temp_ExistedDevice;
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoveredDevice;
+    DROP TEMPORARY TABLE IF EXISTS Temp_RecoveredDeviceNew;
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoverDeviceByBet;
     #==============================================
     
@@ -78,6 +79,7 @@ BEGIN
         , 	FirstDeviceCode			VARCHAR(32)
         , 	DeviceStatus			TINYINT
         , 	DeviceFingerprintID		BIGINT UNSIGNED
+        , 	IsFPIntegrateSubscriber	TINYINT
 	);
     
     CREATE TEMPORARY TABLE Temp_ExistedDevice(
@@ -108,6 +110,17 @@ BEGIN
 		, 	FingerprintCode_CommaSeparated	VARCHAR(620)
         ,	INDEX 							IX_Temp_RecoverDeviceByBet_AccountID_DeviceCode_FingerprintCode(AccountID,DeviceCode,FingerprintCode)
     );
+    
+    CREATE TEMPORARY TABLE Temp_RecoveredDeviceNew(
+			AccountID				BIGINT UNSIGNED
+        ,	DeviceCode   			VARCHAR(32)
+		,	FPPatternID01			BIGINT UNSIGNED
+		,	FPPatternID02			BIGINT UNSIGNED
+        ,	DeviceID				BIGINT UNSIGNED
+        ,	RecoverCode 			VARCHAR(32)
+        ,	PRIMARY KEY 			PK_Temp_RecoveredDevice(AccountID, DeviceCode, FPPatternID01, FPPatternID02)
+        ,	INDEX 					IX_Temp_RecoveredDevice_DeviceCode_DeviceID_RecoverCode(DeviceCode, DeviceID, RecoverCode)
+	);
 	
     
 	#========GET INPUT DATA===========================
@@ -116,7 +129,7 @@ BEGIN
 	EXECUTE stmt1;
     
     
-	INSERT INTO Temp_Transaction(TransID, RawTransID, AccountID, LoginName, SubscriberID, UserAgentKey, IP, DeviceCode, CreatedDate, TransTime, FingerprintCode)
+	INSERT INTO Temp_Transaction(TransID, RawTransID, AccountID, LoginName, SubscriberID, UserAgentKey, IP, DeviceCode, CreatedDate, TransTime, FingerprintCode, IsFPIntegrateSubscriber)
     SELECT 	trans.TransID
 		, 	trans.RawTransID
 		, 	trans.AccountID
@@ -128,8 +141,10 @@ BEGIN
 		, 	trans.CreatedDate
 		, 	trans.TransTime
 		, 	trans.FingerprintCode
+        ,	CASE WHEN fpsub.SubscriberID IS NOT NULL THEN 1 ELSE 0 END AS IsFPIntegrateSubscriber
 	FROM Temp_Input AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
+		LEFT JOIN DCS_DataCenter.FPIntegrateSubscriber AS fpsub ON fpsub.SubscriberID = trans.SubscriberID
     ORDER BY tmp.TransID ASC;
     
     /* === Add index Temp_Transaction === */
@@ -157,6 +172,18 @@ BEGIN
     FROM CTE_DeviceCode AS cte
 		INNER JOIN DCS_DataCenter.DeviceCode AS dc ON dc.DeviceCode = cte.DeviceCode;
 
+	
+    #recover new steps
+    INSERT INTO Temp_RecoveredDeviceNew(AccountID, DeviceCode, FPPatternID01, FPPatternID02, DeviceID)
+    SELECT	AccountID
+		,	DeviceCode
+        ,	FPPatternID01
+        ,	FPPatternID02
+        ,	DeviceID
+    FROM Temp_Transaction AS tmpT
+	WHERE tmpT.IsFPIntegrateSubscriber = 1
+		AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice td WHERE td.DeviceCode = tmpT.DeviceCode)
+
     #recover steps
     # Recover DeviceID by Association - Level 1
     INSERT INTO Temp_RecoveredDevice(AccountID, DeviceCode, FingerprintCode, DeviceID)
@@ -168,7 +195,8 @@ BEGIN
             ,	FingerprintCode1
             ,	FingerprintCode2
         FROM Temp_Transaction AS tmpT
-        WHERE NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice td WHERE td.DeviceCode = tmpT.DeviceCode)
+        WHERE tmpT.IsFPIntegrateSubscriber = 0
+			AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice td WHERE td.DeviceCode = tmpT.DeviceCode)
 	)
     SELECT 	cte.AccountID
 		,	cte.DeviceCode
@@ -194,7 +222,8 @@ BEGIN
         ,	FingerprintCode
         ,	REPLACE(FingerprintCode,';',',') AS FingerprintCode_CommaSeparated
 	FROM Temp_Transaction AS tts
-	WHERE tts.DeviceCode IS NOT NULL
+	WHERE tts.IsFPIntegrateSubscriber = 0
+		AND tts.DeviceCode IS NOT NULL
 		AND tts.FingerprintCode IS NOT NULL
 		AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice AS de WHERE de.DeviceCode = tts.DeviceCode)
 		AND NOT EXISTS (SELECT 1 FROM Temp_RecoveredDevice AS dr WHERE dr.DeviceCode = tts.DeviceCode);
@@ -210,7 +239,8 @@ BEGIN
 		SELECT 	(CASE WHEN rb.DeviceCode = ts.DeviceCode THEN 1 ELSE 0 END) AS DeviceID
 			, 	ts.DeviceCode AS RecoverCode
         FROM Temp_Transaction AS ts
-        WHERE rb.AccountID = ts.AccountID
+        WHERE ts.IsFPIntegrateSubscriber = 0
+			AND rb.AccountID = ts.AccountID
 			AND rb.TransId > ts.TransId
 			AND (
 				rb.DeviceCode = ts.DeviceCode #--> exists from incoming deviceid
