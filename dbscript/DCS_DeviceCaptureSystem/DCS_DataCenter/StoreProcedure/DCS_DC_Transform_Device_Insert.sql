@@ -29,6 +29,7 @@ BEGIN
 			- 20240326@Jonathan.Doan: Enhance for EC24 [Redmine: 202878] 
 			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
 			- 20250324@Jonathan.Doan: Use CURRENT_TIMESTAMP for InsertTime [Redmine ID: #217768]
+            - 20250909@Jonathan.Doan: Remove FPJs and add new flow for F4,F5 rules [Redmine ID: #236716]
 	    Param's Explanation (filtered by):
         
         Example:
@@ -77,10 +78,6 @@ BEGIN
         , 	FirstDeviceCode			VARCHAR(32)
         , 	DeviceStatus			TINYINT
         , 	DeviceFingerprintID		BIGINT UNSIGNED
-        
-        , 	FP_DeviceID				BIGINT UNSIGNED
-        , 	FP_DeviceMappingID		BIGINT UNSIGNED
-        , 	FP_DeviceStatus			TINYINT
 	);
     
     CREATE TEMPORARY TABLE Temp_ExistedDevice(
@@ -338,19 +335,12 @@ BEGIN
 										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN vrDeviceStatusRecover
                                         WHEN de.DeviceID > 0 AND (tts.TransId = de.FirstTransID OR de.IsNew = 1) THEN vrDeviceStatusNew  
 										ELSE tts.DeviceStatus END;
-    
-    UPDATE Temp_Transaction AS tmp
-		INNER JOIN DCS_DataCenter.FP_TransactionDeviceMapping AS tdm ON tdm.RawTransID = tmp.RawTransID
-	SET tmp.FP_DeviceMappingID = tdm.FP_DeviceMappingID,
-		tmp.FP_DeviceID = tdm.FP_DeviceID,
-		tmp.FP_DeviceStatus = tdm.FP_DeviceStatus;
 	
     /* === Insert new Association === */
     WITH cte_DistinctData AS (
 		SELECT	DISTINCT
 				AccountID
 			,	DeviceID
-			,	FP_DeviceID
 			,	SubscriberID
 			,	TransTime
 			,	CreatedDate
@@ -361,7 +351,6 @@ BEGIN
 			JSON_OBJECT(
 					'AccountID'		, AccountID
 				,	'DeviceID'		, DeviceID
-				,	'FP_DeviceID'	, FP_DeviceID
 				,	'SubscriberID'	, SubscriberID
 				,	'CreatedTime'	, TransTime
 				,	'CreatedDate'	, CreatedDate
@@ -409,7 +398,7 @@ BEGIN
     SET lv_NewAccountDeviceJson = IFNULL(lv_NewAccountDeviceJson,'[{}]');
 	CALL DCS_DC_Transform_NewAccountDevice_Insert(lv_NewAccountDeviceJson);
 	
-	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FP_UserAgentID, FP_DeviceMappingID, FP_DeviceID, FP_DeviceStatus)
+	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID)
 	SELECT 	ts.RawTransID
 		,	ts.LoginName
 		,	ts.TransTime
@@ -435,10 +424,6 @@ BEGIN
 		,	ts.FakeIP
 		,	ts.IsIncognitoMode
 		,	ts.JSChallengeInfoID
-		,	ts.FP_UserAgentID
-		,	tmp.FP_DeviceMappingID
-		,	tmp.FP_DeviceID
-		,	tmp.FP_DeviceStatus
 	FROM Temp_Transaction AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS ts ON ts.TransID = tmp.TransID
 	WHERE tmp.DeviceID IS NOT NULL;
@@ -447,10 +432,6 @@ BEGIN
 	FROM DCS_DataCenter.Transaction AS trans
 		INNER JOIN Temp_Transaction AS tmp ON tmp.TransID = trans.TransID
 	WHERE tmp.DeviceID IS NOT NULL;
-    
-    DELETE tdm
-    FROM DCS_DataCenter.FP_TransactionDeviceMapping AS tdm
-		INNER JOIN Temp_Transaction AS tmp ON tmp.RawTransID = tdm.RawTransID;
 END$$
 
 DELIMITER ;
