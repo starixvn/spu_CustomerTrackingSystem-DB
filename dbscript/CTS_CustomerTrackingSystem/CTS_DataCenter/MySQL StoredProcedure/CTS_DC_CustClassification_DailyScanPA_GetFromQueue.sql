@@ -16,6 +16,7 @@ BEGIN
 			- 20240423@Thomas.Nguyen: 	Classify Initial Group Betting - Return list Cust to get Remark for Initial GB [RedmineID: #200854]
 			- 20240531@Thomas.Nguyen: 	Classify Initial Smart - Return list Cust to get Remark for Initial Smart [RedmineID: #199345]
 			- 20240705@Victoria.le:		Renovate CC Phase2 - Not return RemarkSourceType [[RedmineID: #205317] 
+			- 20250909@Logan.Nguyen:	Return SportType for PA [Redmine ID: #237405]
 
 		Param's Explanation (filtered by):    
 			CALL CTS_DC_CustClassification_DailyScanPA_GetFromQueue()
@@ -24,9 +25,11 @@ BEGIN
     DECLARE lv_BatchSize 			INT;
     DECLARE lv_LastScannedTime		DATETIME;
 
+
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customers;
 	CREATE TEMPORARY TABLE Temp_Customers(
 			CustID					BIGINT UNSIGNED
+        ,   SportType           	INT
 	);
 
 	SELECT ParameterValue 
@@ -41,17 +44,22 @@ BEGIN
 	
     SET lv_LastScannedTime = DATE_ADD(lv_LastScannedTime, INTERVAL 24 HOUR);
     
-	INSERT INTO Temp_Customers(CustID)
+	INSERT INTO Temp_Customers(CustID, SportType)
 	WITH cte AS ( 
-		SELECT ID, CustID
-		FROM CTS_DataCenter.CTSCustomerClassification_DailyPAQueue
+		SELECT	ccdpa.ID
+			,	cc.CustID
+			,	ccs.SportType
+		FROM CTS_DataCenter.CTSCustomerClassification_DailyPAQueue AS ccdpa
+		JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CustID = ccdpa.CustID
+		JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cc.CategoryID = ccs.CategoryID
 		WHERE CreatedTime <= lv_LastScannedTime
+			AND ccs.FlowPADailyScan = 1
 		ORDER BY ID ASC
 		LIMIT lv_BatchSize)
-	SELECT DISTINCT CustID
+	SELECT DISTINCT CustID, SportType
     FROM cte;
     
-	SELECT CustID
+	SELECT CustID, SportType AS DWSportType
 	FROM Temp_Customers;
 
 END$$

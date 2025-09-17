@@ -35,6 +35,7 @@ BEGIN
             - 20240424@Thomas.Nguyen: Classify initial group betting - Add ParentID = 150 [Redmine ID: #200854]
 			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode, PinCustomerCategory and return more IsVVIP, IsPA, IsPotentialPA, ColorTypeID [Redmine ID: #205317]
 			- 20240923@Jonas.Huynh:	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
+			- 20250915@Thomas.Nguyen: Add LastModifiedDate to Temp_LatestRecordOfCategory [Redmine ID: #237405]
             
 		Param's Explanation:
         
@@ -70,9 +71,10 @@ BEGIN
 		,	CustomerClassPriority		SMALLINT UNSIGNED
 		,	IsProbation					BIT DEFAULT 0
 		,	ColorTypeID					TINYINT UNSIGNED
+		,	LastModifiedDate			DATETIME
     );
    
-	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName, CategoryGroupID, BusinessCategoryGroupID, CategoryPriority, ParentID, CustomerClassPriority, IsProbation, ColorTypeID)
+	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName, CategoryGroupID, BusinessCategoryGroupID, CategoryPriority, ParentID, CustomerClassPriority, IsProbation, ColorTypeID, LastModifiedDate)
 	SELECT DISTINCT (CASE 
                         WHEN cc.ParentID = CONST_PARENTID_PA AND cc.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN cc.CategoryGroupID
                         ELSE cate.CategoryID 
@@ -85,6 +87,7 @@ BEGIN
 				,	cc.CustomerClassPriority
 				,	cc.IsPAProbation AS IsProbation
 				,	cc.ColorTypeID
+				,	cate.LastModifiedDate
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
     WHERE	cate.CTSCustID = ip_CTSCustID 
@@ -119,6 +122,7 @@ BEGIN
         ,	CASE WHEN ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsMultiplePA
 		,	ColorTypeID
         ,	CategoryPriority
+		,	LastModifiedDate
 	FROM Temp_LatestRecordOfCategory;
 END$$
 DELIMITER ;

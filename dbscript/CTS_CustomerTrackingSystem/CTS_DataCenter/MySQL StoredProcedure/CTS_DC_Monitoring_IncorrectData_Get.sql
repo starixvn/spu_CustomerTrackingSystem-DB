@@ -17,6 +17,7 @@ BEGIN
             - 20240102@Jonas.Huynh: Creator [Redmine ID: 197999]
             - 20241213@Jonas.Huynh: Missing Customer [Redmine ID: 214157]
             - 20250417@Thomas.Nguyen: Monitor Customer Latency pool and Remove logic Total Missing Customer[Redmine ID: #223443]
+			- 20250911@Logan.Nguyen: Monitor INITIALSMART_B, INITIALSMART_B_LOSING [Redmine ID: #237405]
 
 		Param's Explanation (filtered by):
 		Example:
@@ -29,12 +30,14 @@ BEGIN
     DECLARE CONST_BATCHSIZE							    SMALLINT DEFAULT 5000;
 
     DECLARE CONST_ISSUETYPEID_CUSTOMERLATENCYQUEUE		SMALLINT DEFAULT 300;
+    DECLARE CONST_ISSUETYPEID_INITIALSMART_B         	SMALLINT DEFAULT 301;
     
     DECLARE lv_LastScanID 			                    BIGINT UNSIGNED;
     DECLARE lv_MaxScanID	 		                    BIGINT UNSIGNED;
     DECLARE lv_CurrentNextScanID 	                    BIGINT UNSIGNED;
     DECLARE lv_Count_CustLatencyQueue	                INT UNSIGNED;
     DECLARE lv_Threshold_CustLatencyQueue               SMALLINT UNSIGNED;
+    DECLARE lv_InitialSmart_B_LastLogID 			    BIGINT UNSIGNED;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_IncorrectData;    
 	CREATE TEMPORARY TABLE Temp_IncorrectData(
@@ -58,6 +61,11 @@ BEGIN
 	INTO lv_LastScanID
 	FROM CTS_DataCenter.SystemParameter 
 	WHERE ParameterID = 151; 
+
+    SELECT ParameterValue
+	INTO lv_InitialSmart_B_LastLogID
+	FROM CTS_DataCenter.SystemParameter 
+	WHERE ParameterID = 198; 
     
     INSERT INTO Temp_IncorrectData(ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID, IsIssueTypeValid)
     SELECT 		a.ID
@@ -93,8 +101,24 @@ BEGIN
             ,	1 AS IsIssueTypeValid;
     END IF;
 
+    IF EXISTS (SELECT 1 FROM Customer_InitialSmart_BySport_Log AS cibl) THEN
+        INSERT INTO Temp_IncorrectData(ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID, IsIssueTypeValid)
+        SELECT  0 AS ID
+            ,	NULL AS CustID
+            ,	COUNT(1) AS `Value`
+            ,   CONCAT('From ID: ', MIN(ID), ' To ID: ', MAX(ID)) AS TrackingInfo
+            ,	CURRENT_TIMESTAMP() AS CreatedTime
+            ,	0 AS IsResolved
+            ,	CONST_ISSUETYPEID_INITIALSMART_B AS IssueTypeID
+            ,	1 AS IsIssueTypeValid
+        FROM Customer_InitialSmart_BySport_Log AS cibl
+        WHERE cibl.ID > lv_InitialSmart_B_LastLogID;
+    END IF;
+
     SELECT ID, CustID, `Value`, TrackingInfo, CreatedTime, IsResolved, IssueTypeID,  IsIssueTypeValid
     FROM Temp_IncorrectData;
+
+    SELECT MAX(cibl.ID) AS MAX_ID FROM Customer_InitialSmart_BySport_Log AS cibl;
     
 END$$
 DELIMITER ;

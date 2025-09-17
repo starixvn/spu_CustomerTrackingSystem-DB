@@ -28,6 +28,7 @@ BEGIN
 			- 20240618@Victoria.Le:	Initial Writing [Redmine ID: #205317]
 			- 20241017@Victoria.Le:	Remove the statement which being used as a temporary solution for datatypes that are out of range  [Redmine ID: #212240]
 			- 20250519@Thomas.Nguyen: Special Lic Sub CC - Add column ScanSpecialLicSubType [Redmine ID: #226847]
+			- 20250909@Thomas.Nguyen: CC 2900/2901 - Add column DWSportType [Redmine ID: #237405]
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -118,6 +119,7 @@ BEGIN
 		,	ParentID					INT UNSIGNED
 		,	OldTargetCC					INT 
 		,	TargetCC					INT 
+		,	TargetCCForHistory			INT
 		,	TargetDangerLevel			SMALLINT UNSIGNED
 		,	CategoryPriority			SMALLINT  
 		,	CustomerClassPriority		SMALLINT  
@@ -141,6 +143,7 @@ BEGIN
 		,	TVSIssueTypeID 				TINYINT DEFAULT NULL 
 		,	IsTVSParlay					TINYINT(1) DEFAULT NULL
 		,	SportType					SMALLINT DEFAULT NULL 
+		,	DWSportType					SMALLINT DEFAULT 0 
 		
 		,	SourceCreatedDate			DATETIME(3)
 		,	GBTicketCount				INT
@@ -342,7 +345,7 @@ BEGIN
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTVS, TVSRequestID, IsTVSParlay, TVSIssueTypeID, SportType, IsFromCTS
 				, 	SpecialCC, IsPAProbation, RelevantCategoryID, CreatedDate, MatchID, IsFromTW, TWRobotCounter, IsFromAI, IsFromImperva
-				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, GroupName, IsRobot)
+				,	CategoryPriority, CustomerClassPriority, ParentID, IsDataChanged, PerformanceTime, GroupName, IsRobot, DWSportType)
 			SELECT 	tmpJs.CustID
 				,	CASE WHEN tmpJs.CTSCustID = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
 				,	CASE WHEN tmpJs.RoleID = 0 THEN cus.RoleID ELSE tmpJs.RoleID END
@@ -383,6 +386,7 @@ BEGIN
 				,	tmpJs.PerformanceTime
 				,	tmpJs.GroupName
 				,	CASE WHEN cat.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot
+				,	tmpJs.DWSportType
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
@@ -413,6 +417,7 @@ BEGIN
 											,	TWRobotCounter				INT UNSIGNED		PATH "$.RobotCounter"
 											,	IsFromAI					TINYINT(1)			PATH "$.IsFromAI"
 											,	IsFromImperva				TINYINT(1)			PATH "$.IsFromImperva"
+											,	DWSportType					SMALLINT			PATH "$.DWSportType"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
@@ -599,7 +604,7 @@ BEGIN
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW, IsFromCTS, IsFromAI
 				, 	SpecialCC, IsPAProbation, RelevantCategoryID, CategoryPriority, CustomerClassPriority
-				, 	ParentID, IsDataChanged, PerformanceTime, SportType, SourceCreatedDate, GBTicketCount)
+				, 	ParentID, IsDataChanged, PerformanceTime, SportType, SourceCreatedDate, GBTicketCount, DWSportType)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				,	tmpJs.RoleID
@@ -631,6 +636,7 @@ BEGIN
 				,	tmpJs.SportType
 				,	tmpJs.SourceCreatedDate
 				,	tmpJs.GBTicketCount
+				,	tmpJs.DWSportType
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
@@ -654,6 +660,7 @@ BEGIN
 											,	SportType					SMALLINT 			PATH "$.SportType"
 											, 	SourceCreatedDate			DATETIME(3)			PATH "$.DetectedDate"
 											, 	GBTicketCount				INT					PATH "$.GBTicketCount"
+											, 	DWSportType					SMALLINT 			PATH "$.DWSportType"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID

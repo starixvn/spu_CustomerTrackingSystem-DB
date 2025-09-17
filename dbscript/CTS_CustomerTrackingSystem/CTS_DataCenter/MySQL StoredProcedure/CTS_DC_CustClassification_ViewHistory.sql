@@ -32,6 +32,7 @@ BEGIN
 			- 20230404@Victoria.Le		Return First5TWGBTicketCount [Redmine ID: #195060] 
 			- 20240626@Thomas.Nguyen:	Renovate CC phase 2 - Get remark from template [Redmine ID: #205317]
             - 20241210@Casey.Huynh: 	New Robot AI, Bot Login Pattern [Redmine ID: #214655]
+			- 20250909@Logan.Nguyen:	Get Remark for INITIALSMART_B, INITIALSMART_B_LOSING [Redmine ID: #237405]
 			
 		Param's Explanation (filtered by):		
         Example:
@@ -55,6 +56,8 @@ BEGIN
     	DECLARE CONST_CATEID_ROBOTUSERLOSING 			INT;
     	DECLARE CONST_CATEID_ROBOTOCRDLOSING 			INT;
         DECLARE CONST_CATEID_BOTLOGINPATTERNLOSING		INT;
+		DECLARE	CONST_CATEID_INITIALSMART_B		 		INT;
+		DECLARE	CONST_CATEID_INITIALSMART_B_LOSING		INT;
 
 		DECLARE CONST_REMARKID_TVSREQUESTIDPARLAY		INT;
     	DECLARE CONST_REMARKID_TVSBETIDPARLAY			INT;
@@ -91,6 +94,8 @@ BEGIN
     	SET CONST_CATEID_ROBOTOCRDLOSING 		        = CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_ROBOTOCRDLOSING');
         SET CONST_CATEID_BOTLOGINPATTERN 		        = CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_BOTLOGINPATTERN');
         SET CONST_CATEID_BOTLOGINPATTERNLOSING	        = CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_BOTLOGINPATTERNLOSING');
+		SET CONST_CATEID_INITIALSMART_B		            = 30400;
+		SET CONST_CATEID_INITIALSMART_B_LOSING 		    = 35400;
 
 		SET CONST_REMARKID_TVSREQUESTIDPARLAY       	= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_TVSREQUESTIDPARLAY');
     	SET CONST_REMARKID_TVSBETIDPARLAY           	= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_TVSBETIDPARLAY');
@@ -235,6 +240,13 @@ BEGIN
                 INNER JOIN CTS_DataCenter.Customer_InitialSmart AS cis ON cis.CustID = tmp.CustID
             SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', IFNULL(DATE_FORMAT(cis.SourceCreatedDate, '%b %d, %Y'),'')), '[Probability]', IFNULL(cis.Probability,0))
             WHERE tmp.CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING);
+		END IF;
+
+		IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALSMART_B, CONST_CATEID_INITIALSMART_B_LOSING)) THEN
+            UPDATE Temp_CustRemark AS tmp
+                INNER JOIN CTS_DataCenter.Customer_InitialSmart_BySport AS cisb ON cisb.CustID = tmp.CustID
+            SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', IFNULL(DATE_FORMAT(cisb.SourceCreatedDate, '%b %d, %Y'),'')), '[Probability]', IFNULL(cisb.Probability,0))
+            WHERE tmp.CategoryID IN (CONST_CATEID_INITIALSMART_B, CONST_CATEID_INITIALSMART_B_LOSING);
 		END IF;
 
         IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALGB, CONST_CATEID_INITIALGBLOSING)) THEN
