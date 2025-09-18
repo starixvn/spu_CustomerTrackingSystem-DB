@@ -53,6 +53,7 @@ BEGIN
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoveredDevice;
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoveredDeviceNew;
     DROP TEMPORARY TABLE IF EXISTS Temp_RecoverDeviceByBet;
+    DROP TEMPORARY TABLE IF EXISTS Temp_FPPatternCheck;
     #==============================================
     
 	#======GET DATA FROM RAW TRANSACTION===========================
@@ -79,6 +80,8 @@ BEGIN
         , 	FirstDeviceCode			VARCHAR(32)
         , 	DeviceStatus			TINYINT
         , 	DeviceFingerprintID		BIGINT UNSIGNED
+        , 	FPPatternID01			BIGINT UNSIGNED
+        , 	FPPatternID02			BIGINT UNSIGNED
         , 	IsFPIntegrateSubscriber	TINYINT
 	);
     
@@ -121,6 +124,16 @@ BEGIN
         ,	PRIMARY KEY 			PK_Temp_RecoveredDevice(AccountID, DeviceCode, FPPatternID01, FPPatternID02)
         ,	INDEX 					IX_Temp_RecoveredDevice_DeviceCode_DeviceID_RecoverCode(DeviceCode, DeviceID, RecoverCode)
 	);
+
+    CREATE TEMPORARY TABLE Temp_FPPatternCheck(
+			AccountID				BIGINT UNSIGNED
+        ,	DeviceCode   			VARCHAR(32)
+		,	FPPatternID01			BIGINT UNSIGNED
+		,	FPPatternID02			BIGINT UNSIGNED
+        ,	FPPatternType			TINYINT
+        ,	PatternToCheck			BIGINT UNSIGNED
+        ,	PRIMARY KEY 			PK_Temp_FPPatternCheck(AccountID, DeviceCode, FPPatternID01, FPPatternID02, FPPatternType)
+	);
 	
     
 	#========GET INPUT DATA===========================
@@ -129,7 +142,7 @@ BEGIN
 	EXECUTE stmt1;
     
     
-	INSERT INTO Temp_Transaction(TransID, RawTransID, AccountID, LoginName, SubscriberID, UserAgentKey, IP, DeviceCode, CreatedDate, TransTime, FingerprintCode, IsFPIntegrateSubscriber)
+	INSERT INTO Temp_Transaction(TransID, RawTransID, AccountID, LoginName, SubscriberID, UserAgentKey, IP, DeviceCode, CreatedDate, TransTime, FingerprintCode, FPPatternID01, FPPatternID02, IsFPIntegrateSubscriber)
     SELECT 	trans.TransID
 		, 	trans.RawTransID
 		, 	trans.AccountID
@@ -141,6 +154,8 @@ BEGIN
 		, 	trans.CreatedDate
 		, 	trans.TransTime
 		, 	trans.FingerprintCode
+        ,	IFNULL(trans.FPPatternID01, 0) AS FPPatternID01
+        ,	IFNULL(trans.FPPatternID02, 0) AS FPPatternID02
         ,	CASE WHEN fpsub.SubscriberID IS NOT NULL THEN 1 ELSE 0 END AS IsFPIntegrateSubscriber
 	FROM Temp_Input AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
@@ -151,6 +166,7 @@ BEGIN
 	ALTER TABLE Temp_Transaction
 	ADD INDEX IX_Temp_Transaction_RawTransID (RawTransID),
 	ADD INDEX IX_Temp_Transaction_DeviceCode (DeviceCode),
+	ADD INDEX IX_Temp_Transaction_TransTime (TransTime),
 	ADD INDEX IX_Temp_Transaction_AccountID_DeviceCode_FingerprintCode (AccountID, DeviceCode, FingerprintCode);
         
     UPDATE Temp_Transaction
@@ -171,18 +187,6 @@ BEGIN
         ,	dc.DeviceCodeID
     FROM CTE_DeviceCode AS cte
 		INNER JOIN DCS_DataCenter.DeviceCode AS dc ON dc.DeviceCode = cte.DeviceCode;
-
-	
-    #recover new steps
-    INSERT INTO Temp_RecoveredDeviceNew(AccountID, DeviceCode, FPPatternID01, FPPatternID02, DeviceID)
-    SELECT	AccountID
-		,	DeviceCode
-        ,	FPPatternID01
-        ,	FPPatternID02
-        ,	DeviceID
-    FROM Temp_Transaction AS tmpT
-	WHERE tmpT.IsFPIntegrateSubscriber = 1
-		AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice td WHERE td.DeviceCode = tmpT.DeviceCode)
 
     #recover steps
     # Recover DeviceID by Association - Level 1
@@ -254,7 +258,47 @@ BEGIN
         LIMIT 1
     ) AS rd
     WHERE rd.DeviceID = 0; #--> just get recover case
-    
+
+    #recover new steps - FPPattern-based device recovery (only insert when DeviceID found)
+    INSERT IGNORE INTO Temp_FPPatternCheck(AccountID, DeviceCode, FPPatternID01, FPPatternID02, FPPatternType)
+    SELECT	tmpT.AccountID
+        ,	tmpT.DeviceCode
+        ,	tmpT.FPPatternID01
+        ,	tmpT.FPPatternID02
+        ,	CASE WHEN tmpT.FPPatternID02 = 0 
+				THEN 1
+                ELSE 2
+            END AS FPPatternType
+    FROM Temp_Transaction AS tmpT
+    WHERE tmpT.IsFPIntegrateSubscriber = 1
+        AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice td WHERE td.DeviceCode = tmpT.DeviceCode);
+	
+	INSERT INTO Temp_RecoveredDeviceNew(AccountID, FPPatternID01, FPPatternID02, DeviceCode, DeviceID, RecoverCode)
+	SELECT	tmp.AccountID
+		,	tmp.FPPatternID01
+		,	tmp.FPPatternID02
+		,	tmp.DeviceCode
+		,	MAX(pt.DeviceID) AS DeviceID
+		,	5 AS RecoverCode
+    FROM Temp_FPPatternCheck AS tmp
+		INNER JOIN DCS_DataCenter.DeviceFPPattern AS pt ON pt.FPPatternType = tmp.FPPatternType AND pt.FPPatternID = tmp.FPPatternID02
+		LEFT JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID AND ass.DeviceID = pt.DeviceID
+    WHERE tmp.FPPatternType = 2
+	GROUP BY tmp.AccountID, tmp.FPPatternID01, tmp.FPPatternID02, tmp.DeviceCode;
+	
+	INSERT INTO Temp_RecoveredDeviceNew(AccountID, FPPatternID01, FPPatternID02, DeviceCode, DeviceID, RecoverCode)
+	SELECT	tmp.AccountID
+		,	tmp.FPPatternID01
+		,	tmp.FPPatternID02
+		,	tmp.DeviceCode
+		,	MAX(pt.DeviceID) AS DeviceID
+		,	4 AS RecoverCode
+    FROM Temp_FPPatternCheck AS tmp
+		INNER JOIN DCS_DataCenter.DeviceFPPattern AS pt ON pt.FPPatternType = tmp.FPPatternType AND pt.FPPatternID = tmp.FPPatternID01
+		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID AND ass.DeviceID = pt.DeviceID
+    WHERE tmp.FPPatternType = 1
+	GROUP BY tmp.AccountID, tmp.FPPatternID01, tmp.FPPatternID02, tmp.DeviceCode;
+	
     # INSERT new Devices
     INSERT IGNORE INTO DCS_DataCenter.Device(FirstDeviceCode, UserAgentKey, FirstTransID, CreatedTime, CreatedDate, InsertTime)
     SELECT 	tts.DeviceCode
@@ -267,6 +311,7 @@ BEGIN
     WHERE tts.DeviceCode IS NOT NULL
 		AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice AS de WHERE de.DeviceCode = tts.DeviceCode)
 		AND NOT EXISTS (SELECT 1 FROM Temp_RecoveredDevice AS dr WHERE dr.DeviceCode = tts.DeviceCode)
+		AND NOT EXISTS (SELECT 1 FROM Temp_RecoveredDeviceNew AS dr WHERE dr.DeviceCode = tts.DeviceCode)
     GROUP BY tts.DeviceCode, tts.UserAgentKey; #--> Use GROUP BY UserAgentKey combined with INSERT IGNORE to correctly retrieve the UserAgentKey of the first record
     
     # INSERT new DeviceCode
@@ -280,6 +325,7 @@ BEGIN
 		FROM Temp_Transaction AS t
         WHERE NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice AS de WHERE de.DeviceCode = t.DeviceCode)
 			AND NOT EXISTS (SELECT 1 FROM Temp_RecoveredDevice AS dr WHERE dr.DeviceCode = t.DeviceCode)
+			AND NOT EXISTS (SELECT 1 FROM Temp_RecoveredDeviceNew AS dr WHERE dr.DeviceCode = t.DeviceCode)
         GROUP BY t.DeviceCode
     )
     SELECT 	tts.DeviceCode
@@ -301,7 +347,7 @@ BEGIN
 		FROM Temp_Transaction AS t
         WHERE NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice AS de WHERE de.DeviceCode = t.DeviceCode)
         GROUP BY t.DeviceCode
-    ), 
+    ),
     CTE_NewCodeOldDeviceID AS (
 		SELECT 	DISTINCT 
 				DeviceCode
@@ -320,6 +366,27 @@ BEGIN
 		LEFT JOIN DCS_DataCenter.DeviceCode AS dc ON dc.DeviceCode = dr.RecoverCode AND dc.DeviceID > 0
     WHERE IF(dr.DeviceID > 0 , dr.DeviceID, dc.DeviceID)  > 0;
 	
+	
+	# NEW flow - new DeviceID from FPPattern-based recovery
+	INSERT IGNORE INTO DCS_DataCenter.DeviceCode(DeviceCode, DeviceID, FirstTransID, CreatedTime, CreatedDate, InsertTime)
+    SELECT	tmp.DeviceCode
+		,	tmp.DeviceID
+		,	t.FirstTransID
+		,	t.FirstTransTime AS CreatedTime
+		,	t.FirstCreatedDate AS CreatedDate
+		,	lv_InsertionTime AS InsertTime
+	FROM Temp_RecoveredDeviceNew AS tmp
+		LEFT JOIN LATERAL (
+			SELECT tr.TransID AS FirstTransID,
+				tr.TransTime AS FirstTransTime,
+				tr.CreatedDate AS FirstCreatedDate
+			FROM Temp_Transaction tr
+			WHERE tr.DeviceCode = tmp.DeviceCode
+			ORDER BY tr.TransTime ASC
+			LIMIT 1
+		) t ON TRUE
+	WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.DeviceCode dc WHERE dc.DeviceCode = tmp.DeviceCode);
+
     # MERGE existed, recovered vs incoming devices
     INSERT IGNORE INTO Temp_ExistedDevice (DeviceID, DeviceCode, DeviceCodeID, IsNew)
     WITH CTE_DeviceCode AS (
@@ -341,8 +408,32 @@ BEGIN
 		,	lv_InsertionTime	AS InsertTime
     FROM Temp_Transaction AS tts
 		INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
-    WHERE tts.FingerprintCode IS NOT NULL
+    WHERE tts.IsFPIntegrateSubscriber = 0
+		AND tts.FingerprintCode IS NOT NULL
     GROUP BY tts.FingerprintCode, tmpEd.DeviceID;
+
+    # INSERT new FPpattern
+	INSERT IGNORE INTO DCS_DataCenter.DeviceFPPattern(DeviceID, FPPatternID, FPPatternType, InsertedTime)
+	SELECT 	tmpEd.DeviceID
+		,	tts.FPPatternID01 AS FPPatternID
+		,	1 AS FPPatternType
+		,	lv_InsertionTime	AS InsertedTime
+	FROM Temp_Transaction AS tts
+		INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
+    WHERE tts.IsFPIntegrateSubscriber = 1
+		AND tts.FPPatternID01 > 0
+    GROUP BY tmpEd.DeviceID, tts.FPPatternID01;
+	
+	INSERT IGNORE INTO DCS_DataCenter.DeviceFPPattern(DeviceID, FPPatternID, FPPatternType, InsertedTime)
+	SELECT 	tmpEd.DeviceID
+		,	tts.FPPatternID02 AS FPPatternID
+		,	2 AS FPPatternType
+		,	lv_InsertionTime	AS InsertedTime
+	FROM Temp_Transaction AS tts
+		INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
+    WHERE tts.IsFPIntegrateSubscriber = 1
+		AND tts.FPPatternID02 > 0
+    GROUP BY tmpEd.DeviceID, tts.FPPatternID02;
     
     # UPDATE back Temp_ExistedDevice
     UPDATE Temp_ExistedDevice AS de
@@ -364,8 +455,24 @@ BEGIN
 		, tts.DeviceStatus 			= CASE WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN vrDeviceStatusOld
 										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN vrDeviceStatusRecover
                                         WHEN de.DeviceID > 0 AND (tts.TransId = de.FirstTransID OR de.IsNew = 1) THEN vrDeviceStatusNew  
-										ELSE tts.DeviceStatus END;
-	
+										ELSE tts.DeviceStatus END
+	WHERE tts.IsFPIntegrateSubscriber = 0;
+
+    UPDATE Temp_Transaction AS tts
+		LEFT JOIN Temp_ExistedDevice AS de ON de.DeviceCode = tts.DeviceCode
+		LEFT JOIN Temp_RecoveredDeviceNew AS dr ON dr.AccountID = tts.AccountID
+											AND dr.DeviceCode = tts.DeviceCode
+											AND dr.FPPatternID01 = tts.FPPatternID01
+											AND dr.FPPatternID02 = tts.FPPatternID02
+	SET	tts.DeviceID 				= IF(de.DeviceID > 0, de.DeviceID, tts.DeviceID)
+		, tts.FirstDeviceCode 		= IF(de.DeviceID > 0, de.FirstDeviceCode, tts.FirstDeviceCode)
+		, tts.DeviceCodeID 			= IF(de.DeviceID > 0, de.DeviceCodeID, tts.DeviceCodeID)
+		, tts.DeviceStatus 			= CASE WHEN de.DeviceID > 0 AND tts.TransID > de.FirstTransID AND dr.DeviceID IS NULL THEN vrDeviceStatusOld
+										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN dr.RecoverCode
+                                        WHEN de.DeviceID > 0 AND (tts.TransID = de.FirstTransID OR de.IsNew = 1) THEN vrDeviceStatusNew  
+										ELSE tts.DeviceStatus END
+	WHERE tts.IsFPIntegrateSubscriber = 1;
+
     /* === Insert new Association === */
     WITH cte_DistinctData AS (
 		SELECT	DISTINCT
@@ -428,7 +535,7 @@ BEGIN
     SET lv_NewAccountDeviceJson = IFNULL(lv_NewAccountDeviceJson,'[{}]');
 	CALL DCS_DC_Transform_NewAccountDevice_Insert(lv_NewAccountDeviceJson);
 	
-	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID)
+	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, WebRTCIPID, FPPatternID01, FPPatternID02)
 	SELECT 	ts.RawTransID
 		,	ts.LoginName
 		,	ts.TransTime
@@ -454,6 +561,9 @@ BEGIN
 		,	ts.FakeIP
 		,	ts.IsIncognitoMode
 		,	ts.JSChallengeInfoID
+		,	ts.WebRTCIPID
+		,	ts.FPPatternID01
+		,	ts.FPPatternID02
 	FROM Temp_Transaction AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS ts ON ts.TransID = tmp.TransID
 	WHERE tmp.DeviceID IS NOT NULL;

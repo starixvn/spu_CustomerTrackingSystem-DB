@@ -119,7 +119,7 @@ BEGIN
     INTO lv_SysMinCreatedDate
     FROM DCS_DataCenter.SystemSetting 
     WHERE ID = CONST_SYSTEMSETTINGID_MINCREATEDDATE;
-        
+
 	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, IsFpSubscriber)
 	SELECT  rt.TransID
 	    ,   rt.LoginName
@@ -147,12 +147,13 @@ BEGIN
         ,	(CASE WHEN fs.SubscriberID IS NULL THEN 0 ELSE 1 END) AS IsFpSubscriber
 	FROM DCS_DataCenter.RawTransaction AS rt
         INNER JOIN CTS_Admin.Subscriber AS su ON rt.SubscriberName = su.SubscriberName
-        LEFT JOIN DCS_DataCenter.FPIntegrateSubscriber AS fs ON fs.SubscriberID = rt.SubscriberID
+        LEFT JOIN DCS_DataCenter.FPIntegrateSubscriber AS fs ON fs.SubscriberID = su.SubscriberID
 	    LEFT JOIN DCS_DataCenter.ActionResult AS ar ON rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE   rt.IsProcessed = 0
 	    AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
         AND rt.CreatedDate >= lv_SysMinCreatedDate;   
 	
+
     /* === Add index for Temp_RawTransaction === */
 	ALTER TABLE Temp_RawTransaction
 		ADD INDEX IX_Temp_RawTransaction_ChallengeCode (ChallengeCode)
