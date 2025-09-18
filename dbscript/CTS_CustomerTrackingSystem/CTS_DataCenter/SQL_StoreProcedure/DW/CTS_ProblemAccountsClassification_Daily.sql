@@ -17,6 +17,7 @@ AS
 		- 20230807@Jonas.Huynh: HF exclude Non-sport for General [Redmine ID: #192388]
 		- 20230726@Jonas.Huynh: Saba Classification [Redmine ID: #185320]
 		- 20250908@Thomas.Nguyen: CC 2900/2901 - Add logic for SportGroup [Redmine ID: #237405]
+		- 20250918@Thomas.Nguyen: HF data with STRING_AGG is truncated [Redmine ID: #239260]
 
 	Param's Explanation:
 
@@ -100,7 +101,7 @@ BEGIN
 	WITH CTE_CustIds AS (
 		SELECT DISTINCT CustId FROM #tmpCustInfo
 	)
-	SELECT @ListCustIds = STRING_AGG(CustId, ',') FROM CTE_CustIds;
+	SELECT @ListCustIds = STRING_AGG(CAST(CustId AS VARCHAR(MAX)), ',') FROM CTE_CustIds;
 
 	-- #1: GetCustomer Accummulated data
 	INSERT INTO #tmpRawData(CustId, SportGroup, TurnoverRM, WinlossRM, TurnoverORG, WinlossORG, BetCount, ActiveDaysCustID, ActiveDaysSportGroup, WindaysCustID, WinDaysSportGroup, ProcessedTime)
