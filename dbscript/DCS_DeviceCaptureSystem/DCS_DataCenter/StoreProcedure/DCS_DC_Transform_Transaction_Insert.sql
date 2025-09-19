@@ -82,7 +82,8 @@ BEGIN
 		,	FPPatternCode02  	VARCHAR(32) 
 		,	FPPatternID01 		BIGINT UNSIGNED
 		,	FPPatternID02  		BIGINT UNSIGNED
-        ,	IsFpSubscriber		BOOLEAN	
+        ,	FPVersion			VARCHAR(10)
+        ,	FPFlow				TINYINT(1)	
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
@@ -120,7 +121,7 @@ BEGIN
     FROM DCS_DataCenter.SystemSetting 
     WHERE ID = CONST_SYSTEMSETTINGID_MINCREATEDDATE;
 
-	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, IsFpSubscriber)
+	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, FPFlow)
 	SELECT  rt.TransID
 	    ,   rt.LoginName
         ,   rt.TransTime
@@ -144,10 +145,10 @@ BEGIN
         ,	rt.WebRTCIPCode
         ,	rt.FPPatternCode01
         ,	rt.FPPatternCode02
-        ,	(CASE WHEN fs.SubscriberID IS NULL THEN 0 ELSE 1 END) AS IsFpSubscriber
+        ,	rt.FPVersion
+        ,	rt.FPFlow
 	FROM DCS_DataCenter.RawTransaction AS rt
         INNER JOIN CTS_Admin.Subscriber AS su ON rt.SubscriberName = su.SubscriberName
-        LEFT JOIN DCS_DataCenter.FPIntegrateSubscriber AS fs ON fs.SubscriberID = su.SubscriberID
 	    LEFT JOIN DCS_DataCenter.ActionResult AS ar ON rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE   rt.IsProcessed = 0
 	    AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
@@ -166,20 +167,20 @@ BEGIN
 		INNER JOIN DCS_DataCenter.FPPattern AS fp1 ON fp1.FPPatternType = CONST_FPPATTERNTYPE01 AND fp1.FPPatternCode = rt.FPPatternCode01 
 	SET rt.FPPatternID01 = fp1.FPPatternID
     WHERE rt.FPPatternCode01 IS NOT NULL
-		AND rt.IsFpSubscriber = 1;
+		AND rt.FPFlow = 1;
     
     UPDATE Temp_RawTransaction AS rt
 		INNER JOIN DCS_DataCenter.FPPattern AS fp2 ON fp2.FPPatternType = CONST_FPPATTERNTYPE02 AND fp2.FPPatternCode = rt.FPPatternCode02
 	SET rt.FPPatternID02 = fp2.FPPatternID
     WHERE rt.FPPatternCode02 IS NOT NULL
-		AND rt.IsFpSubscriber = 1;
+		AND rt.FPFlow = 1;
     
     #===================FINGERPRINT WebRTCIP=======================================
     UPDATE Temp_RawTransaction AS rt
 		INNER JOIN DCS_DataCenter.WebRTCIP AS wip ON wip.WebRTCIPCode = rt.WebRTCIPCode
 	SET rt.WebRTCIPID = wip.WebRTCIPID
     WHERE rt.WebRTCIPCode IS NOT NULL
-		AND rt.IsFpSubscriber = 1;  
+		AND rt.FPFlow = 1;  
     
     #==================INSERT SUBCRIBERURL =====================================   
     INSERT IGNORE INTO DCS_DataCenter.URL(URLDetails, SubscriberID, CreatedDate)
@@ -255,7 +256,7 @@ BEGIN
 	SET tmp.JSChallengeInfoID = CASE WHEN tmp.ChallengeCode IS NULL THEN NULL ELSE IFNULL(jsc.ID, 0) END;
 	
 	/* ======= INSERT Transaction ========= */
-    INSERT IGNORE INTO DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FPPatternID01, FPPatternID02, WebRTCIPID)
+    INSERT IGNORE INTO DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FPPatternID01, FPPatternID02, WebRTCIPID, FPFlow)
    	SELECT  trt.TransID
 	    ,   trt.LoginName
         ,   trt.TransTime
@@ -280,10 +281,11 @@ BEGIN
         ,	trt.FPPatternID01
         ,	trt.FPPatternID02
         ,	trt.WebRTCIPID
+        ,	trt.FPFlow
 	FROM Temp_RawTransaction AS trt;   
     
     #================================================================
-	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02)
+	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, FPFlow)
 	SELECT  rt.LoginName
         ,   rt.SubscriberName
         ,   rt.TransTime
@@ -310,6 +312,8 @@ BEGIN
         ,	rt.WebRTCIPCode
         ,	rt.FPPatternCode01
         ,	rt.FPPatternCode02
+        ,	rt.FPVersion
+        , 	rt.FPFlow
 	FROM DCS_DataCenter.RawTransaction AS rt
 	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON rt.TransID = tmp_rm.TransID AND rt.CreatedDate = tmp_rm.CreatedDate;
         

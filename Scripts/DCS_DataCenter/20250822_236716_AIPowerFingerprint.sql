@@ -136,15 +136,6 @@ CREATE TABLE DeviceFPPattern(
     ,	INDEX IX_FPPattern_FPPatternTypeFPPatternID(FPPatternType, FPPatternID)
 );
 
-DROP TABLE IF EXISTS FPIntegrateSubscriber;
-CREATE TABLE FPIntegrateSubscriber(
-		SubscriberID		INT
-    ,   SubscriberName		VARCHAR(100) NOT NULL
-    ,	InsertedTime		DATETIME(4) NOT NULL
-
-    ,	PRIMARY KEY PK_FPIntegrateSubscriber_SubscriberID(SubscriberID)
-); 
-
 DROP TABLE IF EXISTS FPAttribute;
 CREATE TABLE FPAttribute(
 		FPAttributeID		INT NOT NULL
@@ -163,18 +154,23 @@ ALTER TABLE RawTransaction
 		ADD COLUMN WebRTCIPCode 	VARCHAR(32)
 	,	ADD COLUMN FPPatternCode01	VARCHAR(32) 
 	,	ADD COLUMN FPPatternCode02	VARCHAR(32)
+    ,	ADD COLUMN FPVersion		VARCHAR(10) 
+	,	ADD COLUMN FPFlow			TINYINT(1)
 ;
 
 ALTER TABLE ProcessedTransaction
 		ADD COLUMN WebRTCIPCode 	VARCHAR(32)
 	,	ADD COLUMN FPPatternCode01	VARCHAR(32)
 	,	ADD COLUMN FPPatternCode02	VARCHAR(32)
+    ,	ADD COLUMN FPVersion		VARCHAR(10) 
+	,	ADD COLUMN FPFlow			TINYINT(1)
 ;
 
 ALTER TABLE Transaction
 		ADD COLUMN WebRTCIPID 		BIGINT UNSIGNED       
 	,	ADD COLUMN FPPatternID01	BIGINT UNSIGNED 
-	,	ADD COLUMN FPPatternID02	BIGINT UNSIGNED   
+	,	ADD COLUMN FPPatternID02	BIGINT UNSIGNED
+    ,	ADD COLUMN FPFlow			TINYINT(1)
 ;
 
 ALTER TABLE Transaction07
@@ -184,11 +180,6 @@ ALTER TABLE Transaction07
 ;
 
 #================================================================================================================
-
-INSERT INTO FPIntegrateSubscriber(SubscriberID, SubscriberName, InsertedTime)
-SELECT SubscriberID, SubscriberName, NOW() AS InsertedTime
-FROM CTS_Admin.Subscriber
-WHERE SubscriberName IN ('Alpha');
 
 INSERT INTO FPAttribute(FPAttributeID, AttributeName, GroupName, AttributeShortName, IsActive, CreatedTime)
 VALUES(1,'platform','Hardware','plf',1, NOW())
