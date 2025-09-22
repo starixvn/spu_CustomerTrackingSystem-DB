@@ -1,4 +1,3 @@
--- Active: 1757043498584@@10.18.200.72@3306@DCS_DataCenter
 /*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `DCS_DC_Transform_Transaction_Insert`;
 
@@ -256,7 +255,8 @@ BEGIN
 	SET tmp.JSChallengeInfoID = CASE WHEN tmp.ChallengeCode IS NULL THEN NULL ELSE IFNULL(jsc.ID, 0) END;
 	
 	/* ======= INSERT Transaction ========= */
-    INSERT IGNORE INTO DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FPPatternID01, FPPatternID02, WebRTCIPID, TransFlow)
+    INSERT IGNORE INTO DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID
+    , FPPatternID01, FPPatternID02, WebRTCIPID, TransFlow)
    	SELECT  trt.TransID
 	    ,   trt.LoginName
         ,   trt.TransTime
@@ -278,12 +278,12 @@ BEGIN
         ,   trt.FakeIP
         ,   trt.IsIncognitoMode
         ,   trt.JSChallengeInfoID
-        ,	ISNULL(0, trt.FPPatternID01) AS FPPatternID01
-        ,	ISNULL(0, trt.FPPatternID02) AS FPPatternID02
+        ,	IFNULL(trt.FPPatternID01, 0) AS FPPatternID01
+        ,	IFNULL(trt.FPPatternID02, 0) AS FPPatternID02
         ,	trt.WebRTCIPID
         ,	trt.TransFlow
 	FROM Temp_RawTransaction AS trt;   
-    
+
     #================================================================
 	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
 	SELECT  rt.LoginName

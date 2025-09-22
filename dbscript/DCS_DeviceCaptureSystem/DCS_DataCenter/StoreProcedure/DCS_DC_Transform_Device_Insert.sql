@@ -32,7 +32,7 @@ BEGIN
             - 20250909@Jonathan.Doan: Remove FPJs and add new flow for F4,F5 rules [Redmine ID: #236716]
             
 	    Param's Explanation (filtered by):
-        
+
         Example:
 			SET sql_safe_updates = 0;
 			CALL DCS_DC_Transform_Device_Insert('32');
@@ -44,6 +44,12 @@ BEGIN
     DECLARE CONST_DEVICESTATUS_OLD_FPPATTERN01		TINYINT DEFAULT 4; 			# Old Device Recover by Acccount FPPATTERN01
     DECLARE CONST_DEVICESTATUS_OLD_FPPATTERN02		TINYINT DEFAULT 5; 			# Old Device Recover by Acccount FPPATTERN02
 	
+	DECLARE CONST_FPPATTERNTYPE01	INT DEFAULT 1;
+    DECLARE CONST_FPPATTERNTYPE02	INT DEFAULT 2;
+    
+    DECLARE CONST_TRANSFLOW_OLD		INT DEFAULT 0;
+    DECLARE CONST_TRANSFLOW_NEW		INT DEFAULT 1;
+    
     DECLARE lv_AssociationJson 			LONGTEXT;
     DECLARE lv_NewAccountDeviceJson 	LONGTEXT;
     
@@ -200,7 +206,7 @@ BEGIN
             ,	tmpT.FingerprintCode1
             ,	tmpT.FingerprintCode2
         FROM Temp_Transaction AS tmpT
-        WHERE tmpT.TransFlow = 0
+        WHERE tmpT.TransFlow = CONST_TRANSFLOW_OLD
 			AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice td WHERE td.DeviceCode = tmpT.DeviceCode)
 	)
     SELECT 	cte.AccountID
@@ -227,7 +233,7 @@ BEGIN
         ,	tts.FingerprintCode
         ,	REPLACE(tts.FingerprintCode,';',',') AS FingerprintCode_CommaSeparated
 	FROM Temp_Transaction AS tts
-	WHERE tts.TransFlow = 0
+	WHERE tts.TransFlow = CONST_TRANSFLOW_OLD
 		AND tts.DeviceCode IS NOT NULL
 		AND tts.FingerprintCode IS NOT NULL
 		AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice AS de WHERE de.DeviceCode = tts.DeviceCode)
@@ -244,7 +250,7 @@ BEGIN
 		SELECT 	(CASE WHEN rb.DeviceCode = ts.DeviceCode THEN 1 ELSE 0 END) AS DeviceID
 			, 	ts.DeviceCode AS RecoverCode
         FROM Temp_Transaction AS ts
-        WHERE ts.TransFlow = 0
+        WHERE ts.TransFlow = CONST_TRANSFLOW_OLD
 			AND rb.AccountID = ts.AccountID
 			AND rb.TransId > ts.TransId
 			AND (
@@ -270,7 +276,7 @@ BEGIN
                 ELSE 2
             END) AS FPPatternType
     FROM Temp_Transaction AS tmpT
-    WHERE tmpT.TransFlow = 1
+    WHERE tmpT.TransFlow = CONST_TRANSFLOW_NEW
         AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice td WHERE td.DeviceCode = tmpT.DeviceCode);
 	
 	INSERT INTO Temp_RecoveredDeviceNew(AccountID, FPPatternID01, FPPatternID02, DeviceCode, DeviceID, RecoverCode)
@@ -279,7 +285,7 @@ BEGIN
 		,	tmp.FPPatternID02
 		,	tmp.DeviceCode
 		,	MAX(pt.DeviceID) AS DeviceID
-		,	5 AS RecoverCode
+		,	CONST_DEVICESTATUS_OLD_FPPATTERN02 AS RecoverCode
     FROM Temp_FPPatternCheck AS tmp
 		INNER JOIN DCS_DataCenter.DeviceFPPattern AS pt ON pt.FPPatternType = tmp.FPPatternType AND pt.FPPatternID = tmp.FPPatternID02
 		LEFT JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID AND ass.DeviceID = pt.DeviceID
@@ -292,7 +298,7 @@ BEGIN
 		,	tmp.FPPatternID02
 		,	tmp.DeviceCode
 		,	MAX(pt.DeviceID) AS DeviceID
-		,	4 AS RecoverCode
+		,	CONST_DEVICESTATUS_OLD_FPPATTERN01 AS RecoverCode
     FROM Temp_FPPatternCheck AS tmp
 		INNER JOIN DCS_DataCenter.DeviceFPPattern AS pt ON pt.FPPatternType = tmp.FPPatternType AND pt.FPPatternID = tmp.FPPatternID01
 		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID AND ass.DeviceID = pt.DeviceID
@@ -408,7 +414,7 @@ BEGIN
 		,	lv_InsertionTime	AS InsertTime
     FROM Temp_Transaction AS tts
 		INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
-    WHERE tts.TransFlow = 0
+    WHERE tts.TransFlow = CONST_TRANSFLOW_OLD
 		AND tts.FingerprintCode IS NOT NULL
     GROUP BY tts.FingerprintCode, tmpEd.DeviceID;
 
@@ -420,7 +426,7 @@ BEGIN
 		,	lv_InsertionTime	AS InsertedTime
 	FROM Temp_Transaction AS tts
 		INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
-    WHERE tts.TransFlow = 1
+    WHERE tts.TransFlow = CONST_TRANSFLOW_NEW
 		AND tts.FPPatternID01 > 0
     GROUP BY tmpEd.DeviceID, tts.FPPatternID01;
 	
@@ -431,7 +437,7 @@ BEGIN
 		,	lv_InsertionTime	AS InsertedTime
 	FROM Temp_Transaction AS tts
 		INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
-    WHERE tts.TransFlow = 1
+    WHERE tts.TransFlow = CONST_TRANSFLOW_NEW
 		AND tts.FPPatternID02 > 0
     GROUP BY tmpEd.DeviceID, tts.FPPatternID02;
     
@@ -452,11 +458,11 @@ BEGIN
 		, tts.FirstDeviceCode 		= IF(de.DeviceID > 0, de.FirstDeviceCode, tts.FirstDeviceCode)
 		, tts.DeviceCodeID 			= IF(de.DeviceID > 0, de.DeviceCodeID, tts.DeviceCodeID)
 		, tts.DeviceFingerprintID 	= IF(df.DeviceFingerprintID > 0, df.DeviceFingerprintID, tts.DeviceFingerprintID)
-		, tts.DeviceStatus 			= CASE WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN CONST_DEVICESTATUS_OLDDEVICECODE
-										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN CONST_DEVICESTATUS_FINGERPRINT
+		, tts.DeviceStatus 			= CASE WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN CONST_DEVICESTATUS_OLD_DEVICECODE
+										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN CONST_DEVICESTATUS_OLD_FINGERPRINT
                                         WHEN de.DeviceID > 0 AND (tts.TransId = de.FirstTransID OR de.IsNew = 1) THEN CONST_DEVICESTATUS_NEW  
 										ELSE tts.DeviceStatus END
-	WHERE tts.TransFlow = 0;
+	WHERE tts.TransFlow = CONST_TRANSFLOW_OLD;
 
     UPDATE Temp_Transaction AS tts
 		LEFT JOIN Temp_ExistedDevice AS de ON de.DeviceCode = tts.DeviceCode
@@ -467,11 +473,11 @@ BEGIN
 	SET	tts.DeviceID 				= IF(de.DeviceID > 0, de.DeviceID, tts.DeviceID)
 		, tts.FirstDeviceCode 		= IF(de.DeviceID > 0, de.FirstDeviceCode, tts.FirstDeviceCode)
 		, tts.DeviceCodeID 			= IF(de.DeviceID > 0, de.DeviceCodeID, tts.DeviceCodeID)
-		, tts.DeviceStatus 			= CASE WHEN de.DeviceID > 0 AND tts.TransID > de.FirstTransID AND dr.DeviceID IS NULL THEN CONST_DEVICESTATUS_OLDDEVICECODE
+		, tts.DeviceStatus 			= CASE WHEN de.DeviceID > 0 AND tts.TransID > de.FirstTransID AND dr.DeviceID IS NULL THEN CONST_DEVICESTATUS_OLD_DEVICECODE
 										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN dr.RecoverCode
                                         WHEN de.DeviceID > 0 AND (tts.TransID = de.FirstTransID OR de.IsNew = 1) THEN CONST_DEVICESTATUS_NEW  
 										ELSE tts.DeviceStatus END
-	WHERE tts.TransFlow = 1;
+	WHERE tts.TransFlow = CONST_TRANSFLOW_NEW;
 
     /* === Insert new Association === */
     WITH cte_DistinctData AS (

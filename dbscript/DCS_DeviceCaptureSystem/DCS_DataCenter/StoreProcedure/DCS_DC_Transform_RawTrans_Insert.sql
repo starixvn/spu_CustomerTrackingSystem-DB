@@ -169,7 +169,7 @@ BEGIN
         ,	rt.FPPatternCode01
         ,	rt.FPPatternCode02
 		,	rt.FPVersion
-        ,	ISNULL(rt.TransFlow,0)
+        ,	IFNULL(rt.TransFlow,0) AS TransFlow
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
