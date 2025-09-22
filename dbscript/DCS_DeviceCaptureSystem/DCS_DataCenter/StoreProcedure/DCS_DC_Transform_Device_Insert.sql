@@ -30,6 +30,7 @@ BEGIN
 			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
 			- 20250324@Jonathan.Doan: Use CURRENT_TIMESTAMP for InsertTime [Redmine ID: #217768]
             - 20250909@Jonathan.Doan: Remove FPJs and add new flow for F4,F5 rules [Redmine ID: #236716]
+            
 	    Param's Explanation (filtered by):
         
         Example:
@@ -37,9 +38,11 @@ BEGIN
 			CALL DCS_DC_Transform_Device_Insert('32');
 	*/
 
-	DECLARE vrDeviceStatusNew			TINYINT DEFAULT 1;			# New Device
-	DECLARE vrDeviceStatusOld			TINYINT DEFAULT 2;			# Old Device
-	DECLARE vrDeviceStatusRecover		TINYINT DEFAULT 3;			# Recover Device
+	DECLARE CONST_DEVICESTATUS_NEW					TINYINT DEFAULT 1;			# New Device
+	DECLARE CONST_DEVICESTATUS_OLD_DEVICECODE		TINYINT DEFAULT 2;			# Old Device Recover by DeviceCode
+	DECLARE CONST_DEVICESTATUS_OLD_FINGERPRINT		TINYINT DEFAULT 3;			# Old Device Recover by Acccount FingerprintCode
+    DECLARE CONST_DEVICESTATUS_OLD_FPPATTERN01		TINYINT DEFAULT 4; 			# Old Device Recover by Acccount FPPATTERN01
+    DECLARE CONST_DEVICESTATUS_OLD_FPPATTERN02		TINYINT DEFAULT 5; 			# Old Device Recover by Acccount FPPATTERN02
 	
     DECLARE lv_AssociationJson 			LONGTEXT;
     DECLARE lv_NewAccountDeviceJson 	LONGTEXT;
@@ -82,7 +85,7 @@ BEGIN
         , 	DeviceFingerprintID		BIGINT UNSIGNED
         , 	FPPatternID01			BIGINT UNSIGNED
         , 	FPPatternID02			BIGINT UNSIGNED
-        , 	IsFPIntegrateSubscriber	TINYINT
+        ,	TransFlow					TINYINT(1)
 	);
     
     CREATE TEMPORARY TABLE Temp_ExistedDevice(
@@ -142,7 +145,7 @@ BEGIN
 	EXECUTE stmt1;
     
     
-	INSERT INTO Temp_Transaction(TransID, RawTransID, AccountID, LoginName, SubscriberID, UserAgentKey, IP, DeviceCode, CreatedDate, TransTime, FingerprintCode, FPPatternID01, FPPatternID02, IsFPIntegrateSubscriber)
+	INSERT INTO Temp_Transaction(TransID, RawTransID, AccountID, LoginName, SubscriberID, UserAgentKey, IP, DeviceCode, CreatedDate, TransTime, FingerprintCode, FPPatternID01, FPPatternID02, TransFlow)
     SELECT 	trans.TransID
 		, 	trans.RawTransID
 		, 	trans.AccountID
@@ -154,17 +157,15 @@ BEGIN
 		, 	trans.CreatedDate
 		, 	trans.TransTime
 		, 	trans.FingerprintCode
-        ,	IFNULL(trans.FPPatternID01, 0) AS FPPatternID01
-        ,	IFNULL(trans.FPPatternID02, 0) AS FPPatternID02
-        ,	CASE WHEN fpsub.SubscriberID IS NOT NULL THEN 1 ELSE 0 END AS IsFPIntegrateSubscriber
+        ,	trans.FPPatternID01
+        ,	trans.FPPatternID01
+        ,	trans.TransFlow
 	FROM Temp_Input AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
-		LEFT JOIN DCS_DataCenter.FPIntegrateSubscriber AS fpsub ON fpsub.SubscriberID = trans.SubscriberID
     ORDER BY tmp.TransID ASC;
     
     /* === Add index Temp_Transaction === */
 	ALTER TABLE Temp_Transaction
-	ADD INDEX IX_Temp_Transaction_RawTransID (RawTransID),
 	ADD INDEX IX_Temp_Transaction_DeviceCode (DeviceCode),
 	ADD INDEX IX_Temp_Transaction_TransTime (TransTime),
 	ADD INDEX IX_Temp_Transaction_AccountID_DeviceCode_FingerprintCode (AccountID, DeviceCode, FingerprintCode);
@@ -193,13 +194,13 @@ BEGIN
     INSERT INTO Temp_RecoveredDevice(AccountID, DeviceCode, FingerprintCode, DeviceID)
     WITH CTE_Assosiation AS (
 		SELECT 	DISTINCT 
-				AccountID
-			,	DeviceCode
-            ,	FingerprintCode
-            ,	FingerprintCode1
-            ,	FingerprintCode2
+				tmpT.AccountID
+			,	tmpT.DeviceCode
+            ,	tmpT.FingerprintCode
+            ,	tmpT.FingerprintCode1
+            ,	tmpT.FingerprintCode2
         FROM Temp_Transaction AS tmpT
-        WHERE tmpT.IsFPIntegrateSubscriber = 0
+        WHERE tmpT.TransFlow = 0
 			AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice td WHERE td.DeviceCode = tmpT.DeviceCode)
 	)
     SELECT 	cte.AccountID
@@ -220,13 +221,13 @@ BEGIN
 
 	# UPDATE recover level 2 from incoming deviceid
     INSERT INTO Temp_RecoverDeviceByBet(TransID, AccountID, DeviceCode, FingerprintCode, FingerprintCode_CommaSeparated)
-    SELECT 	TransID
-		,	AccountID
-        ,	DeviceCode
-        ,	FingerprintCode
-        ,	REPLACE(FingerprintCode,';',',') AS FingerprintCode_CommaSeparated
+    SELECT 	tts.TransID
+		,	tts.AccountID
+        ,	tts.DeviceCode
+        ,	tts.FingerprintCode
+        ,	REPLACE(tts.FingerprintCode,';',',') AS FingerprintCode_CommaSeparated
 	FROM Temp_Transaction AS tts
-	WHERE tts.IsFPIntegrateSubscriber = 0
+	WHERE tts.TransFlow = 0
 		AND tts.DeviceCode IS NOT NULL
 		AND tts.FingerprintCode IS NOT NULL
 		AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice AS de WHERE de.DeviceCode = tts.DeviceCode)
@@ -243,7 +244,7 @@ BEGIN
 		SELECT 	(CASE WHEN rb.DeviceCode = ts.DeviceCode THEN 1 ELSE 0 END) AS DeviceID
 			, 	ts.DeviceCode AS RecoverCode
         FROM Temp_Transaction AS ts
-        WHERE ts.IsFPIntegrateSubscriber = 0
+        WHERE ts.TransFlow = 0
 			AND rb.AccountID = ts.AccountID
 			AND rb.TransId > ts.TransId
 			AND (
@@ -265,12 +266,11 @@ BEGIN
         ,	tmpT.DeviceCode
         ,	tmpT.FPPatternID01
         ,	tmpT.FPPatternID02
-        ,	CASE WHEN tmpT.FPPatternID02 = 0 
-				THEN 1
+        ,	( CASE WHEN tmpT.FPPatternID02 = 0 THEN 1
                 ELSE 2
-            END AS FPPatternType
+            END) AS FPPatternType
     FROM Temp_Transaction AS tmpT
-    WHERE tmpT.IsFPIntegrateSubscriber = 1
+    WHERE tmpT.TransFlow = 1
         AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice td WHERE td.DeviceCode = tmpT.DeviceCode);
 	
 	INSERT INTO Temp_RecoveredDeviceNew(AccountID, FPPatternID01, FPPatternID02, DeviceCode, DeviceID, RecoverCode)
@@ -408,7 +408,7 @@ BEGIN
 		,	lv_InsertionTime	AS InsertTime
     FROM Temp_Transaction AS tts
 		INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
-    WHERE tts.IsFPIntegrateSubscriber = 0
+    WHERE tts.TransFlow = 0
 		AND tts.FingerprintCode IS NOT NULL
     GROUP BY tts.FingerprintCode, tmpEd.DeviceID;
 
@@ -420,7 +420,7 @@ BEGIN
 		,	lv_InsertionTime	AS InsertedTime
 	FROM Temp_Transaction AS tts
 		INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
-    WHERE tts.IsFPIntegrateSubscriber = 1
+    WHERE tts.TransFlow = 1
 		AND tts.FPPatternID01 > 0
     GROUP BY tmpEd.DeviceID, tts.FPPatternID01;
 	
@@ -431,7 +431,7 @@ BEGIN
 		,	lv_InsertionTime	AS InsertedTime
 	FROM Temp_Transaction AS tts
 		INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
-    WHERE tts.IsFPIntegrateSubscriber = 1
+    WHERE tts.TransFlow = 1
 		AND tts.FPPatternID02 > 0
     GROUP BY tmpEd.DeviceID, tts.FPPatternID02;
     
@@ -452,11 +452,11 @@ BEGIN
 		, tts.FirstDeviceCode 		= IF(de.DeviceID > 0, de.FirstDeviceCode, tts.FirstDeviceCode)
 		, tts.DeviceCodeID 			= IF(de.DeviceID > 0, de.DeviceCodeID, tts.DeviceCodeID)
 		, tts.DeviceFingerprintID 	= IF(df.DeviceFingerprintID > 0, df.DeviceFingerprintID, tts.DeviceFingerprintID)
-		, tts.DeviceStatus 			= CASE WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN vrDeviceStatusOld
-										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN vrDeviceStatusRecover
-                                        WHEN de.DeviceID > 0 AND (tts.TransId = de.FirstTransID OR de.IsNew = 1) THEN vrDeviceStatusNew  
+		, tts.DeviceStatus 			= CASE WHEN de.DeviceID > 0 AND tts.TransId > de.FirstTransID AND dr.DeviceID IS NULL THEN CONST_DEVICESTATUS_OLDDEVICECODE
+										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN CONST_DEVICESTATUS_FINGERPRINT
+                                        WHEN de.DeviceID > 0 AND (tts.TransId = de.FirstTransID OR de.IsNew = 1) THEN CONST_DEVICESTATUS_NEW  
 										ELSE tts.DeviceStatus END
-	WHERE tts.IsFPIntegrateSubscriber = 0;
+	WHERE tts.TransFlow = 0;
 
     UPDATE Temp_Transaction AS tts
 		LEFT JOIN Temp_ExistedDevice AS de ON de.DeviceCode = tts.DeviceCode
@@ -467,11 +467,11 @@ BEGIN
 	SET	tts.DeviceID 				= IF(de.DeviceID > 0, de.DeviceID, tts.DeviceID)
 		, tts.FirstDeviceCode 		= IF(de.DeviceID > 0, de.FirstDeviceCode, tts.FirstDeviceCode)
 		, tts.DeviceCodeID 			= IF(de.DeviceID > 0, de.DeviceCodeID, tts.DeviceCodeID)
-		, tts.DeviceStatus 			= CASE WHEN de.DeviceID > 0 AND tts.TransID > de.FirstTransID AND dr.DeviceID IS NULL THEN vrDeviceStatusOld
+		, tts.DeviceStatus 			= CASE WHEN de.DeviceID > 0 AND tts.TransID > de.FirstTransID AND dr.DeviceID IS NULL THEN CONST_DEVICESTATUS_OLDDEVICECODE
 										WHEN dr.DeviceID > 0 OR dr.RecoverCode IS NOT NULL THEN dr.RecoverCode
-                                        WHEN de.DeviceID > 0 AND (tts.TransID = de.FirstTransID OR de.IsNew = 1) THEN vrDeviceStatusNew  
+                                        WHEN de.DeviceID > 0 AND (tts.TransID = de.FirstTransID OR de.IsNew = 1) THEN CONST_DEVICESTATUS_NEW  
 										ELSE tts.DeviceStatus END
-	WHERE tts.IsFPIntegrateSubscriber = 1;
+	WHERE tts.TransFlow = 1;
 
     /* === Insert new Association === */
     WITH cte_DistinctData AS (
