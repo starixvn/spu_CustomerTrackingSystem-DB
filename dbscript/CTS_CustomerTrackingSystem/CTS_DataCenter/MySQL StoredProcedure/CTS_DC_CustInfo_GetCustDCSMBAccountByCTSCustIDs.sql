@@ -1,0 +1,72 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
+DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_GetCustDCSMBAccountByCTSCustIDs`;
+
+DELIMITER $$
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_GetCustDCSMBAccountByCTSCustIDs`(
+        IN ip_CTSCustIDs LONGTEXT
+)
+    SQL SECURITY INVOKER
+BEGIN
+	/*
+		Creator:	20250922@Thomas.Nguyen
+		Task:	 	Get Cust DCS MB Account by CTSCustIDs
+		Server:  	CTSMain
+		DBName:		CTS_DataCenter
+
+		Revisions: 
+				- 20250922@Thomas.Nguyen: Created [Redmine ID: #239121]
+
+		Example:
+			CALL CTS_DataCenter.CTS_DC_CustInfo_GetCustDCSMBAccountByCTSCustIDs('21735,21736');
+	*/
+
+    DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
+    CREATE TEMPORARY TABLE Temp_Customer(
+			CTSCustID			BIGINT UNSIGNED PRIMARY KEY
+        ,   UserName		    VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'   
+        ,   UserName2			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
+        ,   SubscriberID		INT
+        ,   SubscriberPrefix	VARCHAR(30)
+        ,   CustInsertedTime	DATETIME
+    );
+
+    DROP TEMPORARY TABLE IF EXISTS Temp_CustDCSMBAccount;
+    CREATE TEMPORARY TABLE Temp_CustDCSMBAccount(
+			CTSCustID			BIGINT UNSIGNED
+        ,	MBAccountID			BIGINT UNSIGNED
+        ,	SubscriberID		INT
+        ,	CustInsertedTime	DATETIME
+        ,	PRIMARY KEY (CTSCustID, MBAccountID)
+    );
+    
+    INSERT IGNORE INTO Temp_Customer (CTSCustID, UserName, UserName2, SubscriberID, SubscriberPrefix, CustInsertedTime)
+    SELECT	cus.CTSCustID
+        ,	cus.UserName
+        ,	cus.UserName2
+        ,	cus.SubscriberID
+        ,	sub.SubscriberPrefix
+        ,	cus.InsertedTime AS CustInsertedTime
+    FROM JSON_TABLE(REPLACE(JSON_ARRAY(ip_CTSCustIDs), ',', '","'), 
+						'$[*]' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$')
+					) AS tmp
+        INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID
+        INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = cus.SubscriberID;
+
+    INSERT INTO Temp_CustDCSMBAccount(CTSCustID, MBAccountID, SubscriberID, CustInsertedTime)
+    SELECT	tmp.CTSCustID
+        ,	acc.ID AS MBAccountID
+        ,	tmp.SubscriberID
+        ,	tmp.CustInsertedTime
+    FROM Temp_Customer AS tmp
+        INNER JOIN DCS_DataCenter.MBAccount AS acc ON acc.SubscriberID = tmp.SubscriberID AND CONCAT(tmp.SubscriberPrefix, acc.LoginName) = tmp.UserName2;
+    
+    INSERT INTO Temp_CustDCSMBAccount(CTSCustID, MBAccountID, SubscriberID, CustInsertedTime)
+    SELECT	tmp.CTSCustID
+        ,	acc.ID AS MBAccountID
+        ,	tmp.SubscriberID
+        ,	tmp.CustInsertedTime
+    FROM Temp_Customer AS tmp
+        INNER JOIN DCS_DataCenter.MBAccount AS acc ON acc.SubscriberID = tmp.SubscriberID AND acc.LoginName = tmp.UserName;
+
+END$$	
+DELIMITER ;

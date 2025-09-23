@@ -28,6 +28,8 @@ BEGIN
 			- 20240930@Casey.Huynh: Agent CC [Redmine ID: #185799]
 			- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
 			- 20250915@Thomas.Nguyen: Add LastModifiedDate to Temp_CustCategory2 [Redmine ID: #237405]
+			- 20250923@Thomas.Nguyen: Add MB App Log Transaction info [Redmine ID: #239121]
+		
 		---------------------------------------------------------------------------------------------------
 		[Before #192172]: CTS_DC_AssociationDetection_DetectGroup 
 			- 20220727@Aries.Nguyen: Created [Redmine ID: #175701]
@@ -56,6 +58,7 @@ BEGIN
     DECLARE lv_OrigID 							BIGINT;
     DECLARE lv_GroupID 							BIGINT DEFAULT 1;
     DECLARE lv_CustIDs 							LONGTEXT;
+	DECLARE lv_CTSCustIDs 						LONGTEXT;
     DECLARE lv_Count 							INT;
     DECLARE lv_FromDate							DATE;
 	DECLARE lv_ToDate							DATE;
@@ -514,7 +517,7 @@ BEGIN
         FROM Temp_CustAccountID AS tmp
 			INNER JOIN DCS_DataTrace.LoginTransactionSummary AS ls ON ls.AccountID = tmp.AccountID 
 		WHERE ls.TransDate BETWEEN lv_FromDate AND lv_ToDate;
-        
+
         INSERT INTO Temp_CustAccLogTransInfo(CTSCustID, AccountID)
         SELECT tmp.CTSCustID, tmp.AccountID
         FROM Temp_CustAccountID AS tmp;
@@ -554,6 +557,75 @@ BEGIN
 		FROM Temp_CustAccLogTransInfo AS ct
 		GROUP BY ct.CTSCustID;
 
+		/********* Get MB Account Log Transaction info *********/
+		SELECT GROUP_CONCAT(DISTINCT CTSCustID) 
+		INTO lv_CTSCustIDs
+		FROM Temp_Cust;
+
+		CALL CTS_DataCenter.CTS_DC_CustInfo_GetCustDCSMBAccountByCTSCustIDs(lv_CTSCustIDs);
+		
+		TRUNCATE TABLE Temp_CustAccountID;
+		INSERT INTO Temp_CustAccountID(CTSCustID, AccountID)
+		SELECT tmp.CTSCustID, tmp.AccountID
+		FROM Temp_CustDCSMBAccount AS tmp
+			LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = tmp.SubscriberID AND sub.SubscriberSourceID IN (lv_SubSourceID_DirectAPI, lv_SubSourceID_OddsFeed)
+        WHERE sub.SubscriberSourceID IS NULL;
+
+		TRUNCATE TABLE Temp_LoginTransactionSummary;
+		INSERT INTO Temp_LoginTransactionSummary(AccountID, TotalTrans, Flagged)
+        SELECT tmp.AccountID, ls.TotalTrans, ls.Flagged
+        FROM Temp_CustAccountID AS tmp
+			INNER JOIN DCS_DataTrace.LoginMBTransactionSummary AS ls ON ls.MBAccountID = tmp.AccountID 
+		WHERE ls.TransDate BETWEEN lv_FromDate AND lv_ToDate;
+        
+		TRUNCATE TABLE Temp_CustAccLogTransInfo;
+        INSERT INTO Temp_CustAccLogTransInfo(CTSCustID, AccountID)
+        SELECT tmp.CTSCustID, tmp.AccountID
+        FROM Temp_CustAccountID AS tmp;
+        
+		TRUNCATE TABLE Temp_CustAccLogTransInfo;
+        /*UPDATE Temp_CustAccLogTransInfo AS tmp
+        SET tmp.CountLogin = IFNULL((SELECT SUM(sm.TotalLogin)
+                                    FROM DCS_DataCenter.SumMBAccountLogin AS sm
+                                    WHERE sm.MBAccountID = tmp.AccountID AND sm.TransDate BETWEEN lv_FromDate AND lv_ToDate
+                                    GROUP BY sm.AccountID),0);*/
+
+        UPDATE Temp_CustAccLogTransInfo AS tmp
+        SET tmp.CountLogin = IFNULL((SELECT SUM(ls.TotalTrans) 
+                                    FROM Temp_LoginTransactionSummary AS ls
+                                    WHERE ls.AccountID = tmp.AccountID
+                                    GROUP BY ls.AccountID),tmp.CountLogin);
+
+		WITH CTETransInfo AS (
+			SELECT 	ls.AccountID
+				,	SUM(CASE WHEN st.GroupID = 2 THEN ls.TotalTrans ELSE 0 END) AS CountInvalidBrowserTrans
+				,	SUM(CASE WHEN st.GroupID = 3 THEN ls.TotalTrans ELSE 0 END) AS CountBotTrans
+			FROM Temp_LoginTransactionSummary AS ls
+				INNER JOIN DCS_DataCenter.StaticList AS st ON st.ItemID = ls.Flagged AND st.ListID = 1
+				INNER JOIN Temp_CustAccountID AS tmpcust ON tmpcust.AccountID = ls.AccountID
+			GROUP BY ls.AccountID
+        )
+        UPDATE Temp_CustAccLogTransInfo AS tmp
+            INNER JOIN CTETransInfo AS tc ON tc.AccountID = tmp.AccountID
+        SET 	tmp.CountBotTrans = tc.CountBotTrans
+            , 	tmp.CountInvalidBrowserTrans = tc.CountInvalidBrowserTrans
+        WHERE tc.CountBotTrans <> 0 OR tc.CountInvalidBrowserTrans <> 0;
+
+        INSERT INTO Temp_CustLogTransInfo(CTSCustID, CountLogin, CountBotTrans, CountInvalidBrowserTrans)
+		WITH CTE_CustAccLogTransInfo AS (
+			 SELECT	ct.CTSCustID
+				, 	SUM(IFNULL(ct.CountLogin,0)) AS TotalCountLogin
+				, 	SUM(IFNULL(ct.CountBotTrans,0)) AS TotalCountBotTrans
+				, 	SUM(IFNULL(ct.CountInvalidBrowserTrans,0)) AS TotalCountInvalidBrowserTrans
+			FROM Temp_CustAccLogTransInfo AS ct
+			GROUP BY ct.CTSCustID
+        )
+		SELECT CTSCustID, TotalCountLogin, TotalCountBotTrans, TotalCountInvalidBrowserTrans
+        FROM CTE_CustAccLogTransInfo AS ca
+		ON DUPLICATE KEY UPDATE CountLogin = CountLogin + ca.TotalCountLogin
+			,	CountBotTrans = CountBotTrans + ca.TotalCountBotTrans
+			,	CountInvalidBrowserTrans = CountInvalidBrowserTrans + ca.TotalCountInvalidBrowserTrans;
+		
     END IF;
     
 	INSERT IGNORE INTO Temp_CustCategory(CustID, CategoryID, ParentID, CategoryName, ColorTypeID, CustomerClassPriority)
