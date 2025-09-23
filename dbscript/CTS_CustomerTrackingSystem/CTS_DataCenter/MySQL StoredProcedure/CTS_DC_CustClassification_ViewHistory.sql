@@ -235,18 +235,12 @@ BEGIN
             WHERE tmp.CategoryID IN (CONST_CATEID_EARLYWARNING, CONST_CATEID_EARLYWARNINGLOSING);
 		END IF;
 
-        IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING)) THEN
+        IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING, CONST_CATEID_INITIALSMART_B, CONST_CATEID_INITIALSMART_B_LOSING)) THEN
             UPDATE Temp_CustRemark AS tmp
-                INNER JOIN CTS_DataCenter.Customer_InitialSmart AS cis ON cis.CustID = tmp.CustID
+                INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.CategoryID
+				INNER JOIN CTS_DataCenter.Customer_InitialSmart_BySport AS cis ON cis.CustID = tmp.CustID AND cis.SportType = ccs.SportType
             SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', IFNULL(DATE_FORMAT(cis.SourceCreatedDate, '%b %d, %Y'),'')), '[Probability]', IFNULL(cis.Probability,0))
-            WHERE tmp.CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING);
-		END IF;
-
-		IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALSMART_B, CONST_CATEID_INITIALSMART_B_LOSING)) THEN
-            UPDATE Temp_CustRemark AS tmp
-                INNER JOIN CTS_DataCenter.Customer_InitialSmart_BySport AS cisb ON cisb.CustID = tmp.CustID
-            SET tmp.Remark = REPLACE(REPLACE(tmp.Remark,'[DetectedDate]', IFNULL(DATE_FORMAT(cisb.SourceCreatedDate, '%b %d, %Y'),'')), '[Probability]', IFNULL(cisb.Probability,0))
-            WHERE tmp.CategoryID IN (CONST_CATEID_INITIALSMART_B, CONST_CATEID_INITIALSMART_B_LOSING);
+            WHERE tmp.CategoryID IN (CONST_CATEID_INITIALSMART, CONST_CATEID_INITIALSMARTLOSING, CONST_CATEID_INITIALSMART_B, CONST_CATEID_INITIALSMART_B_LOSING);
 		END IF;
 
         IF EXISTS (SELECT 1 FROM Temp_CustRemark WHERE CategoryID IN (CONST_CATEID_INITIALGB, CONST_CATEID_INITIALGBLOSING)) THEN

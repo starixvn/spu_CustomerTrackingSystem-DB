@@ -16,7 +16,8 @@ BEGIN
 		DBName:		CTS_DataCenter
 
 		Revisions: 
-				- 20250908@Logan.Nguyen: Created [Redmine ID: #237405]
+				- 20250908@Logan.Nguyen:    Created [Redmine ID: #237405]
+                - 20250922@Logan.Nguyen:    Adjust Performance Calculation Logic for Initial Smart - CC2700 - Initial Smart (Losing) - CC2701 [Redmine ID: #239118]
 		Example:
 			CALL CTS_DataCenter.CTS_DC_CustClassification_InitialSmart_BySport_Get(@BatchSize,@NextScannedDateTime,@NextScannedCustID);
             SELECT @NextScannedDateTime,@NextScannedCustID
@@ -28,8 +29,6 @@ BEGIN
     DECLARE lv_SecondBatchSize      SMALLINT;
     DECLARE lv_TotalRow             SMALLINT;
 	
-    SET CONST_CATEID_INITIALSMART_B = 30400;
-
     SELECT sys.ParameterValue
     INTO lv_LastScannedCustID
     FROM CTS_DataCenter.SystemParameter AS sys
@@ -97,12 +96,14 @@ BEGIN
         ,	cus.SubscriberID
         ,	cus.RoleID
         ,   cus.IsLicensee
-        ,	CONST_CATEID_INITIALSMART_B   AS CategoryID
-        ,	CONST_CATEID_INITIALSMART_B   AS CategoryGroup
+        ,	cc.CategoryID
+        ,	cc.CategoryGroup
         ,   tmp.Probability
         ,   tmp.SourceCreatedDate       AS DetectedDate
 	FROM Temp_Customer AS tmp
-		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0;
+		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
+        INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CustID = tmp.CustID
+		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cc.CategoryID = ccs.CategoryID AND ccs.SportType = tmp.SportType;
     
 END$$	
 DELIMITER ;
