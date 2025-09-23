@@ -490,34 +490,7 @@ sp: BEGIN
 					  FROM Temp_CustCategory AS cc 
 					  WHERE cc.CustID = tmp.CustID 
 						AND cc.CategoryID = CONST_CATEID_INITIALGB);
-	
-    /***********************Check Initial Smart****************************/
-	INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)
-    SELECT tmp.CTSCustID					AS CTSCustID
-		,	tmp.CustID						AS CustID
-        ,	CONST_CATEID_INITIALSMART 		AS CategoryID
-        , 	NULL 							AS TVSReasonID
-        ,	tmp.RoleID 						AS RoleID
-        ,	tmp.SubscriberID				AS SubscriberID
-		,	tmp.IsLicensee					AS IsLicensee
-        ,	NULL 							AS Remark
-        ,	NULL 							AS CreatedBy
-        ,	1 								AS IsMarkedDirectly
-		,	0 								AS IsFromTVS
-        ,	1 								AS IsFromTW
-        ,   0 								AS IsFromCTS
-        ,	0 								AS IsFromAI
-        ,	0 								AS IsFromImperva
-        , 	s.InsertedTime 					AS CreatedDate
-        ,	s.InsertedTime 					AS LastModifiedDate
-        ,   CONST_INPUTFLOWID_POTENTIALPA	AS InputFlowID
-    FROM  Temp_CustInfo AS tmp
-		INNER JOIN CTS_DataCenter.Customer_InitialSmart AS s ON s.CustID = tmp.CustID
-	WHERE NOT EXISTS (SELECT 1 
-					  FROM Temp_CustCategory AS cc 
-					  WHERE cc.CustID = tmp.CustID 
-						AND cc.CategoryID = CONST_CATEID_INITIALSMART);
-
+    
     /***********************Check Initial Smart (B)****************************/
     INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID, SportType)
     SELECT tmp.CTSCustID					AS CTSCustID
@@ -538,7 +511,7 @@ sp: BEGIN
         , 	s.InsertedTime 					AS CreatedDate
         ,	s.InsertedTime 					AS LastModifiedDate
         ,   CONST_INPUTFLOWID_POTENTIALPA	AS InputFlowID
-        ,   NULL                     AS SportType
+        ,   NULL                            AS SportType
     FROM  Temp_CustInfo AS tmp
 		INNER JOIN CTS_DataCenter.Customer_InitialSmart_BySport AS s ON s.CustID = tmp.CustID
         INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CustID = tmp.CustID

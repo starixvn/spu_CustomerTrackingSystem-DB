@@ -97,7 +97,7 @@ BEGIN
         ,	cus.RoleID
         ,   cus.IsLicensee
         ,	cc.CategoryID
-        ,	cc.CategoryGroup
+        ,	ccs.CategoryGroupID
         ,   tmp.Probability
         ,   tmp.SourceCreatedDate       AS DetectedDate
 	FROM Temp_Customer AS tmp
