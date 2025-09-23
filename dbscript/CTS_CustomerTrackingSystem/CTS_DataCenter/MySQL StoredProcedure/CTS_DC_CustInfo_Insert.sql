@@ -46,6 +46,7 @@ BEGIN
             - 202409266@Casey.Huynh: Return Agent [Redmine ID: #185799]
 			- 20241216@Tony.Nguyen:	Remove UNSIGNED of SMA Recommend (Redmine ID: #214585)
 			- 20250725@Winfred.Pham: Get Agent for Member Credit add Queue Considerable (Redmine ID: #219679)
+			- 20250923@Long.Luu: 	Add Agents ORI6RM & ORI20RM  as internal account [Redmine ID: #239117]
             
 		Param's Explanation (filtered by):
 		Example:
@@ -178,7 +179,7 @@ BEGIN
 						  stl.ItemID IS NOT NULL OR 						 
                           js.SRecommend IN (41430709) OR 
                           js.MRecommend IN (27899314,11656504,12146012) OR
-                          js.Recommend IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)  THEN 1 
+                          js.Recommend IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398,260963471,260963800)  THEN 1 
 				ELSE 0 END AS IsInternal
 	FROM JSON_TABLE(ip_CustomerList,
 		 "$[*]" COLUMNS(

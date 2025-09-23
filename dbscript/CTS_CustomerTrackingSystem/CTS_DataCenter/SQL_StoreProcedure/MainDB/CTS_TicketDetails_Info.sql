@@ -42,11 +42,9 @@ AS
 		- 20240322@Vitoria.Le: 		Exclude Internal Account for Danger Monitor [Redmine ID: #201380]
 		- 20240521@Thomas.Nguyen:	Remove hardcode 2 Agent WINRM and M999RM00 as internal accounts for Danger Monitor [Redmine ID: #205239]
 		- 20240904@Casey.Huynh:		Rename @TicketType To @ViewMode [Redmine ID: #207397]
-<<<<<<< HEAD
 		- 20241226@Thomas.Nguyen: 	Add Username Filter [Redmine ID: #210128]
-=======
 		- 20241217@Victoria.Le: 	Super/Master Direct Member [Redmine ID: #214585]
->>>>>>> 12353df7 (214585-EditSP-MatchMonitorandDangerMonitor)
+        - 20250923@Long.Luu: 		Add Agents ORI6RM & ORI20RM  as internal account [Redmine ID: #239117]
 
 	Params Explaination:
 		@ListSuspiciousTransId: format JSON
@@ -470,7 +468,7 @@ BEGIN
 				AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 				AND c.username NOT LIKE '%Cashout%'
 				AND c.mrecommend NOT IN (27899314,11656504,12146012) 
-				AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
+				AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398,260963471,260963800)
 				AND c.srecommend NOT IN (41430709)
 				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
@@ -516,7 +514,7 @@ BEGIN
 				AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 				AND c.username NOT LIKE '%Cashout%'
 				AND c.mrecommend NOT IN (27899314,11656504,12146012) 
-				AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
+				AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398,260963471,260963800)
 				AND c.srecommend NOT IN (41430709)
 				AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 				AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));

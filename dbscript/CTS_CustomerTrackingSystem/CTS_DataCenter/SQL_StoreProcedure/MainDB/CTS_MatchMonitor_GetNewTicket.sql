@@ -25,6 +25,7 @@ AS
 		- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
 		- 20250317@Casey.Huynh: Match Monitor Badminton - Rename from CTS_Rpt_MatchMonitor_GetTicketInfo [Redmine ID: #219681]
 		- 20250414@Casey.Huynh: Match Monitor Table Tennis Child Match [Redmine ID: #221510]
+        - 20250923@Long.Luu: 	Add Agents ORI6RM & ORI20RM  as internal account [Redmine ID: #239117]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service MM Staging (get tickets by @LastScannedTransID, @IsLive & @BatchSize & @ListSportBettype)
@@ -207,7 +208,7 @@ BEGIN
 			AND b.BetFrom NOT IN ('p','m','w','0','3','6')
 			AND b.srecommend NOT IN (41430709) 
 			AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-			AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+			AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398,260963471,260963800)
 			AND b.statusID <> 101 -- Reject		
 			AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 			AND c.Username NOT LIKE '%Cashout%'

@@ -23,6 +23,7 @@ AS
         - 20231024@Long.Luu: 		Add Agent HITRM & WINRM as internal account [Redmine ID: #195355]
         - 20231207@Long.Luu: 		Add Agent M999RM00 as internal account [Redmine ID: #197915]
 		- 20240920@Thomas.Nguyen: 	Enhance Performance [Redmine ID: #210628]
+        - 20250923@Long.Luu: 		Add Agents ORI6RM & ORI20RM  as internal account [Redmine ID: #239117]
 
 	Params Explaination:
 		- @QueryType: 1 detect associations, 2 get fraud tickets, 3 get association custlist of a group, 4 get fraud tickets of a custgroup
@@ -83,7 +84,7 @@ BEGIN
 		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) on c.custid = tmp.custid
 	WHERE c.srecommend NOT IN (41430709) 
 		AND c.mrecommend NOT IN (27899314,11656504,12146012) 
-		AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)		
+		AND c.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398,260963471,260963800)		
 		AND c.username NOT LIKE '%CashOut' 
 		AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 		AND c.Currency NOT IN (20,27,28);

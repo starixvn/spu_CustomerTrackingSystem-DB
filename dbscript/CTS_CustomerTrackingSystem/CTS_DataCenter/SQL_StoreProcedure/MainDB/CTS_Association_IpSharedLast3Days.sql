@@ -19,6 +19,7 @@ AS
         - 20231024@Long.Luu: 	Add Agent HITRM & WINRM as internal account [Redmine ID: #195355]
         - 20231207@Long.Luu: 	Add Agent M999RM00 as internal account [Redmine ID: #197915]
 		- 20250121@Thomas.Nguyen: Exclude 2 IP [Redmine ID: #217111]
+        - 20250923@Long.Luu: 	Add Agents ORI6RM & ORI20RM  as internal account [Redmine ID: #239117]
 
 	Params Explaination:
 
@@ -107,7 +108,7 @@ BEGIN
 		INNER JOIN bodb02.dbo.Customer AS c WITH(NOLOCK) on b.custid = c.custid	
 	WHERE b.srecommend NOT IN (41430709) 
 		AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-		AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398)
+		AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398,260963471,260963800)
 		AND b.username NOT LIKE '%CashOut' 
 		AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 		AND b.currency NOT IN (20,27,28)
