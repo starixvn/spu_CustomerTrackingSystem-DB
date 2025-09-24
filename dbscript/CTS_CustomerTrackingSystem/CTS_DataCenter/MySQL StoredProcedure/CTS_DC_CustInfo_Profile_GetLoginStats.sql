@@ -148,7 +148,7 @@ BEGIN
 		INTO 	lv_Count_MBAppIP
 		FROM Temp_CustDCSMBAccount AS tmp
 			INNER JOIN DCS_DataCenter.MBAccountIP AS ip ON ip.MBAccountID = tmp.MBAccountID
-		WHERE ip.LastTransDate BETWEEN GREATEST(ip_FromDate, tmp.CustInsertedTime) AND ip_ToDate;
+		WHERE ip.LastAccessedDate BETWEEN GREATEST(ip_FromDate, tmp.CustInsertedTime) AND ip_ToDate;
 
 		SELECT  COUNT(1)
 		INTO 	lv_Count_MBAppDevice
