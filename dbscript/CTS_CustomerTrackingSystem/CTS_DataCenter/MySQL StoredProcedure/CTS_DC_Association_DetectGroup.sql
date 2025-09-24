@@ -566,7 +566,7 @@ BEGIN
 		
 		TRUNCATE TABLE Temp_CustAccountID;
 		INSERT INTO Temp_CustAccountID(CTSCustID, AccountID)
-		SELECT tmp.CTSCustID, tmp.AccountID
+		SELECT tmp.CTSCustID, tmp.MBAccountID
 		FROM Temp_CustDCSMBAccount AS tmp
 			LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = tmp.SubscriberID AND sub.SubscriberSourceID IN (lv_SubSourceID_DirectAPI, lv_SubSourceID_OddsFeed)
         WHERE sub.SubscriberSourceID IS NULL;
@@ -582,13 +582,6 @@ BEGIN
         INSERT INTO Temp_CustAccLogTransInfo(CTSCustID, AccountID)
         SELECT tmp.CTSCustID, tmp.AccountID
         FROM Temp_CustAccountID AS tmp;
-        
-		TRUNCATE TABLE Temp_CustAccLogTransInfo;
-        /*UPDATE Temp_CustAccLogTransInfo AS tmp
-        SET tmp.CountLogin = IFNULL((SELECT SUM(sm.TotalLogin)
-                                    FROM DCS_DataCenter.SumMBAccountLogin AS sm
-                                    WHERE sm.MBAccountID = tmp.AccountID AND sm.TransDate BETWEEN lv_FromDate AND lv_ToDate
-                                    GROUP BY sm.AccountID),0);*/
 
         UPDATE Temp_CustAccLogTransInfo AS tmp
         SET tmp.CountLogin = IFNULL((SELECT SUM(ls.TotalTrans) 

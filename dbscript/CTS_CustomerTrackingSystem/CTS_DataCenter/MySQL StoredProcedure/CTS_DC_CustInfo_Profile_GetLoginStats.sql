@@ -146,26 +146,18 @@ BEGIN
 
 		/********* Get MB Account login info *********/
 		CALL CTS_DataCenter.CTS_DC_CustInfo_GetCustDCSMBAccountByCTSCustIDs(ip_CTSCustID);
-    
-		/*SELECT	IFNULL(SUM(sm.DeviceMobileApp),0)
-			,   IFNULL(SUM(sm.TotalLogin),0)
-		INTO 	lv_CountMBAppDevice_TillYesterday
-			,	lv_Count_MBAppLogin
-		FROM DCS_DataCenter.SumMBAccountLogin AS sm
-		WHERE sm.MBAccountID IN (SELECT tmp.MBAccountID FROM Temp_CustDCSMBAccount AS tmp )
-			AND sm.TransDate BETWEEN ip_FromDate AND ip_ToDate; */
 		
 		SELECT  COUNT(1)
 		INTO 	lv_Count_MBAppIP
 		FROM Temp_CustDCSMBAccount AS tmp
 			INNER JOIN DCS_DataCenter.MBAccountIP AS ip ON ip.MBAccountID = tmp.MBAccountID
-		WHERE ip.LastAccessedDate BETWEEN ip_FromDate AND ip_ToDate;
+		WHERE ip.LastAccessedDate BETWEEN GREATEST(ip_FromDate, tmp.CustInsertedTime) AND ip_ToDate;
 
 		SELECT  COUNT(1)
 		INTO 	lv_Count_MBAppDevice
 		FROM Temp_CustDCSMBAccount AS tmp
 			INNER JOIN DCS_DataCenter.MBAssociation AS dv ON dv.MBAccountID = tmp.MBAccountID
-		WHERE dv.LastAccessedDate BETWEEN ip_FromDate AND ip_ToDate; 
+		WHERE dv.LastAccessedDate BETWEEN GREATEST(ip_FromDate, tmp.CustInsertedTime) AND ip_ToDate; 
 		
 		SELECT  SUM(CASE WHEN st.GroupID = 2 THEN lg.TotalTrans ELSE 0 END) AS Invalid
 			,	SUM(CASE WHEN st.GroupID = 3 THEN lg.TotalTrans ELSE 0 END) AS Bot
@@ -175,29 +167,12 @@ BEGIN
 			INNER JOIN DCS_DataTrace.LoginMBTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
 			INNER JOIN DCS_DataCenter.StaticList AS st ON st.ItemID = lg.Flagged AND st.ListID = 1
 		WHERE lg.TransDate BETWEEN ip_FromDate AND ip_ToDate; 
-		
-		/*TRUNCATE TABLE Temp_AccountLastSummedDate;
-		INSERT INTO Temp_AccountLastSummedDate(AccountID, LastSummedDate)
-        SELECT 	tmp.MBAccountID, 
-				IFNULL(DATE_ADD(MAX(sm.TransDate), INTERVAL 1 DAY), ip_FromDate)
-		FROM Temp_CustDCSMBAccount AS tmp
-			LEFT JOIN DCS_DataCenter.SumMBAccountLogin AS sm ON sm.MBAccountID = tmp.MBAccountID
-		GROUP BY tmp.MBAccountID;
-                
-		SELECT  COUNT(1)
-		INTO lv_CountMBAppDevice_YesterdayTillNow
-		FROM DCS_DataCenter.MBTransaction07 AS t
-			INNER JOIN Temp_AccountLastSummedDate AS a ON t.MBAccountID = a.MBAccountID AND t.CreatedDate >= a.LastSummedDate;
-		
-		SET lv_Count_MBAppLogin_OnTheFly = lv_CountMBAppDevice_YesterdayTillNow + lv_Count_MBAppLogin;*/
         
-        /* Correct Total Trans */
         SELECT  SUM(TotalTrans)
 		INTO 	lv_Count_MBAppLogin
 		FROM Temp_CustDCSMBAccount AS tmp 
 			INNER JOIN DCS_DataTrace.LoginMBTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
 		WHERE lg.TransDate BETWEEN GREATEST(ip_FromDate, tmp.CustInsertedTime) AND ip_ToDate;
-        /* END Correct Total Trans */
 
 		SELECT 	IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0)				AS BotTrans
 			,	ROUND((IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0))/(IFNULL(lv_Count_Login,0) + IFNULL(lv_Count_MBAppLogin,0))*100,2) AS BotTransPercentage
@@ -205,10 +180,10 @@ BEGIN
 			,	ROUND((IFNULL(lv_Count_InvalidBrowser_Trans,0) + IFNULL(lv_Count_MBAppInvalidBrowser_Trans,0))/(IFNULL(lv_Count_Login,0) + IFNULL(lv_Count_MBAppLogin,0))*100,2) AS InvalidBrowserPercentage
 			,	lv_CountDesktopDevice_TillYesterday	+ lv_CountDesktopDevice_YesterdayTillNow	AS DesktopUsage
 			,	lv_CountMobileDevice_TillYesterday + lv_CountMobileDevice_YesterdayTillNow		AS MBWebUsage
-			,	IFNULL(lv_Count_MBAppLogin,0) /*lv_CountMBAppDevice_TillYesterday + lv_CountMBAppDevice_YesterdayTillNow*/		AS MBAppUsage
+			,	IFNULL(lv_Count_MBAppLogin,0)													AS MBAppUsage
 			,	IFNULL(lv_Count_IP,0) + IFNULL(lv_Count_MBAppIP,0) 								AS IP
 			,	IFNULL(lv_Count_Device,0) + IFNULL(lv_Count_MBAppDevice,0) 						AS Device
-			,	lv_Count_Login_OnTheFly + IFNULL(lv_Count_MBAppLogin,0) /*lv_Count_MBAppLogin_OnTheFly*/ 							AS Login;
+			,	lv_Count_Login_OnTheFly + IFNULL(lv_Count_MBAppLogin,0)							AS Login;
 	END IF;
 END$$
 
