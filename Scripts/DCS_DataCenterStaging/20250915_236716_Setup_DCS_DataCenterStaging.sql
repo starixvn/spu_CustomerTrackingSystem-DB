@@ -92,8 +92,8 @@ CREATE TABLE RawTransaction(
 	,	WebRTCIPCode			VARCHAR(32)  DEFAULT NULL
 	,	FPPatternCode01 	VARCHAR(32)  DEFAULT NULL 
 	,	FPPatternCode02		VARCHAR(32)  DEFAULT NULL 
-    ,	FPVersion 			VARCHAR(10) DEFAULT NULL
-    ,	FPFlow 				TINYINT(1)	DEFAULT NULL  
+    ,	FPVersion		VARCHAR(10) 
+	,	TransFlow		TINYINT(1) NOT NULL
 	,	PRIMARY KEY(TransID) 
 	,	KEY IX_RawTransaction_IsProcessed(IsProcessed) 
 	,	KEY IX_RawTransaction_SubscriberName(SubscriberName,CreatedDate) 

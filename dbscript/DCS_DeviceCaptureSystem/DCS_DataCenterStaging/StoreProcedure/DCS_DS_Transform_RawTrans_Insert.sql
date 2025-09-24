@@ -86,7 +86,7 @@ BEGIN
         ,	FPPatternCode01				VARCHAR(32)   				NULL	# FPPatternType 1
         ,	FPPatternCode02				VARCHAR(32)   				NULL 	# FPPatternType 2
         ,	FPVersion 					VARCHAR(10) 				NULL
-		,	FPFlow 						TINYINT(1)					NULL
+		,	TransFlow 						TINYINT(1)					NOT NULL
 	);
 	
 	CREATE TEMPORARY TABLE Temp_MBTransaction(
@@ -129,7 +129,7 @@ BEGIN
 		,	IsNewRecord					TINYINT		 				DEFAULT 1
 	);
 		
-	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry, MBDeviceDetails, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, FPFlow)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry, MBDeviceDetails, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -168,8 +168,8 @@ BEGIN
         ,	rt.WebRTCIPCode
         ,	rt.FPPatternCode01
         ,	rt.FPPatternCode02
-        ,	rt.FPVersion
-        ,	rt.FPFlow
+		,	rt.FPVersion
+        ,	IFNULL(rt.TransFlow,0) AS TransFlow
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
@@ -211,7 +211,7 @@ BEGIN
 							,	FPPatternCode01				VARCHAR(32)		PATH "$.FPPatternCode01"
 							,	FPPatternCode02				VARCHAR(32)		PATH "$.FPPatternCode02"
                             ,	FPVersion					VARCHAR(10)		PATH "$.FPVersion"
-							,	FPFlow 						TINYINT(1)		PATH "$.FPFlow"
+                            ,	TransFlow						TINYINT(1)		PATH "$.TransFlow"
 				)
 		   ) AS rt; 
 		   
@@ -286,7 +286,7 @@ BEGIN
 	SET tmp.BotComponentID = bds.ID;
 	
 	/*******RawTransaction********************/
-	INSERT INTO DCS_DataCenterStaging.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, ChallengeCode, IsIncognitoMode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, FPFlow)
+	INSERT INTO DCS_DataCenterStaging.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, ChallengeCode, IsIncognitoMode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -313,7 +313,7 @@ BEGIN
         ,	rt.FPPatternCode01
         ,	rt.FPPatternCode02
         ,	rt.FPVersion
-        ,	rt.FPFlow   
+        ,	rt.TransFlow  
 	FROM Temp_Transaction AS rt
 		LEFT JOIN DCS_DataCenterStaging.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
 													AND sl.ItemCode = rt.FlaggedCode;
@@ -345,7 +345,7 @@ BEGIN
 		,	rt.Language
 		,	rt.DeviceDetails
 	FROM Temp_MBTransaction AS rt
-		LEFT JOIN DCS_DataCenterStaging.StaticList AS sl ON sl.ListID = 1 /*Flagged*/   
+		LEFT JOIN DCS_DataCenterStaging.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
 													AND sl.ItemCode = rt.FlaggedCode
 	WHERE rt.OSName = 'IOS';
 
