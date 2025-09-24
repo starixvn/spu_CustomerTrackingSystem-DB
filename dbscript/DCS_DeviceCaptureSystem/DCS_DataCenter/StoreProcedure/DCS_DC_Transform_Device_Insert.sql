@@ -164,7 +164,7 @@ BEGIN
 		, 	trans.TransTime
 		, 	trans.FingerprintCode
         ,	trans.FPPatternID01
-        ,	trans.FPPatternID01
+        ,	trans.FPPatternID02
         ,	trans.TransFlow
 	FROM Temp_Input AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
