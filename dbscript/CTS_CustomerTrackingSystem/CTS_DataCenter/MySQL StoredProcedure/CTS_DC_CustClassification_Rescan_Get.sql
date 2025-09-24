@@ -40,7 +40,6 @@ sp: BEGIN
     DECLARE	CONST_CATEID_BOTLOGINPATTERN			INT;
     DECLARE	CONST_CATEID_EARLYWARNING				INT;
     DECLARE	CONST_CATEID_INITIALGB					INT;
-    DECLARE CONST_CATEID_INITIALSMART				INT;
     DECLARE	CONST_PARENTID_PA						INT;
     DECLARE	CONST_AGENCY_CATEID_ROBOT				INT;
     DECLARE	CONST_AGENCY_CATEID_ROBOTLOSING			INT;
@@ -70,7 +69,6 @@ sp: BEGIN
     SET CONST_CATEID_BOTLOGINPATTERN				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_BOTLOGINPATTERN');
     SET CONST_CATEID_EARLYWARNING	 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_EARLYWARNING');
     SET CONST_CATEID_INITIALGB	 					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALGB');
-    SET CONST_CATEID_INITIALSMART	 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMART');
     SET CONST_PARENTID_PA 							= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_AGENCY_CATEID_ROBOT	 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
     SET CONST_AGENCY_CATEID_ROBOTLOSING	 			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
@@ -495,7 +493,7 @@ sp: BEGIN
     INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID, SportType)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
-        ,	cc.CategoryID                	AS CategoryID
+        ,	MIN(ccs.CategoryID)             AS CategoryID
         , 	NULL 							AS TVSReasonID
         ,	tmp.RoleID 						AS RoleID
         ,	tmp.SubscriberID				AS SubscriberID
@@ -514,12 +512,12 @@ sp: BEGIN
         ,   NULL                            AS SportType
     FROM  Temp_CustInfo AS tmp
 		INNER JOIN CTS_DataCenter.Customer_InitialSmart_BySport AS s ON s.CustID = tmp.CustID
-        INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CustID = tmp.CustID
-		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cc.CategoryID = ccs.CategoryID AND ccs.SportType = tmp.SportType
+        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.SportType = s.SportType
 	WHERE NOT EXISTS (SELECT 1 
-					  FROM Temp_CustCategory AS tcc 
-					  WHERE tcc.CustID = tmp.CustID 
-						AND tcc.CategoryID = cc.CategoryID);
+					  FROM Temp_CustCategory AS cc 
+					  WHERE cc.CustID = tmp.CustID 
+						AND cc.CategoryID = ccs.CategoryID)
+    GROUP BY tmp.CTSCustID, tmp.CustID, tmp.RoleID, tmp.SubscriberID, tmp.IsLicensee, s.InsertedTime;
 
     /***********************Rescan Potential Category****************************/        
     INSERT IGNORE INTO Temp_CustCategory (CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, SportType, CreatedDate, LastModifiedDate, InputFlowID)       

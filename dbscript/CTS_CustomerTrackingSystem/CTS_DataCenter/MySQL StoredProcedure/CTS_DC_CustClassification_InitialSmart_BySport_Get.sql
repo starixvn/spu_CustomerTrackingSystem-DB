@@ -22,7 +22,6 @@ BEGIN
 			CALL CTS_DataCenter.CTS_DC_CustClassification_InitialSmart_BySport_Get(@BatchSize,@NextScannedDateTime,@NextScannedCustID);
             SELECT @NextScannedDateTime,@NextScannedCustID
 	*/
-    DECLARE  CONST_CATEID_INITIALSMART_B	INT;
     
 	DECLARE lv_LastScannedDate      DATETIME(3);
 	DECLARE lv_LastScannedCustID    BIGINT UNSIGNED;
@@ -96,14 +95,14 @@ BEGIN
         ,	cus.SubscriberID
         ,	cus.RoleID
         ,   cus.IsLicensee
-        ,	cc.CategoryID
-        ,	ccs.CategoryGroupID
+        ,	MIN(ccs.CategoryID)         AS CategoryID
+        ,	MIN(ccs.CategoryGroupID)    AS CategoryGroupID
         ,   tmp.Probability
         ,   tmp.SourceCreatedDate       AS DetectedDate
 	FROM Temp_Customer AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
-        INNER JOIN CTS_DataCenter.CTSCustomerClassification AS cc ON cc.CustID = tmp.CustID
-		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON cc.CategoryID = ccs.CategoryID AND ccs.SportType = tmp.SportType;
-    
+		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.SportType = tmp.SportType
+    GROUP BY tmp.CustID, tmp.SportType, cus.CTSCustID, cus.SubscriberID, cus.RoleID, cus.IsLicensee, tmp.Probability, tmp.SourceCreatedDate;
+
 END$$	
 DELIMITER ;
