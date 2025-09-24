@@ -177,7 +177,12 @@ BEGIN
 		,	tmpPt.BrowserDetails
 		,	tmpPt.PreferencesDetails
         ,	tmpPt.CreatedDate
-	FROM Temp_FPPattern AS tmpPt;
+	FROM Temp_FPPattern AS tmpPt
+    WHERE (tmpPt.HardwareCode IS NOT NULL
+            OR tmpPt.GraphicCode IS NOT NULL
+            OR tmpPt.AudioCode IS NOT NULL
+            OR tmpPt.BrowserCode IS NOT NULL
+            OR tmpPt.PreferencesCode IS NOT NULL);
   
 END$$
 

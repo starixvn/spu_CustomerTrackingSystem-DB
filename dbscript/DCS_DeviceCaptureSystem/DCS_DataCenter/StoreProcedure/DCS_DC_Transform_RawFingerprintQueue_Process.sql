@@ -133,6 +133,7 @@ BEGIN
 		SELECT	tmpQue.HardwareCode
 			,	MAX(tmpQue.CreatedDate) AS NewUsedDate
         FROM Temp_RawFingerprintQueue AS tmpQue
+        WHERE tmpQue.HardwareCode IS NOT NULL
         GROUP BY tmpQue.HardwareCode
     )
     SELECT 	DISTINCT cte.HardwareCode
@@ -200,6 +201,7 @@ BEGIN
 		SELECT	tmpQue.GraphicCode
 			,	MAX(tmpQue.CreatedDate) AS NewUsedDate
         FROM Temp_RawFingerprintQueue AS tmpQue
+        WHERE tmpQue.GraphicCode IS NOT NULL
         GROUP BY tmpQue.GraphicCode
     )
     SELECT 	DISTINCT cte.GraphicCode
@@ -267,6 +269,7 @@ BEGIN
 		SELECT	tmpQue.AudioCode
 			,	MAX(tmpQue.CreatedDate) AS NewUsedDate
         FROM Temp_RawFingerprintQueue AS tmpQue
+        WHERE tmpQue.AudioCode IS NOT NULL
         GROUP BY tmpQue.AudioCode
     )
     SELECT 	DISTINCT cte.AudioCode
@@ -308,6 +311,7 @@ BEGIN
 		SELECT	tmpQue.BrowserCode
 			,	MAX(tmpQue.CreatedDate) AS NewUsedDate
         FROM Temp_RawFingerprintQueue AS tmpQue
+        WHERE tmpQue.BrowserCode IS NOT NULL
         GROUP BY tmpQue.BrowserCode
     )
     SELECT 	DISTINCT cte.BrowserCode
@@ -375,6 +379,7 @@ BEGIN
 		SELECT	tmpQue.PreferencesCode
 			,	MAX(tmpQue.CreatedDate) AS NewUsedDate
         FROM Temp_RawFingerprintQueue AS tmpQue
+        WHERE tmpQue.PreferencesCode IS NOT NULL
         GROUP BY tmpQue.PreferencesCode
     )
     SELECT 	DISTINCT cte.PreferencesCode
