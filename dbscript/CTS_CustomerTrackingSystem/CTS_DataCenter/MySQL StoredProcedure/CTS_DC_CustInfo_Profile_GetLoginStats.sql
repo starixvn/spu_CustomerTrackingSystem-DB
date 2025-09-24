@@ -34,10 +34,7 @@ BEGIN
     DECLARE lv_Count_Bot_Trans				INT;
     DECLARE lv_Count_InvalidBrowser_Trans	INT;
 
-	DECLARE lv_CountMBAppDevice_TillYesterday 					INT;
-    DECLARE lv_CountMBAppDevice_YesterdayTillNow				INT;
     DECLARE lv_Count_MBAppLogin									INT;
-    DECLARE lv_Count_MBAppLogin_OnTheFly						INT;
     DECLARE lv_Count_MBAppIP									INT;
     DECLARE lv_Count_MBAppDevice								INT;
     DECLARE lv_Count_MBAppBot_Trans								INT;
@@ -151,7 +148,7 @@ BEGIN
 		INTO 	lv_Count_MBAppIP
 		FROM Temp_CustDCSMBAccount AS tmp
 			INNER JOIN DCS_DataCenter.MBAccountIP AS ip ON ip.MBAccountID = tmp.MBAccountID
-		WHERE ip.LastAccessedDate BETWEEN GREATEST(ip_FromDate, tmp.CustInsertedTime) AND ip_ToDate;
+		WHERE ip.LastTransDate BETWEEN GREATEST(ip_FromDate, tmp.CustInsertedTime) AND ip_ToDate;
 
 		SELECT  COUNT(1)
 		INTO 	lv_Count_MBAppDevice

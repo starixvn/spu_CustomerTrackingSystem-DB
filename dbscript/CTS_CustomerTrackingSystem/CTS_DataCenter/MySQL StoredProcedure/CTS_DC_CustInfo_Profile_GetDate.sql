@@ -92,7 +92,7 @@ BEGIN
     
     SELECT 	lv_NextCategoryScan AS NextCategoryScan
 		,	lv_LastTicket		AS LastTicket
-		,	GREATEST(lv_LastLogin, IFNULL(lv_LastLogin_MB, lv_LastLogin)) AS LastLogin
+		,	GREATEST(IFNULL(lv_LastLogin, lv_LastLogin_MB), IFNULL(lv_LastLogin_MB, lv_LastLogin)) AS LastLogin
 		,	lv_Created 			AS Created;
 END$$
 DELIMITER ;
