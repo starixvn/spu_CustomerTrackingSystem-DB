@@ -85,6 +85,7 @@ AS
 		- 20250225@Casey.Huynh: Handle @ListSportBetType (Criket BetID IS NULL) [Redmine ID: #218383]
 		- 20250318@Casey.Huynh: Match Monitor Badminton, Rename From CTS_Rpt_MatchMonitor_TicketDetails [Redmine ID: #219681]
 		- 20250428@Thomas.Nguyen: Upgrade CurrencyID datatype [Redmine ID: #225335]
+        - 20250923@Long.Luu: 	Add Agents ORI6RM & ORI20RM  as internal account [Redmine ID: #239117]
 
 	Params Explaination:
 		- @QueryType: 1 - to run service (get tickets by @LastScannedTransID, @IsLive & @BatchSize) >> refer to new SP CTS_Rpt_MatchMonitor_GetTicketInfo
@@ -783,7 +784,7 @@ BEGIN
 								AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 								AND c.username NOT LIKE '%Cashout%'
 								AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-								AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
+								AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398,260963471,260963800)
 								AND b.srecommend NOT IN (41430709)
 								AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 								AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
@@ -842,7 +843,7 @@ BEGIN
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 							AND c.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
+							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398,260963471,260963800)
 							AND b.srecommend NOT IN (41430709)
 							AND b.TransDate < @LastTransDate
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
@@ -899,7 +900,7 @@ BEGIN
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 							AND c.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
+							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398,260963471,260963800)
 							AND b.srecommend NOT IN (41430709)
 							AND b.TransDate = @MinTransDate
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
@@ -1013,7 +1014,7 @@ BEGIN
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 							AND c.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
+							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398,260963471,260963800)
 							AND b.srecommend NOT IN (41430709)
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 							AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)));
@@ -1073,7 +1074,7 @@ BEGIN
 							AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 							AND c.username NOT LIKE '%Cashout%'
 							AND b.mrecommend NOT IN (27899314,11656504,12146012) 
-							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475)
+							AND b.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398,260963471,260963800)
 							AND b.srecommend NOT IN (41430709)
 							AND (@FromTransDate IS NULL OR (b.TransDate >= @FromTransDate AND b.TransDate < @ToTransDate))
 							AND (ISNULL(@UserNameList,'') = '' OR (ISNULL(@UserNameList,'') <> '' AND EXISTS (SELECT TOP 1 1 FROM #tmpCustomer AS cus WITH(NOLOCK) WHERE b.custid = cus.CustId)))

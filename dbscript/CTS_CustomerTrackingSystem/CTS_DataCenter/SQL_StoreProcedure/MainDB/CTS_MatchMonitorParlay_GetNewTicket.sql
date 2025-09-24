@@ -19,6 +19,7 @@ AS
 	Revisions:
 		- 20240822@Casey.Huynh: Created [Redmine ID: 152883]
 		- 20241217@Victoria.Le: Super/Master Direct Member [Redmine ID: #214585]
+        - 20250923@Long.Luu: 	Add Agents ORI6RM & ORI20RM  as internal account [Redmine ID: #239117]
 
 	Params Explaination:
 
@@ -95,7 +96,7 @@ BEGIN
 		AND bt.Currency NOT IN (20,27,28)
 		AND bt.srecommend NOT IN (41430709) 
 		AND bt.mrecommend NOT IN (27899314,11656504,12146012) 
-		AND bt.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398) 	
+		AND bt.recommend NOT IN (52466,5707545,29270764,134456,27787409,48367475,93558369,16604398,260963471,260963800)
 		AND c.site NOT IN ('Nextbet','9wickets','9wsports')
 		AND c.Username NOT LIKE '%Cashout%'
 		AND (CAST(bt.BetCheck AS INT) & 2 = 2  -- Combo 2 bit 2
