@@ -1,8 +1,8 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DC_CustInfo_GetCustDCSMBAccountByCTSCustIDs`;
+/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2" executers="ctsWeb" isFunction="0" isNested="1"></info>*/
+DROP PROCEDURE IF EXISTS `CTSDCS_DC_CustInfo_AccountCustMapping`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustInfo_GetCustDCSMBAccountByCTSCustIDs`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTSDCS_DC_CustInfo_AccountCustMapping`(
         IN ip_CTSCustIDs LONGTEXT
 )
     SQL SECURITY INVOKER
@@ -11,13 +11,13 @@ BEGIN
 		Creator:	20250922@Thomas.Nguyen
 		Task:	 	Get Cust DCS MB Account by CTSCustIDs
 		Server:  	CTSMain
-		DBName:		CTS_DataCenter
+		DBName:		DCS_DataCenter
 
 		Revisions: 
 				- 20250922@Thomas.Nguyen: Created [Redmine ID: #239121]
 
 		Example:
-			CALL CTS_DataCenter.CTS_DC_CustInfo_GetCustDCSMBAccountByCTSCustIDs('21735,21736');
+			CALL DCS_DataCenter.CTSDCS_DC_CustInfo_AccountCustMapping('21735,21736');
 	*/
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Customer;

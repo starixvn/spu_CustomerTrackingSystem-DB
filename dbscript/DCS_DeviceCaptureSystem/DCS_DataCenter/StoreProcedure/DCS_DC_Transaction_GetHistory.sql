@@ -94,7 +94,7 @@ proc_label: BEGIN
 		AND trs.CreatedDate BETWEEN lv_FromDate AND lv_ToDate;
     
 	/********* Get MB App transaction info *********/
-	CALL CTS_DataCenter.CTS_DC_CustInfo_GetCustDCSMBAccountByCTSCustIDs(ip_CTSCustID);
+	CALL DCS_DataCenter.CTSDCS_DC_CustInfo_AccountCustMapping(ip_CTSCustID);
 	
 	INSERT INTO Temp_Transaction(TransID, TransTime, FirstDeviceCode, IP, IPID, Flagged, Action, ActionResult, OS, Browser, URLDetails)
     SELECT	trs.MBRawTransactionID AS TransID

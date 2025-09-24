@@ -52,7 +52,7 @@ BEGIN
 	FROM CTS_DataCenter.CTSCustomer 
 	WHERE CTSCustID = ip_CTSCustID;
     
-	CALL CTS_DataCenter.CTS_DC_CustInfo_GetCustDCSMBAccountByCTSCustIDs(ip_CTSCustID);
+	CALL CTS_DataCenter.CTSDCS_DC_CustInfo_AccountCustMapping(ip_CTSCustID);
 
 	SELECT MAX(acc.LastLoginTime)
 	INTO lv_LastLogin_MB

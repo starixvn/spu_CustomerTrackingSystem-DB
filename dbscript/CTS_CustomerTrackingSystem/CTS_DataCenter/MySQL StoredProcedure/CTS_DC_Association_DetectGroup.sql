@@ -562,7 +562,7 @@ BEGIN
 		INTO lv_CTSCustIDs
 		FROM Temp_Cust;
 
-		CALL CTS_DataCenter.CTS_DC_CustInfo_GetCustDCSMBAccountByCTSCustIDs(lv_CTSCustIDs);
+		CALL CTS_DataCenter.CTSDCS_DC_CustInfo_AccountCustMapping(lv_CTSCustIDs);
 		
 		TRUNCATE TABLE Temp_CustAccountID;
 		INSERT INTO Temp_CustAccountID(CTSCustID, AccountID)

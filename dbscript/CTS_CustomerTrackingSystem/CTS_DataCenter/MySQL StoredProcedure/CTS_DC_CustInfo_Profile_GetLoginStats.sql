@@ -145,7 +145,7 @@ BEGIN
         /* END Correct Total Trans */
 
 		/********* Get MB Account login info *********/
-		CALL CTS_DataCenter.CTS_DC_CustInfo_GetCustDCSMBAccountByCTSCustIDs(ip_CTSCustID);
+		CALL CTS_DataCenter.CTSDCS_DC_CustInfo_AccountCustMapping(ip_CTSCustID);
 		
 		SELECT  COUNT(1)
 		INTO 	lv_Count_MBAppIP
