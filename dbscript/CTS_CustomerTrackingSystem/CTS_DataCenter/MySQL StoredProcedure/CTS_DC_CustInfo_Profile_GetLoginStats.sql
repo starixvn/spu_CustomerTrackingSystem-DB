@@ -156,19 +156,18 @@ BEGIN
 			INNER JOIN DCS_DataCenter.MBAssociation AS dv ON dv.MBAccountID = tmp.MBAccountID
 		WHERE dv.LastAccessedDate BETWEEN GREATEST(ip_FromDate, tmp.CustInsertedTime) AND ip_ToDate; 
 		
-		SELECT  SUM(CASE WHEN st.GroupID = 2 THEN lg.TotalTrans ELSE 0 END) AS Invalid
-			,	SUM(CASE WHEN st.GroupID = 3 THEN lg.TotalTrans ELSE 0 END) AS Bot
+		SELECT  SUM(CASE WHEN lg.FlaggedGroupID = 2 THEN lg.TotalTrans ELSE 0 END) AS Invalid
+			,	SUM(CASE WHEN lg.FlaggedGroupID = 3 THEN lg.TotalTrans ELSE 0 END) AS Bot
 		INTO 	lv_Count_MBAppInvalidBrowser_Trans
 			,	lv_Count_MBAppBot_Trans
 		FROM Temp_CustDCSMBAccount AS tmp
-			INNER JOIN DCS_DataTrace.LoginMBTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
-			INNER JOIN DCS_DataCenter.StaticList AS st ON st.ItemID = lg.Flagged AND st.ListID = 1
+			INNER JOIN DCS_DataTrace.MBLoginTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
 		WHERE lg.TransDate BETWEEN ip_FromDate AND ip_ToDate; 
         
         SELECT  SUM(TotalTrans)
 		INTO 	lv_Count_MBAppLogin
 		FROM Temp_CustDCSMBAccount AS tmp 
-			INNER JOIN DCS_DataTrace.LoginMBTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
+			INNER JOIN DCS_DataTrace.MBLoginTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
 		WHERE lg.TransDate BETWEEN GREATEST(ip_FromDate, tmp.CustInsertedTime) AND ip_ToDate;
 
 		SELECT 	IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0)				AS BotTrans

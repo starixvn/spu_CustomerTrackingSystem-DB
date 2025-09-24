@@ -575,7 +575,7 @@ BEGIN
 		INSERT INTO Temp_LoginTransactionSummary(AccountID, TotalTrans, Flagged)
         SELECT tmp.AccountID, ls.TotalTrans, ls.Flagged
         FROM Temp_CustAccountID AS tmp
-			INNER JOIN DCS_DataTrace.LoginMBTransactionSummary AS ls ON ls.MBAccountID = tmp.AccountID 
+			INNER JOIN DCS_DataTrace.MBLoginTransactionSummary AS ls ON ls.MBAccountID = tmp.AccountID 
 		WHERE ls.TransDate BETWEEN lv_FromDate AND lv_ToDate;
         
 		TRUNCATE TABLE Temp_CustAccLogTransInfo;
@@ -591,10 +591,9 @@ BEGIN
 
 		WITH CTETransInfo AS (
 			SELECT 	ls.AccountID
-				,	SUM(CASE WHEN st.GroupID = 2 THEN ls.TotalTrans ELSE 0 END) AS CountInvalidBrowserTrans
-				,	SUM(CASE WHEN st.GroupID = 3 THEN ls.TotalTrans ELSE 0 END) AS CountBotTrans
+				,	SUM(CASE WHEN lg.FlaggedGroupID = 2 THEN ls.TotalTrans ELSE 0 END) AS CountInvalidBrowserTrans
+				,	SUM(CASE WHEN lg.FlaggedGroupID = 3 THEN ls.TotalTrans ELSE 0 END) AS CountBotTrans
 			FROM Temp_LoginTransactionSummary AS ls
-				INNER JOIN DCS_DataCenter.StaticList AS st ON st.ItemID = ls.Flagged AND st.ListID = 1
 				INNER JOIN Temp_CustAccountID AS tmpcust ON tmpcust.AccountID = ls.AccountID
 			GROUP BY ls.AccountID
         )
