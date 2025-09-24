@@ -17,6 +17,7 @@ BEGIN
 		- 20241204@Jonathan.Doan: Created [Redmine ID: #213401]
 		- 20250514@Jonathan.Doan: Update field value LastLoginTime [Redmine ID: #221973]
 		- 20250811@Jonathan.Doan: Update new rule [Redmine ID: #235457]
+		- 20250924@Jonathan.Doan: Cook MBAccountIP [Redmine ID: #239121]
 	  Param's Explanation (filtered by):
 	Example:
 	  CALL DCS_DC_ArchiveData_MBLastAccessedDate_Update(100);
@@ -50,6 +51,8 @@ BEGIN
 		, MBUserSettingID	 			BIGINT UNSIGNED
 		, MBDeviceID					BIGINT UNSIGNED
 		, MBAssociationID				BIGINT UNSIGNED
+		, IPID							DECIMAL(50,0)
+		, IP							VARCHAR(50)
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBAccount;
@@ -105,9 +108,19 @@ BEGIN
 		  ID					BIGINT UNSIGNED PRIMARY KEY
 		, MaxLastAccessedDate   DATE
 	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_MBAccountIP;
+	CREATE TEMPORARY TABLE Temp_MBAccountIP(
+		  MBAccountID			BIGINT UNSIGNED
+		, IPID					DECIMAL(50,0)
+		, IP					VARCHAR(50)
+		, MaxLastAccessedDate   DATE
+		, IsUpdate			   	BIT DEFAULT 0
+        , PRIMARY KEY PK_Temp_MBAccountIP(MBAccountID, IPID, IP) 
+	);
 	
 	/*******GET DATA Transaction07********************/
-	INSERT INTO Temp_MBTransaction07(ID, MBAccountID, CreatedDate, TransTime, MBDeviceCodeMachineAccountID, MBDeviceCodeMachineMediaID, MBDeviceCodeTaggingID, MBDeviceModelID, MBOSID, MBUserSettingID, MBDeviceID)
+	INSERT INTO Temp_MBTransaction07(ID, MBAccountID, CreatedDate, TransTime, MBDeviceCodeMachineAccountID, MBDeviceCodeMachineMediaID, MBDeviceCodeTaggingID, MBDeviceModelID, MBOSID, MBUserSettingID, MBDeviceID, IPID, IP)
 	SELECT  trans.ID
 		,	IFNULL(trans.MBAccountID, 0) AS MBAccountID
 		,	trans.CreatedDate
@@ -119,6 +132,8 @@ BEGIN
 		,	IFNULL(trans.MBOSID, 0) AS MBOSID
 		,	IFNULL(trans.MBUserSettingID, 0) AS MBUserSettingID
 		,	IFNULL(trans.MBDeviceID, 0) AS MBDeviceID
+		,	trans.IPID
+		,	trans.IP
 	FROM DCS_DataCenter.MBTransaction07 AS trans
 		LEFT JOIN DCS_DataCenter.MBDeviceMapping AS dm ON dm.ID = trans.MBDeviceMappingID
 	WHERE trans.ID > lv_MaxID
@@ -203,6 +218,17 @@ BEGIN
 	FROM Temp_MBTransaction07
 	WHERE MBAssociationID IS NOT NULL
 	GROUP BY MBAssociationID;
+
+	INSERT INTO Temp_MBAccountIP(MBAccountID, IPID, IP, MaxLastAccessedDate)
+	SELECT	MBAccountID
+		,	IPID
+		,	IP
+		,	MAX(CreatedDate) AS MaxLastAccessedDate
+	FROM Temp_MBTransaction07
+	WHERE MBAccountID IS NOT NULL
+		AND IPID > 0
+	GROUP BY MBAccountID, IPID, IP;
+
 	
 	/*******UPDATE MBAccount.LastLoginTime********************/
 	UPDATE DCS_DataCenter.MBAccount AS acc
@@ -257,6 +283,24 @@ BEGIN
 		INNER JOIN Temp_MBAssociation AS tmp ON tmp.ID = ass.ID
 	SET ass.LastAccessedDate = tmp.MaxLastAccessedDate
 	WHERE ass.LastAccessedDate < tmp.MaxLastAccessedDate;
+	
+    select * from Temp_MBAccountIP;
+	/*******INSERT OR UPDATE MBAccountIP.LastLoginTime********************/
+	UPDATE DCS_DataCenter.MBAccountIP AS ip
+		INNER JOIN Temp_MBAccountIP AS tmp ON tmp.MBAccountID = ip.MBAccountID
+										AND tmp.IPID = ip.IPID
+	SET 	ip.LastAccessedDate = tmp.MaxLastAccessedDate
+		,	tmp.IsUpdate = 1
+	WHERE ip.LastAccessedDate < tmp.MaxLastAccessedDate;
+    
+    INSERT IGNORE INTO DCS_DataCenter.MBAccountIP(MBAccountID, IPID, IP, LastAccessedDate, InsertedTime)
+    SELECT	MBAccountID
+		,	IPID
+		,	IP
+		,	MaxLastAccessedDate
+		,	lv_CurrentDatetime AS InsertedTime
+    FROM Temp_MBAccountIP
+    WHERE IsUpdate = 0;
 	
 	/*******UPDATE SystemSetting MaxTransID********************/
 	SELECT MAX(ID)

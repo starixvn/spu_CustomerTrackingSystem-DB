@@ -11,7 +11,7 @@ CREATE TABLE `MBLoginTransactionSummary` (
 		ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	,	TransDate DATE NOT NULL
 	,	SubscriberID INT UNSIGNED DEFAULT NULL
-	,	AccountID BIGINT UNSIGNED DEFAULT NULL
+	,	MBAccountID BIGINT UNSIGNED DEFAULT NULL
 	,	OSType SMALLINT UNSIGNED DEFAULT NULL
 	,	FlaggedGroupID SMALLINT UNSIGNED DEFAULT NULL
 	,	TotalTrans INT UNSIGNED DEFAULT NULL
@@ -20,8 +20,8 @@ CREATE TABLE `MBLoginTransactionSummary` (
 	,	CreatedTime DATETIME DEFAULT NULL
 	,	ModifiedTime DATETIME DEFAULT NULL
 	,	PRIMARY KEY (`ID`,`TransDate`)
-	,	UNIQUE KEY `UX_MBLoginTransactionSummary_Group` (`TransDate`,`SubscriberID`,`AccountID`,`OSType`,`FlaggedGroupID`)
-	,	KEY `IX_MBLoginTransactionSummary_AccountID` (`AccountID`)
+	,	UNIQUE KEY `UX_MBLoginTransactionSummary_Group` (`TransDate`,`SubscriberID`,`MBAccountID`,`OSType`,`FlaggedGroupID`)
+	,	KEY `IX_MBLoginTransactionSummary_MBAccountID` (`MBAccountID`)
 	,	KEY `IX_MBLoginTransactionSummary_OSType` (`OSType`)
 ) ENGINE=InnoDB
 /*!50100 PARTITION BY RANGE (yearweek(TransDate,0)) (
