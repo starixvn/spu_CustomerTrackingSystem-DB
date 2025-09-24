@@ -68,6 +68,7 @@ BEGIN
 		,   TransStatus			BIT(16) 			
 		,   CreatedDate			DATETIME COMMENT 'Date Only' 
 		,   InsertTime			DATETIME(4) 		
+		,   FingerprintCode		VARCHAR(620)
         ,   BotDetectionValue	BIT(20)
         ,   BotComponentID		BIGINT UNSIGNED
         ,	FakeIP				VARCHAR(100)
@@ -120,7 +121,7 @@ BEGIN
     FROM DCS_DataCenter.SystemSetting 
     WHERE ID = CONST_SYSTEMSETTINGID_MINCREATEDDATE;
 
-	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
+	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
 	SELECT  rt.TransID
 	    ,   rt.LoginName
         ,   rt.TransTime
@@ -136,6 +137,7 @@ BEGIN
         ,   rt.PluginID
         ,   rt.TransStatus
         ,   rt.CreatedDate
+        ,   rt.FingerprintCode
         ,   rt.BotDetectionValue
         ,   rt.BotComponentID
         ,   rt.FakeIP
@@ -255,7 +257,7 @@ BEGIN
 	SET tmp.JSChallengeInfoID = CASE WHEN tmp.ChallengeCode IS NULL THEN NULL ELSE IFNULL(jsc.ID, 0) END;
 	
 	/* ======= INSERT Transaction ========= */
-    INSERT IGNORE INTO DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID
+    INSERT IGNORE INTO DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID
     , FPPatternID01, FPPatternID02, WebRTCIPID, TransFlow)
    	SELECT  trt.TransID
 	    ,   trt.LoginName
@@ -273,6 +275,7 @@ BEGIN
 	    ,   trt.CreatedDate
         ,   lv_CurrentDate AS InsertTime
         ,   trt.DeviceCode
+        ,   trt.FingerprintCode
         ,   trt.BotDetectionValue
         ,   trt.BotComponentID
         ,   trt.FakeIP
@@ -285,12 +288,13 @@ BEGIN
 	FROM Temp_RawTransaction AS trt;   
 
     #================================================================
-	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
+	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
 	SELECT  rt.LoginName
         ,   rt.SubscriberName
         ,   rt.TransTime
         ,   rt.CreatedDate
         ,   rt.DeviceCode
+        ,   rt.FingerprintCode
         ,   rt.UserAgent
 	    ,   rt.IP
         ,   rt.IPID
