@@ -78,7 +78,6 @@ TRUNCATE TABLE DCS_DataCenter.MBDeviceMapping;
 TRUNCATE TABLE DCS_DataCenter.MBDeviceModel;
 TRUNCATE TABLE DCS_DataCenter.MBOS;
 TRUNCATE TABLE DCS_DataCenter.MBRawTransaction;
-TRUNCATE TABLE DCS_DataCenter.MBRawTransactionIOS;
 TRUNCATE TABLE DCS_DataCenter.MBTransaction;
 TRUNCATE TABLE DCS_DataCenter.MBUserSetting;
 TRUNCATE TABLE DCS_DataCenter.MBTransaction07;
