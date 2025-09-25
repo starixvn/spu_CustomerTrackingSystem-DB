@@ -10,13 +10,13 @@ Revisions:
 Reviewer:
 */
 /**********************************************************/
-CREATE DATABASE DCS_DataCenterStaging /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+CREATE DATABASE IF NOT EXISTS DCS_DataCenterStaging /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
 /***********************************************************/
 
 USE DCS_DataCenterStaging;
 
 # ---------------------NEW TABLES--------------------------------------
-
+DROP TABLE IF EXISTS DCS_DataCenterStaging.WebRTCIP;
 CREATE TABLE WebRTCIP(
 		WebRTCIPID		BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
 	,	WebRTCIPCode 	VARCHAR(32) NOT NULL   
@@ -28,6 +28,7 @@ CREATE TABLE WebRTCIP(
     ,	INDEX IX_FPDetailsWebRTCIP_LastUsedDate(LastUsedDate)
 );
 
+DROP TABLE IF EXISTS DCS_DataCenterStaging.FPPattern;
 CREATE TABLE FPPattern(
 		FPPatternID 	BIGINT UNSIGNED	AUTO_INCREMENT PRIMARY KEY
 	,	FPPatternType	TINYINT NOT NULL COMMENT 'Pattern Group Combinition'
@@ -39,6 +40,7 @@ CREATE TABLE FPPattern(
     ,	INDEX IX_FPPattern_LastUsedDate(LastUsedDate)
 );
 
+DROP TABLE IF EXISTS DCS_DataCenterStaging.RawFingerprintQueue;
 CREATE TABLE RawFingerprintQueue(
 		ID					BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
 	,	FPPatternID01		BIGINT UNSIGNED
@@ -57,6 +59,7 @@ CREATE TABLE RawFingerprintQueue(
 );
 
 #====================ALTER TABLE RawTransaction===================================
+DROP TABLE IF EXISTS DCS_DataCenterStaging.RawTransaction;
 CREATE TABLE RawTransaction(
 		LoginName VARCHAR(100)  NOT NULL
 	,	SubscriberName VARCHAR(50)  NOT NULL
@@ -102,6 +105,7 @@ CREATE TABLE RawTransaction(
 
 #================================================================================
 
+DROP TABLE IF EXISTS DCS_DataCenterStaging.BotComponent;
 CREATE TABLE BotComponent(
 		ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	,	Code VARCHAR(100)  NOT NULL
@@ -114,14 +118,16 @@ CREATE TABLE BotComponent(
 	,	KEY IX_BotComponent_ModifiedDate(ModifiedDate) 
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS DCS_DataCenterStaging.BotDetection;
 CREATE TABLE BotDetection(
 		Value bit(32) NOT NULL
 	,	Name VARCHAR(100)  NOT NULL
-	,	CreatedDate DATETIME DEFAULT NULL
+	,	CreatedDate DATETIME DEFAULT NULL 
 	,	PRIMARY KEY(Value) 
 	,	KEY IX_BotDetection_Name(Name) 
 )ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS DCS_DataCenterStaging.StaticList;
 CREATE TABLE StaticList(
 		ListID INT NOT NULL
 	,	ItemID SMALLINT NOT NULL
@@ -139,6 +145,7 @@ CREATE TABLE StaticList(
 	,	UNIQUE KEY UX_StaticList_ListCode_ItemCode(ListCode,ItemCode) 
 )ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS DCS_DataCenterStaging.MBRawTransactionIOS;
 CREATE TABLE MBRawTransactionIOS(
 		ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	,	LoginName VARCHAR(100)  NOT NULL
@@ -167,6 +174,7 @@ CREATE TABLE MBRawTransactionIOS(
 	,	KEY IX_MBRawTransactionIOS_SubscriberName(SubscriberName) 
 ) ENGINE=InnoDB;
 
+DROP TABLE IF EXISTS DCS_DataCenterStaging.MBRawTransaction;
 CREATE TABLE MBRawTransaction(
 		ID BIGINT UNSIGNED NOT NULL AUTO_INCREMENT
 	,	LoginName VARCHAR(100)  NOT NULL
