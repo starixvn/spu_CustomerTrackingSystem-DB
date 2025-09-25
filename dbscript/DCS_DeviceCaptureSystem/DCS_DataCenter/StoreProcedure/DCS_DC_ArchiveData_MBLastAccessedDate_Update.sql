@@ -23,17 +23,16 @@ BEGIN
 	  CALL DCS_DC_ArchiveData_MBLastAccessedDate_Update(100);
 	*/
 	
-	DECLARE CONST_SYSTEMSETTING_MAXMBTRANSACTION07ID  	INT DEFAULT 30;
+	DECLARE CONST_DC_TRANSACTION07_TRANSID  		INT DEFAULT 30;
+    DECLARE CONST_DC_MAXMBTRANSACTION07IDCOMPLETED	INT	DEFAULT 4;
 	
-	DECLARE lv_MaxID				BIGINT UNSIGNED;
+	DECLARE lv_MaxTransID			BIGINT UNSIGNED;
+	DECLARE lv_MaxTransIDCompleted	BIGINT UNSIGNED;
 	DECLARE lv_CurrentDatetime 		DATETIME DEFAULT NOW();
 	
-	SELECT VValue
-	INTO lv_MaxID
-	FROM DCS_DataCenter.SystemSetting
-	WHERE ID = CONST_SYSTEMSETTING_MAXMBTRANSACTION07ID;
-	
-	
+    SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_DC_TRANSACTION07_TRANSID);
+	SET lv_MaxTransIDCompleted	= (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_DC_MAXMBTRANSACTION07IDCOMPLETED);
+    
 	/*******INIT TEMPORARY TABLE************/
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBTransaction07;
 	CREATE TEMPORARY TABLE Temp_MBTransaction07(
@@ -136,7 +135,8 @@ BEGIN
 		,	trans.IP
 	FROM DCS_DataCenter.MBTransaction07 AS trans
 		LEFT JOIN DCS_DataCenter.MBDeviceMapping AS dm ON dm.ID = trans.MBDeviceMappingID
-	WHERE trans.ID > lv_MaxID
+	WHERE trans.ID > lv_MaxTransID
+		AND trans.ID <= lv_MaxTransIDCompleted
 	LIMIT ip_BatchSize;
 
 	UPDATE Temp_MBTransaction07 AS tmp
@@ -284,7 +284,6 @@ BEGIN
 	SET ass.LastAccessedDate = tmp.MaxLastAccessedDate
 	WHERE ass.LastAccessedDate < tmp.MaxLastAccessedDate;
 	
-    select * from Temp_MBAccountIP;
 	/*******INSERT OR UPDATE MBAccountIP.LastLoginTime********************/
 	UPDATE DCS_DataCenter.MBAccountIP AS ip
 		INNER JOIN Temp_MBAccountIP AS tmp ON tmp.MBAccountID = ip.MBAccountID
@@ -304,14 +303,14 @@ BEGIN
 	
 	/*******UPDATE SystemSetting MaxTransID********************/
 	SELECT MAX(ID)
-	INTO lv_MaxID
+	INTO lv_MaxTransID
 	FROM Temp_MBTransaction07;
 	
-	IF lv_MaxID IS NOT NULL THEN
+	IF lv_MaxTransID IS NOT NULL THEN
 		UPDATE DCS_DataCenter.SystemSetting
-		SET VValue = lv_MaxID,
+		SET VValue = lv_MaxTransID,
 			UpdatedTime = lv_CurrentDatetime
-		WHERE ID = CONST_SYSTEMSETTING_MAXMBTRANSACTION07ID;
+		WHERE ID = CONST_DC_TRANSACTION07_TRANSID;
 	END IF;
 END$$
 DELIMITER ;

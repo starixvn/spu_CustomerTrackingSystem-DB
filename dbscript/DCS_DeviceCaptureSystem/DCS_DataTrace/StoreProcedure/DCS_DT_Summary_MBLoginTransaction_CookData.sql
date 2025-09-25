@@ -41,11 +41,10 @@ BEGIN
 		, 	SubscriberID				INT UNSIGNED
 		, 	MBAccountID					BIGINT UNSIGNED
 		, 	MBOSID						BIGINT UNSIGNED
+		, 	MBOSType					SMALLINT UNSIGNED DEFAULT 0
 		, 	Flagged						SMALLINT
 		, 	FlaggedGroupID				SMALLINT UNSIGNED
 		, 	TransTime					DATETIME
-		, 	IsInvalidBrowers			BIT DEFAULT 0
-		, 	IsBotTrans					BIT DEFAULT 0
 	);
     
 	CREATE TEMPORARY TABLE Temp_LoginTrans(
@@ -53,7 +52,7 @@ BEGIN
 		, 	TransDate					DATE NOT NULL
 		, 	SubscriberID				INT UNSIGNED
 		, 	MBAccountID					BIGINT UNSIGNED
-		, 	OSType						SMALLINT UNSIGNED
+		, 	MBOSType					SMALLINT UNSIGNED DEFAULT 0
 		, 	FlaggedGroupID				SMALLINT UNSIGNED
 		, 	TotalTrans					INT UNSIGNED DEFAULT 0
 		, 	FirstLoginTransTime			DATETIME
@@ -81,23 +80,24 @@ BEGIN
 	SET tmp.FlaggedGroupID = sl.GroupID;
     
     UPDATE Temp_Trans07 AS tmp
-		INNER JOIN DCS_DataCenter.MBOSID AS os ON os.ID = tmp.MBOSID
-	SET tmp.OSType = os.OSName;
-        
+		INNER JOIN DCS_DataCenter.MBOS AS os ON os.ID = tmp.MBOSID
+		INNER JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 5 AND sl.ItemName = os.OSName
+	SET tmp.MBOSType = sl.ItemID;
+    
     SET lv_MaxTransID = (SELECT MAX(ID) FROM Temp_Trans07);
         
     /* == Insert into MBLoginTransactionSummary == */
-    INSERT INTO Temp_LoginTrans(TransDate, SubscriberID, MBAccountID, OSType, FlaggedGroupID, FirstLoginTransTime, LastLoginTransTime, TotalTrans)
+    INSERT INTO Temp_LoginTrans(TransDate, SubscriberID, MBAccountID, MBOSType, FlaggedGroupID, FirstLoginTransTime, LastLoginTransTime, TotalTrans)
     SELECT 	TransDate
         ,	SubscriberID
 		,	MBAccountID
-        ,	OSType
+        ,	MBOSType
         ,	FlaggedGroupID
         ,	MIN(TransTime) AS FirstLoginTransTime
         ,	MAX(TransTime) AS LastLoginTransTime
         ,	COUNT(1) AS TotalTrans
 	FROM Temp_Trans07
-    GROUP BY TransDate, SubscriberID, MBAccountID, FlaggedGroupID;
+    GROUP BY TransDate, SubscriberID, MBAccountID, MBOSType, FlaggedGroupID;
     
     ALTER TABLE Temp_LoginTrans
     ADD KEY IX_Temp_LoginTrans_Group(TransDate, SubscriberID, MBAccountID, FlaggedGroupID);

@@ -1,10 +1,13 @@
-/*<info serverAlias="CTSMain-DCS_DataCenter" databaseType="2"></info>*/
+/*<info serverAlias="CTSMain-DCS_DataTrace" databaseType="2"></info>*/
 /*
 	Created: 20250924@Jonathan.Doan [Redmine ID: #233405]
 	Task: New tables for storing MB transaction summary data
-	DB: DCS_DataCenter
+	DB: DCS_DataTrace
 */
 USE DCS_DataTrace;
+
+INSERT IGNORE INTO DCS_DataTrace.SystemSetting(ID, VGroup, VName, VValue, UpdatedTime)
+VALUES(30, 'MBCookData', 'MBTransaction07.TransID', 0, NOW());
 
 DROP TABLE IF EXISTS MBLoginTransactionSummary;
 CREATE TABLE `MBLoginTransactionSummary` (
@@ -24,7 +27,7 @@ CREATE TABLE `MBLoginTransactionSummary` (
 	,	KEY `IX_MBLoginTransactionSummary_MBAccountID` (`MBAccountID`)
 	,	KEY `IX_MBLoginTransactionSummary_OSType` (`OSType`)
 ) ENGINE=InnoDB
-/*!50100 PARTITION BY RANGE (yearweek(TransDate,0)) (
+PARTITION BY RANGE (yearweek(CreatedDate,0)) (
   PARTITION pw202527 VALUES LESS THAN (202528) ENGINE = InnoDB,
   PARTITION pw202528 VALUES LESS THAN (202529) ENGINE = InnoDB,
   PARTITION pw202529 VALUES LESS THAN (202530) ENGINE = InnoDB,
@@ -39,4 +42,4 @@ CREATE TABLE `MBLoginTransactionSummary` (
   PARTITION pw202538 VALUES LESS THAN (202539) ENGINE = InnoDB,
   PARTITION pw202539 VALUES LESS THAN (202540) ENGINE = InnoDB,
   PARTITION pwmax    VALUES LESS THAN MAXVALUE ENGINE = InnoDB
-); */;
+);
