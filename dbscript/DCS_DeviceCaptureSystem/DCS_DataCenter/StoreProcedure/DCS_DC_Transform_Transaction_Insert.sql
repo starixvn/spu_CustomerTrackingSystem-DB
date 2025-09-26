@@ -281,8 +281,8 @@ BEGIN
         ,   trt.FakeIP
         ,   trt.IsIncognitoMode
         ,   trt.JSChallengeInfoID
-        ,	IFNULL(trt.FPPatternID01, 0) AS FPPatternID01
-        ,	IFNULL(trt.FPPatternID02, 0) AS FPPatternID02
+        ,	trt.FPPatternID01
+        ,	trt.FPPatternID02
         ,	trt.WebRTCIPID
         ,	trt.TransFlow
 	FROM Temp_RawTransaction AS trt;   
