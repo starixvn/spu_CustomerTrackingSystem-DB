@@ -55,8 +55,8 @@ BEGIN
 		,	OS				VARCHAR(100)		
 		,	Browser			VARCHAR(100)
 		,	URLDetails		VARCHAR(250)
-        
-        ,	PRIMARY KEY PK_Temp_Transaction(AccountID, TransID)
+        ,	TransSourceID	TINYINT /*1: Desktop, Mobile Web, 2: Mobile App*/
+        ,	PRIMARY KEY PK_Temp_Transaction(AccountID, TransID, TransSourceID)
     );
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustDCSMBAccount;
@@ -106,7 +106,7 @@ BEGIN
         IF @lv_HasData = 1 THEN
         
 			SET @sql = 	CONCAT("
-			INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberName, UserName, LoginID, CTSCustID, TransTime, FirstDeviceCode, IP, Flagged, Action, ActionResult, OS, Browser, URLDetails)
+			INSERT INTO Temp_Transaction(TransID, AccountID, SubscriberName, UserName, LoginID, CTSCustID, TransTime, FirstDeviceCode, IP, Flagged, Action, ActionResult, OS, Browser, URLDetails, TransSourceID)
 			SELECT	ts.TransID
 				,	ts.AccountID
 				,	sb.SubscriberName
@@ -122,6 +122,7 @@ BEGIN
 				,	ua.OS
 				,	ua.Browser
 				,	ur.URLDetails 
+				,	1 AS TransSourceID
 			FROM DCS_DataCenter.Transaction07 PARTITION(",lv_Partition,") AS ts
 				INNER JOIN CTS_DataCenter.CustDCSAccount AS ca ON ts.AccountID = ca.AccountID
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON ca.CTSCustID = cus.CTSCustID 
@@ -187,7 +188,7 @@ BEGIN
         IF @lv_HasData = 1 THEN
         
 			SET @sql = 	CONCAT("
-			INSERT INTO Temp_Transaction(TransID, AccountID, TransTime, FirstDeviceCode, IP, Flagged, Action, ActionResult, OS, Browser, URLDetails)
+			INSERT INTO Temp_Transaction(TransID, AccountID, TransTime, FirstDeviceCode, IP, Flagged, Action, ActionResult, OS, Browser, URLDetails, TransSourceID)
 			SELECT	ts.MBRawTransactionID AS TransID
 				,	ts.MBAccountID AS AccountID
 				,	ts.TransTime
@@ -199,6 +200,7 @@ BEGIN
 				,	os.OSName
 				,	NULL AS Browser
 				,	NULL AS URLDetails 
+				,	2 AS TransSourceID
 			FROM DCS_DataCenter.MBTransaction07 PARTITION(",lv_Partition_MB,") AS ts
 				LEFT JOIN DCS_DataCenter.MBOS AS os ON ts.MBOSID = os.ID
 				LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ts.ActionResultID = ar.ActionResultID
@@ -238,7 +240,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.MBAccount AS mb ON mb.ID = tmp.AccountID
 		INNER JOIN CTS_Admin.Subscriber AS sb ON sb.SubscriberID = mb.SubscriberID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.UserName2 = CONCAT(sb.SubscriberPrefix, mb.LoginName) AND cus.SubscriberID = mb.SubscriberID
-	WHERE tmp.CTSCustID IS NULL;
+	WHERE tmp.CTSCustID IS NULL AND tmp.TransSourceID = 2;
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustDCSMBAccount_Dup;
 	CREATE TEMPORARY TABLE Temp_CustDCSMBAccount_Dup LIKE Temp_CustDCSMBAccount;
@@ -257,7 +259,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.MBAccount AS mb ON mb.ID = tmp.AccountID
 		INNER JOIN CTS_Admin.Subscriber AS sb ON sb.SubscriberID = mb.SubscriberID
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.UserName = mb.LoginName AND cus.SubscriberID = mb.SubscriberID
-	WHERE tmp.CTSCustID IS NULL AND NOT EXISTS (SELECT 1 FROM Temp_CustDCSMBAccount_Dup AS tmp2 WHERE tmp2.MBAccountID = tmp.AccountID);
+	WHERE tmp.CTSCustID IS NULL AND tmp.TransSourceID = 2 AND NOT EXISTS (SELECT 1 FROM Temp_CustDCSMBAccount_Dup AS tmp2 WHERE tmp2.MBAccountID = tmp.AccountID);
 
 	UPDATE Temp_Transaction AS tmp
 		INNER JOIN Temp_CustDCSMBAccount AS mb ON mb.MBAccountID = tmp.AccountID
@@ -265,7 +267,7 @@ BEGIN
 		,	tmp.SubscriberName = mb.SubscriberName
 		,	tmp.UserName = mb.UserName
 		,	tmp.LoginID = mb.UserName2
-	WHERE tmp.CTSCustID IS NULL;
+	WHERE tmp.CTSCustID IS NULL AND tmp.TransSourceID = 2;
 	/*** END MB Account ***/
 
     SELECT	tmpTs.UserName
