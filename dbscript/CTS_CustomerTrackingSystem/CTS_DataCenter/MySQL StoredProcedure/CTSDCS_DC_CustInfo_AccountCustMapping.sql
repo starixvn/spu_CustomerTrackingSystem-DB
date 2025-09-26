@@ -36,6 +36,7 @@ BEGIN
         ,	MBAccountID			BIGINT UNSIGNED
         ,	SubscriberID		INT
         ,	CustInsertedTime	DATETIME
+        ,	LastLoginTime		DATETIME(4)
         ,	PRIMARY KEY (CTSCustID, MBAccountID)
     );
     
@@ -52,19 +53,21 @@ BEGIN
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID
         INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = cus.SubscriberID;
 
-    INSERT INTO Temp_CustDCSMBAccount(CTSCustID, MBAccountID, SubscriberID, CustInsertedTime)
+    INSERT INTO Temp_CustDCSMBAccount(CTSCustID, MBAccountID, SubscriberID, CustInsertedTime, LastLoginTime)
     SELECT	tmp.CTSCustID
         ,	acc.ID AS MBAccountID
         ,	tmp.SubscriberID
         ,	tmp.CustInsertedTime
+        ,	acc.LastLoginTime
     FROM Temp_Customer AS tmp
         INNER JOIN DCS_DataCenter.MBAccount AS acc ON acc.SubscriberID = tmp.SubscriberID AND CONCAT(tmp.SubscriberPrefix, acc.LoginName) = tmp.UserName2;
     
-    INSERT INTO Temp_CustDCSMBAccount(CTSCustID, MBAccountID, SubscriberID, CustInsertedTime)
+    INSERT INTO Temp_CustDCSMBAccount(CTSCustID, MBAccountID, SubscriberID, CustInsertedTime, LastLoginTime)
     SELECT	tmp.CTSCustID
         ,	acc.ID AS MBAccountID
         ,	tmp.SubscriberID
         ,	tmp.CustInsertedTime
+        ,	acc.LastLoginTime
     FROM Temp_Customer AS tmp
         INNER JOIN DCS_DataCenter.MBAccount AS acc ON acc.SubscriberID = tmp.SubscriberID AND acc.LoginName = tmp.UserName;
 

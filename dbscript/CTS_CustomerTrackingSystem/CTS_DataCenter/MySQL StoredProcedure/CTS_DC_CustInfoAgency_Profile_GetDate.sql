@@ -51,10 +51,9 @@ BEGIN
     
 	CALL CTS_DataCenter.CTSDCS_DC_CustInfo_AccountCustMapping(ip_CTSCustID);
 
-	SELECT MAX(acc.LastLoginTime)
+	SELECT MAX(tmp.LastLoginTime)
 	INTO lv_LastLogin_MB
-	FROM Temp_CustDCSMBAccount AS tmp
-		INNER JOIN DCS_DataCenter.MBAccount AS acc ON acc.ID = tmp.MBAccountID;
+	FROM Temp_CustDCSMBAccount AS tmp;
 
     SELECT LastTicketDate 
     INTO lv_LastTicket
