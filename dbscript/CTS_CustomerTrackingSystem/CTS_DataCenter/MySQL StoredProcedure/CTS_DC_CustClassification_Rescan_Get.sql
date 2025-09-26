@@ -493,7 +493,7 @@ sp: BEGIN
     INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID, SportType)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
-        ,	MIN(ccs.CategoryID)             AS CategoryID
+        ,	ccs.CategoryID                  AS CategoryID
         , 	NULL 							AS TVSReasonID
         ,	tmp.RoleID 						AS RoleID
         ,	tmp.SubscriberID				AS SubscriberID
@@ -513,11 +513,12 @@ sp: BEGIN
     FROM  Temp_CustInfo AS tmp
 		INNER JOIN CTS_DataCenter.Customer_InitialSmart_BySport AS s ON s.CustID = tmp.CustID
         INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.SportType = s.SportType
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON ccs.CategoryID = cate.CategoryID
 	WHERE NOT EXISTS (SELECT 1 
 					  FROM Temp_CustCategory AS cc 
 					  WHERE cc.CustID = tmp.CustID 
 						AND cc.CategoryID = ccs.CategoryID)
-    GROUP BY tmp.CTSCustID, tmp.CustID, tmp.RoleID, tmp.SubscriberID, tmp.IsLicensee, s.InsertedTime;
+        AND cate.IsPAProbation = 0;
 
     /***********************Rescan Potential Category****************************/        
     INSERT IGNORE INTO Temp_CustCategory (CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, SportType, CreatedDate, LastModifiedDate, InputFlowID)       

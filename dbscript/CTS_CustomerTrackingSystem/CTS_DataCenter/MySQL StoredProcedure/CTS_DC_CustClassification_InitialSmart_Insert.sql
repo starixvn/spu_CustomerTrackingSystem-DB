@@ -22,6 +22,8 @@ BEGIN
 	*/
 	DECLARE lv_CreatedDate DATETIME(3);
 
+	DECLARE	CONST_SPORTTYPE_SOCCER INT DEFAULT 1;
+	
 	SET lv_CreatedDate = CURRENT_TIMESTAMP(3);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_Customer;
@@ -54,7 +56,7 @@ BEGIN
 	IF EXISTS (	SELECT 1 FROM Temp_ExistedCust) THEN
 		INSERT INTO CTS_DataCenter.Customer_InitialSmart_BySport_Log (CustID, SportType, Probability, SourceCreatedDate, InsertedTime)
 		SELECT	tmp.CustID
-			,	1 AS SportType
+			,	CONST_SPORTTYPE_SOCCER AS SportType
 			,	tmp.Probability
 			,	tmp.SourceCreatedDate
             ,   lv_CreatedDate
@@ -64,7 +66,7 @@ BEGIN
 
     INSERT IGNORE INTO CTS_DataCenter.Customer_InitialSmart_BySport (CustID, SportType, Probability, SourceCreatedDate, InsertedTime)
     SELECT	tmp.CustID
-		,	1 AS SportType
+		,	CONST_SPORTTYPE_SOCCER AS SportType
 		,	tmp.Probability
 		,	tmp.SourceCreatedDate
         ,   lv_CreatedDate

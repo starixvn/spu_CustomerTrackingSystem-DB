@@ -33,6 +33,7 @@ BEGIN
 			- 20240626@Thomas.Nguyen:	Renovate CC phase 2 - Get remark from template [Redmine ID: #205317]
             - 20241210@Casey.Huynh: 	New Robot AI, Bot Login Pattern [Redmine ID: #214655]
 			- 20250909@Logan.Nguyen:	Get Remark for INITIALSMART_B, INITIALSMART_B_LOSING [Redmine ID: #237405]
+			- 20250922@Logan.Nguyen: 	Adjust Performance Calculation Logic for Initial Smart - CC2700 - Initial Smart (Losing) - CC2701 [Redmine ID: #239118]
 			
 		Param's Explanation (filtered by):		
         Example:

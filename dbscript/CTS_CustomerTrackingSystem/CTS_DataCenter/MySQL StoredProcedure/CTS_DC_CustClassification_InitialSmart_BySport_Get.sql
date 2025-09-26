@@ -95,14 +95,15 @@ BEGIN
         ,	cus.SubscriberID
         ,	cus.RoleID
         ,   cus.IsLicensee
-        ,	MIN(ccs.CategoryID)         AS CategoryID
-        ,	MIN(ccs.CategoryGroupID)    AS CategoryGroupID
+        ,	ccs.CategoryID              AS CategoryID
+        ,	ccs.CategoryGroupID         AS CategoryGroupID
         ,   tmp.Probability
         ,   tmp.SourceCreatedDate       AS DetectedDate
 	FROM Temp_Customer AS tmp
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON tmp.CustID = cus.CustID AND cus.CustSubID = 0 AND cus.IsInternal = 0
 		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.SportType = tmp.SportType
-    GROUP BY tmp.CustID, tmp.SportType, cus.CTSCustID, cus.SubscriberID, cus.RoleID, cus.IsLicensee, tmp.Probability, tmp.SourceCreatedDate;
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON ccs.CategoryID = cate.CategoryID
+    WHERE cate.IsPAProbation = 0;
 
 END$$	
 DELIMITER ;
