@@ -290,26 +290,26 @@ BEGIN
     WHERE tmpT.TransFlow = CONST_TRANSFLOW_NEW
         AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice td WHERE td.DeviceCode = tmpT.DeviceCode);
 	
-	INSERT INTO Temp_RecoveredDeviceNew(AccountID, FPPatternID01, FPPatternID02, DeviceCode, DeviceID, RecoverCode)
+	INSERT INTO Temp_RecoveredDeviceNew(AccountID, FPPatternID01, FPPatternID02, DeviceCode, DeviceID, DeviceStatus)
 	SELECT	tmp.AccountID
 		,	tmp.FPPatternID01
 		,	tmp.FPPatternID02
 		,	tmp.DeviceCode
 		,	MAX(pt.DeviceID) AS DeviceID
-		,	CONST_DEVICESTATUS_OLD_FPPATTERN02 AS RecoverCode
+		,	CONST_DEVICESTATUS_OLD_FPPATTERN02 AS DeviceStatus
     FROM Temp_FPPatternCheck AS tmp
 		INNER JOIN DCS_DataCenter.DeviceFPPattern AS pt ON pt.FPPatternType = tmp.FPPatternType AND pt.FPPatternID = tmp.FPPatternID02
 		LEFT JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID AND ass.DeviceID = pt.DeviceID
     WHERE tmp.FPPatternType = 2
 	GROUP BY tmp.AccountID, tmp.FPPatternID01, tmp.FPPatternID02, tmp.DeviceCode;
 	
-	INSERT INTO Temp_RecoveredDeviceNew(AccountID, FPPatternID01, FPPatternID02, DeviceCode, DeviceID, RecoverCode)
+	INSERT INTO Temp_RecoveredDeviceNew(AccountID, FPPatternID01, FPPatternID02, DeviceCode, DeviceID, DeviceStatus)
 	SELECT	tmp.AccountID
 		,	tmp.FPPatternID01
 		,	tmp.FPPatternID02
 		,	tmp.DeviceCode
 		,	MAX(pt.DeviceID) AS DeviceID
-		,	CONST_DEVICESTATUS_OLD_FPPATTERN01 AS RecoverCode
+		,	CONST_DEVICESTATUS_OLD_FPPATTERN01 AS DeviceStatus
     FROM Temp_FPPatternCheck AS tmp
 		INNER JOIN DCS_DataCenter.DeviceFPPattern AS pt ON pt.FPPatternType = tmp.FPPatternType AND pt.FPPatternID = tmp.FPPatternID01
 		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID AND ass.DeviceID = pt.DeviceID
