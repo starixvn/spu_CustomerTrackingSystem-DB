@@ -21,9 +21,10 @@ CREATE TABLE WebRTCIP(
 	,	CreatedDate		DATE NOT NULL    
 	,	LastUsedDate	DATE NOT NULL
     
-	,	UNIQUE KEY UX_FPDetailsWebRTCIP_FPDetailsCode(WebRTCIPID)
+	,	UNIQUE KEY UX_WebRTCIP_WebRTCIPCode (WebRTCIPCode)
     ,	INDEX IX_FPDetailsWebRTCIP_LastUsedDate(LastUsedDate)
 );
+
 
 DROP TABLE IF EXISTS FPGroupHardware;
 CREATE TABLE FPGroupHardware(
