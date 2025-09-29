@@ -335,39 +335,43 @@ BEGIN
 	
     
     INSERT IGNORE INTO Temp_RecoveredDeviceNew(AccountID, DeviceCode, FPPatternID01, FPPatternID02, DeviceID, RecoverCode, DeviceStatus)
-    SELECT 	rb.AccountID
-		,	rb.DeviceCode
-        ,	rb.FPPatternID01
-        ,	rb.FPPatternID02
-        ,	rd.DeviceID
-        ,	rd.RecoverCode
-        ,	rd.DeviceStatus
-    FROM Temp_RecoverDeviceByBetNew AS rb,
-    LATERAL (
-		SELECT 	(CASE WHEN rb.DeviceCode = ts.DeviceCode THEN 1 ELSE 0 END) AS DeviceID
-			, 	ts.DeviceCode AS RecoverCode
-			, 	CASE 
+    SELECT  rb.AccountID
+		,   rb.DeviceCode
+		,   rb.FPPatternID01
+		,   rb.FPPatternID02
+		,   rd.DeviceID
+		,   rd.RecoverCode
+		,   rd.DeviceStatus
+	FROM Temp_RecoverDeviceByBetNew AS rb,
+	LATERAL (
+		SELECT  (CASE WHEN rb.DeviceCode = ts.DeviceCode THEN 1 ELSE 0 END) AS DeviceID
+			,   ts.DeviceCode AS RecoverCode
+			,   CASE 
 					WHEN ts.FPPatternID02 = rb.FPPatternID02 AND rb.FPPatternID02 > 0
 						THEN CONST_DEVICESTATUS_OLD_FPPATTERN02
 					WHEN ts.FPPatternID01 = rb.FPPatternID01 
 						THEN CONST_DEVICESTATUS_OLD_FPPATTERN01
 					ELSE 0
 				END AS DeviceStatus
-        FROM Temp_Transaction AS ts
-        WHERE ts.TransFlow = CONST_TRANSFLOW_NEW
+		FROM Temp_Transaction AS ts
+		WHERE ts.TransFlow = CONST_TRANSFLOW_NEW
 			AND rb.AccountID = ts.AccountID
 			AND rb.TransId > ts.TransId
 			AND (
 				rb.DeviceCode = ts.DeviceCode #--> exists from incoming deviceid
-				OR (rb.DeviceCode <> ts.DeviceCode
+				OR (
+					rb.DeviceCode <> ts.DeviceCode
 					AND ts.FPPatternID01 = rb.FPPatternID01
-					AND ts.FPPatternID02 = rb.FPPatternID02
+					AND (
+						rb.FPPatternID02 = 0
+						OR ts.FPPatternID02 = rb.FPPatternID02
 					) #--> recover from incoming deviceid
+				)
 			)
 		ORDER BY ts.TransId ASC
-        LIMIT 1
-    ) AS rd
-    WHERE rd.DeviceID = 0; #--> just get recover case
+		LIMIT 1
+	) AS rd
+	WHERE rd.DeviceID = 0; #--> just get recover case
     
     # INSERT new Devices
     INSERT IGNORE INTO DCS_DataCenter.Device(FirstDeviceCode, UserAgentKey, FirstTransID, CreatedTime, CreatedDate, InsertTime)
