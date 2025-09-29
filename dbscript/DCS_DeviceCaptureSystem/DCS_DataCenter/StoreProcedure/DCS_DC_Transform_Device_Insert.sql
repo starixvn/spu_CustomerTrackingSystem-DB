@@ -90,15 +90,15 @@ BEGIN
         , 	FirstDeviceCode			VARCHAR(32)
         , 	DeviceStatus			TINYINT
         , 	DeviceFingerprintID		BIGINT UNSIGNED
-        , 	FPPatternID01			BIGINT UNSIGNED
-        , 	FPPatternID02			BIGINT UNSIGNED
-        ,	TransFlow					TINYINT(1)
+        , 	FPPatternID01			BIGINT UNSIGNED NOT NULL
+        , 	FPPatternID02			BIGINT UNSIGNED NOT NULL
+        ,	TransFlow				TINYINT(1)
 	);
     
     CREATE TEMPORARY TABLE Temp_ExistedDevice(
-			DeviceID				BIGINT NOT NULL
-        , 	DeviceCode   			VARCHAR(32) NOT NULL
-        , 	DeviceCodeID  			BIGINT NOT NULL
+			DeviceID				BIGINT		NOT NULL
+        , 	DeviceCode   			VARCHAR(32)	NOT NULL
+        , 	DeviceCodeID  			BIGINT		NOT NULL
         , 	FirstTransID  			BIGINT
         , 	FirstDeviceCode 		VARCHAR(32)
         , 	IsNew					TINYINT DEFAULT 0
@@ -127,8 +127,8 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_RecoveredDeviceNew(
 			AccountID				BIGINT UNSIGNED
         ,	DeviceCode   			VARCHAR(32)
-		,	FPPatternID01			BIGINT UNSIGNED
-		,	FPPatternID02			BIGINT UNSIGNED
+		,	FPPatternID01			BIGINT UNSIGNED NOT NULL
+		,	FPPatternID02			BIGINT UNSIGNED NOT NULL
         ,	DeviceID				BIGINT UNSIGNED
         ,	RecoverCode 			VARCHAR(32)
         ,	DeviceStatus 			TINYINT
@@ -140,16 +140,16 @@ BEGIN
 			TransID					BIGINT PRIMARY KEY
         ,	AccountID				BIGINT UNSIGNED
         ,	DeviceCode				VARCHAR(32)
-        ,	FPPatternID01	 		BIGINT UNSIGNED
-        ,	FPPatternID02	 		BIGINT UNSIGNED
+        ,	FPPatternID01	 		BIGINT UNSIGNED NOT NULL
+        ,	FPPatternID02	 		BIGINT UNSIGNED NOT NULL
         ,	INDEX 					IX_Temp_RecoverDeviceByBetNew_AccountID_DeviceCode_FPPattern(AccountID, DeviceCode, FPPatternID01, FPPatternID02)
     );
 
     CREATE TEMPORARY TABLE Temp_FPPatternCheck(
 			AccountID				BIGINT UNSIGNED
         ,	DeviceCode   			VARCHAR(32)
-		,	FPPatternID01			BIGINT UNSIGNED
-		,	FPPatternID02			BIGINT UNSIGNED
+		,	FPPatternID01			BIGINT UNSIGNED NOT NULL
+		,	FPPatternID02			BIGINT UNSIGNED NOT NULL
         ,	FPPatternType			TINYINT
         ,	PatternToCheck			BIGINT UNSIGNED
         ,	PRIMARY KEY 			PK_Temp_FPPatternCheck(AccountID, DeviceCode, FPPatternID01, FPPatternID02, FPPatternType)
@@ -299,7 +299,7 @@ BEGIN
 		,	CONST_DEVICESTATUS_OLD_FPPATTERN02 AS DeviceStatus
     FROM Temp_FPPatternCheck AS tmp
 		INNER JOIN DCS_DataCenter.DeviceFPPattern AS pt ON pt.FPPatternType = tmp.FPPatternType AND pt.FPPatternID = tmp.FPPatternID02
-		LEFT JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID AND ass.DeviceID = pt.DeviceID
+		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID AND ass.DeviceID = pt.DeviceID
     WHERE tmp.FPPatternType = 2
 	GROUP BY tmp.AccountID, tmp.FPPatternID01, tmp.FPPatternID02, tmp.DeviceCode;
 	
