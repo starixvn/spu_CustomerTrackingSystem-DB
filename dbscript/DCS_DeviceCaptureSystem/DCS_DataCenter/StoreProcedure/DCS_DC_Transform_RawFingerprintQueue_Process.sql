@@ -12,7 +12,7 @@ BEGIN
 		Task : Transform Pattern Group
 		DB: DCS_DataCenter
 		Original:
-
+	
 		Revisions:
             - 20250826@Casey.Huynh: Created, AI Power Device Fingerprint AND Remove FPJs [Redmine ID: #236716]
 
@@ -35,7 +35,7 @@ BEGIN
 		,	FPPatternID01		BIGINT UNSIGNED
 		,	FPPatternID02		BIGINT UNSIGNED
 		,	HardwareCode		VARCHAR(32)
-		,	GraphicCode		VARCHAR(32)
+		,	GraphicCode			VARCHAR(32)
 		,	AudioCode			VARCHAR(32)
 		,	BrowserCode			VARCHAR(32)
 		,	PreferencesCode		VARCHAR(32)
@@ -170,29 +170,21 @@ BEGIN
     
     #===================INSERT Temp_FPPatternGroup========================================================
 	
-	INSERT INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
-    SELECT	ltr.FPPatternID01
+	INSERT IGNORE INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
+    SELECT	tmpQue.FPPatternID01
 		,	CONST_TYPE_PATTERN01 AS FPPatternType
 		,	tmpHw.FPGroupHardwareID
 		,	CONST_TYPE_HARDWARE AS FPGroupType
 	FROM Temp_Hardware AS tmpHw
-		,	LATERAL (	SELECT tmpQue.FPPatternID01
-						FROM Temp_RawFingerprintQueue AS tmpQue
-						WHERE tmpQue.HardwareCode = tmpHw.HardwareCode
-						LIMIT 1
-        ) AS ltr;    
+		INNER JOIN Temp_RawFingerprintQueue AS tmpQue ON tmpHw.HardwareCode = tmpQue.HardwareCode;
         
-	INSERT INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
-    SELECT	ltr.FPPatternID02
+	INSERT IGNORE INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
+    SELECT	tmpQue.FPPatternID02
 		,	CONST_TYPE_PATTERN02 AS FPPatternType
 		,	tmpHw.FPGroupHardwareID
 		,	CONST_TYPE_HARDWARE AS FPGroupType
 	FROM Temp_Hardware AS tmpHw
-		,	LATERAL (	SELECT tmpQue.FPPatternID02
-						FROM Temp_RawFingerprintQueue AS tmpQue
-						WHERE tmpQue.HardwareCode = tmpHw.HardwareCode
-						LIMIT 1
-        ) AS ltr;
+		INNER JOIN Temp_RawFingerprintQueue AS tmpQue ON tmpHw.HardwareCode = tmpQue.HardwareCode;
 	
     #===================================================================================
     #=======================Graphic DEAILS=============================================    
@@ -236,31 +228,15 @@ BEGIN
     SET tmpGp.FPGroupGraphicID = gp.FPGroupGraphicID
     WHERE tmpGp.FPGroupGraphicID IS NULL;
     
-    #===================INSERT Temp_FPPatternGroup========================================================
-	
-	INSERT INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
-    SELECT	ltr.FPPatternID01
-		,	CONST_TYPE_PATTERN01 AS FPPatternType
-		,	tmpGp.FPGroupGraphicID
-		,	CONST_TYPE_GRAPHIC AS FPGroupType
-	FROM Temp_Graphic AS tmpGp
-		,	LATERAL (	SELECT tmpQue.FPPatternID01
-						FROM Temp_RawFingerprintQueue AS tmpQue
-						WHERE tmpQue.GraphicCode = tmpGp.GraphicCode
-						LIMIT 1
-        ) AS ltr;    
+    #===================INSERT Temp_FPPatternGroup: Graphic map to FPPattern Only======================
         
-	INSERT INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
-    SELECT	ltr.FPPatternID02
+	INSERT IGNORE INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
+    SELECT	tmpQue.FPPatternID02
 		,	CONST_TYPE_PATTERN02 AS FPPatternType
 		,	tmpGp.FPGroupGraphicID
 		,	CONST_TYPE_GRAPHIC AS FPGroupType
 	FROM Temp_Graphic AS tmpGp
-		,	LATERAL (	SELECT tmpQue.FPPatternID02
-						FROM Temp_RawFingerprintQueue AS tmpQue
-						WHERE tmpQue.GraphicCode = tmpGp.GraphicCode
-						LIMIT 1
-        ) AS ltr;
+		INNER JOIN Temp_RawFingerprintQueue AS tmpQue ON tmpGp.GraphicCode = tmpQue.GraphicCode;
     
     #===================================================================================
     #=======================Audio DEAILS=============================================    
@@ -303,6 +279,23 @@ BEGIN
 		INNER JOIN DCS_DataCenter.FPGroupAudio AS ad ON ad.AudioCode = tmpAd.AudioCode
     SET tmpAd.FPGroupAudioID = ad.FPGroupAudioID
     WHERE tmpAd.FPGroupAudioID IS NULL;
+    
+	#===================INSERT Temp_FPPatternGroup========================================================	
+	INSERT IGNORE INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
+    SELECT	tmpQue.FPPatternID01
+		,	CONST_TYPE_PATTERN01 AS FPPatternType
+		,	tmpAd.FPGroupAudioID
+		,	CONST_TYPE_AUDIO AS FPGroupType
+	FROM Temp_Audio AS tmpAd
+		INNER JOIN Temp_RawFingerprintQueue AS tmpQue ON tmpAd.AudioCode = tmpQue.AudioCode;
+
+	INSERT INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
+    SELECT	tmpQue.FPPatternID02
+		,	CONST_TYPE_PATTERN02 AS FPPatternType
+		,	tmpAd.FPGroupAudioID
+		,	CONST_TYPE_AUDIO AS FPGroupType
+	FROM Temp_Audio AS tmpAd
+		INNER JOIN Temp_RawFingerprintQueue AS tmpQue ON tmpAd.AudioCode = tmpQue.AudioCode;
 	
     #===================================================================================
     #=======================Browser DEAILS=============================================    
@@ -346,32 +339,22 @@ BEGIN
     SET tmpBs.FPGroupBrowserID = bs.FPGroupBrowserID
     WHERE tmpBs.FPGroupBrowserID IS NULL;
     
-    #===================INSERT Temp_FPPatternGroup========================================================
-	
-	INSERT INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
-    SELECT	ltr.FPPatternID01
+    #===================INSERT Temp_FPPatternGroup========================================================	
+	INSERT IGNORE INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
+    SELECT	tmpQue.FPPatternID01
 		,	CONST_TYPE_PATTERN01 AS FPPatternType
 		,	tmpBs.FPGroupBrowserID
 		,	CONST_TYPE_BROWSER AS FPGroupType
 	FROM Temp_Browser AS tmpBs
-		,	LATERAL (	SELECT tmpQue.FPPatternID01
-						FROM Temp_RawFingerprintQueue AS tmpQue
-						WHERE tmpQue.BrowserCode = tmpBs.BrowserCode
-						LIMIT 1
-        ) AS ltr;    
-        
-	INSERT INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
-    SELECT	ltr.FPPatternID02
+		INNER JOIN Temp_RawFingerprintQueue AS tmpQue ON tmpBs.BrowserCode = tmpQue.BrowserCode;
+
+	INSERT IGNORE INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
+    SELECT	tmpQue.FPPatternID02
 		,	CONST_TYPE_PATTERN02 AS FPPatternType
 		,	tmpBs.FPGroupBrowserID
 		,	CONST_TYPE_BROWSER AS FPGroupType
 	FROM Temp_Browser AS tmpBs
-		,	LATERAL (	SELECT tmpQue.FPPatternID02
-						FROM Temp_RawFingerprintQueue AS tmpQue
-						WHERE tmpQue.BrowserCode = tmpBs.BrowserCode
-						LIMIT 1
-        ) AS ltr;
-    
+		INNER JOIN Temp_RawFingerprintQueue AS tmpQue ON tmpBs.BrowserCode = tmpQue.BrowserCode;
     #===================================================================================
     #=======================Preferences DEAILS=============================================    
     INSERT INTO Temp_Preferences(PreferencesCode, FPGroupPreferencesID, NewUsedDate)
@@ -414,58 +397,23 @@ BEGIN
     SET tmpPf.FPGroupPreferencesID = pf.FPGroupPreferencesID
     WHERE tmpPf.FPGroupPreferencesID IS NULL;
     
-    #===================INSERT Temp_FPPatternGroup========================================================
-	
-	INSERT INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
-    SELECT	ltr.FPPatternID01
-		,	CONST_TYPE_PATTERN01 AS FPPatternType
-		,	tmpPf.FPGroupPreferencesID
-		,	CONST_TYPE_PREFERENCES AS FPGroupType
-	FROM Temp_Preferences AS tmpPf
-		,	LATERAL (	SELECT tmpQue.FPPatternID01
-						FROM Temp_RawFingerprintQueue AS tmpQue
-						WHERE tmpQue.PreferencesCode = tmpPf.PreferencesCode
-						LIMIT 1
-        ) AS ltr;    
-        
-	INSERT INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
-    SELECT	ltr.FPPatternID02
-		,	CONST_TYPE_PATTERN02 AS FPPatternType
-		,	tmpPf.FPGroupPreferencesID
-		,	CONST_TYPE_PREFERENCES AS FPGroupType
-	FROM Temp_Preferences AS tmpPf
-		,	LATERAL (	SELECT tmpQue.FPPatternID02
-						FROM Temp_RawFingerprintQueue AS tmpQue
-						WHERE tmpQue.PreferencesCode = tmpPf.PreferencesCode
-						LIMIT 1
-        ) AS ltr;
-	   
-    
     #===================INSERT Temp_FPPatternGroup========================================================	
-	INSERT INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
-    SELECT	ltr.FPPatternID01
+	INSERT IGNORE INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
+    SELECT	tmpQue.FPPatternID01
 		,	CONST_TYPE_PATTERN01 AS FPPatternType
-		,	tmpAd.FPGroupAudioID
-		,	CONST_TYPE_AUDIO AS FPGroupType
-	FROM Temp_Audio AS tmpAd
-		,	LATERAL (	SELECT tmpQue.FPPatternID01
-						FROM Temp_RawFingerprintQueue AS tmpQue
-						WHERE tmpQue.AudioCode = tmpAd.AudioCode
-						LIMIT 1
-        ) AS ltr;    
-
-	INSERT INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
-    SELECT	ltr.FPPatternID02
+		,	tmpPf.FPGroupPreferencesID
+		,	CONST_TYPE_PREFERENCES AS FPGroupType
+	FROM Temp_Preferences AS tmpPf
+		INNER JOIN Temp_RawFingerprintQueue AS tmpQue ON tmpPf.PreferencesCode = tmpQue.PreferencesCode; 
+        
+	INSERT IGNORE INTO Temp_FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
+    SELECT	tmpQue.FPPatternID02
 		,	CONST_TYPE_PATTERN02 AS FPPatternType
-		,	tmpAd.FPGroupAudioID
-		,	CONST_TYPE_AUDIO AS FPGroupType
-	FROM Temp_Audio AS tmpAd
-		,	LATERAL (	SELECT tmpQue.FPPatternID02
-						FROM Temp_RawFingerprintQueue AS tmpQue
-						WHERE tmpQue.AudioCode = tmpAd.AudioCode
-						LIMIT 1
-        ) AS ltr;
-	
+		,	tmpPf.FPGroupPreferencesID
+		,	CONST_TYPE_PREFERENCES AS FPGroupType
+	FROM Temp_Preferences AS tmpPf
+		INNER JOIN Temp_RawFingerprintQueue AS tmpQue ON tmpPf.PreferencesCode = tmpQue.PreferencesCode; 	   
+    
     #=================FPPatternGroup=========================
     INSERT IGNORE INTO DCS_DataCenter.FPPatternGroup(FPPatternID, FPPatternType, FPGroupID, FPGroupType)
     SELECT	tmpPg.FPPatternID
