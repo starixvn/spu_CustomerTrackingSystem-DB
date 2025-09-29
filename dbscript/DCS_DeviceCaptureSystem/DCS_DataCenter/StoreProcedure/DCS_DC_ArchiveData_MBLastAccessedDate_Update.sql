@@ -17,22 +17,22 @@ BEGIN
 		- 20241204@Jonathan.Doan: Created [Redmine ID: #213401]
 		- 20250514@Jonathan.Doan: Update field value LastLoginTime [Redmine ID: #221973]
 		- 20250811@Jonathan.Doan: Update new rule [Redmine ID: #235457]
+		- 20250924@Jonathan.Doan: Cook MBAccountIP [Redmine ID: #239121]
 	  Param's Explanation (filtered by):
 	Example:
 	  CALL DCS_DC_ArchiveData_MBLastAccessedDate_Update(100);
 	*/
 	
-	DECLARE CONST_SYSTEMSETTING_MAXMBTRANSACTION07ID  	INT DEFAULT 30;
+	DECLARE CONST_DC_TRANSACTION07_TRANSID  		INT DEFAULT 30;
+    DECLARE CONST_DC_MAXMBTRANSACTION07IDCOMPLETED	INT	DEFAULT 4;
 	
-	DECLARE lv_MaxID				BIGINT UNSIGNED;
+	DECLARE lv_MaxTransID			BIGINT UNSIGNED;
+	DECLARE lv_MaxTransIDCompleted	BIGINT UNSIGNED;
 	DECLARE lv_CurrentDatetime 		DATETIME DEFAULT NOW();
 	
-	SELECT VValue
-	INTO lv_MaxID
-	FROM DCS_DataCenter.SystemSetting
-	WHERE ID = CONST_SYSTEMSETTING_MAXMBTRANSACTION07ID;
-	
-	
+    SET lv_MaxTransID = (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_DC_TRANSACTION07_TRANSID);
+	SET lv_MaxTransIDCompleted	= (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_DC_MAXMBTRANSACTION07IDCOMPLETED);
+    
 	/*******INIT TEMPORARY TABLE************/
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBTransaction07;
 	CREATE TEMPORARY TABLE Temp_MBTransaction07(
@@ -50,6 +50,8 @@ BEGIN
 		, MBUserSettingID	 			BIGINT UNSIGNED
 		, MBDeviceID					BIGINT UNSIGNED
 		, MBAssociationID				BIGINT UNSIGNED
+		, IPID							DECIMAL(50,0)
+		, IP							VARCHAR(50)
 	);
 	
 	DROP TEMPORARY TABLE IF EXISTS Temp_MBAccount;
@@ -105,9 +107,19 @@ BEGIN
 		  ID					BIGINT UNSIGNED PRIMARY KEY
 		, MaxLastAccessedDate   DATE
 	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_MBAccountIP;
+	CREATE TEMPORARY TABLE Temp_MBAccountIP(
+		  MBAccountID			BIGINT UNSIGNED
+		, IPID					DECIMAL(50,0)
+		, IP					VARCHAR(50)
+		, MaxLastAccessedDate   DATE
+		, IsUpdate			   	BIT DEFAULT 0
+        , PRIMARY KEY PK_Temp_MBAccountIP(MBAccountID, IPID, IP) 
+	);
 	
 	/*******GET DATA Transaction07********************/
-	INSERT INTO Temp_MBTransaction07(ID, MBAccountID, CreatedDate, TransTime, MBDeviceCodeMachineAccountID, MBDeviceCodeMachineMediaID, MBDeviceCodeTaggingID, MBDeviceModelID, MBOSID, MBUserSettingID, MBDeviceID)
+	INSERT INTO Temp_MBTransaction07(ID, MBAccountID, CreatedDate, TransTime, MBDeviceCodeMachineAccountID, MBDeviceCodeMachineMediaID, MBDeviceCodeTaggingID, MBDeviceModelID, MBOSID, MBUserSettingID, MBDeviceID, IPID, IP)
 	SELECT  trans.ID
 		,	IFNULL(trans.MBAccountID, 0) AS MBAccountID
 		,	trans.CreatedDate
@@ -119,9 +131,12 @@ BEGIN
 		,	IFNULL(trans.MBOSID, 0) AS MBOSID
 		,	IFNULL(trans.MBUserSettingID, 0) AS MBUserSettingID
 		,	IFNULL(trans.MBDeviceID, 0) AS MBDeviceID
+		,	trans.IPID
+		,	trans.IP
 	FROM DCS_DataCenter.MBTransaction07 AS trans
 		LEFT JOIN DCS_DataCenter.MBDeviceMapping AS dm ON dm.ID = trans.MBDeviceMappingID
-	WHERE trans.ID > lv_MaxID
+	WHERE trans.ID > lv_MaxTransID
+		AND trans.ID <= lv_MaxTransIDCompleted
 	LIMIT ip_BatchSize;
 
 	UPDATE Temp_MBTransaction07 AS tmp
@@ -203,6 +218,17 @@ BEGIN
 	FROM Temp_MBTransaction07
 	WHERE MBAssociationID IS NOT NULL
 	GROUP BY MBAssociationID;
+
+	INSERT INTO Temp_MBAccountIP(MBAccountID, IPID, IP, MaxLastAccessedDate)
+	SELECT	MBAccountID
+		,	IPID
+		,	IP
+		,	MAX(CreatedDate) AS MaxLastAccessedDate
+	FROM Temp_MBTransaction07
+	WHERE MBAccountID IS NOT NULL
+		AND IPID > 0
+	GROUP BY MBAccountID, IPID, IP;
+
 	
 	/*******UPDATE MBAccount.LastLoginTime********************/
 	UPDATE DCS_DataCenter.MBAccount AS acc
@@ -258,16 +284,33 @@ BEGIN
 	SET ass.LastAccessedDate = tmp.MaxLastAccessedDate
 	WHERE ass.LastAccessedDate < tmp.MaxLastAccessedDate;
 	
+	/*******INSERT OR UPDATE MBAccountIP.LastLoginTime********************/
+	UPDATE DCS_DataCenter.MBAccountIP AS ip
+		INNER JOIN Temp_MBAccountIP AS tmp ON tmp.MBAccountID = ip.MBAccountID
+										AND tmp.IPID = ip.IPID
+	SET 	ip.LastAccessedDate = tmp.MaxLastAccessedDate
+		,	tmp.IsUpdate = 1
+	WHERE ip.LastAccessedDate < tmp.MaxLastAccessedDate;
+    
+    INSERT IGNORE INTO DCS_DataCenter.MBAccountIP(MBAccountID, IPID, IP, LastAccessedDate, InsertedTime)
+    SELECT	MBAccountID
+		,	IPID
+		,	IP
+		,	MaxLastAccessedDate
+		,	lv_CurrentDatetime AS InsertedTime
+    FROM Temp_MBAccountIP
+    WHERE IsUpdate = 0;
+	
 	/*******UPDATE SystemSetting MaxTransID********************/
 	SELECT MAX(ID)
-	INTO lv_MaxID
+	INTO lv_MaxTransID
 	FROM Temp_MBTransaction07;
 	
-	IF lv_MaxID IS NOT NULL THEN
+	IF lv_MaxTransID IS NOT NULL THEN
 		UPDATE DCS_DataCenter.SystemSetting
-		SET VValue = lv_MaxID,
+		SET VValue = lv_MaxTransID,
 			UpdatedTime = lv_CurrentDatetime
-		WHERE ID = CONST_SYSTEMSETTING_MAXMBTRANSACTION07ID;
+		WHERE ID = CONST_DC_TRANSACTION07_TRANSID;
 	END IF;
 END$$
 DELIMITER ;
