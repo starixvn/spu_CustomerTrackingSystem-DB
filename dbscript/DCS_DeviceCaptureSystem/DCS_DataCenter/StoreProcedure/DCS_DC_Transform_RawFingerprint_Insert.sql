@@ -21,8 +21,8 @@ BEGIN
 		Example:
 	*/
     
-    DECLARE 	CONST_FPPATTERNTYPE01	INT DEFAULT 1;
-    DECLARE 	CONST_FPPATTERNTYPE02	INT DEFAULT 2;
+    DECLARE CONST_FPPATTERNTYPE01	INT DEFAULT 1;
+    DECLARE CONST_FPPATTERNTYPE02	INT DEFAULT 2;
     
     DECLARE CONST_TYPE_HARDWARE		INT DEFAULT 1;
     DECLARE CONST_TYPE_GRAPHIC		INT DEFAULT 2;
@@ -32,22 +32,22 @@ BEGIN
     
     DROP TEMPORARY TABLE IF EXISTS Temp_FPPattern;
 	CREATE TEMPORARY TABLE Temp_FPPattern(
-			ID							BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY 
-		,	FPPatternCode01				VARCHAR(32)
-		,	FPPatternCode02 			VARCHAR(32)
-        ,	FPPatternID01				BIGINT UNSIGNED
-		,	FPPatternID02 				BIGINT UNSIGNED
-        ,	HardwareCode			VARCHAR(32)
+			ID					BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY 
+		,	FPPatternCode01		VARCHAR(32)
+		,	FPPatternCode02 	VARCHAR(32)
+        ,	FPPatternID01		BIGINT UNSIGNED
+		,	FPPatternID02 		BIGINT UNSIGNED
+        ,	HardwareCode		VARCHAR(32)
         ,	GraphicCode			VARCHAR(32)
         ,	AudioCode			VARCHAR(32)
         ,	BrowserCode			VARCHAR(32)
         ,	PreferencesCode		VARCHAR(32)
         ,	HardwareDetails		LONGTEXT
         ,	GraphicDetails		LONGTEXT
-        ,	AudioDetails			LONGTEXT
+        ,	AudioDetails		LONGTEXT
         ,	BrowserDetails		LONGTEXT
         ,	PreferencesDetails	LONGTEXT
-		,	CreatedDate					DATE NOT NULL
+		,	CreatedDate			DATE NOT NULL
 		
 		,	INDEX IX_Temp_FPPattern_FPPatternCode01(FPPatternCode01)
         ,	INDEX IX_Temp_FPPattern_FPPatternCode02(FPPatternCode02)
@@ -96,7 +96,7 @@ BEGIN
                             
                             ,	CreatedDate			DATE			PATH "$.CreatedDate"
 				)
-		   ) AS js; 	
+		   ) AS js;
 
 	#======GET EXISTING Pattern============
 	INSERT INTO Temp_ExistingFPPattern(FPPatternID, FPPatternType, FPPatternCode, NewUsedDate)
@@ -132,8 +132,9 @@ BEGIN
 	FROM Temp_FPPattern AS tmpPt
 		LEFT JOIN Temp_ExistingFPPattern AS tmpEx ON tmpEx.FPPatternCode = tmpPt.FPPatternCode01
 	WHERE	tmpEx.FPPatternType IS NULL
+		AND tmpPt.FPPatternCode01 IS NOT NULL
 	ON DUPLICATE KEY UPDATE LastUsedDate = GREATEST(tmpPt.CreatedDate,LastUsedDate);
-	
+    
 	INSERT IGNORE INTO DCS_DataCenter.FPPattern(FPPatternType, FPPatternCode, CreatedDate, LastUsedDate)
 	SELECT DISTINCT CONST_FPPATTERNTYPE02 AS FPPatternType
 		,	tmpPt.FPPatternCode02 AS FPPatternCode
@@ -142,6 +143,7 @@ BEGIN
 	FROM Temp_FPPattern AS tmpPt
 		LEFT JOIN Temp_ExistingFPPattern AS tmpEx ON tmpEx.FPPatternCode = tmpPt.FPPatternCode02
 	WHERE	tmpEx.FPPatternType IS NULL
+		AND tmpPt.FPPatternCode02 IS NOT NULL
 	ON DUPLICATE KEY UPDATE LastUsedDate = GREATEST(tmpPt.CreatedDate,LastUsedDate);   	
 
    #======INSERT FPPatternGroupQueue=============================
@@ -183,7 +185,6 @@ BEGIN
             OR tmpPt.AudioCode IS NOT NULL
             OR tmpPt.BrowserCode IS NOT NULL
             OR tmpPt.PreferencesCode IS NOT NULL);
-  
 END$$
 
 DELIMITER ;

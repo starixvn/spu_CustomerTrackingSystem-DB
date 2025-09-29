@@ -347,7 +347,7 @@ BEGIN
 		SELECT 	(CASE WHEN rb.DeviceCode = ts.DeviceCode THEN 1 ELSE 0 END) AS DeviceID
 			, 	ts.DeviceCode AS RecoverCode
 			, 	CASE 
-					WHEN ts.FPPatternID02 = rb.FPPatternID02 
+					WHEN ts.FPPatternID02 = rb.FPPatternID02 AND rb.FPPatternID02 > 0
 						THEN CONST_DEVICESTATUS_OLD_FPPATTERN02
 					WHEN ts.FPPatternID01 = rb.FPPatternID01 
 						THEN CONST_DEVICESTATUS_OLD_FPPATTERN01
