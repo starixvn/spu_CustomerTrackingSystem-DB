@@ -27,7 +27,7 @@ CREATE TABLE `MBLoginTransactionSummary` (
 	,	KEY `IX_MBLoginTransactionSummary_MBAccountID` (`MBAccountID`)
 	,	KEY `IX_MBLoginTransactionSummary_OSType` (`OSType`)
 ) ENGINE=InnoDB
-PARTITION BY RANGE (yearweek(CreatedDate,0)) (
+PARTITION BY RANGE (yearweek(TransDate,0)) (
   PARTITION pw202527 VALUES LESS THAN (202528) ENGINE = InnoDB,
   PARTITION pw202528 VALUES LESS THAN (202529) ENGINE = InnoDB,
   PARTITION pw202529 VALUES LESS THAN (202530) ENGINE = InnoDB,
