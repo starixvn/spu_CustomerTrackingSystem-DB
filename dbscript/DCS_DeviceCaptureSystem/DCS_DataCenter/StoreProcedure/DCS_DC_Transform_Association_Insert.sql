@@ -20,8 +20,8 @@ BEGIN
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DC_Transform_Association_Insert('[{"DeviceID": 4, "AccountID": 1, "FP_DeviceID": 3000001, "CreatedDate": "2023-11-17 00:00:00.000000", "CreatedTime": "2023-11-17 10:33:46.527500", "SubscriberID": 2}]');
-			CALL DCS_DC_Transform_Association_Insert('[{"DeviceID": 6, "AccountID": 300016, "FP_DeviceID": null, "CreatedDate": "2023-11-17 00:00:00.000000", "CreatedTime": "2023-11-17 10:33:46.527500", "SubscriberID": 2}]');
+			CALL DCS_DC_Transform_Association_Insert('[{"DeviceID": 4, "AccountID": 1, "CreatedDate": "2023-11-17 00:00:00.000000", "CreatedTime": "2023-11-17 10:33:46.527500", "SubscriberID": 2}]');
+			CALL DCS_DC_Transform_Association_Insert('[{"DeviceID": 6, "AccountID": 300016, "CreatedDate": "2023-11-17 00:00:00.000000", "CreatedTime": "2023-11-17 10:33:46.527500", "SubscriberID": 2}]');
         select * from Association;
 */
     DECLARE lv_CreatedDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
@@ -32,19 +32,15 @@ BEGIN
 			ID								INT UNSIGNED		NOT NULL AUTO_INCREMENT PRIMARY KEY
         ,	AccountID						BIGINT UNSIGNED		NOT NULL
         ,	DeviceID						BIGINT UNSIGNED		DEFAULT 0
-        ,	FP_DeviceID						BIGINT UNSIGNED		DEFAULT 0
         ,	SubscriberID					BIGINT UNSIGNED		
         ,	CreatedTime						TIMESTAMP(4)		
         ,	CreatedDate						DATETIME			
 		,	IsNewRecordAssociation			TINYINT		 		DEFAULT 1
-		,	IsNewRecordFPAssociation		TINYINT		 		DEFAULT 1
-		,	IsNewRecordMapping				TINYINT		 		DEFAULT 1
     );
     
-    INSERT INTO Temp_AssociationInsert(AccountID, DeviceID, FP_DeviceID, SubscriberID, CreatedTime, CreatedDate)
+    INSERT INTO Temp_AssociationInsert(AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate)
 	SELECT 	tmp.AccountID
 		,	IFNULL(tmp.DeviceID, 0) AS DeviceID
-		,	IFNULL(tmp.FP_DeviceID, 0) AS FP_DeviceID
 		,	MIN(tmp.SubscriberID) AS SubscriberID
 		,	MIN(tmp.CreatedTime) AS CreatedTime
 		,	MIN(tmp.CreatedDate) AS CreatedDate
@@ -53,19 +49,17 @@ BEGIN
 			 "$[*]" COLUMNS(
 							AccountID			BIGINT UNSIGNED	PATH "$.AccountID"
 						,	DeviceID			BIGINT UNSIGNED PATH "$.DeviceID"
-						,	FP_DeviceID			BIGINT UNSIGNED PATH "$.FP_DeviceID"
 						,	SubscriberID		INT 			PATH "$.SubscriberID"
 						,	CreatedTime			TIMESTAMP(4) 	PATH "$.CreatedTime"
 						,	CreatedDate			DATETIME	 	PATH "$.CreatedDate"
 					)
 		) AS tmp
 	WHERE tmp.AccountID IS NOT NULL
-	GROUP BY tmp.AccountID, tmp.DeviceID, FP_DeviceID;
+	GROUP BY tmp.AccountID, tmp.DeviceID;
     
     /* === Add index === */
 	ALTER TABLE Temp_AssociationInsert
-	ADD INDEX IX_Temp_AssociationInsert_AccountID_DeviceID (AccountID, DeviceID),
-	ADD INDEX IX_Temp_AssociationInsert_AccountID_FP_DeviceID (AccountID, FP_DeviceID);
+	ADD INDEX IX_Temp_AssociationInsert_AccountID_DeviceID (AccountID, DeviceID);
     
     UPDATE Temp_AssociationInsert AS tmp
 		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID
@@ -82,39 +76,6 @@ BEGIN
 	FROM Temp_AssociationInsert
     WHERE IsNewRecordAssociation = 1
 		AND DeviceID > 0;
-    
-    /* === Insert into FP_AssociationMapping === */
-    UPDATE Temp_AssociationInsert AS tmp
-		INNER JOIN DCS_DataCenter.FP_Association AS ass ON ass.AccountID = tmp.AccountID
-														AND ass.DeviceID = (CASE WHEN tmp.FP_DeviceID = 0 THEN tmp.DeviceID ELSE tmp.FP_DeviceID END)
-    SET tmp.IsNewRecordFPAssociation = 0;
-    
-	INSERT IGNORE INTO DCS_DataCenter.FP_Association(AccountID, DeviceID, SubscriberID, CreatedTime, CreatedDate, InsertedTime)
-	SELECT	AccountID
-		,	(CASE WHEN FP_DeviceID = 0 THEN DeviceID ELSE FP_DeviceID END) AS DeviceID
-		,	SubscriberID
-		,	CreatedTime
-		,	CreatedDate
-		,	lv_CreatedDate AS InsertedTime
-	FROM Temp_AssociationInsert
-    WHERE IsNewRecordFPAssociation = 1
-		AND (FP_DeviceID > 0 OR DeviceID > 0);
-    
-    /* === Insert into FP_AssociationMapping === */
-    UPDATE Temp_AssociationInsert AS tmp
-		INNER JOIN DCS_DataCenter.FP_AssociationMapping AS ass ON ass.AccountID = tmp.AccountID 
-															AND ass.DeviceID = tmp.DeviceID
-															AND ass.FP_DeviceID = tmp.FP_DeviceID
-    SET tmp.IsNewRecordMapping = 0;
-    
-	INSERT IGNORE INTO DCS_DataCenter.FP_AssociationMapping(AccountID, DeviceID, FP_DeviceID, SubscriberID)
-	SELECT	AccountID
-		,	DeviceID
-		,	FP_DeviceID
-		,	SubscriberID
-	FROM Temp_AssociationInsert
-    WHERE IsNewRecordMapping = 1
-		AND (FP_DeviceID > 0 OR DeviceID > 0);
 END$$
 
 DELIMITER ;
