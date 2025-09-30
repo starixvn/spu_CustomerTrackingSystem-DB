@@ -21,6 +21,7 @@ sp: BEGIN
             -   20211214@Aries.Nguyen: Enrich the information on customer profile [Redmine ID: #165105]
 			-   20220325@Aries.Nguyen: Refactor the Sum data job of transaction statistic [Redmine ID: #170525]
 			-   20220415@Aries.Nguyen: Fix bug return op_DateScan incorrect [Redmine ID: #170525]
+            -   20250930@Jonathan.Doan: Update DeviceStatus 4,5 [Redmine ID: #236716]
 
 	    Param's Explanation (filtered by):
         
