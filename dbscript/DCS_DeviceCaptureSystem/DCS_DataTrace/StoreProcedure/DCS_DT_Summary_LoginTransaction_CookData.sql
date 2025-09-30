@@ -19,6 +19,7 @@ BEGIN
 		- 20240924@Jonathan.Doan: Add table LoginTransactionSummaryByDevice [Redmine ID: #211161]
 		- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
 		- 20250327@Jonathan.Doan: HF - Missing transaction data when retrieving from table Transaction07 [Redmine ID: #222043]
+        - 20250909@Jonathan.Doan: Remove FP code [Redmine ID: #236716]
 		
 	Param's Explanation (filtered by):
 
@@ -29,6 +30,7 @@ BEGIN
     DECLARE CONST_DEVICETRANSFORM_MAXTRANSACTION07IDCOMPLETED	INT			DEFAULT 3;
     DECLARE CONST_COOKDATA_TRANSACTION07_TRANSID 				INT 		DEFAULT 5;
     DECLARE CONST_COOKDATA_BYDEVICE_LISTSUBID 					INT 		DEFAULT 7;
+    
     DECLARE CONST_FLAGGEDGROUPID_INVALIDBROWSER					SMALLINT 	DEFAULT 2;
     DECLARE CONST_FLAGGEDGROUPID_BOTTRANS 						SMALLINT 	DEFAULT 3;
     
@@ -46,7 +48,6 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTrans;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransByAccount;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransByFlagged;
-	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransByBrowser;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransByDevice;
 	DROP TEMPORARY TABLE IF EXISTS Temp_SubscriberID;
     
@@ -95,18 +96,6 @@ BEGIN
 		, 	TransDate					DATE NOT NULL
 		, 	Flagged						SMALLINT UNSIGNED NOT NULL
 		, 	TotalTrans					INT UNSIGNED DEFAULT 0
-		, 	IsUpdate					BIT DEFAULT 0
-	);
-    
-	CREATE TEMPORARY TABLE Temp_TotalTransByBrowser(
-			ID							INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
-		, 	TransDate					DATE NOT NULL
-		, 	BrowserID					BIGINT UNSIGNED NOT NULL
-		, 	OSID						BIGINT UNSIGNED NOT NULL
-		, 	DeviceTypeID				BIGINT UNSIGNED NOT NULL
-		, 	TotalTrans					INT UNSIGNED DEFAULT 0
-		, 	TotalInvalidBrowers			INT UNSIGNED DEFAULT 0
-		, 	TotalBotTrans				INT UNSIGNED DEFAULT 0
 		, 	IsUpdate					BIT DEFAULT 0
 	);
     
@@ -178,8 +167,8 @@ BEGIN
 											AND tl.DeviceID = tmp.DeviceID
 											AND tl.Flagged = tmp.Flagged
 	SET tl.TotalTrans 			= tl.TotalTrans + tmp.TotalTrans,
-		tl.FirstLoginTransTime 	= tmp.FirstLoginTransTime,
-		tl.LastLoginTransTime 	= tmp.LastLoginTransTime,
+		tl.FirstLoginTransTime	= LEAST(tl.FirstLoginTransTime, tmp.FirstLoginTransTime),
+		tl.LastLoginTransTime	= GREATEST(tl.LastLoginTransTime, tmp.LastLoginTransTime),
 		tl.ModifiedTime 		= lv_CurrentDatetime,
 		tmp.IsUpdate 			= 1;
     

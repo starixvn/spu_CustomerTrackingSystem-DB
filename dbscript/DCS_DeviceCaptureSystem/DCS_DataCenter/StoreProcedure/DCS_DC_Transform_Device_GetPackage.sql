@@ -21,6 +21,7 @@ BEGIN
             - 20240403@Jonathan.Doan: The same AccountID must be in the same batch [Redmine ID: #202878]
             - 20240503@Jonathan.Doan: HF Division by 0 [Redmine ID: #204757]
 			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
+            - 20250909@Jonathan.Doan: Remove FP code [Redmine ID: #236716]
 
 	    Param's Explanation (filtered by):
 			CALL DCS_DC_Transform_Device_GetPackage(100, 2);

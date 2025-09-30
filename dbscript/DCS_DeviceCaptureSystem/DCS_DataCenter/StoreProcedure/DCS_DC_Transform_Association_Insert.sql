@@ -16,6 +16,7 @@ BEGIN
 		Revisions:
 			- 20231128@Jonathan.Doan: Created [Redmine ID: #196570]
 			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
+            - 20250909@Jonathan.Doan: Remove FP code [Redmine ID: #236716]
             
 		Param's Explanation (filtered by):
 			
