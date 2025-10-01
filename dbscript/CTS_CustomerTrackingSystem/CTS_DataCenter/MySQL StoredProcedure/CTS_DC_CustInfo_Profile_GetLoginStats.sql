@@ -39,6 +39,9 @@ BEGIN
     DECLARE lv_Count_MBAppDevice								INT;
     DECLARE lv_Count_MBAppBot_Trans								INT;
     DECLARE lv_Count_MBAppInvalidBrowser_Trans					INT;
+
+	DECLARE lv_CustInsertedTime									DATETIME(4);
+	DECLARE lv_CustInsertedDate									DATE;
     
     DECLARE lv_IsExcludeSubscriber			BIT DEFAULT(0); 	
     DECLARE lv_SubSourceID_DirectAPI		TINYINT DEFAULT(1);
@@ -48,7 +51,14 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_AccountID(
 			AccountID	BIGINT UNSIGNED PRIMARY KEY
 	);	
+
+	SELECT 	IFNULL(cus.InsertedTime, cus.CreatedDate)
+	INTO 	lv_CustInsertedTime
+	FROM CTS_DataCenter.CTSCustomer AS cus
+	WHERE cus.CTSCustID = ip_CTSCustID;
 	
+	SET lv_CustInsertedDate = DATE(lv_CustInsertedTime);
+
     SELECT 1
     INTO lv_IsExcludeSubscriber
     FROM CTS_DataCenter.CTSCustomer AS cus
@@ -141,35 +151,58 @@ BEGIN
 			AND TransDate BETWEEN ip_FromDate AND ip_ToDate;
         /* END Correct Total Trans */
 
-		/********* Get MB Account login info *********/
+		/********* Get MB Account login info from SUM table *********/
 		CALL CTS_DataCenter.CTSDCS_DC_CustInfo_AccountCustMapping(ip_CTSCustID);
 		
 		SELECT  COUNT(1)
 		INTO 	lv_Count_MBAppIP
 		FROM Temp_CustDCSMBAccount AS tmp
 			INNER JOIN DCS_DataCenter.MBAccountIP AS ip ON ip.MBAccountID = tmp.MBAccountID
-		WHERE ip.LastAccessedDate BETWEEN GREATEST(ip_FromDate, tmp.CustInsertedDate) AND ip_ToDate;
+		WHERE ip.LastAccessedDate > GREATEST(ip_FromDate, lv_CustInsertedDate) AND ip.LastAccessedDate <= ip_ToDate;
 
 		SELECT  COUNT(1)
 		INTO 	lv_Count_MBAppDevice
 		FROM Temp_CustDCSMBAccount AS tmp
 			INNER JOIN DCS_DataCenter.MBAssociation AS dv ON dv.MBAccountID = tmp.MBAccountID
-		WHERE dv.LastAccessedDate BETWEEN GREATEST(ip_FromDate, tmp.CustInsertedDate) AND ip_ToDate; 
+		WHERE dv.LastAccessedDate > GREATEST(ip_FromDate, lv_CustInsertedDate) AND dv.LastAccessedDate <= ip_ToDate; 
 		
-		SELECT  SUM(CASE WHEN lg.FlaggedGroupID = 2 THEN lg.TotalTrans ELSE 0 END) AS Invalid
-			,	SUM(CASE WHEN lg.FlaggedGroupID = 3 THEN lg.TotalTrans ELSE 0 END) AS Bot
+		SELECT  IFNULL(SUM(CASE WHEN lg.FlaggedGroupID = 2 THEN lg.TotalTrans ELSE 0 END),0) AS Invalid
+			,	IFNULL(SUM(CASE WHEN lg.FlaggedGroupID = 3 THEN lg.TotalTrans ELSE 0 END),0) AS Bot
 		INTO 	lv_Count_MBAppInvalidBrowser_Trans
 			,	lv_Count_MBAppBot_Trans
 		FROM Temp_CustDCSMBAccount AS tmp
 			INNER JOIN DCS_DataTrace.MBLoginTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
 		WHERE lg.TransDate BETWEEN ip_FromDate AND ip_ToDate; 
         
-        SELECT  SUM(TotalTrans)
+        SELECT  IFNULL(SUM(TotalTrans),0)
 		INTO 	lv_Count_MBAppLogin
 		FROM Temp_CustDCSMBAccount AS tmp 
 			INNER JOIN DCS_DataTrace.MBLoginTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
-		WHERE lg.TransDate BETWEEN GREATEST(ip_FromDate, tmp.CustInsertedDate) AND ip_ToDate;
+		WHERE lg.TransDate > GREATEST(ip_FromDate, lv_CustInsertedDate) AND lg.TransDate <= ip_ToDate;
 
+		/********* Get more MB Account login info from MBTransaction07 *********/
+		IF (ip_FromDate <= lv_CustInsertedDate)
+		THEN
+			SET lv_Count_MBAppIP = lv_Count_MBAppIP + (
+			SELECT COUNT(DISTINCT ts.IPID)
+			FROM Temp_CustDCSMBAccount AS tmp
+				INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
+			WHERE ts.TransTime >= lv_CustInsertedTime AND ts.TransTime < DATE_ADD(lv_CustInsertedDate, INTERVAL 1 DAY) AND IFNULL(ts.IPID, 0) > 0);
+
+			SET lv_Count_MBAppDevice = lv_Count_MBAppDevice + (
+			SELECT COUNT(DISTINCT ts.MBDeviceID)
+			FROM Temp_CustDCSMBAccount AS tmp
+				INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
+			WHERE ts.TransTime >= lv_CustInsertedTime AND ts.TransTime < DATE_ADD(lv_CustInsertedDate, INTERVAL 1 DAY) AND IFNULL(ts.MBDeviceID, 0) > 0);
+
+			SET lv_Count_MBAppLogin = lv_Count_MBAppLogin + (
+			SELECT COUNT(DISTINCT ts.ID)
+			FROM Temp_CustDCSMBAccount AS tmp
+				INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
+			WHERE ts.TransTime >= lv_CustInsertedTime AND ts.TransTime < DATE_ADD(lv_CustInsertedDate, INTERVAL 1 DAY));
+
+		END IF;
+		
 		SELECT 	IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0)				AS BotTrans
 			,	ROUND((IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0))/(IFNULL(lv_Count_Login,0) + IFNULL(lv_Count_MBAppLogin,0))*100,2) AS BotTransPercentage
 			,	IFNULL(lv_Count_InvalidBrowser_Trans,0) + IFNULL(lv_Count_MBAppInvalidBrowser_Trans,0) AS InvalidBrowser

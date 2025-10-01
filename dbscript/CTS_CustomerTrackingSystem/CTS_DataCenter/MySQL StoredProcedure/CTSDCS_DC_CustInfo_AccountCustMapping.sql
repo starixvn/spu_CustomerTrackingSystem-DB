@@ -27,7 +27,6 @@ BEGIN
         ,   UserName2			VARCHAR(50) CHARACTER SET 'UTF8MB4' COLLATE 'UTF8MB4_UNICODE_CI'
         ,   SubscriberID		INT
         ,   SubscriberPrefix	VARCHAR(30)
-        ,   CustInsertedDate	DATE
     );
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustDCSMBAccount;
@@ -35,38 +34,34 @@ BEGIN
 			CTSCustID			BIGINT UNSIGNED
         ,	MBAccountID			BIGINT UNSIGNED
         ,	SubscriberID		INT
-        ,	CustInsertedDate	DATE
         ,	LastLoginTime		DATETIME(4)
         ,	PRIMARY KEY (CTSCustID, MBAccountID)
     );
     
-    INSERT IGNORE INTO Temp_Customer (CTSCustID, UserName, UserName2, SubscriberID, SubscriberPrefix, CustInsertedDate)
+    INSERT IGNORE INTO Temp_Customer (CTSCustID, UserName, UserName2, SubscriberID, SubscriberPrefix)
     SELECT	cus.CTSCustID
         ,	cus.UserName
         ,	cus.UserName2
         ,	cus.SubscriberID
         ,	sub.SubscriberPrefix
-        ,	CAST(IFNULL(cus.InsertedTime, cus.CreatedDate) AS DATE) AS CustInsertedDate
     FROM JSON_TABLE(REPLACE(JSON_ARRAY(ip_CTSCustIDs), ',', '","'), 
 						'$[*]' COLUMNS (CTSCustID BIGINT UNSIGNED PATH '$')
 					) AS tmp
         INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = tmp.CTSCustID
         INNER JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = cus.SubscriberID;
 
-    INSERT INTO Temp_CustDCSMBAccount(CTSCustID, MBAccountID, SubscriberID, CustInsertedDate, LastLoginTime)
+    INSERT INTO Temp_CustDCSMBAccount(CTSCustID, MBAccountID, SubscriberID, LastLoginTime)
     SELECT	tmp.CTSCustID
         ,	acc.ID AS MBAccountID
         ,	tmp.SubscriberID
-        ,	tmp.CustInsertedDate
         ,	acc.LastLoginTime
     FROM Temp_Customer AS tmp
         INNER JOIN DCS_DataCenter.MBAccount AS acc ON acc.SubscriberID = tmp.SubscriberID AND CONCAT(tmp.SubscriberPrefix, acc.LoginName) = tmp.UserName2;
     
-    INSERT INTO Temp_CustDCSMBAccount(CTSCustID, MBAccountID, SubscriberID, CustInsertedDate, LastLoginTime)
+    INSERT INTO Temp_CustDCSMBAccount(CTSCustID, MBAccountID, SubscriberID, LastLoginTime)
     SELECT	tmp.CTSCustID
         ,	acc.ID AS MBAccountID
         ,	tmp.SubscriberID
-        ,	tmp.CustInsertedDate
         ,	acc.LastLoginTime
     FROM Temp_Customer AS tmp
         INNER JOIN DCS_DataCenter.MBAccount AS acc ON acc.SubscriberID = tmp.SubscriberID AND acc.LoginName = tmp.UserName;
