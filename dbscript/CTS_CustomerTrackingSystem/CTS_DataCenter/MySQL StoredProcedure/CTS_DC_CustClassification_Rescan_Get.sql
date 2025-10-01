@@ -27,6 +27,7 @@ sp: BEGIN
             - 20241030@Thomas.Nguyen: 	CC Agent - Change source tables when checking affected PA from Upline [RedmineID: #185799]
 			- 20241210@Casey.Huynh:		New Robot AI, Bot Login Pattern [Redmine ID: #214655]
             - 20250909@Thomas.Nguyen:	Rescan for CC 2900/2901 [Redmine ID: #237405]
+            - 20250922@Logan.Nguyen:    Adjust Performance Calculation Logic for Initial Smart - CC2700 - Initial Smart (Losing) - CC2701 [Redmine ID: #239118]
 
         Param's Explanation:
 
@@ -39,8 +40,6 @@ sp: BEGIN
     DECLARE	CONST_CATEID_BOTLOGINPATTERN			INT;
     DECLARE	CONST_CATEID_EARLYWARNING				INT;
     DECLARE	CONST_CATEID_INITIALGB					INT;
-    DECLARE CONST_CATEID_INITIALSMART				INT;
-    DECLARE CONST_CATEID_INITIALSMART_B				INT DEFAULT 30400;
     DECLARE	CONST_PARENTID_PA						INT;
     DECLARE	CONST_AGENCY_CATEID_ROBOT				INT;
     DECLARE	CONST_AGENCY_CATEID_ROBOTLOSING			INT;
@@ -70,7 +69,6 @@ sp: BEGIN
     SET CONST_CATEID_BOTLOGINPATTERN				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_BOTLOGINPATTERN');
     SET CONST_CATEID_EARLYWARNING	 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_EARLYWARNING');
     SET CONST_CATEID_INITIALGB	 					= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALGB');
-    SET CONST_CATEID_INITIALSMART	 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_INITIALSMART');
     SET CONST_PARENTID_PA 							= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_AGENCY_CATEID_ROBOT	 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOT');
     SET CONST_AGENCY_CATEID_ROBOTLOSING	 			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_CATEID_ROBOTLOSING');
@@ -490,39 +488,12 @@ sp: BEGIN
 					  FROM Temp_CustCategory AS cc 
 					  WHERE cc.CustID = tmp.CustID 
 						AND cc.CategoryID = CONST_CATEID_INITIALGB);
-	
-    /***********************Check Initial Smart****************************/
-	INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID)
-    SELECT tmp.CTSCustID					AS CTSCustID
-		,	tmp.CustID						AS CustID
-        ,	CONST_CATEID_INITIALSMART 		AS CategoryID
-        , 	NULL 							AS TVSReasonID
-        ,	tmp.RoleID 						AS RoleID
-        ,	tmp.SubscriberID				AS SubscriberID
-		,	tmp.IsLicensee					AS IsLicensee
-        ,	NULL 							AS Remark
-        ,	NULL 							AS CreatedBy
-        ,	1 								AS IsMarkedDirectly
-		,	0 								AS IsFromTVS
-        ,	1 								AS IsFromTW
-        ,   0 								AS IsFromCTS
-        ,	0 								AS IsFromAI
-        ,	0 								AS IsFromImperva
-        , 	s.InsertedTime 					AS CreatedDate
-        ,	s.InsertedTime 					AS LastModifiedDate
-        ,   CONST_INPUTFLOWID_POTENTIALPA	AS InputFlowID
-    FROM  Temp_CustInfo AS tmp
-		INNER JOIN CTS_DataCenter.Customer_InitialSmart AS s ON s.CustID = tmp.CustID
-	WHERE NOT EXISTS (SELECT 1 
-					  FROM Temp_CustCategory AS cc 
-					  WHERE cc.CustID = tmp.CustID 
-						AND cc.CategoryID = CONST_CATEID_INITIALSMART);
-
+    
     /***********************Check Initial Smart (B)****************************/
     INSERT IGNORE INTO Temp_PotentialCategory(CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, CreatedDate, LastModifiedDate, InputFlowID, SportType)
     SELECT tmp.CTSCustID					AS CTSCustID
 		,	tmp.CustID						AS CustID
-        ,	CONST_CATEID_INITIALSMART_B 	AS CategoryID
+        ,	ccs.CategoryID                  AS CategoryID
         , 	NULL 							AS TVSReasonID
         ,	tmp.RoleID 						AS RoleID
         ,	tmp.SubscriberID				AS SubscriberID
@@ -538,13 +509,16 @@ sp: BEGIN
         , 	s.InsertedTime 					AS CreatedDate
         ,	s.InsertedTime 					AS LastModifiedDate
         ,   CONST_INPUTFLOWID_POTENTIALPA	AS InputFlowID
-        ,   NULL                     AS SportType
+        ,   NULL                            AS SportType
     FROM  Temp_CustInfo AS tmp
 		INNER JOIN CTS_DataCenter.Customer_InitialSmart_BySport AS s ON s.CustID = tmp.CustID
+        INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.SportType = s.SportType
+        INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON ccs.CategoryID = cate.CategoryID
 	WHERE NOT EXISTS (SELECT 1 
 					  FROM Temp_CustCategory AS cc 
 					  WHERE cc.CustID = tmp.CustID 
-						AND cc.CategoryID = CONST_CATEID_INITIALSMART_B);
+						AND cc.CategoryID = ccs.CategoryID)
+        AND cate.IsPAProbation = 0;
 
     /***********************Rescan Potential Category****************************/        
     INSERT IGNORE INTO Temp_CustCategory (CTSCustID, CustID, CategoryID, TVSReasonID, RoleID, SubscriberID, IsLicensee, Remark, CreatedBy, IsMarkedDirectly, IsFromTVS, IsFromTW, IsFromCTS, IsFromAI, IsFromImperva, SportType, CreatedDate, LastModifiedDate, InputFlowID)       
