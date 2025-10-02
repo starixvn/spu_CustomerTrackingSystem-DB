@@ -99,7 +99,7 @@ BEGIN
 		   ) AS js;
 
 	#======GET EXISTING Pattern============
-	INSERT INTO Temp_ExistingFPPattern(FPPatternID, FPPatternType, FPPatternCode, NewUsedDate)
+	INSERT IGNORE INTO Temp_ExistingFPPattern(FPPatternID, FPPatternType, FPPatternCode, NewUsedDate)
 	SELECT 	fp.FPPatternID
 		,	fp.FPPatternType
         ,	fp.FPPatternCode
@@ -108,7 +108,7 @@ BEGIN
 		INNER JOIN DCS_DataCenter.FPPattern AS fp ON fp.FPPatternType = CONST_FPPATTERNTYPE01 AND fp.FPPatternCode = tmpFp.FPPatternCode01
 	WHERE tmpFp.FPPatternCode01 IS NOT NULL ;        
 
-	INSERT INTO Temp_ExistingFPPattern(FPPatternID, FPPatternType, FPPatternCode, NewUsedDate)
+	INSERT IGNORE INTO Temp_ExistingFPPattern(FPPatternID, FPPatternType, FPPatternCode, NewUsedDate)
 	SELECT 	fp.FPPatternID
 		,	fp.FPPatternType
         ,	fp.FPPatternCode
