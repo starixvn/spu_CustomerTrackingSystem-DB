@@ -181,27 +181,24 @@ BEGIN
 		WHERE lg.TransDate > GREATEST(ip_FromDate, lv_CustInsertedDate) AND lg.TransDate <= ip_ToDate;
 
 		/********* Get more MB Account login info from MBTransaction07 *********/
-		IF (ip_FromDate <= lv_CustInsertedDate)
-		THEN
-			SET lv_Count_MBAppIP = lv_Count_MBAppIP + (
-			SELECT COUNT(DISTINCT ts.IPID)
-			FROM Temp_CustDCSMBAccount AS tmp
-				INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
-			WHERE ts.TransTime >= lv_CustInsertedTime AND ts.TransTime < DATE_ADD(lv_CustInsertedDate, INTERVAL 1 DAY) AND IFNULL(ts.IPID, 0) > 0);
 
-			SET lv_Count_MBAppDevice = lv_Count_MBAppDevice + (
-			SELECT COUNT(DISTINCT ts.MBDeviceID)
-			FROM Temp_CustDCSMBAccount AS tmp
-				INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
-			WHERE ts.TransTime >= lv_CustInsertedTime AND ts.TransTime < DATE_ADD(lv_CustInsertedDate, INTERVAL 1 DAY) AND IFNULL(ts.MBDeviceID, 0) > 0);
+		SET lv_Count_MBAppIP = lv_Count_MBAppIP + (
+		SELECT COUNT(DISTINCT ts.IPID)
+		FROM Temp_CustDCSMBAccount AS tmp
+			INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
+		WHERE ts.TransTime >= GREATEST(ip_FromDate, lv_CustInsertedTime) AND ts.TransTime < DATE_ADD(GREATEST(ip_FromDate, lv_CustInsertedDate), INTERVAL 1 DAY) AND IFNULL(ts.IPID, 0) > 0);
 
-			SET lv_Count_MBAppLogin = lv_Count_MBAppLogin + (
-			SELECT COUNT(DISTINCT ts.ID)
-			FROM Temp_CustDCSMBAccount AS tmp
-				INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
-			WHERE ts.TransTime >= lv_CustInsertedTime AND ts.TransTime < DATE_ADD(lv_CustInsertedDate, INTERVAL 1 DAY));
+		SET lv_Count_MBAppDevice = lv_Count_MBAppDevice + (
+		SELECT COUNT(DISTINCT ts.MBDeviceID)
+		FROM Temp_CustDCSMBAccount AS tmp
+			INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
+		WHERE ts.TransTime >= GREATEST(ip_FromDate, lv_CustInsertedTime) AND ts.TransTime < DATE_ADD(GREATEST(ip_FromDate, lv_CustInsertedDate), INTERVAL 1 DAY) AND IFNULL(ts.MBDeviceID, 0) > 0);
 
-		END IF;
+		SET lv_Count_MBAppLogin = lv_Count_MBAppLogin + (
+		SELECT COUNT(DISTINCT ts.ID)
+		FROM Temp_CustDCSMBAccount AS tmp
+			INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
+		WHERE ts.TransTime >= GREATEST(ip_FromDate, lv_CustInsertedTime) AND ts.TransTime < DATE_ADD(GREATEST(ip_FromDate, lv_CustInsertedDate), INTERVAL 1 DAY));
 		
 		SELECT 	IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0)				AS BotTrans
 			,	ROUND((IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0))/(IFNULL(lv_Count_Login,0) + IFNULL(lv_Count_MBAppLogin,0))*100,2) AS BotTransPercentage
