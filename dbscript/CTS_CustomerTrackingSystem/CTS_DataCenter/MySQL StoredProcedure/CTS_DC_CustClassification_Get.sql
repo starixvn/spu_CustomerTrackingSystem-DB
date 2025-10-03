@@ -36,6 +36,7 @@ BEGIN
 			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode, PinCustomerCategory and return more IsVVIP, IsPA, IsPotentialPA, ColorTypeID [Redmine ID: #205317]
 			- 20240923@Jonas.Huynh:	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
 			- 20250915@Thomas.Nguyen: Add LastModifiedDate to Temp_LatestRecordOfCategory [Redmine ID: #237405]
+			- 20251003@Logan.Nguyen: 	Add more 'CreatedDate' when insert into and get from Temp_LatestRecordOfCategory [Redmine ID: #239118]
             
 		Param's Explanation:
         
@@ -72,9 +73,10 @@ BEGIN
 		,	IsProbation					BIT DEFAULT 0
 		,	ColorTypeID					TINYINT UNSIGNED
 		,	LastModifiedDate			DATETIME
+		,	CreatedDate					DATETIME
     );
    
-	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName, CategoryGroupID, BusinessCategoryGroupID, CategoryPriority, ParentID, CustomerClassPriority, IsProbation, ColorTypeID, LastModifiedDate)
+	INSERT INTO Temp_LatestRecordOfCategory(CategoryID, CategoryName, CategoryGroupID, BusinessCategoryGroupID, CategoryPriority, ParentID, CustomerClassPriority, IsProbation, ColorTypeID, LastModifiedDate, CreatedDate)
 	SELECT DISTINCT (CASE 
                         WHEN cc.ParentID = CONST_PARENTID_PA AND cc.BusinessCategoryGroupID <> CONST_BIZCATEGROUPID_NORMAL THEN cc.CategoryGroupID
                         ELSE cate.CategoryID 
@@ -88,6 +90,7 @@ BEGIN
 				,	cc.IsPAProbation AS IsProbation
 				,	cc.ColorTypeID
 				,	cate.LastModifiedDate
+				,	cate.CreatedDate
 	FROM	CTS_DataCenter.CTSCustomerClassification AS cate
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
     WHERE	cate.CTSCustID = ip_CTSCustID 
@@ -123,6 +126,7 @@ BEGIN
 		,	ColorTypeID
         ,	CategoryPriority
 		,	LastModifiedDate
+		,	CreatedDate
 	FROM Temp_LatestRecordOfCategory;
 END$$
 DELIMITER ;

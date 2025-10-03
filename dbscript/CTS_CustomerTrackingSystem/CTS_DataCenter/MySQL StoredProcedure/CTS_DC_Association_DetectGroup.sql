@@ -37,6 +37,7 @@ BEGIN
             - 20221107@Aries.Nguyen: Missing Agent info [RedmineID: #180181]
             - 20221205@Aries.Nguyen: Re-arrange type options on Association Detection  [Redmine ID: #181207]
 			- 20231116@Thomas.Nguyen: Return more Log Transaction info on Association Detection  [Redmine ID: #196362]
+			- 20251003@Logan.Nguyen:	Add more condition: 'clss.CreatedDate DESC' when get and insert into Temp_CustCategory (block code Member) [Redmine ID: #239118]
 
 		Param's Explanation (filtered by):
 
@@ -568,7 +569,7 @@ BEGIN
 					FROM CTS_DataCenter.CTSCustomerClassification AS clss
 						INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
 					WHERE clss.CustID = cus.CustID AND clss.ParentID <> CONST_PARENTID_WRAPPER
-					ORDER BY cat.CustomerClassPriority ASC, clss.LastModifiedDate DESC
+					ORDER BY cat.CustomerClassPriority ASC, clss.LastModifiedDate DESC, clss.CreatedDate DESC
 					LIMIT 1	) AS tmpcls
 	INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss	ON clss.CustID = tmpcls.CustID AND clss.ParentID = tmpcls.ParentID
 	INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID

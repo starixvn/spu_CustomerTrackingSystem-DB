@@ -44,6 +44,7 @@ sp : BEGIN
 			- 20240923@Jonas.Huynh: 	Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
 			- 20241024@Jonas.Huynh: 	HF Wrong category color order   [RedmineID: #209792]	
 			- 20241002@Casey.Huynh: 	Return Agency Category [Redmine ID: #185799]
+			- 20251003@Logan.Nguyen: 	Adjust condition: 'ORDER BY cat.CategoryPriority ASC' to 'ORDER BY cat.CategoryPriority ASC, cat.CreatedDate DESC' when get and insert into Temp_Classification (block code Member) [Redmine ID: #239118]
             
 		Param's Explanation (filtered by):
 			- ip_AssociationType: 0 - ALL, 1 - Device, 2 - AI, 3 - Manual, 4 - IP
@@ -442,14 +443,14 @@ sp : BEGIN
 		,	cat.ParentID -- Each Customer has only 1 ParentID
 		,	GROUP_CONCAT(DISTINCT cat.CategoryID SEPARATOR ',') 
         ,	GROUP_CONCAT(DISTINCT cat.CategoryName SEPARATOR ',')
-        ,	GROUP_CONCAT((SELECT cat.ColorTypeID FROM CTS_DataCenter.CustomerCategory AS cate2 WHERE cate2.CategoryID = cat.CategoryID) ORDER BY cat.CategoryPriority ASC)
+        ,	GROUP_CONCAT((SELECT cat.ColorTypeID FROM CTS_DataCenter.CustomerCategory AS cate2 WHERE cate2.CategoryID = cat.CategoryID) ORDER BY cat.CategoryPriority ASC, cat.CreatedDate DESC)
 		,	MAX(cat.IsPAProbation)
 	FROM	Temp_AssociatedAccount AS tmpAcc
 		,	LATERAL (	SELECT clss.CTSCustID, cat.ParentID
 						FROM CTS_DataCenter.CTSCustomerClassification AS clss
 							INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1
 						WHERE clss.CTSCustID = tmpAcc.CTSCustID AND clss.ParentID <> CONST_PARENTID_WRAPPER
-						ORDER BY cat.CategoryPriority ASC
+						ORDER BY cat.CategoryPriority ASC, cat.CreatedDate DESC
 						LIMIT 1) AS cate
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification AS clss ON clss.CTSCustID = cate.CTSCustID AND clss.ParentID = cate.ParentID
 		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = clss.CategoryID AND cat.IsActive = 1

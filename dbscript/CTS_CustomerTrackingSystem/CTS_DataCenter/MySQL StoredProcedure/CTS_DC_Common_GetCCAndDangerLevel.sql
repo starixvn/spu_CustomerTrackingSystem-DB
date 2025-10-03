@@ -21,6 +21,7 @@ BEGIN
 			- 20240923@Jonas.Huynh:		Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
 			- 20240930@Casey.Huynh: 	Return Agency CC and Danger [Redmine ID: #185799]
 			- 20250701@Logan.Nguyen: 	Set to Ori 17-18-19 [Redmine ID: #229875]
+			- 20251003@Logan.Nguyen: 	Add more condition: 'clss.CreatedDate DESC' when insert into Temp_CustLatestCate (block code Member) [Redmine ID: #239118]
             
         Param's Explanation:     
         Example:
@@ -213,6 +214,7 @@ BEGIN
 					AND clss.ParentID <> CONST_PARENTID_WRAPPER
                 ORDER BY  cate.CustomerClassPriority ASC  
 						, clss.LastModifiedDate DESC
+						, clss.CreatedDate DESC
                 LIMIT 1) AS clss
 	WHERE tmp.RoleID = CONST_ROLEID_MEMBER
 	GROUP BY tmp.CustID, clss.CategoryID;
