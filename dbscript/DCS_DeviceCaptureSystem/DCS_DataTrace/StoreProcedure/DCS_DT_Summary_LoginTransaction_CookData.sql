@@ -19,6 +19,7 @@ BEGIN
 		- 20240924@Jonathan.Doan: Add table LoginTransactionSummaryByDevice [Redmine ID: #211161]
 		- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
 		- 20250327@Jonathan.Doan: HF - Missing transaction data when retrieving from table Transaction07 [Redmine ID: #222043]
+        - 20250909@Jonathan.Doan: Remove FP code [Redmine ID: #236716]
 		
 	Param's Explanation (filtered by):
 
@@ -29,6 +30,7 @@ BEGIN
     DECLARE CONST_DEVICETRANSFORM_MAXTRANSACTION07IDCOMPLETED	INT			DEFAULT 3;
     DECLARE CONST_COOKDATA_TRANSACTION07_TRANSID 				INT 		DEFAULT 5;
     DECLARE CONST_COOKDATA_BYDEVICE_LISTSUBID 					INT 		DEFAULT 7;
+    
     DECLARE CONST_FLAGGEDGROUPID_INVALIDBROWSER					SMALLINT 	DEFAULT 2;
     DECLARE CONST_FLAGGEDGROUPID_BOTTRANS 						SMALLINT 	DEFAULT 3;
     
@@ -46,7 +48,6 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_LoginTrans;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransByAccount;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransByFlagged;
-	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransByBrowser;
 	DROP TEMPORARY TABLE IF EXISTS Temp_TotalTransByDevice;
 	DROP TEMPORARY TABLE IF EXISTS Temp_SubscriberID;
     
@@ -56,8 +57,6 @@ BEGIN
 		, 	SubscriberID				INT UNSIGNED
 		, 	AccountID					BIGINT UNSIGNED
 		, 	DeviceID					BIGINT UNSIGNED
-		, 	FP_DeviceID					BIGINT UNSIGNED
-		, 	FP_UserAgentID				BIGINT UNSIGNED
 		, 	Flagged						SMALLINT
 		, 	FlaggedGroupID				SMALLINT
 		, 	TransTime					DATETIME
@@ -75,7 +74,6 @@ BEGIN
 		, 	FlaggedGroupID				SMALLINT
 		, 	TotalTrans					INT UNSIGNED DEFAULT 0
 		, 	TotalNoDeviceTrans			INT UNSIGNED DEFAULT 0
-		, 	TotalNoFPDeviceTrans		INT UNSIGNED DEFAULT 0
 		, 	FirstLoginTransTime			DATETIME
 		, 	LastLoginTransTime			DATETIME
 		, 	IsUpdate					BIT DEFAULT 0
@@ -90,7 +88,6 @@ BEGIN
 		, 	TotalInvalidBrowers			INT UNSIGNED DEFAULT 0
 		, 	TotalBotTrans				INT UNSIGNED DEFAULT 0
 		, 	TotalNoDeviceTrans			INT UNSIGNED DEFAULT 0
-		, 	TotalNoFPDeviceTrans		INT UNSIGNED DEFAULT 0
 		, 	IsUpdate					BIT DEFAULT 0
 	);
     
@@ -99,18 +96,6 @@ BEGIN
 		, 	TransDate					DATE NOT NULL
 		, 	Flagged						SMALLINT UNSIGNED NOT NULL
 		, 	TotalTrans					INT UNSIGNED DEFAULT 0
-		, 	IsUpdate					BIT DEFAULT 0
-	);
-    
-	CREATE TEMPORARY TABLE Temp_TotalTransByBrowser(
-			ID							INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY 
-		, 	TransDate					DATE NOT NULL
-		, 	BrowserID					BIGINT UNSIGNED NOT NULL
-		, 	OSID						BIGINT UNSIGNED NOT NULL
-		, 	DeviceTypeID				BIGINT UNSIGNED NOT NULL
-		, 	TotalTrans					INT UNSIGNED DEFAULT 0
-		, 	TotalInvalidBrowers			INT UNSIGNED DEFAULT 0
-		, 	TotalBotTrans				INT UNSIGNED DEFAULT 0
 		, 	IsUpdate					BIT DEFAULT 0
 	);
     
@@ -132,14 +117,12 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
     
-    INSERT INTO Temp_Trans07(TransID, TransDate, AccountID, SubscriberID, DeviceID, FP_DeviceID, FP_UserAgentID, Flagged, TransTime)
+    INSERT INTO Temp_Trans07(TransID, TransDate, AccountID, SubscriberID, DeviceID, Flagged, TransTime)
     SELECT 	TransID
 		,	CreatedDate AS TransDate
         ,	IFNULL(AccountID, 0) AS AccountID
         ,	IFNULL(SubscriberID, 0) AS SubscriberID
         ,	IFNULL(DeviceID, 0) AS DeviceID
-        ,	IFNULL(FP_DeviceID, 0) AS FP_DeviceID
-        ,	IFNULL(FP_UserAgentID, 0) AS FP_UserAgentID
         ,	IFNULL(Flagged, 0) AS Flagged
         ,	TransTime
 	FROM DCS_DataCenter.Transaction07
@@ -150,9 +133,8 @@ BEGIN
     
     ALTER TABLE Temp_Trans07
     ADD KEY IX_Temp_Trans07_Flagged (Flagged),
-    ADD KEY IX_Temp_Trans07_TransID_SubscriberID (TransID, SubscriberID),
-    ADD KEY IX_Temp_Trans07_FP_UserAgentID (FP_UserAgentID);
-    
+    ADD KEY IX_Temp_Trans07_TransID_SubscriberID (TransID, SubscriberID);
+
     UPDATE Temp_Trans07 AS tmp
 		INNER JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.ItemID = tmp.Flagged
 	SET 	tmp.FlaggedGroupID = sl.GroupID
@@ -185,8 +167,8 @@ BEGIN
 											AND tl.DeviceID = tmp.DeviceID
 											AND tl.Flagged = tmp.Flagged
 	SET tl.TotalTrans 			= tl.TotalTrans + tmp.TotalTrans,
-		tl.FirstLoginTransTime 	= tmp.FirstLoginTransTime,
-		tl.LastLoginTransTime 	= tmp.LastLoginTransTime,
+		tl.FirstLoginTransTime	= LEAST(tl.FirstLoginTransTime, tmp.FirstLoginTransTime),
+		tl.LastLoginTransTime	= GREATEST(tl.LastLoginTransTime, tmp.LastLoginTransTime),
 		tl.ModifiedTime 		= lv_CurrentDatetime,
 		tmp.IsUpdate 			= 1;
     
@@ -207,7 +189,7 @@ BEGIN
 
     
     /* == Insert into LoginTransactionSummaryByAccount == */
-    INSERT INTO Temp_TotalTransByAccount(TransDate, SubscriberID, AccountID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, TotalNoDeviceTrans, TotalNoFPDeviceTrans)
+    INSERT INTO Temp_TotalTransByAccount(TransDate, SubscriberID, AccountID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, TotalNoDeviceTrans)
     SELECT 	TransDate
         ,	SubscriberID
         ,	AccountID
@@ -215,7 +197,6 @@ BEGIN
         ,	SUM(IsInvalidBrowers) AS TotalInvalidBrowers
         ,	SUM(IsBotTrans) AS TotalBotTrans
         ,	SUM(CASE WHEN DeviceID = 0 THEN 1 ELSE 0 END) AS TotalNoDeviceTrans
-        ,	SUM(CASE WHEN FP_DeviceID = 0 THEN 1 ELSE 0 END) AS TotalNoFPDeviceTrans
 	FROM Temp_Trans07
     GROUP BY TransDate, SubscriberID, AccountID;
     
@@ -230,11 +211,10 @@ BEGIN
 		,	trans.TotalInvalidBrowers 	= trans.TotalInvalidBrowers 	+ tmp.TotalInvalidBrowers
 		,	trans.TotalBotTrans 		= trans.TotalBotTrans 			+ tmp.TotalBotTrans
 		,	trans.TotalNoDeviceTrans 	= trans.TotalNoDeviceTrans 		+ tmp.TotalNoDeviceTrans
-		,	trans.TotalNoFPDeviceTrans 	= trans.TotalNoFPDeviceTrans 	+ tmp.TotalNoFPDeviceTrans
 		,	trans.ModifiedTime 			= lv_CurrentDatetime
 		,	tmp.IsUpdate = 1;
         
-    INSERT INTO DCS_DataTrace.LoginTransactionSummaryByAccount(TransDate, SubscriberID, AccountID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, TotalNoDeviceTrans, TotalNoFPDeviceTrans, CreatedTime, ModifiedTime)
+    INSERT INTO DCS_DataTrace.LoginTransactionSummaryByAccount(TransDate, SubscriberID, AccountID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, TotalNoDeviceTrans, CreatedTime, ModifiedTime)
     SELECT 	tmp.TransDate
         ,	tmp.SubscriberID
         ,	tmp.AccountID
@@ -242,7 +222,6 @@ BEGIN
         ,	tmp.TotalInvalidBrowers
         ,	tmp.TotalBotTrans
         ,	tmp.TotalNoDeviceTrans
-        ,	tmp.TotalNoFPDeviceTrans
         ,	lv_CurrentDatetime AS CreatedTime
         ,	lv_CurrentDatetime AS ModifiedTime
 	FROM Temp_TotalTransByAccount AS tmp
@@ -274,47 +253,6 @@ BEGIN
         ,	lv_CurrentDatetime AS ModifiedTime
 	FROM Temp_TotalTransByFlagged AS tmp
     WHERE tmp.IsUpdate = 0;
-    
-    /* == Insert into LoginTransactionSummaryByBrowser == */
-    INSERT INTO Temp_TotalTransByBrowser(TransDate, BrowserID, OSID, DeviceTypeID, TotalTrans, TotalInvalidBrowers, TotalBotTrans)
-    SELECT 	tmp.TransDate
-        ,	IFNULL(ua.BrowserID, 0) AS _BrowserID
-        ,	IFNULL(ua.OSID, 0) AS _OSID
-        ,	IFNULL(ua.DeviceTypeID, 0) AS _DeviceTypeID
-        ,	COUNT(1) AS TotalTrans
-        ,	SUM(tmp.IsInvalidBrowers) AS TotalInvalidBrowers
-        ,	SUM(tmp.IsBotTrans) AS TotalBotTrans
-	FROM Temp_Trans07 AS tmp
-		LEFT JOIN DCS_DataCenter.FP_UserAgent AS ua ON ua.ID = tmp.FP_UserAgentID
-    GROUP BY tmp.TransDate, _BrowserID, _OSID, _DeviceTypeID;
-    
-    ALTER TABLE Temp_TotalTransByBrowser
-    ADD KEY IX_Temp_TotalTransByBrowser_Group(TransDate, BrowserID, OSID, DeviceTypeID);
-    
-    UPDATE DCS_DataTrace.LoginTransactionSummaryByBrowser AS trans
-		INNER JOIN Temp_TotalTransByBrowser AS tmp ON 	trans.TransDate 	= tmp.TransDate 
-													AND trans.BrowserID 	= tmp.BrowserID
-													AND trans.OSID 			= tmp.OSID
-													AND trans.DeviceTypeID 	= tmp.DeviceTypeID
-	SET 	trans.TotalTrans 			= trans.TotalTrans + tmp.TotalTrans
-		,	trans.TotalInvalidBrowers 	= trans.TotalInvalidBrowers + tmp.TotalInvalidBrowers
-		,	trans.TotalBotTrans 		= trans.TotalBotTrans + tmp.TotalBotTrans
-		,	trans.ModifiedTime 			= lv_CurrentDatetime
-		,	tmp.IsUpdate = 1;
-    
-    INSERT INTO DCS_DataTrace.LoginTransactionSummaryByBrowser(TransDate, BrowserID, OSID, DeviceTypeID, TotalTrans, TotalInvalidBrowers, TotalBotTrans, CreatedTime, ModifiedTime)
-    SELECT 	tmp.TransDate
-        ,	tmp.BrowserID
-        ,	tmp.OSID
-        ,	tmp.DeviceTypeID
-        ,	tmp.TotalTrans
-        ,	tmp.TotalInvalidBrowers
-        ,	tmp.TotalBotTrans
-        ,	lv_CurrentDatetime AS CreatedTime
-        ,	lv_CurrentDatetime AS ModifiedTime
-	FROM Temp_TotalTransByBrowser AS tmp
-    WHERE tmp.IsUpdate = 0;
-    
     
     /* == Insert into LoginTransactionSummaryByDevice == */
     INSERT INTO Temp_TotalTransByDevice(TransDate, SubscriberID, AccountID, DeviceID, TotalTrans)

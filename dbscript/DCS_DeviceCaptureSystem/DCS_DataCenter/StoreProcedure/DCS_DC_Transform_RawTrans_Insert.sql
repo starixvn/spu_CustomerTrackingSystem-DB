@@ -27,7 +27,8 @@ BEGIN
 			- 20241121@Jonathan.Doan: Insert MBRawTransaction [Redmine ID: #213401]
 			- 20250804@Lando.Vu: Add MBDeviceDetails table [Redmine ID: #233405]
 			- 20250808@Jonathan.Doan: Separate iOS trans [Redmine ID: #235457]
-
+			- 20250916@Casey.Huynh: AI Power Device Fingerprint AND Remove FPJs[Redmine ID: #236716]
+            
 		Param's Explanation (filtered by):
 			
 		Example:
@@ -65,11 +66,6 @@ BEGIN
 		,	BotComponent				LONGTEXT					NULL
 		,	BotComponentCode			VARCHAR(100)				NULL
 		,	FakeIP						VARCHAR(100) 				NULL
-		,	FP_Tagging					VARCHAR(32)					NULL
-		,	FP_FingerPrintCode			VARCHAR(32)					NULL
-		,	FP_FingerPrintExtraCode		VARCHAR(32)					NULL
-		,	FP_FingerPrintOldCode		VARCHAR(32)					NULL
-		,	FP_UserAgentCode			VARCHAR(32)					NULL
 		,	ChallengeCode				VARCHAR(50)					NULL
 		,	IsIncognitoMode				BOOLEAN						NULL
 		,	MBDeviceCodeMediaDRM		VARCHAR(32)					NULL
@@ -86,6 +82,11 @@ BEGIN
 		,	MBLanguage					VARCHAR(32)					NULL
 		,	MBCountry					VARCHAR(32)					NULL
 		,	MBDeviceDetails				JSON						NULL
+        ,	WebRTCIPCode				VARCHAR(32)					NULL    
+        ,	FPPatternCode01				VARCHAR(32)   				NULL	# FPPatternType 1
+        ,	FPPatternCode02				VARCHAR(32)   				NULL 	# FPPatternType 2
+        ,	FPVersion 					VARCHAR(10) 				NULL
+		,	TransFlow 						TINYINT(1)					NOT NULL
 	);
 	
 	CREATE TEMPORARY TABLE Temp_MBTransaction(
@@ -128,7 +129,7 @@ BEGIN
 		,	IsNewRecord					TINYINT		 				DEFAULT 1
 	);
 		
-	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode, ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry, MBDeviceDetails)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry, MBDeviceDetails, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -148,11 +149,6 @@ BEGIN
 		,	rt.BotComponent
 		,	MD5(rt.BotComponent) AS BotComponentCode
 		,	rt.FakeIP
-		,	rt.FP_Tagging
-		,	rt.FP_FingerPrintCode
-		,	rt.FP_FingerPrintExtraCode
-		,	rt.FP_FingerPrintOldCode
-		,	rt.FP_UserAgentCode
 		,	rt.ChallengeCode
 		,	rt.IsIncognitoMode
 		,	rt.MBDeviceCodeMediaDRM
@@ -169,6 +165,11 @@ BEGIN
 		,	rt.MBLanguage
 		,	rt.MBCountry
 		,	rt.MBDeviceDetails
+        ,	rt.WebRTCIPCode
+        ,	rt.FPPatternCode01
+        ,	rt.FPPatternCode02
+		,	rt.FPVersion
+        ,	IFNULL(rt.TransFlow,0) AS TransFlow
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
@@ -190,11 +191,6 @@ BEGIN
 							,	BotDetection				LONGTEXT		PATH "$.BotDetection"
 							,	BotComponent				LONGTEXT		PATH "$.BotComponent"
 							,	FakeIP						VARCHAR(100)	PATH "$.FakeIP"
-							,	FP_Tagging					VARCHAR(32)		PATH "$.FPTagging"
-							,	FP_FingerPrintCode			VARCHAR(32)		PATH "$.FPFingerPrintCode"
-							,	FP_FingerPrintExtraCode		VARCHAR(32)		PATH "$.FPFingerPrintExtraCode"
-							,	FP_FingerPrintOldCode		VARCHAR(32)		PATH "$.FPFingerPrintOldCode"
-							,	FP_UserAgentCode			VARCHAR(32)		PATH "$.FPUserAgentCode"
 							,	ChallengeCode				VARCHAR(50)		PATH "$.ChallengeCode"
 							,	IsIncognitoMode				BOOLEAN			PATH "$.IsIncognitoMode"
 							,	MBDeviceCodeMediaDRM		VARCHAR(32)		PATH "$.MBDeviceCodeMediaDRM"
@@ -211,6 +207,11 @@ BEGIN
 							,	MBLanguage					VARCHAR(32)		PATH "$.MBLanguage"
 							,	MBCountry					VARCHAR(32)		PATH "$.MBCountry"
 							,	MBDeviceDetails				JSON			PATH "$.MBDeviceDetails"
+                            ,	WebRTCIPCode				VARCHAR(32)		PATH "$.WebRTCIPCode"						
+							,	FPPatternCode01				VARCHAR(32)		PATH "$.FPPatternCode01"
+							,	FPPatternCode02				VARCHAR(32)		PATH "$.FPPatternCode02"
+                            ,	FPVersion					VARCHAR(10)		PATH "$.FPVersion"
+                            ,	TransFlow						TINYINT(1)		PATH "$.TransFlow"
 				)
 		   ) AS rt; 
 		   
@@ -285,7 +286,7 @@ BEGIN
 	SET tmp.BotComponentID = bds.ID;
 	
 	/*******RawTransaction********************/
-	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, FP_Tagging, FP_FingerPrintCode, FP_FingerPrintExtraCode, FP_FingerPrintOldCode, FP_UserAgentCode, ChallengeCode, IsIncognitoMode)
+	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, ChallengeCode, IsIncognitoMode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -306,13 +307,13 @@ BEGIN
 		,	rt.BotDetectionValue
 		,	rt.BotComponentID
 		,	rt.FakeIP
-		,   rt.FP_Tagging
-		,   rt.FP_FingerPrintCode
-		,   rt.FP_FingerPrintExtraCode
-		,   rt.FP_FingerPrintOldCode
-		,   rt.FP_UserAgentCode
 		,   rt.ChallengeCode
 		,   rt.IsIncognitoMode
+        ,	rt.WebRTCIPCode
+        ,	rt.FPPatternCode01
+        ,	rt.FPPatternCode02
+        ,	rt.FPVersion
+        ,	rt.TransFlow  
 	FROM Temp_Transaction AS rt
 		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
 													AND sl.ItemCode = rt.FlaggedCode;

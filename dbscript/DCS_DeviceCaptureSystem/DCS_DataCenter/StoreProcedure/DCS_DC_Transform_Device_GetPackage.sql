@@ -21,13 +21,13 @@ BEGIN
             - 20240403@Jonathan.Doan: The same AccountID must be in the same batch [Redmine ID: #202878]
             - 20240503@Jonathan.Doan: HF Division by 0 [Redmine ID: #204757]
 			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
+            - 20250909@Jonathan.Doan: Remove FP code [Redmine ID: #236716]
 
 	    Param's Explanation (filtered by):
 			CALL DCS_DC_Transform_Device_GetPackage(100, 2);
 	*/
     DECLARE 	CONST_SYSTEMSETTINGID_MINTRANSID 			INT 		DEFAULT 1;
     DECLARE 	CONST_SYSTEMSETTINGID_MINCREATEDDATE 		INT 		DEFAULT 2;
-    DECLARE 	CONST_SYSTEMSETTINGID_SKIPDEVICEMAPPING 	INT 		DEFAULT 27;
 	
 	DECLARE		lv_TotalRecord			INT UNSIGNED DEFAULT 0;
 	DECLARE		lv_RateBatch			DECIMAL(4,2);
@@ -35,7 +35,6 @@ BEGIN
     DECLARE		lv_FromCreatedDate		DATE;
     DECLARE		lv_CountAccountID		INT;
     DECLARE		lv_NoOfBatchOfAccountID	INT;
-    DECLARE		lv_SkipDeviceMapping	TINYINT(1) UNSIGNED;
 
     DROP TEMPORARY TABLE IF EXISTS Temp_Trans;
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
@@ -55,7 +54,6 @@ BEGIN
     
 	SET lv_TotalRecord 	    	= ip_NoOfTickets*ip_NoOfBatch;
     SET lv_FromTransID 	    	= (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_SYSTEMSETTINGID_MINTRANSID);
-    SET lv_SkipDeviceMapping 	= (SELECT CAST(VValue AS UNSIGNED) FROM DCS_DataCenter.SystemSetting WHERE ID = CONST_SYSTEMSETTINGID_SKIPDEVICEMAPPING);
 
     INSERT INTO Temp_Trans(TransID, RawTransID, AccountID, CreatedDate)
 	SELECT	TransID
@@ -73,11 +71,6 @@ BEGIN
     
 	SET lv_FromTransID = IFNULL((SELECT MIN(TransID) FROM Temp_Trans), lv_FromTransID); 
 	SET lv_FromCreatedDate = IFNULL((SELECT MIN(CreatedDate) FROM Temp_Trans), DATE_ADD(CURRENT_TIMESTAMP(), INTERVAL -2 WEEK));
-    
-    DELETE tmp
-    FROM Temp_Trans AS tmp
-    WHERE lv_SkipDeviceMapping = 0
-		AND NOT EXISTS (SELECT 1 FROM DCS_DataCenter.FP_TransactionDeviceMapping AS tdm WHERE tdm.RawTransID = tmp.RawTransID);
     
     INSERT INTO Temp_Account(AccountID)
 	SELECT DISTINCT AccountID
