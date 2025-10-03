@@ -26,7 +26,8 @@ BEGIN
 			- 20250327@Thomas.Nguyen:		Add to source table for the first time classify TW GroupBetting or HighRejected [Redmine ID: #221508]
 			- 20250519@Thomas.Nguyen:		Set IsDisabled = 1 for Special Lic Sub source table when having CustomerClassPriority greater than [Redmine ID: #226847]
             - 20250725@Casey.Huynh:			Agent CC, Insert Considerable Agency Queue [Redmine ID: #219679]
-			- 20250915@Thomas.Nguyen:		CC 2900/2901 - Use TargetCCHistory to store TargetCC in CC History/Log table [Redmine ID: #237405]						
+			- 20250915@Thomas.Nguyen:		CC 2900/2901 - Use TargetCCHistory to store TargetCC in CC History/Log table [Redmine ID: #237405]
+			- 20251003@Thomas.Nguyen:		Change logic for LastModifiedDate [Redmine ID: #239118]
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -58,6 +59,7 @@ BEGIN
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL		INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL			INT;
 	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY		INT;
+	DECLARE CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL		INT;
 	DECLARE CONST_ACTIONTYPE_INSERT 						INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 						INT DEFAULT 1;
 	DECLARE CONST_SOURCETYPE_CUSTOMERCLASS_ADD_MANUAL		INT DEFAULT 10;
@@ -81,6 +83,7 @@ BEGIN
 	DECLARE lv_ActionType									INT;
 	DECLARE lv_IsMarkedDirectly								TINYINT(1);  
 	DECLARE lv_IsRescan										TINYINT(1) DEFAULT 0;     
+	DECLARE lv_IsPotentialRescan							TINYINT(1) DEFAULT 0;     
     DECLARE lv_ConsiderableDangerAgentList					TEXT;
 
 	SET CONST_CATEID_VVIP 									= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
@@ -111,7 +114,7 @@ BEGIN
 	SET CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_POTENTIAL');
 	SET CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL');
 	SET CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY');
-	
+	SET CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL');
 	#=================CONSIDERABLE_BEGIN: GET PA BEFORE==================   
     DROP TEMPORARY TABLE IF EXISTS Temp_PACustStart;    
 	CREATE TEMPORARY TABLE Temp_PACustStart(	  	
@@ -887,6 +890,10 @@ BEGIN
 			SET lv_IsRescan = 1;
 		END IF;
 		
+		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_RESCAN_POTENTIAL THEN
+			SET lv_IsPotentialRescan = 1;
+		END IF;
+		
 		/*delete Normal/PotentialPA - IsKeepOldCateID = 0*/
 		DELETE cls
 		FROM CTS_DataCenter.CTSCustomerClassification AS cls
@@ -900,7 +907,7 @@ BEGIN
 																						AND temp.DataChangeType = 1
 		SET 	cls.CTSCustID 			=  temp.CTSCustID
 			,	cls.CategoryID 			=  temp.NewCategoryID
-			, 	cls.LastModifiedDate 	=  lv_CurrentDateTime
+			, 	cls.LastModifiedDate 	=  temp.LastModifiedDate
 			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime)
 			,	cls.IsFromTW 			=   CASE WHEN temp.IsFromTW 		= 1 THEN temp.IsFromTW 			ELSE cls.IsFromTW 			END
 			,	cls.IsFromCTS 			=   CASE WHEN temp.IsFromCTS 		= 1 THEN temp.IsFromCTS 		ELSE cls.IsFromCTS 			END
@@ -940,9 +947,9 @@ BEGIN
 			, 	temp.RoleID
 			, 	temp.NewCategoryGroupID AS CategoryID
 			, 	temp.ParentID
-			, 	CASE WHEN lv_IsRescan = 1 THEN temp.CreatedDate ELSE lv_CurrentDateTime END AS CreatedDate
+			, 	CASE WHEN lv_IsRescan = 1 OR lv_IsPotentialRescan = 1 THEN temp.CreatedDate ELSE lv_CurrentDateTime END AS CreatedDate
 			, 	temp.CreatedBy
-			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	temp.LastModifiedDate AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	DATE(lv_CurrentDateTime) AS LastScannedDate
 			,	temp.IsMarkedDirectly
@@ -979,7 +986,7 @@ BEGIN
 			, 	temp.CTSCustID
 			, 	temp.NewCategoryID AS CategoryID
 			,	temp.ParentID
-			, 	lv_CurrentDateTime AS LastModifiedDate
+			, 	temp.LastModifiedDate AS LastModifiedDate
 			, 	temp.CreatedBy AS LastModifiedBy
 			, 	temp.ActionType
 			, 	DATE(lv_CurrentDateTime) AS InsertDate
@@ -1015,7 +1022,7 @@ BEGIN
 		FROM Temp_NewClassification AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID 
 		WHERE temp.IsDataChanged = 1 
-		ORDER BY temp.LastModifiedDate ASC, temp.NewCategoryID ASC;
+		ORDER BY temp.LastModifiedDate ASC, CASE WHEN lv_IsRescan = 1 OR lv_IsPotentialRescan = 1 THEN temp.CreatedDate ELSE temp.NewCategoryID END ASC;
 		
 		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
 				CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate
@@ -1026,7 +1033,7 @@ BEGIN
 			,	temp.CTSCustID
 			,	temp.NewCategoryID
 			,	temp.ParentID
-			,	lv_CurrentDateTime AS LastModifiedDate
+			,	temp.LastModifiedDate AS LastModifiedDate
 			,	temp.CreatedBy AS LastModifiedBy
 			,	temp.ActionType
 			,	lv_IsAuto

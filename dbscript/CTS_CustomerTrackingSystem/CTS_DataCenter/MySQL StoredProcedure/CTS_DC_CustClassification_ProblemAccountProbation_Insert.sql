@@ -29,6 +29,7 @@ BEGIN
 			- 20240703@Victoria.Le:   Renovate CC phase 2 - Remove Table PinCustomerCategory  [Redmine ID: #205317]
 			- 20241205@Victoria.Le:   Incorect Datatype for ActiveDays [Redmine ID: #214567]
 			- 20250909@Thomas.Nguyen: CC 2900/2901 - Update logic to map DW Performance by DWSportType [Redmine ID: #237405]
+			- 20251003@Thomas.Nguyen: Update LastModifiedDate for Daily Scan PA [Redmine ID: #239118]
 
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_ProblemAccountProbation_Insert ('[{"CustID": 224340007,"DWSportType": 0,"WinlossStatus": 2,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10},{"CustID": 224340007,"DWSportType": 2,"WinlossStatus": 0,"TurnoverRM":150,"WinlossRM":-15000,"BetCount":15,"ActiveDays":10}]');
@@ -83,6 +84,7 @@ BEGIN
         ,	PerformanceTime		    DATETIME(3)
 		,	IsRobot					BIT(1)
 		,	DWSportType				SMALLINT
+		,	LastModifiedDate		DATETIME
         , 	PRIMARY KEY(CustID,CategoryID)  
     );  
     
@@ -102,7 +104,7 @@ BEGIN
     /* START */
     INSERT IGNORE INTO Temp_PA(
 			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetDangerLevel1, IsDangerProbation
-		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsMarkedDirectly,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime, IsRobot, DWSportType)
+		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsMarkedDirectly,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime, IsRobot, DWSportType, LastModifiedDate)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
@@ -128,6 +130,7 @@ BEGIN
         ,   js.PerformanceTime
 		,	CASE WHEN cate.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot
 		,	js.DWSportType
+		,	CASE WHEN clss.CategoryID = tmpCat.CategoryID THEN DATE_ADD(lv_CurrentDateTime, INTERVAL 1 SECOND) ELSE lv_CurrentDateTime END AS LastModifiedDate
 	FROM JSON_TABLE(ip_ProblemAccount,
 		"$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED			PATH "$.CustID"
@@ -147,7 +150,13 @@ BEGIN
 				,	tbl.CustomerClass AS TargetCC
 				FROM CTS_DataCenter.CustomerCategory AS tbl 
 				WHERE cate.RelevantCategoryID = tbl.CategoryID AND tbl.IsActive = 1
-				LIMIT 1) AS desCate; 
+				LIMIT 1) AS desCate
+	,	LATERAL (
+			SELECT cate.CategoryID
+			FROM CTS_DataCenter.CustomerCategory AS cate 
+			WHERE cate.CategoryID = clss.CategoryID
+			ORDER BY cate.CustomerClassPriority ASC, clss.LastModifiedDate DESC, clss.CreatedDate DESC
+			LIMIT 1) AS tmpCat;
     
     DELETE pa
     FROM Temp_PA AS pa
@@ -162,6 +171,7 @@ BEGIN
     SET 	clss.CategoryID = tmp.RelevantCategoryID
         ,	clss.LastModifiedBy = lv_CreatedBy
         ,	tmp.CategoryID = tmp.RelevantCategoryID 
+		,	clss.LastModifiedDate = tmp.LastModifiedDate
     WHERE tmp.IsDataChanged = 1;
 
     UPDATE Temp_PA AS t 
@@ -184,7 +194,7 @@ BEGIN
 		, 	tmp.CTSCustID
 		, 	tmp.RelevantCategoryID
 		, 	tmp.ParentID
-		, 	lv_CurrentDateTime AS LastModifiedDate
+		, 	tmp.LastModifiedDate AS LastModifiedDate
 		, 	lv_CreatedBy AS LastModifiedBy
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
 		, 	1 AS IsAuto
@@ -204,14 +214,15 @@ BEGIN
 	FROM Temp_PA AS tmp
 		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.RelevantCategoryID
     WHERE tmp.IsDataChanged = 1
-		AND tmp.ParentID <> CONST_PARENTID_WRAPPER;
+		AND tmp.ParentID <> CONST_PARENTID_WRAPPER
+	ORDER BY tmp.LastModifiedDate ASC;
 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_Log(CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, IsAuto, InsertDate, TargetCC, SourceTypeID, IsDataChanged,TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT  tmp.CustID
 		, 	tmp.CTSCustID
 		, 	CASE WHEN tmp.IsDataChanged = 1 THEN tmp.RelevantCategoryID ELSE tmp.CategoryID END AS CategoryID
 		, 	tmp.ParentID
-		, 	lv_CurrentDateTime AS LastModifiedDate
+		, 	tmp.LastModifiedDate AS LastModifiedDate
 		, 	lv_CreatedBy AS LastModifiedBy
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
 		, 	1 AS IsAuto
@@ -229,7 +240,8 @@ BEGIN
         , 	tmp.ActiveDays
         ,   tmp.PerformanceTime
 	FROM Temp_PA AS tmp
-		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.RelevantCategoryID;
+		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.RelevantCategoryID
+	ORDER BY tmp.LastModifiedDate ASC;
     
 	SELECT 	DISTINCT
 			tmp.CustID

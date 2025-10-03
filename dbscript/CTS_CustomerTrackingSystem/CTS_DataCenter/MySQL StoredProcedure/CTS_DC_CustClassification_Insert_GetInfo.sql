@@ -29,6 +29,7 @@ BEGIN
 			- 20241017@Victoria.Le:	Remove the statement which being used as a temporary solution for datatypes that are out of range  [Redmine ID: #212240]
 			- 20250519@Thomas.Nguyen: Special Lic Sub CC - Add column ScanSpecialLicSubType [Redmine ID: #226847]
 			- 20250909@Thomas.Nguyen: CC 2900/2901 - Add column DWSportType [Redmine ID: #237405]
+			- 20251003@Thomas.Nguyen: Add column CreatedDate for Potential [Redmine ID: #239118]
 */
 
 	DECLARE CONST_CATEID_VVIP 								INT;
@@ -604,7 +605,7 @@ BEGIN
 					CustID, CTSCustID, RoleID, SubscriberID, DWCategoryID, DWCategoryGroupID,IsLicensee, IsLicenseeVIP, IsLicenseeBA, CreatedBy, Remark, IsMarkedDirectly
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsFromTW, IsFromCTS, IsFromAI
 				, 	SpecialCC, IsPAProbation, RelevantCategoryID, CategoryPriority, CustomerClassPriority
-				, 	ParentID, IsDataChanged, PerformanceTime, SportType, SourceCreatedDate, GBTicketCount, DWSportType)
+				, 	ParentID, IsDataChanged, PerformanceTime, SportType, SourceCreatedDate, GBTicketCount, DWSportType, CreatedDate)
 			SELECT 	tmpJs.CustID
 				,	tmpJs.CTSCustID
 				,	tmpJs.RoleID
@@ -637,6 +638,7 @@ BEGIN
 				,	tmpJs.SourceCreatedDate
 				,	tmpJs.GBTicketCount
 				,	tmpJs.DWSportType
+				,	tmpJs.CreatedDate
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
@@ -661,6 +663,7 @@ BEGIN
 											, 	SourceCreatedDate			DATETIME(3)			PATH "$.DetectedDate"
 											, 	GBTicketCount				INT					PATH "$.GBTicketCount"
 											, 	DWSportType					SMALLINT 			PATH "$.DWSportType"
+											, 	CreatedDate					DATETIME			PATH "$.CreatedDate"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID
 				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID

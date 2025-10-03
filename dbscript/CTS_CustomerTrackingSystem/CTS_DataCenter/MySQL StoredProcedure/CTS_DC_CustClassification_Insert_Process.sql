@@ -23,6 +23,7 @@ BEGIN
            	- 20240923@Jonas.Huynh: Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]
 			- 20250519@Thomas.Nguyen: Add ActionType to ignore lower priority for Special Lic Sub CC [Redmine ID: #226847]	
 			- 20250908@Thomas.Nguyen: CC 2900/2901 - Update logic to map DW Performance by DWSportType [Redmine ID: #237405]
+			- 20251003@Thomas.Nguyen: Update LastModifiedDate for PA/Potential PA [Redmine ID: #239118]
 */
 
 	DECLARE CONST_INPUTFLOWID_GENERAL_INSERT_NORMAL		INT;
@@ -725,6 +726,18 @@ BEGIN
 		SET temp_old.IsRemove = 0
 		WHERE temp_old.IsNew = 0 AND temp_old.IsRemove = 1 AND temp.IsDataChanged = 0;
 			
+		UPDATE Temp_NewClassification AS temp
+			, LATERAL(
+				SELECT cate.CategoryID
+				FROM CTS_DataCenter.CustomerCategory AS cate
+				WHERE cate.CategoryID = temp.NewCategoryID OR cate.CategoryID = temp.OldCategoryID
+				ORDER BY cate.CustomerClassPriority ASC, cate.LastModifiedDate DESC, cate.CreatedDate DESC
+				LIMIT 1
+			) AS tmpCat
+		SET temp.LastModifiedDate =	CASE WHEN temp.NewCategoryID = tmpCat.CategoryID OR temp.OldCategoryID = tmpCat.CategoryID 
+										THEN DATE_ADD(lv_CurrentDateTime, INTERVAL 1 SECOND) ELSE lv_CurrentDateTime END
+		WHERE temp.ParentID IN (CONST_PARENTID_PA, CONST_PARENTID_POTENTIALPA);
+
 	END IF;
 	
 END$$
