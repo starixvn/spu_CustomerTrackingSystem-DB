@@ -17,6 +17,7 @@ BEGIN
 		- 20250213@Lando.Vu: Created [Redmine ID: 217768]
 		- 20250312@Lando.Vu: Ignored Subscribers [Redmine ID: 217768]
 		- 20250327@Jonathan.Doan: HF - Missing transaction data when retrieving from table Transaction07 [Redmine ID: #222043]
+		- 20251006@Jonathan.Doan: HF - Resolve FingerprintCode update delay [Redmine ID: 236716]
 		
 	Param's Explanation (filtered by):
 
@@ -127,14 +128,17 @@ BEGIN
 	#========Fingerprint Code===========================
 	UPDATE Temp_Trans07 AS trans
 		INNER JOIN DCS_DataCenter.DeviceFingerprint AS df ON df.DeviceFingerprintID = trans.DeviceFingerprintID AND df.DeviceID = trans.DeviceID
-	SET trans.FingerprintCode = df.FingerprintCode;
+	SET trans.FingerprintCode = df.FingerprintCode
+	WHERE trans.DeviceFingerprintID > 0
+		AND trans.DeviceID > 0;
 	
 	#========Useragent===========================
 	UPDATE Temp_Trans07 AS trans
 		INNER JOIN DCS_DataCenter.UserAgent AS ua ON ua.UserAgentKey = trans.UserAgentKey
 		LEFT JOIN DCS_DataCenter.DeviceType AS dt ON dt.DeviceTypeID = ua.DeviceTypeID
 	SET trans.UserAgent = ua.UserAgent,
-		trans.DeviceType = dt.DeviceTypeName;
+		trans.DeviceType = dt.DeviceTypeName
+	WHERE trans.UserAgentKey IS NOT NULL;
     
 	#========Bot Detection===========================
 	INSERT IGNORE INTO Temp_BotDetection(TransID, BotDetection)
