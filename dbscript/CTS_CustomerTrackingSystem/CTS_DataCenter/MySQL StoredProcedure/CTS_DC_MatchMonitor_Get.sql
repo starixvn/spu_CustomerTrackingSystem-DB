@@ -42,6 +42,7 @@ BEGIN
             - 	20250218@Thomas.Nguyen:	Fix issue not filter by Bettype in Scan Date mode [Redmine ID: #217782]
             -	20250317@Casey.Huynh: 	Match Monitor Badminton [Redmine ID: #219681]
 			-	20250812@Logan.Nguyen: 	Match Monitor Group Betting - Cricket [Redmine ID: #235043]
+			-	20251006@Logan.Nguyen: 	Match Monitor Group Betting - Badminton - BetID [Redmine ID: #202509]
 
 		Param's Explanation (filtered by):
 			- ip_Market: 		0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
@@ -60,7 +61,6 @@ BEGIN
 				,@ip_Market:=0,@ip_IsVerified:=NULL
 				,@ip_Bettypes:='[{"BettypeID":1,"BetID":0},{"BettypeID":3,"BetID":0},{"BettypeID":7,"BetID":0}]',@ip_Reason:='0,5');
     */
-	DECLARE CONST_SPORTTYPE_BADMINTON	INT DEFAULT 9;
     
 	DECLARE lv_IsLog TINYINT DEFAULT 0;    
 	DECLARE lv_SPName VARCHAR(100) DEFAULT 'CTS_DC_MatchMonitor_Get';
@@ -227,12 +227,12 @@ BEGIN
 			,	mm.LeagueID
 			,	mm.Sporttype
 			,	mm.BettypeID
-			,	(CASE WHEN mm.SportType = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mm.BetID END) AS BetID
+			,	mm.BetID
 			,	mm.Reason	# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game , 58: Irrigition
             ,	mm.TicketType
 		FROM   CTS_DataCenter.MatchMonitor AS mm
 			INNER JOIN Temp_Bettype AS tmpBt ON mm.BettypeID = tmpBt.BettypeID 
-							AND (CASE WHEN mm.SportType = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mm.BetID END) =  IFNULL(tmpBt.BetID, mm.BetID)
+							AND mm.BetID =  IFNULL(tmpBt.BetID, mm.BetID)
 			INNER JOIN Temp_Sporttype AS tmpSt ON mm.Sporttype = tmpSt.SportTypeID AND IFNULL(mm.LeagueGroupID,0) = tmpSt.LeagueGroupID
 			INNER JOIN Temp_Reason AS r ON r.ReasonID = mm.Reason
 		WHERE mm.InsertDate BETWEEN ip_FromDate AND ip_ToDate
@@ -250,7 +250,7 @@ BEGIN
 			,	mm.Sporttype
             ,	IFNULL(mm.LeagueGroupID,0)
 			,	mm.BettypeID
-			,	(CASE WHEN mm.SportType = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mm.BetID END) AS BetID
+			,	mm.BetID AS BetID
 			,	mm.Reason		# 0:Group Betting, 1: Hedging, 2: Arbitrage, 3: Fixed Game
 			,	js.MatchSection
 			, 	js.KickOffTime
@@ -265,7 +265,7 @@ BEGIN
 										)
 								) AS js ON js.MatchId = mm.MatchId
 			INNER JOIN Temp_Bettype AS tmpBt ON mm.BettypeID = tmpBt.BettypeID 
-				AND (CASE WHEN mm.SportType = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mm.BetID END) = IFNULL(tmpBt.BetID,mm.BetID)
+				AND mm.BetID = IFNULL(tmpBt.BetID,mm.BetID)
 			INNER JOIN Temp_Reason AS r ON r.ReasonID = mm.Reason
 		WHERE	mm.LiveIndicator = IFNULL(ip_Market, mm.LiveIndicator);
     
@@ -278,7 +278,7 @@ BEGIN
 			,	tmpMi.LeagueID
 			,	tmpMi.SportTypeID
 			,	tmpMi.BettypeID
-			,	(CASE WHEN tmpMi.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE tmpMi.BetID END) AS BetID
+			,	tmpMi.BetID AS BetID
 			,	tmpMi.Reason		# Refer table StaticList(ListID=16)
 			,	tmpMi.MatchSection
 			, 	tmpMi.KickOffTime
@@ -294,13 +294,13 @@ BEGIN
         ,	mdv.MatchID
         ,	mdv.LiveIndicator
         ,	mdv.BettypeID
-        ,	(CASE WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mdv.BetID END) AS BetID
+        ,	mdv.BetID AS BetID
         ,	mdv.TicketType
     FROM CTS_DataCenter.MatchMonitorDetailsVerifiedTrans AS mdv		
 		LEFT JOIN CTS_Admin.CTSUser AS us ON us.UserID = mdv.VerifiedBy
 		INNER JOIN Temp_MatchMonitor AS tmpMm ON mdv.MatchID = tmpMm.MatchID AND mdv.LiveIndicator = tmpMm.LiveIndicator 
 														AND mdv.BettypeID = tmpMm.BettypeID 
-                                                        AND (CASE WHEN tmpMm.SportTypeID =CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mdv.BetID END) = tmpMm.BetID AND mdv.TicketType = tmpMm.TicketType
+                                                        AND mdv.BetID = tmpMm.BetID AND mdv.TicketType = tmpMm.TicketType
 			JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mdv.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
 						) js;
@@ -328,7 +328,7 @@ BEGIN
     FROM Temp_MatchGroup AS tmpMg
 		INNER JOIN CTS_DataCenter.MatchMonitorDetails AS mmd ON tmpMg.MatchID = mmd.MatchID AND tmpMg.LiveIndicator = mmd.LiveIndicator
 																AND tmpMg.BettypeID = mmd.BettypeID 
-                                                                AND tmpMg.BetID = (CASE WHEN tmpMg.SportTypeID =CONST_SPORTTYPE_BADMINTON THEN 0 ELSE mmd.BetID END) 
+                                                                AND tmpMg.BetID = mmd.BetID 
                                                                 AND tmpMg.TicketType = mmd.TicketType
 		JOIN JSON_TABLE(REPLACE(JSON_ARRAY(mmd.ListTransID), ',', '","'), 
 						'$[*]' COLUMNS (TransID BIGINT UNSIGNED PATH '$')
@@ -343,7 +343,7 @@ BEGIN
     FROM Temp_MatchMonitor AS t
 		INNER JOIN CTS_DataCenter.MatchMonitorDetails AS d ON t.MatchID = d.MatchID 
 			AND t.LiveIndicator = d.LiveIndicator AND t.BettypeID = d.BettypeID 
-									AND t.BetID = (CASE WHEN t.SportTypeID =CONST_SPORTTYPE_BADMINTON THEN 0 ELSE d.BetID END) 
+									AND t.BetID = d.BetID
 									AND  t.TicketType = d.TicketType 
 		INNER JOIN Temp_Reason AS r ON d.Reason = r.ReasonID
 	GROUP BY t.MatchID, t.LiveIndicator, t.BettypeID, t.BetID, t.TicketType;
@@ -362,10 +362,7 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE 
-					WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON 
-						THEN sbs.BettypeNameDisplay 
-					ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', 
+            ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', 
 						(CASE 
     						WHEN LOCATE('X', sbs.BetIDPattern) > 0 
     							THEN CAST(
@@ -376,7 +373,7 @@ BEGIN
         							) AS UNSIGNED
     							)
     						ELSE 0
-						END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+						END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END)) AS BettypeNameDisplay
         	,	-- DetailsX
 				CASE 
     				WHEN LOCATE('X', sbs.BetIDPattern) > 0 
@@ -448,10 +445,7 @@ BEGIN
             ,	tmpMm.SportTypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE 
-					WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON 
-						THEN sbs.BettypeNameDisplay 
-					ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', 
+            ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', 
 						(CASE 
     						WHEN LOCATE('X', sbs.BetIDPattern) > 0 
     							THEN CAST(
@@ -462,7 +456,7 @@ BEGIN
         							) AS UNSIGNED
     							)
     						ELSE 0
-						END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+						END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END)) AS BettypeNameDisplay
             ,	-- DetailsX
 				CASE 
     				WHEN LOCATE('X', sbs.BetIDPattern) > 0 
@@ -532,10 +526,7 @@ BEGIN
             ,	tmpMm.SporttypeID
 			,	tmpMm.BettypeID
             ,	tmpMm.BetID
-            ,	(CASE 
-					WHEN tmpMm.SportTypeID = CONST_SPORTTYPE_BADMINTON 
-						THEN sbs.BettypeNameDisplay 
-					ELSE  REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', 
+            ,	REPLACE(REPLACE(sbs.BettypeNameDisplay, '[X]', 
 						(CASE 
     						WHEN LOCATE('X', sbs.BetIDPattern) > 0 
     							THEN CAST(
@@ -546,7 +537,7 @@ BEGIN
         							) AS UNSIGNED
     							)
     						ELSE 0
-						END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END))END) AS BettypeNameDisplay
+						END)), ' Y ', (CASE WHEN (tmpMm.BetID > 999) THEN CONCAT(' ',(tmpMm.BetID MOD 100),' ') ELSE 0 END)) AS BettypeNameDisplay
             ,	-- DetailsX
 				CASE 
     				WHEN LOCATE('X', sbs.BetIDPattern) > 0 
