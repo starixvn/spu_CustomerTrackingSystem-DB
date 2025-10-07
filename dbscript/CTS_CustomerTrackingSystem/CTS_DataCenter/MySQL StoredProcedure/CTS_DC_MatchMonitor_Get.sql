@@ -42,7 +42,7 @@ BEGIN
             - 	20250218@Thomas.Nguyen:	Fix issue not filter by Bettype in Scan Date mode [Redmine ID: #217782]
             -	20250317@Casey.Huynh: 	Match Monitor Badminton [Redmine ID: #219681]
 			-	20250812@Logan.Nguyen: 	Match Monitor Group Betting - Cricket [Redmine ID: #235043]
-			-	20251006@Logan.Nguyen: 	Match Monitor Group Betting - Badminton - BetID [Redmine ID: #202509]
+			-	20251006@Logan.Nguyen: 	Match Monitor Group Betting - Badminton - BetID [Redmine ID: #239957]
 
 		Param's Explanation (filtered by):
 			- ip_Market: 		0 return LiveIndicator = 0, 1 return LiveIndicator = 1, NULL: Both Live And Non-Live
