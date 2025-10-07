@@ -15,14 +15,14 @@ Reviewer:
 /*******************************INITIAL BettypeSetting*********************************/
 USE CTS_DataCenter;
 
-UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDisplay = 'Game [X] Winner' WHERE (BetTypeID = 707) and (BetteamOrder = 1);
-UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDisplay = 'Game [X] Winner' WHERE (BetTypeID = 707) and (BetteamOrder = 2);
-UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDisplay = 'Game [X] Points HDP' WHERE (BetTypeID = 708) and (BetteamOrder = 1);
-UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDisplay = 'Game [X] Points HDP' WHERE (BetTypeID = 708) and (BetteamOrder = 2);
-UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDetailsX = '1,2,3,4,5' WHERE (BetTypeID = 707) and (BetteamOrder = 1);
-UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDetailsX = '1,2,3,4,5' WHERE (BetTypeID = 707) and (BetteamOrder = 2);
-UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDetailsX = '1,2,3,4,5' WHERE (BetTypeID = 708) and (BetteamOrder = 1);
-UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDetailsX = '1,2,3,4,5' WHERE (BetTypeID = 708) and (BetteamOrder = 2);
+UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDisplay = 'Game [X] Winner' WHERE (BetTypeID = 707) AND (BetteamOrder = 1);
+UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDisplay = 'Game [X] Winner' WHERE (BetTypeID = 707) AND (BetteamOrder = 2);
+UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDisplay = 'Game [X] Points HDP' WHERE (BetTypeID = 708) AND (BetteamOrder = 1);
+UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDisplay = 'Game [X] Points HDP' WHERE (BetTypeID = 708) AND (BetteamOrder = 2);
+UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDetailsX = '1,2,3,4,5' WHERE (BetTypeID = 707) AND (BetteamOrder = 1);
+UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDetailsX = '1,2,3,4,5' WHERE (BetTypeID = 707) AND (BetteamOrder = 2);
+UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDetailsX = '1,2,3,4,5' WHERE (BetTypeID = 708) AND (BetteamOrder = 1);
+UPDATE CTS_DataCenter.BettypeSetting SET BetTypeNameDetailsX = '1,2,3,4,5' WHERE (BetTypeID = 708) AND (BetteamOrder = 2);
 
 INSERT INTO CTS_DataCenter.BettypeSetting (
     BetTypeID, BetteamOrder, BetteamName, BetChoiceType, BetTypeName, BetTypeNameDetailsX, 
@@ -37,14 +37,6 @@ VALUES
     ,   (@lv_BetTypeID := 701, @lv_BetteamOrder := 2, @lv_BetteamName := 'Away', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Match Handicap',
         @lv_BetTypeNameDetailsX := NULL,
         @lv_BetTypeNameDisplay := 'Match HDP', @lv_BetIDPattern := NULL, @lv_BetTeamDB := 'a', @lv_BetteamShortName := 'a', @lv_Status := 1, @lv_BettypeOrder := '20200')
-
-    /* Match Points Over/Under - Match Points O/U */
-    ,   (@lv_BetTypeID := 705, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Match Points Over/Under',
-        @lv_BetTypeNameDetailsX := NULL,
-        @lv_BetTypeNameDisplay := 'Match Points O/U', @lv_BetIDPattern := NULL, @lv_BetTeamDB := 'o', @lv_BetteamShortName := 'o', @lv_Status := 1, @lv_BettypeOrder := '20200')
-    ,   (@lv_BetTypeID := 705, @lv_BetteamOrder := 2, @lv_BetteamName := 'Under', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Match Points Over/Under',
-        @lv_BetTypeNameDetailsX := NULL,
-        @lv_BetTypeNameDisplay := 'Match Points O/U', @lv_BetIDPattern := NULL, @lv_BetTeamDB := 'u', @lv_BetteamShortName := 'u', @lv_Status := 1, @lv_BettypeOrder := '20200')
 
     /*  Game (X) Point Over/Under - Game (X) Point O/U */
     ,   (@lv_BetTypeID := 709, @lv_BetteamOrder := 1, @lv_BetteamName := 'Over', @lv_BetChoiceType := 2, @lv_BetTypeName := 'Game X Point Over/Under',
@@ -61,9 +53,9 @@ SELECT * FROM BettypeSetting WHERE BettypeID IN (701,705,709,707,708);
 /*******************************INITIAL SportBettypeSetting*********************************/        
 USE CTS_DataCenter;
 
-UPDATE CTS_DataCenter.SportBettypeSetting SET BetTypeNameDetailsX = '1,2,3,4,5' WHERE LeagueGroupID = 0 and SportTypeID = 9 and BetTypeID in (708,707); 
-UPDATE CTS_DataCenter.SportBettypeSetting SET BettypeNameDisplay = 'Game [X] Points HDP' WHERE LeagueGroupID = 0 and SportTypeID = 9 and BetTypeID = 708;
-UPDATE CTS_DataCenter.SportBettypeSetting SET BettypeNameDisplay = 'Game [X] Winner' WHERE LeagueGroupID = 0 and SportTypeID = 9 and BetTypeID = 707;
+UPDATE CTS_DataCenter.SportBettypeSetting SET BetTypeNameDetailsX = '1,2,3,4,5' WHERE LeagueGroupID = 0 AND SportTypeID = 9 AND BetTypeID in (708,707); 
+UPDATE CTS_DataCenter.SportBettypeSetting SET BettypeNameDisplay = 'Game [X] Points HDP' WHERE LeagueGroupID = 0 AND SportTypeID = 9 AND BetTypeID = 708;
+UPDATE CTS_DataCenter.SportBettypeSetting SET BettypeNameDisplay = 'Game [X] Winner' WHERE LeagueGroupID = 0 AND SportTypeID = 9 AND BetTypeID = 707;
 
 INSERT INTO CTS_DataCenter.SportBettypeSetting
     (FunctionID,SportTypeID,LeagueGroupID,BetTypeID,SportName,BetTypeName,BetTypeNameDetailsX,BettypeNameDisplay,BetChoicePattern,BetChoiceType,BetIDPattern,IsMMDetection,IsMMParlayDetection,MMReason,IsDefaultSelected,Status,SportOrder)
