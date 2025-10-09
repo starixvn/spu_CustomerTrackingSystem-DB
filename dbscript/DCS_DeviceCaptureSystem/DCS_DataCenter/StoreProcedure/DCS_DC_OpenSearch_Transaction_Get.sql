@@ -18,6 +18,7 @@ BEGIN
 		- 20250312@Lando.Vu: Ignored Subscribers [Redmine ID: 217768]
 		- 20250327@Jonathan.Doan: HF - Missing transaction data when retrieving from table Transaction07 [Redmine ID: #222043]
 		- 20251006@Jonathan.Doan: HF - Resolve FingerprintCode update delay [Redmine ID: 236716]
+		- 20251009@Jonathan.Doan: Add field Indicate Tagging Type & FP version[Redmine ID: #240781]
 		
 	Param's Explanation (filtered by):
 
@@ -72,6 +73,12 @@ BEGIN
 		,	UserAgent					VARCHAR(1000)
 		,	BotDetection				LONGTEXT
 		,	DeviceType 					VARCHAR(20)
+		,	FPPatternID01 				BIGINT UNSIGNED
+		,	FPPatternID02 				BIGINT UNSIGNED
+		,	TransFlow 					TINYINT(1)
+		,	ActivatorVersion 			VARCHAR(10)
+		,	FingerprintVersion 			VARCHAR(10)
+		,	TaggingType 				SMALLINT
 	);
 
 	CREATE TEMPORARY TABLE Temp_IgnoredSubscriberID(
@@ -88,7 +95,7 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 
-	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode)
+	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode, FPPatternID01, FPPatternID02, TransFlow, ActivatorVersion, FingerprintVersion, TaggingType)
 		SELECT 	trans.TransID
 		,	trans.TransTime
 		,	trans.AccountID
@@ -111,6 +118,12 @@ BEGIN
 		,	trans.BotDetectionValue
 		,	trans.FakeIP
 		,	trans.IsIncognitoMode
+		,	trans.FPPatternID01
+		,	trans.FPPatternID02
+		,	trans.TransFlow
+		,	trans.ActivatorVersion
+		,	trans.FingerprintVersion
+		,	trans.TaggingType
 	FROM DCS_DataCenter.Transaction07 AS trans
 	WHERE trans.TransID > lv_MaxTransID
 		AND trans.TransID <= lv_MaxTransIDCompleted
@@ -178,6 +191,12 @@ BEGIN
 		,	trans.BotDetection
 		,	trans.FakeIP
 		,	trans.IsIncognitoMode
+		,	trans.FPPatternID01
+		,	trans.FPPatternID02
+		,	trans.TransFlow
+		,	trans.ActivatorVersion
+		,	trans.FingerprintVersion
+		,	trans.TaggingType
 	FROM Temp_Trans07 AS trans
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND CAST(sl.ItemID AS UNSIGNED) = trans.Flagged
