@@ -1,4 +1,4 @@
-/*<info serverAlias="CTSARC-CTS_Archive" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
+/*<info serverAlias="CTSMain-CTS_Archive" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
 DROP PROCEDURE IF EXISTS `CTS_Archive`.`CTS_Archive_Log_Insert`;
 
 DELIMITER $$
