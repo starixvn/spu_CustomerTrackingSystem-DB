@@ -10,7 +10,7 @@ BEGIN
 	/*
 		Created: 20190610@Casey.Huynh
 		Task : Insert to Raw Table
-		DB: FPS_RawTrans
+		DB: DCS_DataCenterStaging
 		Original:
 
 		Revisions:
