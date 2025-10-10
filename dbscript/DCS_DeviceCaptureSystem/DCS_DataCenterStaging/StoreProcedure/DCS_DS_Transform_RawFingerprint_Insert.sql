@@ -15,39 +15,41 @@ BEGIN
 
 		Revisions:
             - 20250826@Casey.Huynh: Created, AI Power Device Fingerprint AND Remove FPJs [Redmine ID: #236716]
+			- 20251010@Jonathan.Doan: Add field Indicate Tagging Type & FP version[Redmine ID: #240781]
 
 		Param's Explanation (filtered by):
         
 		Example:
+			CALL DCS_DS_Transform_RawFingerprint_Insert('[{"FPPatternCode01":"FPPatternCode01Sample","FPPatternCode02":"FPPatternCode02Sample","HardwareCode":"7ca71ebf7ca71ebf7ca71ebf7ca71ebf","GraphicCode":"77ad7e6477ad7e6477ad7e6477ad7e64","AudioCode":"ff61404dff61404dff61404dff61404d","BrowserCode":"b500f57fb500f57fb500f57fb500f57f","PreferencesCode":"6f0147036f0147036f0147036f014703","HardwareDetails":"Hw","GraphicDetails":"Gp","AudioDetails":"Au","BrowserDetails":"Br","PreferencesDetails":"Pf","CreatedDate":"2025-09-23T00:00:00"}]');
 	*/
     
-    DECLARE 	CONST_FPPATTERNTYPE01	INT DEFAULT 1;
-    DECLARE 	CONST_FPPATTERNTYPE02	INT DEFAULT 2;
+    DECLARE CONST_FPPATTERNTYPE01	INT DEFAULT 1;
+    DECLARE CONST_FPPATTERNTYPE02	INT DEFAULT 2;
     
     DECLARE CONST_TYPE_HARDWARE		INT DEFAULT 1;
-    DECLARE CONST_TYPE_Graphic		INT DEFAULT 2;
-    DECLARE CONST_TYPE_AUDIO			INT DEFAULT 3;
+    DECLARE CONST_TYPE_GRAPHIC		INT DEFAULT 2;
+    DECLARE CONST_TYPE_AUDIO		INT DEFAULT 3;
     DECLARE CONST_TYPE_BROWSER		INT DEFAULT 4;
     DECLARE CONST_TYPE_PREFERENCES	INT DEFAULT 5;
     
     DROP TEMPORARY TABLE IF EXISTS Temp_FPPattern;
 	CREATE TEMPORARY TABLE Temp_FPPattern(
-			ID							BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY 
-		,	FPPatternCode01				VARCHAR(32)
-		,	FPPatternCode02 			VARCHAR(32)
-        ,	FPPatternID01				BIGINT UNSIGNED
-		,	FPPatternID02 				BIGINT UNSIGNED
-        ,	HardwareCode			VARCHAR(32)
+			ID					BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY 
+		,	FPPatternCode01		VARCHAR(32)
+		,	FPPatternCode02 	VARCHAR(32)
+        ,	FPPatternID01		BIGINT UNSIGNED
+		,	FPPatternID02 		BIGINT UNSIGNED
+        ,	HardwareCode		VARCHAR(32)
         ,	GraphicCode			VARCHAR(32)
         ,	AudioCode			VARCHAR(32)
         ,	BrowserCode			VARCHAR(32)
         ,	PreferencesCode		VARCHAR(32)
         ,	HardwareDetails		LONGTEXT
         ,	GraphicDetails		LONGTEXT
-        ,	AudioDetails			LONGTEXT
+        ,	AudioDetails		LONGTEXT
         ,	BrowserDetails		LONGTEXT
         ,	PreferencesDetails	LONGTEXT
-		,	CreatedDate					DATE NOT NULL
+		,	CreatedDate			DATE NOT NULL
 		
 		,	INDEX IX_Temp_FPPattern_FPPatternCode01(FPPatternCode01)
         ,	INDEX IX_Temp_FPPattern_FPPatternCode02(FPPatternCode02)
@@ -99,7 +101,7 @@ BEGIN
 		   ) AS js; 	
 
 	#======GET EXISTING Pattern============
-	INSERT INTO Temp_ExistingFPPattern(FPPatternID, FPPatternType, FPPatternCode, NewUsedDate)
+	INSERT IGNORE INTO Temp_ExistingFPPattern(FPPatternID, FPPatternType, FPPatternCode, NewUsedDate)
 	SELECT 	fp.FPPatternID
 		,	fp.FPPatternType
         ,	fp.FPPatternCode
@@ -108,7 +110,7 @@ BEGIN
 		INNER JOIN DCS_DataCenterStaging.FPPattern AS fp ON fp.FPPatternType = CONST_FPPATTERNTYPE01 AND fp.FPPatternCode = tmpFp.FPPatternCode01
 	WHERE tmpFp.FPPatternCode01 IS NOT NULL ;        
 
-	INSERT INTO Temp_ExistingFPPattern(FPPatternID, FPPatternType, FPPatternCode, NewUsedDate)
+	INSERT IGNORE INTO Temp_ExistingFPPattern(FPPatternID, FPPatternType, FPPatternCode, NewUsedDate)
 	SELECT 	fp.FPPatternID
 		,	fp.FPPatternType
         ,	fp.FPPatternCode
@@ -132,6 +134,7 @@ BEGIN
 	FROM Temp_FPPattern AS tmpPt
 		LEFT JOIN Temp_ExistingFPPattern AS tmpEx ON tmpEx.FPPatternCode = tmpPt.FPPatternCode01
 	WHERE	tmpEx.FPPatternType IS NULL
+		AND tmpPt.FPPatternCode01 IS NOT NULL
 	ON DUPLICATE KEY UPDATE LastUsedDate = GREATEST(tmpPt.CreatedDate,LastUsedDate);
 	
 	INSERT IGNORE INTO DCS_DataCenterStaging.FPPattern(FPPatternType, FPPatternCode, CreatedDate, LastUsedDate)
@@ -142,6 +145,7 @@ BEGIN
 	FROM Temp_FPPattern AS tmpPt
 		LEFT JOIN Temp_ExistingFPPattern AS tmpEx ON tmpEx.FPPatternCode = tmpPt.FPPatternCode02
 	WHERE	tmpEx.FPPatternType IS NULL
+		AND tmpPt.FPPatternCode02 IS NOT NULL
 	ON DUPLICATE KEY UPDATE LastUsedDate = GREATEST(tmpPt.CreatedDate,LastUsedDate);   	
 
    #======INSERT FPPatternGroupQueue=============================
@@ -177,7 +181,12 @@ BEGIN
 		,	tmpPt.BrowserDetails
 		,	tmpPt.PreferencesDetails
         ,	tmpPt.CreatedDate
-	FROM Temp_FPPattern AS tmpPt;
+	FROM Temp_FPPattern AS tmpPt
+    WHERE (tmpPt.HardwareCode IS NOT NULL
+            OR tmpPt.GraphicCode IS NOT NULL
+            OR tmpPt.AudioCode IS NOT NULL
+            OR tmpPt.BrowserCode IS NOT NULL
+            OR tmpPt.PreferencesCode IS NOT NULL);
   
 END$$
 
