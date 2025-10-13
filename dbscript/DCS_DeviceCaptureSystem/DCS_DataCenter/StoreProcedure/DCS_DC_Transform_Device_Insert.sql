@@ -595,7 +595,7 @@ BEGIN
     SET lv_NewAccountDeviceJson = IFNULL(lv_NewAccountDeviceJson,'[{}]');
 	CALL DCS_DC_Transform_NewAccountDevice_Insert(lv_NewAccountDeviceJson);
 	
-	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, WebRTCIPID, FPPatternID01, FPPatternID02, TransFlow, ActivatorVersion, FingerprintVersion, TaggingType)
+	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, WebRTCIPID, FPPatternID01, FPPatternID02, TransFlow, ActivatorVersionID, FingerprintVersionID, TaggingType)
 	SELECT 	ts.RawTransID
 		,	ts.LoginName
 		,	ts.TransTime
@@ -625,8 +625,8 @@ BEGIN
 		,	ts.FPPatternID01
 		,	ts.FPPatternID02
 		,	ts.TransFlow
-		,	ts.ActivatorVersion
-		,	ts.FingerprintVersion
+		,	ts.ActivatorVersionID
+		,	ts.FingerprintVersionID
 		,	ts.TaggingType
 	FROM Temp_Transaction AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS ts ON ts.TransID = tmp.TransID

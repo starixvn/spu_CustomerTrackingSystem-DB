@@ -76,8 +76,8 @@ BEGIN
 		,	FPPatternID01 				BIGINT UNSIGNED
 		,	FPPatternID02 				BIGINT UNSIGNED
 		,	TransFlow 					TINYINT(1)
-		,	ActivatorVersion 			VARCHAR(10)
-		,	FingerprintVersion 			VARCHAR(10)
+		,	ActivatorVersionID 			INT
+		,	FingerprintVersionID		INT
 		,	TaggingType 				SMALLINT
 	);
 
@@ -95,7 +95,7 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 
-	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode, FPPatternID01, FPPatternID02, TransFlow, ActivatorVersion, FingerprintVersion, TaggingType)
+	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode, FPPatternID01, FPPatternID02, TransFlow, ActivatorVersionID, FingerprintVersionID, TaggingType)
 		SELECT 	trans.TransID
 		,	trans.TransTime
 		,	trans.AccountID
@@ -121,8 +121,8 @@ BEGIN
 		,	trans.FPPatternID01
 		,	trans.FPPatternID02
 		,	trans.TransFlow
-		,	trans.ActivatorVersion
-		,	trans.FingerprintVersion
+		,	trans.ActivatorVersionID
+		,	trans.FingerprintVersionID
 		,	trans.TaggingType
 	FROM DCS_DataCenter.Transaction07 AS trans
 	WHERE trans.TransID > lv_MaxTransID
@@ -194,8 +194,8 @@ BEGIN
 		,	trans.FPPatternID01
 		,	trans.FPPatternID02
 		,	trans.TransFlow
-		,	trans.ActivatorVersion
-		,	trans.FingerprintVersion
+		,	trans.ActivatorVersionID
+		,	trans.FingerprintVersionID
 		,	trans.TaggingType
 	FROM Temp_Trans07 AS trans
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
