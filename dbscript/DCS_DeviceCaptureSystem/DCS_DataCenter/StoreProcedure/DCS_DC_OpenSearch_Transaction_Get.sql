@@ -29,6 +29,9 @@ BEGIN
     DECLARE CONST_OPENSEARCH_LISTIGNOREDSUBID 					INT 		DEFAULT 100;
 	DECLARE CONST_OPENSEARCH_TRANSACTION07_TRANSID 				INT 		DEFAULT 101;
     
+	DECLARE CONST_SCRIPTVERSIONTYPE_ACTIVATOR	 				INT 		DEFAULT 1;
+	DECLARE CONST_SCRIPTVERSIONTYPE_FINGERPRINT	 				INT 		DEFAULT 2;
+    
 	DECLARE lv_MaxTransID  				BIGINT UNSIGNED;
 	DECLARE lv_MaxTransIDCompleted		BIGINT UNSIGNED;
 	DECLARE lv_ListIgnoredSubID			VARCHAR(500);
@@ -195,13 +198,17 @@ BEGIN
 		,	trans.FPPatternID02
 		,	trans.TransFlow
 		,	trans.ActivatorVersionID
+		,	sv.ScriptVersion AS ActivatorVersion
 		,	trans.FingerprintVersionID
+		,	svFp.ScriptVersion AS FingerprintVersion
 		,	trans.TaggingType
 	FROM Temp_Trans07 AS trans
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND CAST(sl.ItemID AS UNSIGNED) = trans.Flagged
 		LEFT JOIN DCS_DataCenter.URL AS url ON url.URLID = trans.URLID
 		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID
-		LEFT JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = trans.AccountID;
+		LEFT JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = trans.AccountID
+		LEFT JOIN DCS_DataCenter.ScriptVersion AS sv ON sv.ScriptVersionID = trans.ActivatorVersionID
+		LEFT JOIN DCS_DataCenter.ScriptVersion AS svFp ON svFp.ScriptVersionID = trans.FingerprintVersionID;
 END$$
 DELIMITER ;
