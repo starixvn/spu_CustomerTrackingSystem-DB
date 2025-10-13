@@ -57,7 +57,7 @@ BEGIN
 		    TransID					BIGINT UNSIGNED NOT NULL
 		,   LoginName				VARCHAR(100) NOT NULL
 		,   TransTime				DATETIME(4) NOT NULL
-		,   SubscriberID			INT 				
+		,   SubscriberID			INT
         ,   AccountID				BIGINT	UNSIGNED 	
         ,   SubscriberType			TINYINT	UNSIGNED	
         ,   URLDetails				VARCHAR(250)		
@@ -179,7 +179,9 @@ BEGIN
 		ADD INDEX IX_Temp_RawTransaction_ChallengeCode (ChallengeCode)
     ,	ADD INDEX IX_Temp_RawTransaction_FPPatternCode01(FPPatternCode01)
     ,	ADD INDEX IX_Temp_RawTransaction_FPPatternCode02(FPPatternCode02)
-    ,	ADD INDEX IX_Temp_RawTransaction_WebRTCIPCode(WebRTCIPCode);
+    ,	ADD INDEX IX_Temp_RawTransaction_WebRTCIPCode(WebRTCIPCode)
+    ,	ADD INDEX IX_Temp_RawTransaction_ActivatorVersion(ActivatorVersion)
+    ,	ADD INDEX IX_Temp_RawTransaction_FingerprintVersion(FingerprintVersion);
 	
     #===================FINGERPRINT PARTTERN=======================================
 	UPDATE Temp_RawTransaction AS rt
@@ -233,11 +235,21 @@ BEGIN
 		tmp.URLID = url.URLID;
 	
     #=================== ScriptVersion =======================================
+	UPDATE Temp_RawTransaction
+	SET ActivatorVersionID = ActivatorVersion
+    WHERE ActivatorVersion IN ('-1', '-2', '-3');
+    
+	UPDATE Temp_RawTransaction
+	SET FingerprintVersionID = FingerprintVersion
+    WHERE FingerprintVersion IN ('-1', '-2', '-3');
+    
     INSERT INTO Temp_ScriptVersion(ScriptVersionType, ScriptVersion, LastUsedDate)
     SELECT	CONST_SCRIPTVERSIONTYPE_ACTIVATOR AS ScriptVersionType
 		,	ActivatorVersion AS ScriptVersion
 		,	MAX(CreatedDate) AS LastUsedDate
     FROM Temp_RawTransaction
+    WHERE ActivatorVersion IS NOT NULL
+		AND ActivatorVersionID IS NULL
     GROUP BY ActivatorVersion;
     
     INSERT INTO Temp_ScriptVersion(ScriptVersionType, ScriptVersion, LastUsedDate)
@@ -245,6 +257,8 @@ BEGIN
 		,	FingerprintVersion AS ScriptVersion
 		,	MAX(CreatedDate) AS LastUsedDate
     FROM Temp_RawTransaction
+    WHERE FingerprintVersion IS NOT NULL
+		AND FingerprintVersionID IS NULL
     GROUP BY FingerprintVersion;
     
     INSERT IGNORE INTO DCS_DataCenter.ScriptVersion(ScriptVersionType, ScriptVersion, LastUsedDate, CreatedDate)
@@ -258,12 +272,14 @@ BEGIN
 	UPDATE Temp_RawTransaction AS rt
 		INNER JOIN DCS_DataCenter.ScriptVersion AS sv ON sv.ScriptVersionType = CONST_SCRIPTVERSIONTYPE_ACTIVATOR AND sv.ScriptVersion = rt.ActivatorVersion 
 	SET rt.ActivatorVersionID = sv.ScriptVersionID
-    WHERE rt.ActivatorVersion IS NOT NULL;
+    WHERE rt.ActivatorVersion IS NOT NULL
+		AND rt.ActivatorVersionID IS NULL;
     
 	UPDATE Temp_RawTransaction AS rt
 		INNER JOIN DCS_DataCenter.ScriptVersion AS sv ON sv.ScriptVersionType = CONST_SCRIPTVERSIONTYPE_FINGERPRINT AND sv.ScriptVersion = rt.FingerprintVersion 
 	SET rt.FingerprintVersionID = sv.ScriptVersionID
-    WHERE rt.FingerprintVersion IS NOT NULL;
+    WHERE rt.FingerprintVersion IS NOT NULL
+		AND rt.FingerprintVersionID IS NULL;
     
     #==============Remove Temp Trans If AccountID Is NULL=======================
     DELETE 	trt

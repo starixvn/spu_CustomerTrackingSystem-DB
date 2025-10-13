@@ -28,15 +28,21 @@ INSERT IGNORE INTO `DCS_DataCenter`.`StaticList` (`ListID`, `ItemID`, `ListCode`
 VALUES (8, 1, 'ScriptVersion_ScriptVersionType', 'ScriptVersion ScriptVersionType', 'ActivatorVersion', 'ActivatorVersion', '1', NOW())
 	,	(8, 2, 'ScriptVersion_ScriptVersionType', 'ScriptVersion ScriptVersionType', 'FingerprintVersion', 'FingerprintVersion', '1', NOW());
 
+
 INSERT IGNORE INTO `DCS_DataCenter`.`StaticList` (`ListID`, `ItemID`, `ListCode`, `ListName`, `ItemCode`, `ItemName`, `Status`, `CreatedDate`) 
-VALUES (9, 1001, 'TaggingType', 'TaggingType', 'IndexedDB', 'IndexedDB', '1', NOW())
-	,	(9, 2002, 'TaggingType', 'TaggingType', 'Etag', 'Etag', '1', NOW())
-	,	(9, 3003, 'TaggingType', 'TaggingType', 'CacheAPI', 'CacheAPI', '1', NOW())
-	,	(9, 4004, 'TaggingType', 'TaggingType', 'Cookies', 'Cookies', '1', NOW())
-	,	(9, 5005, 'TaggingType', 'TaggingType', 'LocalStorage', 'LocalStorage', '1', NOW())
-	,	(9, 6006, 'TaggingType', 'TaggingType', 'WindowName', 'WindowName', '1', NOW())
-	,	(9, 7000, 'TaggingType', 'TaggingType', 'Generated', 'Generated', '1', NOW())
-	,	(9, 8000, 'TaggingType', 'TaggingType', 'Default', 'Default', '1', NOW());
+VALUES (9, -1, 'ScriptVersion_Exception', 'ScriptVersion Exception', 'NotExists', 'NotExists', '1', NOW())
+	,	(9, -2, 'ScriptVersion_Exception', 'ScriptVersion Exception', 'Empty', 'Empty', '1', NOW())
+	,	(9, -3, 'ScriptVersion_Exception', 'ScriptVersion Exception', 'MaxLength', 'MaxLength', '1', NOW());
+
+INSERT IGNORE INTO `DCS_DataCenter`.`StaticList` (`ListID`, `ItemID`, `ListCode`, `ListName`, `ItemCode`, `ItemName`, `Status`, `CreatedDate`) 
+VALUES (10, 1001, 'TaggingType', 'TaggingType', 'IndexedDB', 'IndexedDB', '1', NOW())
+	,	(10, 2002, 'TaggingType', 'TaggingType', 'Etag', 'Etag', '1', NOW())
+	,	(10, 3003, 'TaggingType', 'TaggingType', 'CacheAPI', 'CacheAPI', '1', NOW())
+	,	(10, 4004, 'TaggingType', 'TaggingType', 'Cookies', 'Cookies', '1', NOW())
+	,	(10, 5005, 'TaggingType', 'TaggingType', 'LocalStorage', 'LocalStorage', '1', NOW())
+	,	(10, 6006, 'TaggingType', 'TaggingType', 'WindowName', 'WindowName', '1', NOW())
+	,	(10, 7000, 'TaggingType', 'TaggingType', 'Generated', 'Generated', '1', NOW())
+	,	(10, 8000, 'TaggingType', 'TaggingType', 'Default', 'Default', '1', NOW());
 
 ALTER TABLE RawTransaction
 ADD COLUMN ActivatorVersion VARCHAR(10),
@@ -48,27 +54,14 @@ ADD COLUMN ActivatorVersion VARCHAR(10),
 ADD COLUMN FingerprintVersion VARCHAR(10),
 ADD COLUMN TaggingType SMALLINT;
 
-/*
-ALTER TABLE Transaction
-DROP COLUMN ActivatorVersion,
-DROP COLUMN FingerprintVersion,
-DROP COLUMN TaggingType;
-
-ALTER TABLE Transaction07
-DROP COLUMN ActivatorVersion,
-DROP COLUMN FingerprintVersion,
-DROP COLUMN TransFlow,
-DROP COLUMN TaggingType;
-*/
-
 ALTER TABLE Transaction
 ADD COLUMN ActivatorVersionID INT,
 ADD COLUMN FingerprintVersionID INT,
 ADD COLUMN TaggingType SMALLINT;
 
 ALTER TABLE Transaction07
-ADD COLUMN ActivatorVersionID INT COMMENT 'ScriptVersion.ScriptVersionType = 1',
-ADD COLUMN FingerprintVersionID INT COMMENT 'ScriptVersion.ScriptVersionType = 2',
+ADD COLUMN ActivatorVersionID INT COMMENT 'ScriptVersion.ScriptVersionType = 1 || StaticList.ListID = 9',
+ADD COLUMN FingerprintVersionID INT COMMENT 'ScriptVersion.ScriptVersionType = 2 || StaticList.ListID = 9',
 ADD COLUMN TransFlow TINYINT(1) COMMENT '1: New, 0: Old',
 ADD COLUMN TaggingType SMALLINT COMMENT 'StaticList.ListID = 9';
 
