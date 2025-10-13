@@ -18,3 +18,12 @@ ALTER TABLE CustEvidenceFromFile RENAME TO DLE_CustEvidenceFromFile;
 ALTER TABLE CustEvidenceLog RENAME TO DLE_CustEvidenceLog;
 ALTER TABLE CustEvidenceQueue RENAME TO DLE_CustEvidenceQueue;
 ALTER TABLE SmartGroupHistory RENAME TO DLE_SmartGroupHistory;
+
+/********************* Correct Parameter Name *********************/
+UPDATE SystemParameter
+SET ParameterName = 'ClassificationDangerousScoreDeposit_LastCustID'
+WHERE ParameterID = 157;
+
+UPDATE SystemParameter
+SET ParameterName = 'ClassificationDangerousScoreDeposit_BatchSize'
+WHERE ParameterID = 158;

@@ -1,1 +1,0 @@
-UPDATE `CTS_DataCenter`.`Evidence` SET `EvidenceDesc` = 'Harvey test' WHERE (`EvidenceID` = '31');
