@@ -87,13 +87,13 @@ BEGIN
 		INTO 	lv_Count_IP
 		FROM DCS_DataCenter.AccountIP AS ip
 		WHERE ip.AccountID IN (SELECT tmp.AccountID FROM Temp_AccountID AS tmp )
-			AND ip.LastTransDate BETWEEN ip_FromDate AND ip_ToDate; 
+			AND ip.LastTransDate BETWEEN ip_FromDate AND ip_ToDate AND ip.IP <> ''; 
 		
 		SELECT  COUNT(1)
 		INTO 	lv_Count_Device
 		FROM DCS_DataCenter.AccountDevice AS dv
 		WHERE dv.AccountID IN (SELECT tmp.AccountID FROM Temp_AccountID AS tmp )
-			AND dv.LastTransDate BETWEEN ip_FromDate AND ip_ToDate; 
+			AND dv.LastTransDate BETWEEN ip_FromDate AND ip_ToDate AND IFNULL(dv.DeviceID, 0) > 0; 
 		
 		SELECT  SUM(CASE WHEN st.GroupID = 2 THEN lg.TotalTrans ELSE 0 END) AS Invalid
 			,	SUM(CASE WHEN st.GroupID = 3 THEN lg.TotalTrans ELSE 0 END) AS Bot
