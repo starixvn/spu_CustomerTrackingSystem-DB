@@ -168,15 +168,21 @@ BEGIN
 			AND ts.TransTime < DATE_ADD(GREATEST(ip_FromDate, lv_CustInsertedDate), INTERVAL 1 DAY) 
 			AND IFNULL(ts.IPID, 0) > 0;
 		
-		-- Count IPID from MBAccountIP excluding those in MBTransaction07
-		SELECT  (SELECT COUNT(1) FROM Temp_IPFromTransaction) + COUNT(DISTINCT ip.IPID)
+		-- Count IPID from MBTransaction07
+		SELECT  COUNT(1)
 		INTO 	lv_Count_MBAppIP
-		FROM Temp_CustDCSMBAccount AS tmp
-			INNER JOIN DCS_DataCenter.MBAccountIP AS ip ON ip.MBAccountID = tmp.MBAccountID
-			LEFT JOIN Temp_IPFromTransaction AS tmpIP ON tmpIP.IPID = ip.IPID
-		WHERE ip.LastAccessedDate > GREATEST(ip_FromDate, lv_CustInsertedDate) 
-			AND ip.LastAccessedDate < ip_ToDate
-			AND tmpIP.IPID IS NULL;
+		FROM Temp_IPFromTransaction;
+		
+		-- Count IPID from MBAccountIP excluding those in MBTransaction07
+		SET lv_Count_MBAppIP = lv_Count_MBAppIP + (
+			SELECT  COUNT(DISTINCT ip.IPID)
+			FROM Temp_CustDCSMBAccount AS tmp
+				INNER JOIN DCS_DataCenter.MBAccountIP AS ip ON ip.MBAccountID = tmp.MBAccountID
+				LEFT JOIN Temp_IPFromTransaction AS tmpIP ON tmpIP.IPID = ip.IPID
+			WHERE ip.LastAccessedDate > GREATEST(ip_FromDate, lv_CustInsertedDate) 
+				AND ip.LastAccessedDate < ip_ToDate
+				AND tmpIP.IPID IS NULL
+		);
 
 		-- Count MBDeviceID from MBTransaction07 first
 		DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceFromTransaction;
@@ -192,16 +198,22 @@ BEGIN
 			AND ts.TransTime < DATE_ADD(GREATEST(ip_FromDate, lv_CustInsertedDate), INTERVAL 1 DAY) 
 			AND IFNULL(ts.MBDeviceID, 0) > 0;
 		
-		-- Count MBDeviceID from MBAssociation excluding those in MBTransaction07
-		SELECT  (SELECT COUNT(1) FROM Temp_MBDeviceFromTransaction) + COUNT(DISTINCT dv.MBDeviceID)
+		-- Count MBDeviceID from MBTransaction07
+		SELECT  COUNT(1)
 		INTO 	lv_Count_MBAppDevice
-		FROM Temp_CustDCSMBAccount AS tmp
-			INNER JOIN DCS_DataCenter.MBAssociation AS dv ON dv.MBAccountID = tmp.MBAccountID
-			LEFT JOIN Temp_MBDeviceFromTransaction AS tmpDev ON tmpDev.MBDeviceID = dv.MBDeviceID
-		WHERE dv.LastAccessedDate > GREATEST(ip_FromDate, lv_CustInsertedDate) 
-			AND dv.LastAccessedDate < ip_ToDate
-			AND IFNULL(dv.MBDeviceID, 0) > 0
-			AND tmpDev.MBDeviceID IS NULL;
+		FROM Temp_MBDeviceFromTransaction;
+		
+		-- Count MBDeviceID from MBAssociation excluding those in MBTransaction07
+		SET lv_Count_MBAppDevice = lv_Count_MBAppDevice + (
+			SELECT  COUNT(DISTINCT dv.MBDeviceID)
+			FROM Temp_CustDCSMBAccount AS tmp
+				INNER JOIN DCS_DataCenter.MBAssociation AS dv ON dv.MBAccountID = tmp.MBAccountID
+				LEFT JOIN Temp_MBDeviceFromTransaction AS tmpDev ON tmpDev.MBDeviceID = dv.MBDeviceID
+			WHERE dv.LastAccessedDate > GREATEST(ip_FromDate, lv_CustInsertedDate) 
+				AND dv.LastAccessedDate < ip_ToDate
+				AND IFNULL(dv.MBDeviceID, 0) > 0
+				AND tmpDev.MBDeviceID IS NULL
+		);
 		
 		SELECT  IFNULL(SUM(CASE WHEN lg.FlaggedGroupID = 2 THEN lg.TotalTrans ELSE 0 END),0) AS Invalid
 			,	IFNULL(SUM(CASE WHEN lg.FlaggedGroupID = 3 THEN lg.TotalTrans ELSE 0 END),0) AS Bot
