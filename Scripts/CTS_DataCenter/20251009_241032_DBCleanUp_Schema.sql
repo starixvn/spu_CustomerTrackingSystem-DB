@@ -7,6 +7,7 @@ DBName:		CTS_DataCenter
 
 Revisions: 
 		- 20251009@Thomas.Nguyen: Created [Redmine ID: #241032]
+		- 20251014@Logan.Nguyen: Remove SystemParameter [Redmine ID: #241032]
 Reviewer:
 */
 
@@ -254,6 +255,28 @@ DROP PROCEDURE IF EXISTS CTS_Log.CTS_Log_Monitor_Neo4j_CustClassification_Get_xt
 DROP PROCEDURE IF EXISTS CTS_Log.CTS_Log_Monitor_Neo4j_CustEvidence_Get_xtest;
 DROP PROCEDURE IF EXISTS CTS_Log.CTS_Log_Monitor_Neo4j_CustEvidence_InsertMissing_xtest;
 
+
+/***************************** Remove unused SystemParameter *****************************/
+CREATE TABLE Adhoc_241032_SystemParameter_BeforeRemove (
+	ParameterID SMALLINT UNSIGNED NOT NULL,
+	ParameterName VARCHAR(50) DEFAULT NULL,
+	ParameterDesc VARCHAR(200) COLLATE DEFAULT NULL,
+	ParameterDataType VARCHAR(50) COLLATE DEFAULT NULL,
+	ParameterValue VARCHAR(200) COLLATE DEFAULT NULL,
+	PRIMARY KEY (ParameterID) 
+);
+
+INSERT INTO Adhoc_241032_SystemParameter_BeforeRemove (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+SELECT ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue
+FROM CTS_DataCenter.SystemParameter AS spt  
+WHERE ParameterID IN (14, 21, 22, 23, 50, 51, 52, 68, 68, 71, 72, 73, 74,
+						75, 77, 78, 82, 83, 90, 108, 109, 110, 111, 112,
+						134, 135, 136, 141, 142, 170, 990, 991);
+ 
+DELETE FROM CTS_DataCenter.SystemParameter 
+WHERE ParameterID IN (14, 21, 22, 23, 50, 51, 52, 68, 68, 71, 72, 73, 74,
+						75, 77, 78, 82, 83, 90, 108, 109, 110, 111, 112,
+						134, 135, 136, 141, 142, 170, 990, 991);
 
 /***************************** Remove unused procedures SPU_AIML *****************************/
 USE SPU_AIML;
