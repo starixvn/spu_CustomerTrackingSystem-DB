@@ -114,7 +114,7 @@ BEGIN
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 
-	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode, FPPatternID01, FPPatternID02, TransFlow, ActivatorVersionID, FingerprintVersionID, TaggingType)
+	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode, FPPatternID01, FPPatternID02, TransFlow, ActivatorVersionID, FingerprintVersionID, TaggingType, WebRTCIPID)
 	SELECT 	trans.TransID
 		,	trans.TransTime
 		,	trans.AccountID
@@ -143,6 +143,7 @@ BEGIN
 		,	trans.ActivatorVersionID
 		,	trans.FingerprintVersionID
 		,	trans.TaggingType
+		,	trans.WebRTCIPID
 	FROM DCS_DataCenter.Transaction07 AS trans
 	WHERE trans.TransID > lv_MaxTransID
 		AND trans.TransID <= lv_MaxTransIDCompleted
@@ -224,8 +225,8 @@ BEGIN
 		,	trans.IP
 		,	CAST(trans.IPID AS CHAR) AS IPID
 		,	ar.Action
-		,	trans.Flagged 				AS	Flagged
-		,	sl.ItemCode 				AS	FlaggedName
+		,	trans.Flagged 				AS	FlaggedID
+		,	sl.ItemCode 				AS	Flagged
 		,	trans.CreatedDate
 		,	trans.InsertTime
 		,	trans.RawTransID
