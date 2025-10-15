@@ -45,6 +45,7 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
 	DROP TEMPORARY TABLE IF EXISTS Temp_IgnoredSubscriberID;
 	DROP TEMPORARY TABLE IF EXISTS Temp_BotDetection;
+	DROP TEMPORARY TABLE IF EXISTS Temp_FPPatternID;
 	DROP TEMPORARY TABLE IF EXISTS Temp_FPPattern;
     #============================================
     
@@ -94,6 +95,10 @@ BEGIN
 		,	BotDetection				LONGTEXT
 	);
     
+	CREATE TEMPORARY TABLE Temp_FPPatternID (
+		FPPatternID						BIGINT UNSIGNED PRIMARY KEY
+	);
+    
 	CREATE TEMPORARY TABLE Temp_FPPattern (
 		FPPatternID						BIGINT UNSIGNED PRIMARY KEY,
 		HardwareDetails					LONGTEXT,
@@ -109,7 +114,7 @@ BEGIN
 	EXECUTE stmt1;
 
 	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode, FPPatternID01, FPPatternID02, TransFlow, ActivatorVersionID, FingerprintVersionID, TaggingType)
-		SELECT 	trans.TransID
+	SELECT 	trans.TransID
 		,	trans.TransTime
 		,	trans.AccountID
 		,	trans.LoginName
@@ -178,25 +183,29 @@ BEGIN
 		INNER JOIN Temp_BotDetection AS bd ON bd.TransID = trans.TransID
 	SET trans.BotDetection = bd.BotDetection;
     
-    WITH cte_FPPatternID AS (
-		SELECT	DISTINCT
-				(CASE WHEN FPPatternID02 IS NOT NULL 
-					THEN FPPatternID02 
-					ELSE FPPatternID01 
-				END) AS FPPatternID
-		FROM Temp_Trans07
-    )
-    , cte AS (
-		SELECT	a.FPPatternID
-			,	MAX(CASE WHEN b.FPGroupType = 1 THEN b.FPGroupID ELSE 0 END) fp1
-			,	MAX(CASE WHEN b.FPGroupType = 2 THEN b.FPGroupID ELSE 0 END) fp2
-			,	MAX(CASE WHEN b.FPGroupType = 3 THEN b.FPGroupID ELSE 0 END) fp3
-			,	MAX(CASE WHEN b.FPGroupType = 4 THEN b.FPGroupID ELSE 0 END) fp4
-			,	MAX(CASE WHEN b.FPGroupType = 5 THEN b.FPGroupID ELSE 0 END) fp5
-		FROM cte_FPPatternID AS a
+    INSERT IGNORE INTO Temp_FPPatternID(FPPatternID)
+    SELECT DISTINCT FPPatternID01
+	FROM Temp_Trans07
+	WHERE FPPatternID01 > 0;
+    
+    INSERT IGNORE INTO Temp_FPPatternID(FPPatternID)
+    SELECT DISTINCT FPPatternID02
+	FROM Temp_Trans07
+	WHERE FPPatternID02 > 0;
+    
+    INSERT INTO Temp_FPPattern(FPPatternID, HardwareDetails, GraphicDetails, AudioDetails, BrowserDetails, PreferencesDetails)
+    WITH cte AS (
+		SELECT 
+			a.FPPatternID,
+			MAX(CASE WHEN b.FPGroupType = 1 THEN b.FPGroupID END) AS FP1,
+			MAX(CASE WHEN b.FPGroupType = 2 THEN b.FPGroupID END) AS FP2,
+			MAX(CASE WHEN b.FPGroupType = 3 THEN b.FPGroupID END) AS FP3,
+			MAX(CASE WHEN b.FPGroupType = 4 THEN b.FPGroupID END) AS FP4,
+			MAX(CASE WHEN b.FPGroupType = 5 THEN b.FPGroupID END) AS FP5
+		FROM Temp_FPPatternID AS a
 			INNER JOIN DCS_DataCenter.FPPatternGroup AS b ON b.FPPatternID = a.FPPatternID
 		GROUP BY a.FPPatternID
-	)
+    )
     SELECT	cte.FPPatternID
 		,	fp1.HardwareDetails
 		,	fp2.GraphicDetails
@@ -208,10 +217,9 @@ BEGIN
 		LEFT JOIN DCS_DataCenter.FPGroupGraphic fp2 on fp2.FPGroupGraphicID = cte.fp2
 		LEFT JOIN DCS_DataCenter.FPGroupAudio fp3 on fp3.FPGroupAudioID = cte.fp3
 		LEFT JOIN DCS_DataCenter.FPGroupBrowser fp4 on fp4.FPGroupBrowserID = cte.fp4
-		LEFT JOIN DCS_DataCenter.FPGroupPreferences fp5 on fp5.FPGroupPreferencesID = cte.fp5
-	ORDER BY cte.FPPatternID ASC
-	LIMIT 100;
-	
+		LEFT JOIN DCS_DataCenter.FPGroupPreferences fp5 on fp5.FPGroupPreferencesID = cte.fp5;
+        
+	select * from Temp_FPPattern;
 	#========Return===========================
 	SELECT	trans.TransID
 		,	trans.TransTime
@@ -238,14 +246,19 @@ BEGIN
 		,	trans.BotDetection
 		,	trans.FakeIP
 		,	trans.IsIncognitoMode
-		,	trans.FPPatternID01
-		,	trans.FPPatternID02
 		,	trans.TransFlow
 		,	trans.ActivatorVersionID
 		,	sv.ScriptVersion AS ActivatorVersion
 		,	trans.FingerprintVersionID
 		,	svFp.ScriptVersion AS FingerprintVersion
 		,	trans.TaggingType
+		,	trans.FPPatternID01
+		,	trans.FPPatternID02
+		,	fp.HardwareDetails
+		,	fp.GraphicDetails
+		,	fp.AudioDetails 
+		,	fp.BrowserDetails 
+		,	fp.PreferencesDetails
 	FROM Temp_Trans07 AS trans
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND CAST(sl.ItemID AS UNSIGNED) = trans.Flagged
@@ -253,6 +266,7 @@ BEGIN
 		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID
 		LEFT JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = trans.AccountID
 		LEFT JOIN DCS_DataCenter.ScriptVersion AS sv ON sv.ScriptVersionID = trans.ActivatorVersionID
-		LEFT JOIN DCS_DataCenter.ScriptVersion AS svFp ON svFp.ScriptVersionID = trans.FingerprintVersionID;
+		LEFT JOIN DCS_DataCenter.ScriptVersion AS svFp ON svFp.ScriptVersionID = trans.FingerprintVersionID
+		LEFT JOIN Temp_FPPattern AS fp ON fp.FPPatternID = IFNULL(trans.FPPatternID02, trans.FPPatternID01);
 END$$
 DELIMITER ;
