@@ -84,6 +84,7 @@ BEGIN
 		,	ActivatorVersionID 			INT
 		,	FingerprintVersionID		INT
 		,	TaggingType 				SMALLINT
+		,	WebRTCIPID 					BIGINT UNSIGNED
 	);
 
 	CREATE TEMPORARY TABLE Temp_IgnoredSubscriberID(
@@ -101,11 +102,11 @@ BEGIN
     
 	CREATE TEMPORARY TABLE Temp_FPPattern (
 		FPPatternID						BIGINT UNSIGNED PRIMARY KEY,
-		HardwareDetails					LONGTEXT,
-		GraphicDetails					LONGTEXT,
-		AudioDetails					LONGTEXT,
-		BrowserDetails					LONGTEXT,
-		PreferencesDetails				LONGTEXT
+		FPGroupHardwareID				BIGINT UNSIGNED,
+		FPGroupGraphicID				BIGINT UNSIGNED,
+		FPGroupAudioID					BIGINT UNSIGNED,
+		FPGroupBrowserID				BIGINT UNSIGNED,
+		FPGroupPreferencesID			BIGINT UNSIGNED
 	);
 	
 	#========GET INPUT DATA===========================
@@ -193,33 +194,17 @@ BEGIN
 	FROM Temp_Trans07
 	WHERE FPPatternID02 > 0;
     
-    INSERT INTO Temp_FPPattern(FPPatternID, HardwareDetails, GraphicDetails, AudioDetails, BrowserDetails, PreferencesDetails)
-    WITH cte AS (
-		SELECT 
-			a.FPPatternID,
-			MAX(CASE WHEN b.FPGroupType = 1 THEN b.FPGroupID END) AS FP1,
-			MAX(CASE WHEN b.FPGroupType = 2 THEN b.FPGroupID END) AS FP2,
-			MAX(CASE WHEN b.FPGroupType = 3 THEN b.FPGroupID END) AS FP3,
-			MAX(CASE WHEN b.FPGroupType = 4 THEN b.FPGroupID END) AS FP4,
-			MAX(CASE WHEN b.FPGroupType = 5 THEN b.FPGroupID END) AS FP5
-		FROM Temp_FPPatternID AS a
-			INNER JOIN DCS_DataCenter.FPPatternGroup AS b ON b.FPPatternID = a.FPPatternID
-		GROUP BY a.FPPatternID
-    )
-    SELECT	cte.FPPatternID
-		,	fp1.HardwareDetails
-		,	fp2.GraphicDetails
-		,	fp3.AudioDetails 
-		,	fp4.BrowserDetails 
-		,	fp5.PreferencesDetails 
-	FROM cte 
-		LEFT JOIN DCS_DataCenter.FPGroupHardware fp1 on fp1.FPGroupHardwareID = cte.fp1
-		LEFT JOIN DCS_DataCenter.FPGroupGraphic fp2 on fp2.FPGroupGraphicID = cte.fp2
-		LEFT JOIN DCS_DataCenter.FPGroupAudio fp3 on fp3.FPGroupAudioID = cte.fp3
-		LEFT JOIN DCS_DataCenter.FPGroupBrowser fp4 on fp4.FPGroupBrowserID = cte.fp4
-		LEFT JOIN DCS_DataCenter.FPGroupPreferences fp5 on fp5.FPGroupPreferencesID = cte.fp5;
+    INSERT INTO Temp_FPPattern(FPPatternID, FPGroupHardwareID, FPGroupGraphicID, FPGroupAudioID, FPGroupBrowserID, FPGroupPreferencesID)
+	SELECT	a.FPPatternID
+		,	MAX(CASE WHEN b.FPGroupType = 1 THEN b.FPGroupID END) AS FP1
+		,	MAX(CASE WHEN b.FPGroupType = 2 THEN b.FPGroupID END) AS FP2
+		,	MAX(CASE WHEN b.FPGroupType = 3 THEN b.FPGroupID END) AS FP3
+		,	MAX(CASE WHEN b.FPGroupType = 4 THEN b.FPGroupID END) AS FP4
+		,	MAX(CASE WHEN b.FPGroupType = 5 THEN b.FPGroupID END) AS FP5
+	FROM Temp_FPPatternID AS a
+		INNER JOIN DCS_DataCenter.FPPatternGroup AS b ON b.FPPatternID = a.FPPatternID
+	GROUP BY a.FPPatternID;
         
-	select * from Temp_FPPattern;
 	#========Return===========================
 	SELECT	trans.TransID
 		,	trans.TransTime
@@ -239,7 +224,8 @@ BEGIN
 		,	trans.IP
 		,	CAST(trans.IPID AS CHAR) AS IPID
 		,	ar.Action
-		,	sl.ItemCode 				AS	Flagged
+		,	trans.Flagged 				AS	Flagged
+		,	sl.ItemCode 				AS	FlaggedName
 		,	trans.CreatedDate
 		,	trans.InsertTime
 		,	trans.RawTransID
@@ -254,11 +240,13 @@ BEGIN
 		,	trans.TaggingType
 		,	trans.FPPatternID01
 		,	trans.FPPatternID02
-		,	fp.HardwareDetails
-		,	fp.GraphicDetails
-		,	fp.AudioDetails 
-		,	fp.BrowserDetails 
-		,	fp.PreferencesDetails
+		,	fp.FPGroupHardwareID
+		,	fp.FPGroupGraphicID
+		,	fp.FPGroupAudioID 
+		,	fp.FPGroupBrowserID 
+		,	fp.FPGroupPreferencesID
+		,	trans.WebRTCIPID
+		,	rtc.WebRTCIPDetails
 	FROM Temp_Trans07 AS trans
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND CAST(sl.ItemID AS UNSIGNED) = trans.Flagged
@@ -267,6 +255,7 @@ BEGIN
 		LEFT JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = trans.AccountID
 		LEFT JOIN DCS_DataCenter.ScriptVersion AS sv ON sv.ScriptVersionID = trans.ActivatorVersionID
 		LEFT JOIN DCS_DataCenter.ScriptVersion AS svFp ON svFp.ScriptVersionID = trans.FingerprintVersionID
-		LEFT JOIN Temp_FPPattern AS fp ON fp.FPPatternID = IFNULL(trans.FPPatternID02, trans.FPPatternID01);
+		LEFT JOIN Temp_FPPattern AS fp ON fp.FPPatternID = IFNULL(trans.FPPatternID02, trans.FPPatternID01)
+		LEFT JOIN DCS_DataCenter.WebRTCIP AS rtc ON rtc.WebRTCIPID = trans.WebRTCIPID;
 END$$
 DELIMITER ;
