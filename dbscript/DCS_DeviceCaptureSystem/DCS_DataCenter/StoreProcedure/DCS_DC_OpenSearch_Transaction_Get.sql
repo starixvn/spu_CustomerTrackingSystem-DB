@@ -45,6 +45,7 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
 	DROP TEMPORARY TABLE IF EXISTS Temp_IgnoredSubscriberID;
 	DROP TEMPORARY TABLE IF EXISTS Temp_BotDetection;
+	DROP TEMPORARY TABLE IF EXISTS Temp_FPPattern;
     #============================================
     
     #======GET DATA FROM TRANSACTION07===========================
@@ -91,6 +92,15 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_BotDetection(
 			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	BotDetection				LONGTEXT
+	);
+    
+	CREATE TEMPORARY TABLE Temp_FPPattern (
+		FPPatternID						BIGINT UNSIGNED PRIMARY KEY,
+		HardwareDetails					LONGTEXT,
+		GraphicDetails					LONGTEXT,
+		AudioDetails					LONGTEXT,
+		BrowserDetails					LONGTEXT,
+		PreferencesDetails				LONGTEXT
 	);
 	
 	#========GET INPUT DATA===========================
@@ -167,6 +177,40 @@ BEGIN
 	UPDATE Temp_Trans07 AS trans
 		INNER JOIN Temp_BotDetection AS bd ON bd.TransID = trans.TransID
 	SET trans.BotDetection = bd.BotDetection;
+    
+    WITH cte_FPPatternID AS (
+		SELECT	DISTINCT
+				(CASE WHEN FPPatternID02 IS NOT NULL 
+					THEN FPPatternID02 
+					ELSE FPPatternID01 
+				END) AS FPPatternID
+		FROM Temp_Trans07
+    )
+    , cte AS (
+		SELECT	a.FPPatternID
+			,	MAX(CASE WHEN b.FPGroupType = 1 THEN b.FPGroupID ELSE 0 END) fp1
+			,	MAX(CASE WHEN b.FPGroupType = 2 THEN b.FPGroupID ELSE 0 END) fp2
+			,	MAX(CASE WHEN b.FPGroupType = 3 THEN b.FPGroupID ELSE 0 END) fp3
+			,	MAX(CASE WHEN b.FPGroupType = 4 THEN b.FPGroupID ELSE 0 END) fp4
+			,	MAX(CASE WHEN b.FPGroupType = 5 THEN b.FPGroupID ELSE 0 END) fp5
+		FROM cte_FPPatternID AS a
+			INNER JOIN DCS_DataCenter.FPPatternGroup AS b ON b.FPPatternID = a.FPPatternID
+		GROUP BY a.FPPatternID
+	)
+    SELECT	cte.FPPatternID
+		,	fp1.HardwareDetails
+		,	fp2.GraphicDetails
+		,	fp3.AudioDetails 
+		,	fp4.BrowserDetails 
+		,	fp5.PreferencesDetails 
+	FROM cte 
+		LEFT JOIN DCS_DataCenter.FPGroupHardware fp1 on fp1.FPGroupHardwareID = cte.fp1
+		LEFT JOIN DCS_DataCenter.FPGroupGraphic fp2 on fp2.FPGroupGraphicID = cte.fp2
+		LEFT JOIN DCS_DataCenter.FPGroupAudio fp3 on fp3.FPGroupAudioID = cte.fp3
+		LEFT JOIN DCS_DataCenter.FPGroupBrowser fp4 on fp4.FPGroupBrowserID = cte.fp4
+		LEFT JOIN DCS_DataCenter.FPGroupPreferences fp5 on fp5.FPGroupPreferencesID = cte.fp5
+	ORDER BY cte.FPPatternID ASC
+	LIMIT 100;
 	
 	#========Return===========================
 	SELECT	trans.TransID
