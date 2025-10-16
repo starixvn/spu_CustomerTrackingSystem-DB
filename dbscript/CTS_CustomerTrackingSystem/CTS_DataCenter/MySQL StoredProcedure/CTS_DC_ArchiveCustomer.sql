@@ -19,6 +19,7 @@ sp: BEGIN
 			-	20210719@Casey.Huynh: Fix Issue Rule Trans.StepTime and AssGroup [Redmine ID: #158946]
             -	20210929@Aries.Nguyen: Enhance performance [Redmine ID: #162277]
             -	20250905@Thomas.Nguyen: Enhance flow for Reactivating Customer [Redmine ID: #237406]
+            -	20251003@Thomas.Nguyen: Enhance flow for Reactivating Customer - Phase 2 [Redmine ID: #240593]
             
 		Param's Explanation (filtered by):	
 
@@ -91,7 +92,7 @@ sp: BEGIN
    INNER JOIN Temp_ArchiveCustDCSAccount AS ac ON ac.CTSCustID = cust.CTSCustID
    SET cust.AccountID =  ac.AccountID;
    
-    INSERT IGNORE INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer(ArchivedDate, CTSCustID, AccountID, SubscriberID, CustID, CustSubID, UserName, UserName2, RoleID, InsertTime, IsReactivated, ProcessedDate)
+    INSERT IGNORE INTO CTS_DataCenter.ArchiveCustomer_CTSCustomer(ArchivedDate, CTSCustID, AccountID, SubscriberID, CustID, CustSubID, UserName, UserName2, RoleID, InsertTime, IsReactivated, ReactivateDate, ProcessedDate)
     SELECT	cus.ArchivedDate
 		,	cus.CTSCustID
         ,	cus.AccountID
@@ -103,9 +104,15 @@ sp: BEGIN
         ,	cus.RoleID
         ,	CURRENT_TIMESTAMP(3)
         ,	CASE WHEN arc.CustID IS NOT NULL THEN 1 ELSE 0 END AS IsReactivated
-        ,	CASE WHEN arc.CustID IS NOT NULL THEN NOW() ELSE NULL END AS ProcessedDate
+        ,	CASE WHEN arc.CustID IS NOT NULL THEN arc.ReactivateDate ELSE NULL END AS ReactivateDate
+        ,	CASE WHEN arc.CustID IS NOT NULL THEN arc.ReactivateDate ELSE NULL END AS ProcessedDate
     FROM Temp_ArchiveCTSCustomer AS cus
-        LEFT JOIN CTS_DataCenter.ArchiveCustomer_CTSCustomer AS arc ON arc.CustID = cus.CustID AND arc.CTSCustID = 0 AND arc.IsReactivated = 1 AND arc.ReactivateDate > cus.ArchivedDate;
+        LEFT JOIN LATERAL (
+                SELECT ar.CustID, ar.ReactivateDate
+                FROM CTS_DataCenter.ArchiveCustomer_CTSCustomer AS ar
+                WHERE ar.CustID = cus.CustID AND ar.IsReactivated = 1 AND ar.ReactivateDate > cus.ArchivedDate
+                ORDER BY ar.ID DESC
+                LIMIT 1) AS arc ON TRUE;
 	
     IF EXISTS(SELECT 1 FROM  Temp_InputCustomer)
     THEN
