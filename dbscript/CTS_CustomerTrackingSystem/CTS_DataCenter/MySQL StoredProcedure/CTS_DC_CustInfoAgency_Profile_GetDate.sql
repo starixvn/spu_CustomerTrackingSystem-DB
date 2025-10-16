@@ -15,6 +15,7 @@ BEGIN
 		Revisions:
 			- 20241001@Casey.Huynh: Created [Redmine ID: #185799]
 			- 20250728@Adam.Tran: Agent's CC - Considerable Low Value - CC 30001 and Considerable High Value - CC 31001 [Redmine ID: #219679]
+			- 20250922@Thomas.Nguyen: Get more MB Account Last Login Time [Redmine ID: #239121]
 
 		Param's Explanation (filtered by):
         Example:
@@ -31,7 +32,8 @@ BEGIN
     DECLARE lv_LastTicket 			DATETIME;
     DECLARE lv_LastLogin 			DATETIME;
     DECLARE lv_Created				DATETIME;
-    
+    DECLARE lv_LastLogin_MB			DATETIME;
+
     DECLARE lv_ScanScheduler		DATETIME DEFAULT CAST(CONCAT(DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) , ' ', '21:00:00') as DATETIME);
 	
 	SET CONST_AGENCY_PARENTID_VVIP 			= CTS_DC_CategoryTypeParent_Get ('CONST_AGENCY_PARENTID_VVIP');
@@ -47,6 +49,12 @@ BEGIN
 	FROM CTS_DataCenter.CTSCustomer 
 	WHERE CTSCustID = ip_CTSCustID;
     
+	CALL CTS_DataCenter.CTSDCS_DC_CustInfo_AccountCustMapping(ip_CTSCustID);
+
+	SELECT MAX(tmp.LastLoginTime)
+	INTO lv_LastLogin_MB
+	FROM Temp_CustDCSMBAccount AS tmp;
+
     SELECT LastTicketDate 
     INTO lv_LastTicket
 	FROM CTS_Archive.CTSCustomerAssociationStatus
@@ -86,7 +94,7 @@ BEGIN
 		
 		SELECT 	lv_NextCategoryScan AS NextCategoryScan
 			,	lv_LastTicket		AS LastTicket
-			,	lv_LastLogin 		AS LastLogin
+			,	GREATEST(IFNULL(lv_LastLogin, lv_LastLogin_MB), IFNULL(lv_LastLogin_MB, lv_LastLogin)) AS LastLogin
 			,	lv_Created 			AS Created;
 	END IF;
 END$$

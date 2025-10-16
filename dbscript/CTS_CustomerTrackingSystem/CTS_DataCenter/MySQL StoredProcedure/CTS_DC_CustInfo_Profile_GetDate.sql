@@ -18,6 +18,7 @@ BEGIN
 			- 20220603@Long.Luu: Merge Robot AI & Robot TW [Redmine ID: #172561]
 			- 20240425@Thomas.Nguyen: Classify Initial Group Betting - Add SportGroupID = 150 [Redmine ID: #200854]
 			- 20240628@Thomas.Nguyen: Renovate CC phase 2 - Remove hardcode SportGroupID, CategoryGroup and get next scan for robot user [Redmine ID: #205317]
+			- 20250922@Thomas.Nguyen: Get more MB Account Last Login Time [Redmine ID: #239121]
 
 		Param's Explanation (filtered by):
         Example:
@@ -30,12 +31,13 @@ BEGIN
     DECLARE	CONST_CATEGROUPID_PROBATION 		INT;
     DECLARE	CONST_CATEGROUPID_NEW 				INT;
     
-	DECLARE lv_NextCategoryScan		DATE;
-    DECLARE lv_LastTicket 			DATETIME;
-    DECLARE lv_LastLogin 			DATETIME;
-    DECLARE lv_Created				DATETIME;
+	DECLARE lv_NextCategoryScan					DATE;
+    DECLARE lv_LastTicket 						DATETIME;
+    DECLARE lv_LastLogin 						DATETIME;
+    DECLARE lv_Created							DATETIME;
+    DECLARE lv_LastLogin_MB						DATETIME;
     
-    DECLARE lv_ScanScheduler		DATETIME DEFAULT CAST(CONCAT(DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) , ' ', '21:00:00') as DATETIME);
+    DECLARE lv_ScanScheduler					DATETIME DEFAULT CAST(CONCAT(DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) , ' ', '21:00:00') as DATETIME);
 	
 	SET CONST_PARENTID_PA 				    = CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
     SET CONST_PARENTID_POTENTIALPA 			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_POTENTIALPA');
@@ -50,11 +52,17 @@ BEGIN
 	FROM CTS_DataCenter.CTSCustomer 
 	WHERE CTSCustID = ip_CTSCustID;
     
+	CALL CTS_DataCenter.CTSDCS_DC_CustInfo_AccountCustMapping(ip_CTSCustID);
+
+	SELECT MAX(tmp.LastLoginTime)
+	INTO lv_LastLogin_MB
+	FROM Temp_CustDCSMBAccount AS tmp;
+
     SELECT LastTicketDate 
     INTO lv_LastTicket
 	FROM CTS_Archive.CTSCustomerAssociationStatus 
 	WHERE CTSCustID = ip_CTSCustID;
-    
+
     /* PA Category */
     SELECT CASE WHEN CURRENT_TIMESTAMP() > lv_ScanScheduler THEN DATE_ADD(CURRENT_DATE(), INTERVAL 1 DAY) 
 				ELSE CURRENT_DATE() 
@@ -83,7 +91,7 @@ BEGIN
     
     SELECT 	lv_NextCategoryScan AS NextCategoryScan
 		,	lv_LastTicket		AS LastTicket
-		,	lv_LastLogin 		AS LastLogin
+		,	GREATEST(IFNULL(lv_LastLogin, lv_LastLogin_MB), IFNULL(lv_LastLogin_MB, lv_LastLogin)) AS LastLogin
 		,	lv_Created 			AS Created;
 END$$
 DELIMITER ;

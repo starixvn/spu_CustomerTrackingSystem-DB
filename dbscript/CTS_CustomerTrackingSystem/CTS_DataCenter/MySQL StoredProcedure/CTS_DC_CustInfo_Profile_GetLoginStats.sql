@@ -17,7 +17,8 @@ BEGIN
 		Revisions:
 			- 20211214@Aries.Nguyen: Created [Redmine ID: #165105]
 			- 20231025@Jonas.Huynh: Get Invalid Browser Info and Bot Transaction [Redmine ID: #195095]
-            
+            - 20250923@Thomas.Nguyen: Get more MB Account login info [Redmine ID: #239121]
+
 		Param's Explanation (filtered by):
         Example:
 			- CALL CTS_DataCenter.CTS_DC_CustInfo_Profile_GetLoginStats_xtest(2570300, '2023-08-07', '2023-11-07');
@@ -32,6 +33,15 @@ BEGIN
     DECLARE lv_Count_Device					INT;
     DECLARE lv_Count_Bot_Trans				INT;
     DECLARE lv_Count_InvalidBrowser_Trans	INT;
+
+    DECLARE lv_Count_MBAppLogin									INT;
+    DECLARE lv_Count_MBAppIP									INT;
+    DECLARE lv_Count_MBAppDevice								INT;
+    DECLARE lv_Count_MBAppBot_Trans								INT;
+    DECLARE lv_Count_MBAppInvalidBrowser_Trans					INT;
+
+	DECLARE lv_CustInsertedTime									DATETIME(4);
+	DECLARE lv_CustInsertedDate									DATE;
     
     DECLARE lv_IsExcludeSubscriber			BIT DEFAULT(0); 	
     DECLARE lv_SubSourceID_DirectAPI		TINYINT DEFAULT(1);
@@ -41,7 +51,14 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_AccountID(
 			AccountID	BIGINT UNSIGNED PRIMARY KEY
 	);	
+
+	SELECT 	IFNULL(cus.InsertedTime, cus.CreatedDate)
+	INTO 	lv_CustInsertedTime
+	FROM CTS_DataCenter.CTSCustomer AS cus
+	WHERE cus.CTSCustID = ip_CTSCustID;
 	
+	SET lv_CustInsertedDate = DATE(lv_CustInsertedTime);
+
     SELECT 1
     INTO lv_IsExcludeSubscriber
     FROM CTS_DataCenter.CTSCustomer AS cus
@@ -70,13 +87,13 @@ BEGIN
 		INTO 	lv_Count_IP
 		FROM DCS_DataCenter.AccountIP AS ip
 		WHERE ip.AccountID IN (SELECT tmp.AccountID FROM Temp_AccountID AS tmp )
-			AND ip.LastTransDate BETWEEN ip_FromDate AND ip_ToDate; 
+			AND ip.LastTransDate BETWEEN ip_FromDate AND ip_ToDate AND ip.IP <> ''; 
 		
 		SELECT  COUNT(1)
 		INTO 	lv_Count_Device
 		FROM DCS_DataCenter.AccountDevice AS dv
 		WHERE dv.AccountID IN (SELECT tmp.AccountID FROM Temp_AccountID AS tmp )
-			AND dv.LastTransDate BETWEEN ip_FromDate AND ip_ToDate; 
+			AND dv.LastTransDate BETWEEN ip_FromDate AND ip_ToDate AND IFNULL(dv.DeviceID, 0) > 0; 
 		
 		SELECT  SUM(CASE WHEN st.GroupID = 2 THEN lg.TotalTrans ELSE 0 END) AS Invalid
 			,	SUM(CASE WHEN st.GroupID = 3 THEN lg.TotalTrans ELSE 0 END) AS Bot
@@ -133,16 +150,103 @@ BEGIN
 		WHERE AccountID IN (SELECT tmp.AccountID FROM Temp_AccountID AS tmp )
 			AND TransDate BETWEEN ip_FromDate AND ip_ToDate;
         /* END Correct Total Trans */
-            
-		SELECT 	lv_Count_Bot_Trans 																AS BotTrans
-			,	ROUND((lv_Count_Bot_Trans/lv_Count_Login)*100,2)								AS BotTransPercentage
-			,	lv_Count_InvalidBrowser_Trans 													AS InvalidBrowser
-			,	ROUND((lv_Count_InvalidBrowser_Trans/lv_Count_Login)*100,2)						AS InvalidBrowserPercentage
+
+		/********* Get MB Account login info from SUM table *********/
+		CALL CTS_DataCenter.CTSDCS_DC_CustInfo_AccountCustMapping(ip_CTSCustID);
+		
+		-- Count IPID from MBTransaction07 first
+		DROP TEMPORARY TABLE IF EXISTS Temp_IPFromTransaction;
+		CREATE TEMPORARY TABLE Temp_IPFromTransaction(
+			IPID	BIGINT UNSIGNED PRIMARY KEY
+		);
+		
+		INSERT IGNORE INTO Temp_IPFromTransaction(IPID)
+		SELECT DISTINCT ts.IPID
+		FROM Temp_CustDCSMBAccount AS tmp
+			INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
+		WHERE ts.TransTime >= GREATEST(ip_FromDate, lv_CustInsertedTime) 
+			AND ts.TransTime < DATE_ADD(GREATEST(ip_FromDate, lv_CustInsertedDate), INTERVAL 1 DAY) 
+			AND IFNULL(ts.IPID, 0) > 0;
+		
+		-- Count IPID from MBTransaction07
+		SELECT  COUNT(1)
+		INTO 	lv_Count_MBAppIP
+		FROM Temp_IPFromTransaction;
+		
+		-- Count IPID from MBAccountIP excluding those in MBTransaction07
+		SET lv_Count_MBAppIP = lv_Count_MBAppIP + (
+			SELECT  COUNT(DISTINCT ip.IPID)
+			FROM Temp_CustDCSMBAccount AS tmp
+				INNER JOIN DCS_DataCenter.MBAccountIP AS ip ON ip.MBAccountID = tmp.MBAccountID
+				LEFT JOIN Temp_IPFromTransaction AS tmpIP ON tmpIP.IPID = ip.IPID
+			WHERE ip.LastAccessedDate > GREATEST(ip_FromDate, lv_CustInsertedDate) 
+				AND ip.LastAccessedDate < ip_ToDate
+				AND tmpIP.IPID IS NULL
+		);
+
+		-- Count MBDeviceID from MBTransaction07 first
+		DROP TEMPORARY TABLE IF EXISTS Temp_MBDeviceFromTransaction;
+		CREATE TEMPORARY TABLE Temp_MBDeviceFromTransaction(
+			MBDeviceID	BIGINT UNSIGNED PRIMARY KEY
+		);
+		
+		INSERT IGNORE INTO Temp_MBDeviceFromTransaction(MBDeviceID)
+		SELECT DISTINCT ts.MBDeviceID
+		FROM Temp_CustDCSMBAccount AS tmp
+			INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
+		WHERE ts.TransTime >= GREATEST(ip_FromDate, lv_CustInsertedTime) 
+			AND ts.TransTime < DATE_ADD(GREATEST(ip_FromDate, lv_CustInsertedDate), INTERVAL 1 DAY) 
+			AND IFNULL(ts.MBDeviceID, 0) > 0;
+		
+		-- Count MBDeviceID from MBTransaction07
+		SELECT  COUNT(1)
+		INTO 	lv_Count_MBAppDevice
+		FROM Temp_MBDeviceFromTransaction;
+		
+		-- Count MBDeviceID from MBAssociation excluding those in MBTransaction07
+		SET lv_Count_MBAppDevice = lv_Count_MBAppDevice + (
+			SELECT  COUNT(DISTINCT dv.MBDeviceID)
+			FROM Temp_CustDCSMBAccount AS tmp
+				INNER JOIN DCS_DataCenter.MBAssociation AS dv ON dv.MBAccountID = tmp.MBAccountID
+				LEFT JOIN Temp_MBDeviceFromTransaction AS tmpDev ON tmpDev.MBDeviceID = dv.MBDeviceID
+			WHERE dv.LastAccessedDate > GREATEST(ip_FromDate, lv_CustInsertedDate) 
+				AND dv.LastAccessedDate < ip_ToDate
+				AND IFNULL(dv.MBDeviceID, 0) > 0
+				AND tmpDev.MBDeviceID IS NULL
+		);
+		
+		SELECT  IFNULL(SUM(CASE WHEN lg.FlaggedGroupID = 2 THEN lg.TotalTrans ELSE 0 END),0) AS Invalid
+			,	IFNULL(SUM(CASE WHEN lg.FlaggedGroupID = 3 THEN lg.TotalTrans ELSE 0 END),0) AS Bot
+		INTO 	lv_Count_MBAppInvalidBrowser_Trans
+			,	lv_Count_MBAppBot_Trans
+		FROM Temp_CustDCSMBAccount AS tmp
+			INNER JOIN DCS_DataTrace.MBLoginTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
+		WHERE lg.TransDate BETWEEN ip_FromDate AND ip_ToDate; 
+		
+		SELECT  IFNULL(SUM(TotalTrans),0)
+		INTO 	lv_Count_MBAppLogin
+		FROM Temp_CustDCSMBAccount AS tmp 
+			INNER JOIN DCS_DataTrace.MBLoginTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
+		WHERE lg.TransDate > GREATEST(ip_FromDate, lv_CustInsertedDate) AND lg.TransDate <= ip_ToDate;
+
+		/********* Get more MB Account login info from MBTransaction07 *********/
+	
+	SET lv_Count_MBAppLogin = lv_Count_MBAppLogin + (
+		SELECT COUNT(DISTINCT ts.ID)
+		FROM Temp_CustDCSMBAccount AS tmp
+			INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
+		WHERE ts.TransTime >= GREATEST(ip_FromDate, lv_CustInsertedTime) AND ts.TransTime < DATE_ADD(GREATEST(ip_FromDate, lv_CustInsertedDate), INTERVAL 1 DAY));
+		
+		SELECT 	IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0)				AS BotTrans
+			,	ROUND((IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0))/(IFNULL(lv_Count_Login,0) + IFNULL(lv_Count_MBAppLogin,0))*100,2) AS BotTransPercentage
+			,	IFNULL(lv_Count_InvalidBrowser_Trans,0) + IFNULL(lv_Count_MBAppInvalidBrowser_Trans,0) AS InvalidBrowser
+			,	ROUND((IFNULL(lv_Count_InvalidBrowser_Trans,0) + IFNULL(lv_Count_MBAppInvalidBrowser_Trans,0))/(IFNULL(lv_Count_Login,0) + IFNULL(lv_Count_MBAppLogin,0))*100,2) AS InvalidBrowserPercentage
 			,	lv_CountDesktopDevice_TillYesterday	+ lv_CountDesktopDevice_YesterdayTillNow	AS DesktopUsage
-			,	lv_CountMobileDevice_TillYesterday + lv_CountMobileDevice_YesterdayTillNow		AS MobileUsage
-			,	lv_Count_IP 																	AS IP
-			,	lv_Count_Device 																AS Device
-			,	lv_Count_Login_OnTheFly 														AS Login;
+			,	lv_CountMobileDevice_TillYesterday + lv_CountMobileDevice_YesterdayTillNow		AS MBWebUsage
+			,	IFNULL(lv_Count_MBAppLogin,0)													AS MBAppUsage
+			,	IFNULL(lv_Count_IP,0) + IFNULL(lv_Count_MBAppIP,0) 								AS IP
+			,	IFNULL(lv_Count_Device,0) + IFNULL(lv_Count_MBAppDevice,0) 						AS Device
+			,	lv_Count_Login_OnTheFly + IFNULL(lv_Count_MBAppLogin,0)							AS Login;
 	END IF;
 END$$
 
