@@ -18,6 +18,7 @@ BEGIN
 		- 20250312@Lando.Vu: Ignored Subscribers [Redmine ID: 217768]
 		- 20250327@Jonathan.Doan: HF - Missing transaction data when retrieving from table Transaction07 [Redmine ID: #222043]
 		- 20251006@Jonathan.Doan: HF - Resolve FingerprintCode update delay [Redmine ID: 236716]
+		- 20251009@Jonathan.Doan: Add field Indicate Tagging Type & FP version[Redmine ID: #240781]
 		
 	Param's Explanation (filtered by):
 
@@ -27,6 +28,9 @@ BEGIN
     DECLARE CONST_DEVICETRANSFORM_MAXTRANSACTION07IDCOMPLETED	INT			DEFAULT 3;
     DECLARE CONST_OPENSEARCH_LISTIGNOREDSUBID 					INT 		DEFAULT 100;
 	DECLARE CONST_OPENSEARCH_TRANSACTION07_TRANSID 				INT 		DEFAULT 101;
+    
+	DECLARE CONST_SCRIPTVERSIONTYPE_ACTIVATOR	 				INT 		DEFAULT 1;
+	DECLARE CONST_SCRIPTVERSIONTYPE_FINGERPRINT	 				INT 		DEFAULT 2;
     
 	DECLARE lv_MaxTransID  				BIGINT UNSIGNED;
 	DECLARE lv_MaxTransIDCompleted		BIGINT UNSIGNED;
@@ -41,6 +45,8 @@ BEGIN
 	DROP TEMPORARY TABLE IF EXISTS Temp_Trans07;
 	DROP TEMPORARY TABLE IF EXISTS Temp_IgnoredSubscriberID;
 	DROP TEMPORARY TABLE IF EXISTS Temp_BotDetection;
+	DROP TEMPORARY TABLE IF EXISTS Temp_FPPatternID;
+	DROP TEMPORARY TABLE IF EXISTS Temp_FPPattern;
     #============================================
     
     #======GET DATA FROM TRANSACTION07===========================
@@ -72,6 +78,13 @@ BEGIN
 		,	UserAgent					VARCHAR(1000)
 		,	BotDetection				LONGTEXT
 		,	DeviceType 					VARCHAR(20)
+		,	FPPatternID01 				BIGINT UNSIGNED
+		,	FPPatternID02 				BIGINT UNSIGNED
+		,	TransFlow 					TINYINT(1)
+		,	ActivatorVersionID 			INT
+		,	FingerprintVersionID		INT
+		,	TaggingType 				SMALLINT
+		,	WebRTCIPID 					BIGINT UNSIGNED
 	);
 
 	CREATE TEMPORARY TABLE Temp_IgnoredSubscriberID(
@@ -82,14 +95,27 @@ BEGIN
 			TransID						BIGINT UNSIGNED NOT NULL PRIMARY KEY
 		,	BotDetection				LONGTEXT
 	);
+    
+	CREATE TEMPORARY TABLE Temp_FPPatternID (
+		FPPatternID						BIGINT UNSIGNED PRIMARY KEY
+	);
+    
+	CREATE TEMPORARY TABLE Temp_FPPattern (
+		FPPatternID						BIGINT UNSIGNED PRIMARY KEY,
+		FPGroupHardwareID				BIGINT UNSIGNED,
+		FPGroupGraphicID				BIGINT UNSIGNED,
+		FPGroupAudioID					BIGINT UNSIGNED,
+		FPGroupBrowserID				BIGINT UNSIGNED,
+		FPGroupPreferencesID			BIGINT UNSIGNED
+	);
 	
 	#========GET INPUT DATA===========================
 	SET @sql = CONCAT("INSERT IGNORE INTO Temp_IgnoredSubscriberID (SubscriberID) VALUES ('", REPLACE(lv_ListIgnoredSubID, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 
-	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode)
-		SELECT 	trans.TransID
+	INSERT IGNORE INTO Temp_Trans07(TransID, TransTime, AccountID, LoginName, SubscriberID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, CreatedDate, InsertTime, RawTransID, BotDetectionValue, FakeIP, IsIncognitoMode, FPPatternID01, FPPatternID02, TransFlow, ActivatorVersionID, FingerprintVersionID, TaggingType, WebRTCIPID)
+	SELECT 	trans.TransID
 		,	trans.TransTime
 		,	trans.AccountID
 		,	trans.LoginName
@@ -111,6 +137,13 @@ BEGIN
 		,	trans.BotDetectionValue
 		,	trans.FakeIP
 		,	trans.IsIncognitoMode
+		,	trans.FPPatternID01
+		,	trans.FPPatternID02
+		,	trans.TransFlow
+		,	trans.ActivatorVersionID
+		,	trans.FingerprintVersionID
+		,	trans.TaggingType
+		,	trans.WebRTCIPID
 	FROM DCS_DataCenter.Transaction07 AS trans
 	WHERE trans.TransID > lv_MaxTransID
 		AND trans.TransID <= lv_MaxTransIDCompleted
@@ -151,7 +184,28 @@ BEGIN
 	UPDATE Temp_Trans07 AS trans
 		INNER JOIN Temp_BotDetection AS bd ON bd.TransID = trans.TransID
 	SET trans.BotDetection = bd.BotDetection;
-	
+    
+    INSERT IGNORE INTO Temp_FPPatternID(FPPatternID)
+    SELECT DISTINCT FPPatternID01
+	FROM Temp_Trans07
+	WHERE FPPatternID01 > 0;
+    
+    INSERT IGNORE INTO Temp_FPPatternID(FPPatternID)
+    SELECT DISTINCT FPPatternID02
+	FROM Temp_Trans07
+	WHERE FPPatternID02 > 0;
+    
+    INSERT INTO Temp_FPPattern(FPPatternID, FPGroupHardwareID, FPGroupGraphicID, FPGroupAudioID, FPGroupBrowserID, FPGroupPreferencesID)
+	SELECT	a.FPPatternID
+		,	MAX(CASE WHEN b.FPGroupType = 1 THEN b.FPGroupID END) AS FP1
+		,	MAX(CASE WHEN b.FPGroupType = 2 THEN b.FPGroupID END) AS FP2
+		,	MAX(CASE WHEN b.FPGroupType = 3 THEN b.FPGroupID END) AS FP3
+		,	MAX(CASE WHEN b.FPGroupType = 4 THEN b.FPGroupID END) AS FP4
+		,	MAX(CASE WHEN b.FPGroupType = 5 THEN b.FPGroupID END) AS FP5
+	FROM Temp_FPPatternID AS a
+		INNER JOIN DCS_DataCenter.FPPatternGroup AS b ON b.FPPatternID = a.FPPatternID
+	GROUP BY a.FPPatternID;
+        
 	#========Return===========================
 	SELECT	trans.TransID
 		,	trans.TransTime
@@ -171,6 +225,7 @@ BEGIN
 		,	trans.IP
 		,	CAST(trans.IPID AS CHAR) AS IPID
 		,	ar.Action
+		,	trans.Flagged 				AS	FlaggedID
 		,	sl.ItemCode 				AS	Flagged
 		,	trans.CreatedDate
 		,	trans.InsertTime
@@ -178,11 +233,30 @@ BEGIN
 		,	trans.BotDetection
 		,	trans.FakeIP
 		,	trans.IsIncognitoMode
+		,	trans.TransFlow
+		,	trans.ActivatorVersionID
+		,	sv.ScriptVersion AS ActivatorVersion
+		,	trans.FingerprintVersionID
+		,	svFp.ScriptVersion AS FingerprintVersion
+		,	trans.TaggingType
+		,	trans.FPPatternID01
+		,	trans.FPPatternID02
+		,	fp.FPGroupHardwareID
+		,	fp.FPGroupGraphicID
+		,	fp.FPGroupAudioID 
+		,	fp.FPGroupBrowserID 
+		,	fp.FPGroupPreferencesID
+		,	trans.WebRTCIPID
+		,	rtc.WebRTCIPDetails
 	FROM Temp_Trans07 AS trans
 		LEFT JOIN CTS_Admin.Subscriber AS sub ON sub.SubscriberID = trans.SubscriberID
 		LEFT JOIN DCS_DataCenter.StaticList AS sl ON sl.ListID = 1 AND sl.Status = 1 AND CAST(sl.ItemID AS UNSIGNED) = trans.Flagged
 		LEFT JOIN DCS_DataCenter.URL AS url ON url.URLID = trans.URLID
 		LEFT JOIN DCS_DataCenter.ActionResult AS ar ON ar.ActionResultID = trans.ActionResultID
-		LEFT JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = trans.AccountID;
+		LEFT JOIN DCS_DataCenter.Account AS acc ON acc.AccountID = trans.AccountID
+		LEFT JOIN DCS_DataCenter.ScriptVersion AS sv ON sv.ScriptVersionID = trans.ActivatorVersionID
+		LEFT JOIN DCS_DataCenter.ScriptVersion AS svFp ON svFp.ScriptVersionID = trans.FingerprintVersionID
+		LEFT JOIN Temp_FPPattern AS fp ON fp.FPPatternID = IFNULL(trans.FPPatternID02, trans.FPPatternID01)
+		LEFT JOIN DCS_DataCenter.WebRTCIP AS rtc ON rtc.WebRTCIPID = trans.WebRTCIPID;
 END$$
 DELIMITER ;

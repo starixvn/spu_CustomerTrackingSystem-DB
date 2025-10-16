@@ -34,6 +34,7 @@ BEGIN
 			- 20240627@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
 			- 20241111@Jonathan.Doan: Add Insert FP_Tagging [Redmine ID: #212696]
             - 20250825@Casey.Huynh: AI Power Device Fingerprint And Remove FPJs [Redmine ID: #236716]
+			- 20251009@Jonathan.Doan: Add field Indicate Tagging Type & FP version[Redmine ID: #240781]
             
 	    Param's Explanation (filtered by):
 		Example:
@@ -41,8 +42,11 @@ BEGIN
     */
     DECLARE 	CONST_SYSTEMSETTINGID_MINCREATEDDATE	INT DEFAULT 2;
     
-    DECLARE 	CONST_FPPATTERNTYPE01	INT DEFAULT 1;
-    DECLARE 	CONST_FPPATTERNTYPE02	INT DEFAULT 2;
+    DECLARE 	CONST_FPPATTERNTYPE01					INT DEFAULT 1;
+    DECLARE 	CONST_FPPATTERNTYPE02					INT DEFAULT 2;
+    
+    DECLARE 	CONST_SCRIPTVERSIONTYPE_ACTIVATOR		INT DEFAULT 1;
+    DECLARE 	CONST_SCRIPTVERSIONTYPE_FINGERPRINT		INT DEFAULT 2;
     
 	DECLARE		lv_SysMinCreatedDate					DATETIME;
     DECLARE 	lv_CurrentDate 							DATETIME(4) DEFAULT CURRENT_TIMESTAMP(4);
@@ -50,40 +54,44 @@ BEGIN
 
     DROP TEMPORARY TABLE IF EXISTS Temp_RawTransaction;
 	CREATE TEMPORARY TABLE IF NOT EXISTS Temp_RawTransaction (
-		    TransID				BIGINT UNSIGNED NOT NULL
-		,   LoginName			VARCHAR(100) NOT NULL
-		,   TransTime			DATETIME(4) NOT NULL
-		,   SubscriberID		INT 				
-        ,   AccountID			BIGINT	UNSIGNED 	
-        ,   SubscriberType		TINYINT	UNSIGNED	
-        ,   URLDetails			VARCHAR(250)		
-		,   URLID				INT					
-		,   DeviceCode			VARCHAR(32) COMMENT 'Trans Device Code'
-        ,   UserAgentKey		VARCHAR(32)			
-		,   IP					VARCHAR(50) 		
-        ,   IPID				DECIMAL(50,0)			
-		,   ActionResultID		INT					
-		,   Flagged				SMALLINT COMMENT 'captcha & browserless'
-		,   PluginID			BIGINT 				
-		,   TransStatus			BIT(16) 			
-		,   CreatedDate			DATETIME COMMENT 'Date Only' 
-		,   InsertTime			DATETIME(4) 		
-		,   FingerprintCode		VARCHAR(620)
-        ,   BotDetectionValue	BIT(20)
-        ,   BotComponentID		BIGINT UNSIGNED
-        ,	FakeIP				VARCHAR(100)
-        ,	ChallengeCode		VARCHAR(50)
-        ,	IsIncognitoMode		BIT
-        ,	JSChallengeInfoID	BIGINT UNSIGNED
-
-        ,	WebRTCIPCode		VARCHAR(32)	
-        ,	WebRTCIPID			BIGINT UNSIGNED
-		,	FPPatternCode01 	VARCHAR(32) COMMENT 'Hash Code of combine Multi-Group ' 
-		,	FPPatternCode02  	VARCHAR(32) 
-		,	FPPatternID01 		BIGINT UNSIGNED
-		,	FPPatternID02  		BIGINT UNSIGNED
-        ,	FPVersion			VARCHAR(10)
-        ,	TransFlow				TINYINT(1)	
+		    TransID					BIGINT UNSIGNED NOT NULL
+		,   LoginName				VARCHAR(100) NOT NULL
+		,   TransTime				DATETIME(4) NOT NULL
+		,   SubscriberID			INT
+        ,   AccountID				BIGINT	UNSIGNED 	
+        ,   SubscriberType			TINYINT	UNSIGNED	
+        ,   URLDetails				VARCHAR(250)		
+		,   URLID					INT					
+		,   DeviceCode				VARCHAR(32) COMMENT 'Trans Device Code'
+        ,   UserAgentKey			VARCHAR(32)			
+		,   IP						VARCHAR(50) 		
+        ,   IPID					DECIMAL(50,0)			
+		,   ActionResultID			INT					
+		,   Flagged					SMALLINT COMMENT 'captcha & browserless'
+		,   PluginID				BIGINT 				
+		,   TransStatus				BIT(16) 			
+		,   CreatedDate				DATETIME COMMENT 'Date Only' 
+		,   InsertTime				DATETIME(4) 		
+		,   FingerprintCode			VARCHAR(620)
+        ,   BotDetectionValue		BIT(20)
+        ,   BotComponentID			BIGINT UNSIGNED
+        ,	FakeIP					VARCHAR(100)
+        ,	ChallengeCode			VARCHAR(50)
+        ,	IsIncognitoMode			BIT
+        ,	JSChallengeInfoID		BIGINT UNSIGNED
+	
+        ,	WebRTCIPCode			VARCHAR(32)	
+        ,	WebRTCIPID				BIGINT UNSIGNED
+		,	FPPatternCode01 		VARCHAR(32) COMMENT 'Hash Code of combine Multi-Group ' 
+		,	FPPatternCode02  		VARCHAR(32) 
+		,	FPPatternID01 			BIGINT UNSIGNED
+		,	FPPatternID02  			BIGINT UNSIGNED
+        ,	TransFlow				TINYINT(1)
+		,	ActivatorVersion 		VARCHAR(10)
+		,	FingerprintVersion 		VARCHAR(10)
+		,	ActivatorVersionID 		INT
+		,	FingerprintVersionID	INT
+		,	TaggingType 			SMALLINT
 	);
     
     DROP TEMPORARY TABLE IF EXISTS Temp_Account;
@@ -115,13 +123,21 @@ BEGIN
         
         ,	INDEX IX_Temp_ExistingPattern_FPGroupCode(FPPatternType, FPPatternCode)
     ); 
+    
+    DROP TEMPORARY TABLE IF EXISTS Temp_ScriptVersion;
+	CREATE TEMPORARY TABLE  Temp_ScriptVersion(
+		    ScriptVersionType	INT
+		,   ScriptVersion		VARCHAR(10)
+        ,	LastUsedDate 		DATE
+        ,	PRIMARY KEY (ScriptVersionType, ScriptVersion)
+    );
        
     SELECT DATE(VValue)
     INTO lv_SysMinCreatedDate
     FROM DCS_DataCenter.SystemSetting 
     WHERE ID = CONST_SYSTEMSETTINGID_MINCREATEDDATE;
 
-	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
+	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, TransFlow, ActivatorVersion, FingerprintVersion, TaggingType)
 	SELECT  rt.TransID
 	    ,   rt.LoginName
         ,   rt.TransTime
@@ -146,8 +162,10 @@ BEGIN
         ,	rt.WebRTCIPCode
         ,	rt.FPPatternCode01
         ,	rt.FPPatternCode02
-        ,	rt.FPVersion
         ,	rt.TransFlow
+        ,	rt.ActivatorVersion
+        ,	rt.FingerprintVersion
+        ,	rt.TaggingType
 	FROM DCS_DataCenter.RawTransaction AS rt
         INNER JOIN CTS_Admin.Subscriber AS su ON rt.SubscriberName = su.SubscriberName
 	    LEFT JOIN DCS_DataCenter.ActionResult AS ar ON rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
@@ -161,7 +179,9 @@ BEGIN
 		ADD INDEX IX_Temp_RawTransaction_ChallengeCode (ChallengeCode)
     ,	ADD INDEX IX_Temp_RawTransaction_FPPatternCode01(FPPatternCode01)
     ,	ADD INDEX IX_Temp_RawTransaction_FPPatternCode02(FPPatternCode02)
-    ,	ADD INDEX IX_Temp_RawTransaction_WebRTCIPCode(WebRTCIPCode);
+    ,	ADD INDEX IX_Temp_RawTransaction_WebRTCIPCode(WebRTCIPCode)
+    ,	ADD INDEX IX_Temp_RawTransaction_ActivatorVersion(ActivatorVersion)
+    ,	ADD INDEX IX_Temp_RawTransaction_FingerprintVersion(FingerprintVersion);
 	
     #===================FINGERPRINT PARTTERN=======================================
 	UPDATE Temp_RawTransaction AS rt
@@ -213,6 +233,53 @@ BEGIN
 	    LEFT JOIN DCS_DataCenter.URL AS url ON url.URLDetails = tmp.URLDetails
     SET tmp.AccountID = acc.AccountID,
 		tmp.URLID = url.URLID;
+	
+    #=================== ScriptVersion =======================================
+	UPDATE Temp_RawTransaction
+	SET ActivatorVersionID = ActivatorVersion
+    WHERE ActivatorVersion IN ('-1', '-2', '-3');
+    
+	UPDATE Temp_RawTransaction
+	SET FingerprintVersionID = FingerprintVersion
+    WHERE FingerprintVersion IN ('-1', '-2', '-3');
+    
+    INSERT INTO Temp_ScriptVersion(ScriptVersionType, ScriptVersion, LastUsedDate)
+    SELECT	CONST_SCRIPTVERSIONTYPE_ACTIVATOR AS ScriptVersionType
+		,	ActivatorVersion AS ScriptVersion
+		,	MAX(CreatedDate) AS LastUsedDate
+    FROM Temp_RawTransaction
+    WHERE ActivatorVersion IS NOT NULL
+		AND ActivatorVersionID IS NULL
+    GROUP BY ActivatorVersion;
+    
+    INSERT INTO Temp_ScriptVersion(ScriptVersionType, ScriptVersion, LastUsedDate)
+    SELECT	CONST_SCRIPTVERSIONTYPE_FINGERPRINT AS ScriptVersionType
+		,	FingerprintVersion AS ScriptVersion
+		,	MAX(CreatedDate) AS LastUsedDate
+    FROM Temp_RawTransaction
+    WHERE FingerprintVersion IS NOT NULL
+		AND FingerprintVersionID IS NULL
+    GROUP BY FingerprintVersion;
+    
+    INSERT IGNORE INTO DCS_DataCenter.ScriptVersion(ScriptVersionType, ScriptVersion, LastUsedDate, CreatedDate)
+    SELECT  ScriptVersionType
+	    ,   ScriptVersion
+        ,   LastUsedDate
+	    ,   lv_CurrentDate AS CreatedDate
+    FROM Temp_ScriptVersion AS tmp
+    WHERE NOT EXISTS (SELECT 1 FROM DCS_DataCenter.ScriptVersion AS sv WHERE sv.ScriptVersionType = tmp.ScriptVersionType AND sv.ScriptVersion = tmp.ScriptVersion);
+    
+	UPDATE Temp_RawTransaction AS rt
+		INNER JOIN DCS_DataCenter.ScriptVersion AS sv ON sv.ScriptVersionType = CONST_SCRIPTVERSIONTYPE_ACTIVATOR AND sv.ScriptVersion = rt.ActivatorVersion 
+	SET rt.ActivatorVersionID = sv.ScriptVersionID
+    WHERE rt.ActivatorVersion IS NOT NULL
+		AND rt.ActivatorVersionID IS NULL;
+    
+	UPDATE Temp_RawTransaction AS rt
+		INNER JOIN DCS_DataCenter.ScriptVersion AS sv ON sv.ScriptVersionType = CONST_SCRIPTVERSIONTYPE_FINGERPRINT AND sv.ScriptVersion = rt.FingerprintVersion 
+	SET rt.FingerprintVersionID = sv.ScriptVersionID
+    WHERE rt.FingerprintVersion IS NOT NULL
+		AND rt.FingerprintVersionID IS NULL;
     
     #==============Remove Temp Trans If AccountID Is NULL=======================
     DELETE 	trt
@@ -257,8 +324,7 @@ BEGIN
 	SET tmp.JSChallengeInfoID = CASE WHEN tmp.ChallengeCode IS NULL THEN NULL ELSE IFNULL(jsc.ID, 0) END;
 	
 	/* ======= INSERT Transaction ========= */
-    INSERT IGNORE INTO DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID
-    , FPPatternID01, FPPatternID02, WebRTCIPID, TransFlow)
+    INSERT IGNORE INTO DCS_DataCenter.Transaction(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, UserAgentKey , IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, DeviceCode, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, FPPatternID01, FPPatternID02, WebRTCIPID, TransFlow, ActivatorVersionID, FingerprintVersionID, TaggingType)
    	SELECT  trt.TransID
 	    ,   trt.LoginName
         ,   trt.TransTime
@@ -285,10 +351,13 @@ BEGIN
         ,	trt.FPPatternID02
         ,	trt.WebRTCIPID
         ,	trt.TransFlow
+        ,	trt.ActivatorVersionID
+        ,	trt.FingerprintVersionID
+        ,	trt.TaggingType
 	FROM Temp_RawTransaction AS trt;   
 
     #================================================================
-	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
+	INSERT IGNORE INTO DCS_DataCenter.ProcessedTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent , IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, IsProcessed, TransID, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, TransFlow, ActivatorVersion, FingerprintVersion, TaggingType)
 	SELECT  rt.LoginName
         ,   rt.SubscriberName
         ,   rt.TransTime
@@ -316,8 +385,10 @@ BEGIN
         ,	rt.WebRTCIPCode
         ,	rt.FPPatternCode01
         ,	rt.FPPatternCode02
-        ,	rt.FPVersion
         , 	rt.TransFlow
+        ,	rt.ActivatorVersion
+        ,	rt.FingerprintVersion
+        ,	rt.TaggingType
 	FROM DCS_DataCenter.RawTransaction AS rt
 	    INNER JOIN	Temp_RawTransaction	AS tmp_rm ON rt.TransID = tmp_rm.TransID AND rt.CreatedDate = tmp_rm.CreatedDate;
         

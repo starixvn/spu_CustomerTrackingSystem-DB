@@ -28,11 +28,12 @@ BEGIN
 			- 20250804@Lando.Vu: Add MBDeviceDetails table [Redmine ID: #233405]
 			- 20250808@Jonathan.Doan: Separate iOS trans [Redmine ID: #235457]
 			- 20250916@Casey.Huynh: AI Power Device Fingerprint AND Remove FPJs[Redmine ID: #236716]
+			- 20251009@Jonathan.Doan: Add field Indicate Tagging Type & FP version[Redmine ID: #240781]
             
 		Param's Explanation (filtered by):
 			
 		Example:
-			CALL DCS_DataCenter.DCS_DC_Transform_RawTrans_Insert('[{"LoginName":"test1","SubscriberName":"Alpha","TransTime":"2024-08-05T15:10:59.051","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"464d165f74c441ee924c2c7adedba28f","FingerprintCode":"45174aef1a33a67c31d443a81a0877f320166613;c5ca1ab37b1378c2626993e2921c8d9d","FingerprintMoreInfo":"6QiqFW9UJpa64drfM/VSENyo7IkHmVlnMxCI8JwitEY=","UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36","IP":"::1","FakeIP":"","IPId":1,"IsIPV6":true,"PluginID":0,"URL":"http://localhost:60207","Action":"Login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FPSTransId":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","FPTagging":"464d165f74c441ee924c2c7adedba28f","FPFingerPrintCode":"8b5ee6dab25b9db5818ad7d5bbd68d6e","FPFingerPrintExtraCode":"b5b2333484fb344440bc31a349e8e1a0","FPFingerPrintOldCode":"5b7c23ba59b230eb5415eb8c4684bf22","ChallengeCode":"6386619f64de47f598576b290e48b170","FPUserAgentCode":"c92baae71318dc81de51a663df2f8b4f","IsIncognitoMode":false,"MBDeviceCodeMachine":"42679e3362cdec47d7d889082e972457","MBDeviceCodeTagging":"ad921d60486366258809553a3db49a4a","MBDeviceCodeMediaDRM":"550714e40b4d3ff77cb888ac94e82ad6","MBIsMobileApp":true,"MBIsEmulator":true,"MBModelName":"sdk_gphone64_x86_64","MBManufacturer":"Google","MBBrand":"google","MBSDKVersion":"35","MBOS":"Android","MBTimezone":"Indochina Time","MBLanguage":"English","MBCountry":"US"}]');
+			CALL DCS_DC_Transform_RawTrans_Insert('[{"LoginName":"fadomas","SubscriberName":"Alpha","TransTime":"2025-09-28T01:41:55.1562","CreatedDate":"0001-01-01T00:00:00","DeviceCode":"016696225c26492c98dfc83cf5cf6d66","FingerprintCode":null,"UserAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","IP":"10.0.0.112","FakeIP":"","IPId":167772272,"IsIPV6":false,"PluginID":0,"URL":"http://alp21.nexdev.net/","Action":"login","ActionResult":"Successfull","InvalidDevice":null,"TransStatus":0,"FlaggedCode":"Human","BotDetection":"","BotComponent":"","ChallengeCode":null,"IsIncognitoMode":null,"MBDeviceCodeMediaDRM":null,"MBDeviceCodeMachine":null,"MBDeviceCodeTagging":null,"MBIsMobileApp":false,"MBIsEmulator":false,"MBModelName":null,"MBManufacturer":null,"MBBrand":null,"MBSDKVersion":null,"MBOS":null,"MBTimezone":null,"MBLanguage":null,"MBCountry":null,"MBDeviceDetails":null,"WebRTCIPCode":"bc34dce2502f5d0f0e24fe5c3bb36fb3","FPPatternCode01":"9350094f6f271526f9f117f02326db25","FPPatternCode02":null,"ActivatorVersion":"3.0.3","FingerprintVersion":"1.0.3","TransFlow":1,"TaggingType":1001}]');
 	*/
 	
 	DECLARE lv_FlaggedHuman	INT UNSIGNED DEFAULT 1;
@@ -85,8 +86,10 @@ BEGIN
         ,	WebRTCIPCode				VARCHAR(32)					NULL    
         ,	FPPatternCode01				VARCHAR(32)   				NULL	# FPPatternType 1
         ,	FPPatternCode02				VARCHAR(32)   				NULL 	# FPPatternType 2
-        ,	FPVersion 					VARCHAR(10) 				NULL
-		,	TransFlow 						TINYINT(1)					NOT NULL
+		,	TransFlow 					TINYINT(1)					NOT NULL
+		,	ActivatorVersion 			VARCHAR(10)					NULL
+		,	FingerprintVersion 			VARCHAR(10)					NULL
+		,	TaggingType 				SMALLINT					NULL
 	);
 	
 	CREATE TEMPORARY TABLE Temp_MBTransaction(
@@ -129,7 +132,7 @@ BEGIN
 		,	IsNewRecord					TINYINT		 				DEFAULT 1
 	);
 		
-	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry, MBDeviceDetails, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
+	INSERT INTO Temp_Transaction(LoginName, SubscriberName, TransTime, DeviceCode, FingerprintCode, UserAgent, IP, IPID, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, FlaggedCode, BotDetection, BotComponent, BotComponentCode, FakeIP, ChallengeCode, IsIncognitoMode, MBDeviceCodeMediaDRM, MBDeviceCodeMachine, MBDeviceCodeTagging, MBIsMobileApp, MBIsEmulator, MBModelName, MBManufacturer, MBBrand, MBSDKVersion, MBOS, MBTimezone, MBLanguage, MBCountry, MBDeviceDetails, WebRTCIPCode, FPPatternCode01, FPPatternCode02, TransFlow, ActivatorVersion, FingerprintVersion, TaggingType)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -168,8 +171,10 @@ BEGIN
         ,	rt.WebRTCIPCode
         ,	rt.FPPatternCode01
         ,	rt.FPPatternCode02
-		,	rt.FPVersion
         ,	IFNULL(rt.TransFlow,0) AS TransFlow
+		,	rt.ActivatorVersion
+		,	rt.FingerprintVersion
+		,	rt.TaggingType
 	FROM	JSON_TABLE(
 			ip_RawTransJson,
 			 "$[*]" COLUMNS(
@@ -210,8 +215,10 @@ BEGIN
                             ,	WebRTCIPCode				VARCHAR(32)		PATH "$.WebRTCIPCode"						
 							,	FPPatternCode01				VARCHAR(32)		PATH "$.FPPatternCode01"
 							,	FPPatternCode02				VARCHAR(32)		PATH "$.FPPatternCode02"
-                            ,	FPVersion					VARCHAR(10)		PATH "$.FPVersion"
-                            ,	TransFlow						TINYINT(1)		PATH "$.TransFlow"
+                            ,	TransFlow					TINYINT(1)		PATH "$.TransFlow"
+                            ,	ActivatorVersion 			VARCHAR(10)		PATH "$.ActivatorVersion"
+                            ,	FingerprintVersion 			VARCHAR(10)		PATH "$.FingerprintVersion"
+                            ,	TaggingType	 				SMALLINT		PATH "$.TaggingType"
 				)
 		   ) AS rt; 
 		   
@@ -286,7 +293,7 @@ BEGIN
 	SET tmp.BotComponentID = bds.ID;
 	
 	/*******RawTransaction********************/
-	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, ChallengeCode, IsIncognitoMode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, FPVersion, TransFlow)
+	INSERT INTO DCS_DataCenter.RawTransaction(LoginName, SubscriberName, TransTime, CreatedDate, DeviceCode, FingerprintCode, UserAgent, IP, IPID, Flagged, PluginID, URL, Action, ActionResult, InvalidDevice, TransStatus, InsertTime, BotDetectionValue, BotComponentID, FakeIP, ChallengeCode, IsIncognitoMode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, TransFlow, ActivatorVersion, FingerprintVersion, TaggingType)
 	SELECT	rt.LoginName
 		,	rt.SubscriberName
 		,	rt.TransTime
@@ -312,8 +319,10 @@ BEGIN
         ,	rt.WebRTCIPCode
         ,	rt.FPPatternCode01
         ,	rt.FPPatternCode02
-        ,	rt.FPVersion
-        ,	rt.TransFlow  
+        ,	rt.TransFlow
+		,	rt.ActivatorVersion
+		,	rt.FingerprintVersion
+		,	rt.TaggingType
 	FROM Temp_Transaction AS rt
 		LEFT JOIN DCS_DataCenter.StaticList AS sl 	ON sl.ListID = 1 /*Flagged*/   
 													AND sl.ItemCode = rt.FlaggedCode;

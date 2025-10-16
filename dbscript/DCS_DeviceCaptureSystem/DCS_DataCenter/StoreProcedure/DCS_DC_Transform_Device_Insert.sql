@@ -30,6 +30,7 @@ BEGIN
 			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
 			- 20250324@Jonathan.Doan: Use CURRENT_TIMESTAMP for InsertTime [Redmine ID: #217768]
             - 20250909@Jonathan.Doan: Remove FPJs and add new flow for F4,F5 rules [Redmine ID: #236716]
+			- 20251009@Jonathan.Doan: Add field Indicate Tagging Type & FP version[Redmine ID: #240781]
             
 	    Param's Explanation (filtered by):
 
@@ -594,7 +595,7 @@ BEGIN
     SET lv_NewAccountDeviceJson = IFNULL(lv_NewAccountDeviceJson,'[{}]');
 	CALL DCS_DC_Transform_NewAccountDevice_Insert(lv_NewAccountDeviceJson);
 	
-	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, WebRTCIPID, FPPatternID01, FPPatternID02)
+	INSERT IGNORE INTO  DCS_DataCenter.Transaction07(RawTransID, LoginName, TransTime, SubscriberID, AccountID, URLID, DeviceCodeID, DeviceID, FirstDeviceCode, DeviceStatus, DeviceFingerprintID, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, InsertTime, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, JSChallengeInfoID, WebRTCIPID, FPPatternID01, FPPatternID02, TransFlow, ActivatorVersionID, FingerprintVersionID, TaggingType)
 	SELECT 	ts.RawTransID
 		,	ts.LoginName
 		,	ts.TransTime
@@ -623,6 +624,10 @@ BEGIN
 		,	ts.WebRTCIPID
 		,	ts.FPPatternID01
 		,	ts.FPPatternID02
+		,	ts.TransFlow
+		,	ts.ActivatorVersionID
+		,	ts.FingerprintVersionID
+		,	ts.TaggingType
 	FROM Temp_Transaction AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS ts ON ts.TransID = tmp.TransID
 	WHERE tmp.DeviceID IS NOT NULL;
