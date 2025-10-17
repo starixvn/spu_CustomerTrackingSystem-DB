@@ -21,6 +21,7 @@ BEGIN
 			- 20240923@Jonas.Huynh:		Change CC Priority of Robot- Potential Risk  [RedmineID: #209792]	
 			- 20240930@Casey.Huynh: 	Return Agency CC and Danger [Redmine ID: #185799]
 			- 20250701@Logan.Nguyen: 	Set to Ori 17-18-19 [Redmine ID: #229875]
+			- 20250701@Logan.Nguyen: 	Set Ori 18 for PE currency [Redmine ID: #241833]
             
         Param's Explanation:     
         Example:
@@ -126,10 +127,14 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_OriCurrency (
     		Currency			VARCHAR(50)
 		,	CurrencyID			INT PRIMARY KEY
+		,	IsOri18Currency		INT
 		,	IsOri19Currency		INT
 	);
 
-	INSERT INTO Temp_OriCurrency (Currency, CurrencyID, IsOri19Currency) VALUES ('USDT', 96, 1),('EURO', 6, 1);
+	INSERT INTO Temp_OriCurrency (Currency, CurrencyID, IsOri18Currency, IsOri19Currency)
+		VALUES	('USDT', 96, 0, 1)
+			,	('EURO', 6, 0, 1)
+			,	('PE', 42, 1, 0);
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCateInfo;
     CREATE TEMPORARY TABLE 		Temp_CustCateInfo(
@@ -356,19 +361,10 @@ BEGIN
 		,	cate.DangerLevel
 		,	cate.DangerLevelType
 		,	CASE
-				WHEN os.IsOri18Site = 1 AND ccs.IsOri18Excepted = 0 
-				THEN 18
-				WHEN tmp.IsLicensee = 1
-					AND (os.SiteName IS NULL OR os.IsNotOri19Site = 1) -- exclusive of members from EVOIO (SiteName IS NULL -- If tmp.SiteID not found in Temp_OriSite, 'os' columns will be NULL)
-					AND oc.IsOri19Currency = 1
-					AND ccs.IsOri19TargetClass = 1
-				THEN 19
-				WHEN os.IsOri17Site = 1
-					AND ccs.IsOri17TargetClass = 1
-				THEN 17
-				WHEN ccs.IsOriResetClass = 1
-						AND tmp.Danger1 IN (17, 19)
-				THEN 0
+				WHEN oc.IsOri18Currency = 1 OR (os.IsOri18Site = 1 AND ccs.IsOri18Excepted = 0) THEN 18
+				WHEN tmp.IsLicensee = 1 AND (os.SiteName IS NULL OR os.IsNotOri19Site = 0) AND oc.IsOri19Currency = 1 AND ccs.IsOri19TargetClass = 1 THEN 19
+				WHEN os.IsOri17Site = 1 AND ccs.IsOri17TargetClass = 1 THEN 17
+				WHEN ccs.IsOriResetClass = 1 AND tmp.Danger1 IN (17, 19) THEN 0
 				ELSE tmp.Danger1			
 			END	AS Danger1
     FROM Temp_CustInfo AS tmp
