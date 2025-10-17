@@ -184,7 +184,7 @@ BEGIN
 		INTO 	lv_Count_MBAppLogin
 		FROM Temp_CustDCSMBAccount AS tmp
 			INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
-		WHERE ts.TransTime >= GREATEST(ip_FromDate, lv_CustInsertedTime) AND ts.TransTime <= ip_ToDate;
+		WHERE ts.TransTime >= GREATEST(ip_FromDate, lv_CustInsertedTime) AND ts.TransTime < DATE_ADD(ip_ToDate, INTERVAL 1 DAY);
 		
 		SELECT 	IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0)				AS BotTrans
 			,	ROUND((IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0))/(IFNULL(lv_Count_Login,0) + IFNULL(lv_Count_MBAppLogin,0))*100,2) AS BotTransPercentage
