@@ -162,12 +162,6 @@ BEGIN
 		FROM Temp_CustDCSMBAccount AS tmp
 			INNER JOIN DCS_DataTrace.MBLoginTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
 		WHERE lg.TransDate BETWEEN ip_FromDate AND ip_ToDate; 
-		
-		SELECT  IFNULL(SUM(TotalTrans),0)
-		INTO 	lv_Count_MBAppLogin
-		FROM Temp_CustDCSMBAccount AS tmp 
-			INNER JOIN DCS_DataTrace.MBLoginTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
-		WHERE lg.TransDate > GREATEST(ip_FromDate, lv_CustInsertedDate) AND lg.TransDate <= ip_ToDate;
 
 		/********* Get more MB Account login info from MBTransaction07 *********/
 		SELECT COUNT(DISTINCT ts.IPID)
@@ -186,11 +180,11 @@ BEGIN
 			AND ts.TransTime < ip_ToDate 
 			AND IFNULL(ts.MBDeviceID, 0) > 0;
 
-		SET lv_Count_MBAppLogin = lv_Count_MBAppLogin + (
-		SELECT COUNT(DISTINCT ts.ID)
+		SELECT COUNT(ts.ID)
+		INTO 	lv_Count_MBAppLogin
 		FROM Temp_CustDCSMBAccount AS tmp
 			INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
-		WHERE ts.TransTime >= GREATEST(ip_FromDate, lv_CustInsertedTime) AND ts.TransTime < DATE_ADD(GREATEST(ip_FromDate, lv_CustInsertedDate), INTERVAL 1 DAY));
+		WHERE ts.TransTime >= GREATEST(ip_FromDate, lv_CustInsertedTime) AND ts.TransTime <= ip_ToDate;
 		
 		SELECT 	IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0)				AS BotTrans
 			,	ROUND((IFNULL(lv_Count_Bot_Trans,0) + IFNULL(lv_Count_MBAppBot_Trans,0))/(IFNULL(lv_Count_Login,0) + IFNULL(lv_Count_MBAppLogin,0))*100,2) AS BotTransPercentage
