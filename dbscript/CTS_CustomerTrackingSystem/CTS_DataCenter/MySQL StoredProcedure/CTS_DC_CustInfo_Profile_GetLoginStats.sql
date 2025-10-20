@@ -36,6 +36,7 @@ BEGIN
     DECLARE lv_Count_InvalidBrowser_Trans	INT;
 
     DECLARE lv_Count_MBAppLogin									INT;
+	DECLARE lv_Count_MBAppLogin_OnTheFly						INT;
     DECLARE lv_Count_MBAppIP									INT;
     DECLARE lv_Count_MBAppDevice								INT;
     DECLARE lv_Count_MBAppBot_Trans								INT;
@@ -163,6 +164,12 @@ BEGIN
 			INNER JOIN DCS_DataTrace.MBLoginTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
 		WHERE lg.TransDate BETWEEN ip_FromDate AND ip_ToDate; 
 
+		SELECT SUM(lg.TotalTrans)
+		INTO lv_Count_MBAppLogin
+		FROM Temp_CustDCSMBAccount AS tmp
+			INNER JOIN DCS_DataTrace.MBLoginTransactionSummary AS lg ON lg.MBAccountID = tmp.MBAccountID
+		WHERE lg.TransDate BETWEEN ip_FromDate AND ip_ToDate;
+
 		/********* Get more MB Account login info from MBTransaction07 *********/
 		SELECT COUNT(DISTINCT ts.IPID)
 		INTO lv_Count_MBAppIP
@@ -172,8 +179,8 @@ BEGIN
 			AND ts.TransTime < ip_ToDate 
 			AND IFNULL(ts.IPID, 0) > 0;
 
-		SELECT COUNT(DISTINCT ts.MBDeviceID)
-		INTO lv_Count_MBAppDevice
+		SELECT	COUNT(DISTINCT ts.MBDeviceID)
+		INTO	lv_Count_MBAppDevice
 		FROM Temp_CustDCSMBAccount AS tmp
 			INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
 		WHERE ts.TransTime >= GREATEST(ip_FromDate, lv_CustInsertedTime) 
@@ -181,7 +188,7 @@ BEGIN
 			AND IFNULL(ts.MBDeviceID, 0) > 0;
 
 		SELECT COUNT(ts.ID)
-		INTO 	lv_Count_MBAppLogin
+		INTO 	lv_Count_MBAppLogin_OnTheFly
 		FROM Temp_CustDCSMBAccount AS tmp
 			INNER JOIN DCS_DataCenter.MBTransaction07 AS ts ON ts.MBAccountID = tmp.MBAccountID
 		WHERE ts.TransTime >= GREATEST(ip_FromDate, lv_CustInsertedTime) AND ts.TransTime < DATE_ADD(ip_ToDate, INTERVAL 1 DAY);
@@ -192,10 +199,10 @@ BEGIN
 			,	ROUND((IFNULL(lv_Count_InvalidBrowser_Trans,0) + IFNULL(lv_Count_MBAppInvalidBrowser_Trans,0))/(IFNULL(lv_Count_Login,0) + IFNULL(lv_Count_MBAppLogin,0))*100,2) AS InvalidBrowserPercentage
 			,	lv_CountDesktopDevice_TillYesterday	+ lv_CountDesktopDevice_YesterdayTillNow	AS DesktopUsage
 			,	lv_CountMobileDevice_TillYesterday + lv_CountMobileDevice_YesterdayTillNow		AS MBWebUsage
-			,	IFNULL(lv_Count_MBAppLogin,0)													AS MBAppUsage
+			,	IFNULL(lv_Count_MBAppLogin_OnTheFly,0)											AS MBAppUsage
 			,	IFNULL(lv_Count_IP,0) + IFNULL(lv_Count_MBAppIP,0) 								AS IP
 			,	IFNULL(lv_Count_Device,0) + IFNULL(lv_Count_MBAppDevice,0) 						AS Device
-			,	lv_Count_Login_OnTheFly + IFNULL(lv_Count_MBAppLogin,0)							AS Login;
+			,	lv_Count_Login_OnTheFly + IFNULL(lv_Count_MBAppLogin_OnTheFly,0)				AS Login;
 	END IF;
 END$$
 
