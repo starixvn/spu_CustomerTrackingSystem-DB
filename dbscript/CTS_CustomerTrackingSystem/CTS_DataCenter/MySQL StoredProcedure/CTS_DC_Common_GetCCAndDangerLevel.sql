@@ -361,8 +361,7 @@ BEGIN
 		,	cate.DangerLevel
 		,	cate.DangerLevelType
 		,	CASE
-				WHEN os.IsOri18Site = 1 AND ccs.IsOri18Excepted = 0 THEN 18
-				WHEN tmp.IsLicensee = 1 AND oc.IsOri18Currency = 1 THEN 18
+				WHEN (os.IsOri18Site = 1 AND ccs.IsOri18Excepted = 0) OR (tmp.IsLicensee = 1 AND oc.IsOri18Currency = 1) THEN 18
 				WHEN tmp.IsLicensee = 1 AND (os.SiteName IS NULL OR os.IsNotOri19Site = 0) AND oc.IsOri19Currency = 1 AND ccs.IsOri19TargetClass = 1 THEN 19
 				WHEN os.IsOri17Site = 1 AND ccs.IsOri17TargetClass = 1 THEN 17
 				WHEN ccs.IsOriResetClass = 1 AND tmp.Danger1 IN (17, 19) THEN 0
