@@ -25,18 +25,54 @@ VALUES	(<???>			, <???>					, 0				, 1					, 1					, <???>		, <???>		, NULL)
 SELECT MAX(SubscriberID)
 FROM CTS_Admin.Subscriber; 111308;
 
-SELECT *
+SELECT SubscriberID
+      ,SubscriberName
+      ,SubscriberPrefix
+      ,SubscriberType
+      ,SubscriberSourceID
+      ,SubscriberStatus
+      ,CreatedDate
+      ,CreatedBy
+      ,IsTest
+      ,DCSStatus
+      ,DCSIntegrationDate
+      ,FPSSubscriberID
+      ,TerminatedDate
 FROM CTS_Admin.Subscriber
 WHERE SubscriberID > 13673;
 
 
 /*Check SubscriberName*/
-SELECT 	*
+SELECT SubscriberID
+      ,SubscriberName
+      ,SubscriberPrefix
+      ,SubscriberType
+      ,SubscriberSourceID
+      ,SubscriberStatus
+      ,CreatedDate
+      ,CreatedBy
+      ,IsTest
+      ,DCSStatus
+      ,DCSIntegrationDate
+      ,FPSSubscriberID
+      ,TerminatedDate
 FROM 	CTS_Admin.Subscriber
 WHERE 	SubscriberName IN ('liv66', 'HC6YAYOU', 'TIC88', 'Nbet', 'Sky88', 'Kbet', 'Dabet');
 
 /*Check SubscriberName*/
-SELECT 	*
+SELECT SubscriberID
+      ,SubscriberName
+      ,SubscriberPrefix
+      ,SubscriberType
+      ,SubscriberSourceID
+      ,SubscriberStatus
+      ,CreatedDate
+      ,CreatedBy
+      ,IsTest
+      ,DCSStatus
+      ,DCSIntegrationDate
+      ,FPSSubscriberID
+      ,TerminatedDate
 FROM 	CTS_Admin.Subscriber
 WHERE 	SubscriberPrefix IN ('liv66$', 'HC6YAYOU$', 'TIC88$', 'Nbet$', 'Sky88$', 'Kbet$', 'Dabet$');
 
@@ -52,10 +88,31 @@ VALUES	(13672			, 'ZFRT082'				, 505		, 'ZFRT082'		, 0				, 1					, 1							, NU
 	,	(13673			, 'wmcasino'			, 506		, 'wmcasino'	, 0				, 1					, 1							, NULL)
 ;
    
-SELECT *
+SELECT SubscriberID
+      ,SubscriberName
+      ,SubscriberPrefix
+      ,SubscriberType
+      ,SubscriberSourceID
+      ,SubscriberStatus
+      ,CreatedDate
+      ,CreatedBy
+      ,IsTest
+      ,DCSStatus
+      ,DCSIntegrationDate
+      ,FPSSubscriberID
+      ,TerminatedDate
 FROM CTS_Admin.Subscriber
 ORDER BY SubscriberID Desc;
 
-SELECT *
+SELECT SubscriberID
+      ,SubscriberName
+      ,RoleMapping
+      ,SubscriberType
+      ,SubscriberStatus
+      ,SubscriberGroupID
+      ,SiteID
+      ,SiteName
+      ,Comments
+      ,SiteLabel
 FROM CTS_DataCenter.MappingSubscriberSite
 ORDER BY SubscriberID Desc;

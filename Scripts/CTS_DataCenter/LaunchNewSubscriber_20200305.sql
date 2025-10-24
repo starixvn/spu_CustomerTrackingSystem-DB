@@ -1,3 +1,12 @@
+/*
+		Created:	20200528@CaseyHuynh	
+		Task :		Subsriber: New (2)
+		DB:			CTS_Admin
+		Original:
+
+		Revisions:
+		Param's Explanation (filtered by):
+*/
 INSERT INTO `CTS_Admin`.`Subscriber`
 (`SubscriberID`,
 `SubscriberName`,
@@ -31,4 +40,17 @@ GGBOOKES, BPLE, Weiwei and Axiawin
 <{IsTest: }>,
 <{DCSStatus: }>,
 <{DCSIntegrationDate: }>);
-SELECT * FROM CTS_Admin.Subscriber;
+SELECT SubscriberID
+      ,SubscriberName
+      ,SubscriberPrefix
+      ,SubscriberType
+      ,SubscriberSourceID
+      ,SubscriberStatus
+      ,CreatedDate
+      ,CreatedBy
+      ,IsTest
+      ,DCSStatus
+      ,DCSIntegrationDate
+      ,FPSSubscriberID
+      ,TerminatedDate 
+FROM CTS_Admin.Subscriber;*/
