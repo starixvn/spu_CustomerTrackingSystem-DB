@@ -258,8 +258,3 @@ BEGIN
 
 END;
 GO
-
-GRANT EXECUTE ON [dbo].Acc_Rpt_CTS_CheckExistAccumulatedBetcount TO [wsv_cts]
-GO
-GRANT VIEW DEFINITION ON [dbo].Acc_Rpt_CTS_CheckExistAccumulatedBetcount TO [wsv_cts]
-GO

@@ -30,6 +30,7 @@ SET ParameterName = 'ClassificationDangerousScoreDeposit_BatchSize'
 WHERE ParameterID = 158;
 
 /********************* Remove unused procedures *********************/
+/********************* CTS_DataCenter *********************/
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_AddManualAssociation;
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_AssociatedAccountMonitor_Get;
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_AssociatedAccountMonitor_Insert;
@@ -224,9 +225,11 @@ DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_UpdateIPTableLog_xtest;
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_UpdateSystemParameterById_xtest;
 DROP PROCEDURE IF EXISTS CTS_DataCenter.CTS_DC_UpdateUsername2_xtest;
 
+/**********CTS_Admin**************/
 DROP PROCEDURE IF EXISTS CTS_Admin.DCS_AD_InsertSubscriberByUser;
 DROP PROCEDURE IF EXISTS CTS_Admin.DCS_AD_InsertSubscriberByUser_xtest;
 
+/**********CTS_Log**************/
 DROP PROCEDURE IF EXISTS CTS_Log.CTS_Log_CTSCustomer_Get;
 DROP PROCEDURE IF EXISTS CTS_Log.CTS_Log_InsertMissingCusts;
 DROP PROCEDURE IF EXISTS CTS_Log.CTS_Log_Monitor_Neo4j_AssByAI_Get;
@@ -257,7 +260,7 @@ DROP PROCEDURE IF EXISTS CTS_Log.CTS_Log_Monitor_Neo4j_CustEvidence_InsertMissin
 
 
 /***************************** Remove unused SystemParameter *****************************/
-CREATE TABLE Adhoc_241032_SystemParameter_BeforeRemove (
+CREATE TABLE CTS_DataCenter.Adhoc_241032_SystemParameter_BeforeRemove (
 	ParameterID SMALLINT UNSIGNED NOT NULL,
 	ParameterName VARCHAR(50) DEFAULT NULL,
 	ParameterDesc VARCHAR(200) COLLATE DEFAULT NULL,
@@ -266,7 +269,7 @@ CREATE TABLE Adhoc_241032_SystemParameter_BeforeRemove (
 	PRIMARY KEY (ParameterID) 
 );
 
-INSERT INTO Adhoc_241032_SystemParameter_BeforeRemove (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
+INSERT INTO CTS_DataCenter.Adhoc_241032_SystemParameter_BeforeRemove (ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue)
 SELECT ParameterID, ParameterName, ParameterDesc, ParameterDataType, ParameterValue
 FROM CTS_DataCenter.SystemParameter AS spt  
 WHERE ParameterID IN (14, 21, 22, 23, 50, 51, 52, 68, 68, 71, 72, 73, 74,

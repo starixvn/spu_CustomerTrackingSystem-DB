@@ -1,4 +1,4 @@
-/*<info serverAlias="DBCTS-bodb02,WASAVerse" databaseType="1"></info>*/
+/*<info serverAlias="DBCTS-bodb02,DBCTS-WASAVerse" databaseType="1"></info>*/
 /*
 Creator:	20251009@Thomas.Nguyen
 Task:	 	DB CleanUp Schema
