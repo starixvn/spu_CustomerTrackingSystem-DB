@@ -27,6 +27,7 @@ sp: BEGIN
 			-	20250327@Casey.Huynh: 	Clean Table Customer_FirstTWTaggingCC [Redmine ID #221508]
 			-	20250520@Thomas.Nguyen: Clean Table Customer_SpecialLicSubCC [Redmine ID #226847]
 			- 	20250725@Winfred.Pham: Archive Agent and rescan Queue Considerable (Redmine ID: #219679)
+			-	20251009@Thomas.Nguyen: Remove unused Tables AssociatedAccountMonitor, CustEvidenceFromFile, CustEvidenceLog, CustEvidenceQueue, SmartGroupHistory [Redmine ID: #241032]
 
 		Param's Explanation (filtered by):	
         
@@ -43,8 +44,8 @@ sp: BEGIN
     DECLARE lv_NextID 					BIGINT UNSIGNED;
     DECLARE lv_Table 					VARCHAR(100);
     DECLARE lv_Count				    INT DEFAULT 0;
-	DECLARE lv_AgentCreditList 					LONGTEXT DEFAULT NULL;
-	DECLARE	CONST_ROLEID_AGENT 				TINYINT DEFAULT 2;
+	DECLARE lv_AgentCreditList 			LONGTEXT DEFAULT NULL;
+	DECLARE	CONST_ROLEID_AGENT 			TINYINT DEFAULT 2;
     
 	SET CONST_PARENTID_PA 				= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_PARENTID_WRAPPER			= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
@@ -287,24 +288,8 @@ sp: BEGIN
 			LEAVE sp;
         END IF;
         
-        SET lv_Table = 'CTS_DataCenter.AssociatedAccountMonitor';
-    END IF; 
-    
-	/*************************************** 7. CTS_DataCenter.AssociatedAccountMonitor ************************/
-    IF (lv_Table = 'CTS_DataCenter.AssociatedAccountMonitor') THEN 
-		IF EXISTS (SELECT 1  FROM CTS_DataCenter.AssociatedAccountMonitor AS aam WHERE  aam.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
-			DELETE aam
-			FROM CTS_DataCenter.AssociatedAccountMonitor AS  aam
-				INNER JOIN Temp_CustInfo AS tmp ON tmp.CTSCustID = aam.CTSCustID;
-			
-			UPDATE  CTS_DataCenter.SystemParameter 
-			SET ParameterValue = 'CTS_DataCenter.AssociatedAccountMonitor'
-			WHERE ParameterID = 46;
-			
-			LEAVE sp;
-        END IF;
         SET lv_Table = 'CTS_DataCenter.AssociatedAccountNotification';
-    END IF;
+    END IF; 
     
     /*************************************** 8. CTS_DataCenter.AssociatedAccountNotification *******************/
     IF (lv_Table = 'CTS_DataCenter.AssociatedAccountNotification') THEN 
@@ -990,116 +975,8 @@ sp: BEGIN
             SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
-        SET lv_Table = 'CTS_DataCenter.CustEvidenceFromFile';
-	 END IF;         
-
-	/*************************************** 19. CTS_DataCenter.CustEvidenceFromFile *************************/
-	IF (lv_Table = 'CTS_DataCenter.CustEvidenceFromFile') THEN
-		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustEvidenceFromFile AS ev WHERE ev.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
-			DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidenceFromFile_Clean;
-			CREATE TEMPORARY TABLE Temp_CustEvidenceFromFile_Clean(
-					ID   BIGINT UNSIGNED PRIMARY KEY
-			);
-            
-            INSERT IGNORE INTO Temp_CustEvidenceFromFile_Clean(ID)
-            SELECT 	ev.ID
-			FROM CTS_DataCenter.CustEvidenceFromFile AS ev
-			WHERE  ev.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)
-			LIMIT lv_CleanTableBatchSize;
-            
-            DELETE ev
-			FROM CTS_DataCenter.CustEvidenceFromFile AS ev
-			WHERE  ev.ID IN (SELECT tmp.ID FROM Temp_CustEvidenceFromFile_Clean AS tmp);
-			
-			UPDATE  CTS_DataCenter.SystemParameter 
-			SET ParameterValue = 'CTS_DataCenter.CustEvidenceFromFile'
-			WHERE ParameterID = 46;
-			
-			SELECT COUNT(1)
-            INTO lv_Count
-            FROM Temp_CustEvidenceFromFile_Clean;
-            
-            IF lv_Count >= lv_CleanTableBatchSize THEN
-				LEAVE sp;
-            END IF;
-			
-            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
-        END IF;
-        
-        SET lv_Table = 'CTS_DataCenter.CustEvidenceLog';
-	 END IF;     
-     
-    /*************************************** 20. CTS_DataCenter.CustEvidenceLog ******************************/
-	IF (lv_Table = 'CTS_DataCenter.CustEvidenceLog') THEN
-		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustEvidenceLog AS ev WHERE ev.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
-			DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidenceLog_Clean;
-			CREATE TEMPORARY TABLE Temp_CustEvidenceLog_Clean(
-					CustEvidID   BIGINT UNSIGNED PRIMARY KEY
-			);
-            
-            INSERT IGNORE INTO Temp_CustEvidenceLog_Clean(CustEvidID)
-            SELECT 	ev.CustEvidID
-			FROM CTS_DataCenter.CustEvidenceLog AS ev
-			WHERE  ev.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)
-			LIMIT lv_CleanTableBatchSize;
-            
-            DELETE ev
-			FROM CTS_DataCenter.CustEvidenceLog AS ev
-			WHERE  ev.CustEvidID IN (SELECT tmp.CustEvidID FROM Temp_CustEvidenceLog_Clean AS tmp);
-			
-			UPDATE  CTS_DataCenter.SystemParameter 
-			SET ParameterValue = 'CTS_DataCenter.CustEvidenceLog'
-			WHERE ParameterID = 46;
-		   
-			SELECT COUNT(1)
-            INTO lv_Count
-            FROM Temp_CustEvidenceLog_Clean;
-            
-            IF lv_Count >= lv_CleanTableBatchSize THEN
-				LEAVE sp;
-            END IF;
-			
-            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
-        END IF;
-        
-        SET lv_Table = 'CTS_DataCenter.CustEvidenceQueue';
-	 END IF; 
-     
-    /*************************************** 21. CTS_DataCenter.CustEvidenceQueue ****************************/
-	IF (lv_Table = 'CTS_DataCenter.CustEvidenceQueue') THEN
-		IF EXISTS (SELECT 1  FROM CTS_DataCenter.CustEvidenceQueue AS ev WHERE ev.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
-			DROP TEMPORARY TABLE IF EXISTS Temp_CustEvidenceQueue_Clean;
-			CREATE TEMPORARY TABLE Temp_CustEvidenceQueue_Clean(
-					ID   BIGINT UNSIGNED PRIMARY KEY
-			);
-            
-            INSERT IGNORE INTO Temp_CustEvidenceQueue_Clean(ID)
-            SELECT 	ev.ID
-			FROM CTS_DataCenter.CustEvidenceQueue AS ev
-			WHERE  ev.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)
-			LIMIT lv_CleanTableBatchSize;
-            
-            DELETE ev
-			FROM CTS_DataCenter.CustEvidenceQueue AS ev
-			WHERE  ev.ID IN (SELECT tmp.ID FROM Temp_CustEvidenceQueue_Clean AS tmp);
-			
-			UPDATE  CTS_DataCenter.SystemParameter 
-			SET ParameterValue = 'CTS_DataCenter.CustEvidenceQueue'
-			WHERE ParameterID = 46;
-		
-			SELECT COUNT(1)
-            INTO lv_Count
-            FROM Temp_CustEvidenceQueue_Clean;
-            
-            IF lv_Count >= lv_CleanTableBatchSize THEN
-				LEAVE sp;
-            END IF;
-			
-            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
-        END IF;
-        
         SET lv_Table = 'CTS_DataCenter.CustException-From';
-	 END IF;   
+	 END IF;         
 	
 	/*************************************** 22. CTS_DataCenter.CustException ********************************/
 	IF (lv_Table = 'CTS_DataCenter.CustException-From') THEN
@@ -1217,49 +1094,9 @@ sp: BEGIN
             SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
         END IF;
         
-        SET lv_Table = 'CTS_DataCenter.SmartGroupHistory';
-	 END IF; 
-     
-    /*************************************** 28. CTS_DataCenter.SmartGroupHistory *****************************/
-	IF (lv_Table = 'CTS_DataCenter.SmartGroupHistory') THEN
-		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SmartGroupHistory As his WHERE his.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)) THEN
-			DROP TEMPORARY TABLE IF EXISTS Temp_SmartGroupHistory_Clean;
-			CREATE TEMPORARY TABLE Temp_SmartGroupHistory_Clean(
-					CustID   		BIGINT UNSIGNED 
-				,	CreatedDate		DATE
-                ,	PRIMARY KEY(CustID, CreatedDate)
-			);
-            
-            INSERT IGNORE INTO Temp_SmartGroupHistory_Clean(CustID, CreatedDate)
-            SELECT 	his.CustID
-				,	his.CreatedDate
-			FROM CTS_DataCenter.SmartGroupHistory As his
-			WHERE  his.CustID IN (SELECT tmp.CustID FROM Temp_CustInfo AS tmp)
-			LIMIT lv_CleanTableBatchSize;
-            
-            DELETE ev
-			FROM CTS_DataCenter.SmartGroupHistory AS ev
-				INNER JOIN Temp_SmartGroupHistory_Clean AS tmp ON tmp.CustID = ev.CustID
-																AND tmp.CreatedDate = ev.CreatedDate;
-			
-			UPDATE  CTS_DataCenter.SystemParameter 
-			SET ParameterValue = 'CTS_DataCenter.SmartGroupHistory'
-			WHERE ParameterID = 46;
-			
-			SELECT COUNT(1)
-            INTO lv_Count
-            FROM Temp_SmartGroupHistory_Clean;
-            
-            IF lv_Count >= lv_CleanTableBatchSize THEN
-				LEAVE sp;
-            END IF;
-			
-            SET lv_CleanTableBatchSize = lv_CleanTableBatchSize - lv_Count;
-        END IF;
-        
         SET lv_Table = 'CTS_DataCenter.SpecialCustomerClass';
-	 END IF;
-	
+	 END IF; 
+
     /*************************************** 29. CTS_DataCenter.SpecialCustomerClass **************************/
     IF (lv_Table = 'CTS_DataCenter.SpecialCustomerClass') THEN
 		IF EXISTS (SELECT 1  FROM CTS_DataCenter.SpecialCustomerClass As sp WHERE sp.CTSCustID IN (SELECT tmp.CTSCustID FROM Temp_CustInfo AS tmp)) THEN
