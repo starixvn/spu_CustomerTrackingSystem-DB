@@ -406,7 +406,6 @@ BEGIN
 		END;
 		IF EXISTS (SELECT 1 FROM #tmpMatchInfo)
 		BEGIN
-
 			;WITH CTE_CustTrans AS(			
 						SELECT	b.MatchId
 							,	b.liveindicator
@@ -454,6 +453,7 @@ BEGIN
 						,	tmp.BetChoiceType
 						,	tmp.Bettype
 						,	tmp.BetID
+						,	tmp.CustID
 						,	SUM(CASE WHEN tmp.BetChoiceType = 2 AND tmp.betteam = tmp.BetChoiceHome THEN tmp.stake * tmp.actualrate 
 									 WHEN tmp.BetChoiceType = 1 THEN tmp.stake * tmp.actualrate 
 									 ELSE 0 END) AS CustAmountHome
@@ -464,7 +464,6 @@ BEGIN
 									 ELSE 0 END) AS CustTicketHome
 						,	SUM(CASE WHEN tmp.BetChoiceType = 2 AND tmp.betteam = tmp.BetChoiceAway THEN 1 
 									 ELSE 0 END) AS CustTicketAway
-						,	tmp.CustID
 					FROM CTE_CustTrans AS tmp
 						INNER JOIN #tmpMatchInfo AS m WITH(NOLOCK) ON m.MatchId = tmp.MatchId					
 					WHERE (CASE WHEN @MarketList = '' THEN 1
@@ -650,6 +649,7 @@ BEGIN
 				,	tmp.LiveIndicator
 				,	t.BetChoiceType
 				,	tmp.Bettype
+				,	tmp.CustID
 				,	CASE WHEN t.BetID = 0 THEN 0 ELSE tmp.BetID END AS BetID
 				,	SUM(CASE WHEN t.BetChoiceType = 2 AND tmp.betteam = t.BetChoiceHome THEN tmp.stake * tmp.actualrate 
 							 WHEN t.BetChoiceType = 1 THEN tmp.stake * tmp.actualrate 
@@ -661,7 +661,6 @@ BEGIN
 							 ELSE 0 END) AS CustTicketHome
 				,	SUM(CASE WHEN t.BetChoiceType = 2 AND tmp.betteam = t.BetChoiceAway THEN 1 
 							 ELSE 0 END) AS CustTicketAway
-				,	tmp.CustID
 			FROM #tmpCustTrans AS tmp
 				CROSS APPLY (
 						SELECT bt.BetID, bt.BetChoiceType,bt.BetChoiceHome,bt.BetChoiceAway
