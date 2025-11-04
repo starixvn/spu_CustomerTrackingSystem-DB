@@ -17,7 +17,6 @@ ALTER PROCEDURE [dbo].[CTS_MatchTicketInfo_Associations_Get]
 	,	@LeagueGroupList		VARCHAR(MAX)=''
 	,	@UserAmount				MONEY = 0
 	,	@TotalAmount			MONEY = 0
-	,	@IsExclTestCurr			BIT = 1
 	,	@AssociationsList		VARCHAR(MAX) = '[]' -- JSON
 AS
 
@@ -233,15 +232,15 @@ BEGIN
 	SELECT j.RootCustID, TRY_CAST(ss.value AS INT)
 	FROM OPENJSON(@AssociationsList) WITH (
  			RootCustID			INT				'$.RootCustID'
-		,	CustIDAssociations	VARCHAR(MAX)	'$.CustIDAssociations'
+		,	AssCustIDList	VARCHAR(MAX)	'$.AssCustIDList'
 	) AS j
-	CROSS APPLY STRING_SPLIT(ISNULL(NULLIF(j.CustIDAssociations,''), '0'), ',') AS ss
+	CROSS APPLY STRING_SPLIT(ISNULL(NULLIF(j.AssCustIDList,''), '0'), ',') AS ss
 
 	UNION ALL
 	SELECT j.RootCustID, j.RootCustID
 	FROM OPENJSON(@AssociationsList) WITH (
  			RootCustID			INT				'$.RootCustID'
-		,	CustIDAssociations	VARCHAR(MAX)	'$.CustIDAssociations'
+		,	AssCustIDList	VARCHAR(MAX)	'$.AssCustIDList'
 	) AS j;	
 	
 	INSERT INTO #tmpBetType(BetType,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIdPattern,BetId)
@@ -438,14 +437,7 @@ BEGIN
 				,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustAmountAway ELSE 0 END) AS AmountWay
 				,	SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustTicketHome ELSE 0 END) AS TicketHome
 				,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustTicketAway ELSE 0 END) AS TicketAway
-				,	(	
-					SELECT STRING_AGG(CAST(d.CustID AS VARCHAR(20)), ',')
-					FROM(
-						SELECT DISTINCT tmpCust.CustID AS CustID
-						WHERE tmpCust.CustAmountHome >= @UserAmount 
-							OR tmpCust.CustAmountAway >= @UserAmount
-						) AS d
-					) AS ListCustID
+				,	STRING_AGG(CAST(CASE WHEN tmpCust.CustAmountHome >= @UserAmount OR tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustID ELSE NULL END AS VARCHAR(20)),',') AS ListCustID
 				,	0 AS IsFrom14
 			FROM (
 					SELECT 	tmp.MatchId
@@ -602,8 +594,7 @@ BEGIN
 						) AS tmp
 					WHERE (tmp.LeagueName LIKE '%' + @LeagueEvent + '%'
 										OR tmp.HomeName LIKE '%' + @LeagueEvent + '%'
-										OR tmp.AwayName LIKE '%' + @LeagueEvent + '%')
-					;
+										OR tmp.AwayName LIKE '%' + @LeagueEvent + '%');
 			END
   
   IF Exists (SELECT 1 FROM #tmpMatchInfo14) 
@@ -635,14 +626,7 @@ BEGIN
 			,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustAmountAway ELSE 0 END) AS AmountWay
 			,	SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustTicketHome ELSE 0 END) AS TicketHome
 			,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustTicketAway ELSE 0 END) AS TicketAway
-			,	(
-				SELECT STRING_AGG(CAST(d.CustID AS VARCHAR(20)), ',')
-				FROM (
-					SELECT DISTINCT tmpCust.CustID AS CustID
-					WHERE tmpCust.CustAmountHome >= @UserAmount 
-						OR tmpCust.CustAmountAway >= @UserAmount
-					) AS d
-				) AS ListCustID
+			,	STRING_AGG(CAST(CASE WHEN tmpCust.CustAmountHome >= @UserAmount OR tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustID ELSE NULL END AS VARCHAR(20)),',') AS ListCustID
 			,	1 AS IsFrom14
 		FROM (
 			SELECT 	tmp.MatchId
@@ -739,7 +723,6 @@ END;
 																						WHEN ms.Id = @MatchSection_Early AND m.EventDate > @Today THEN 1 END)
 											 WHEN m.EventStatus = ms.EventStatus AND ms.Id = @MatchSection_Closed THEN 1
 											 ELSE 0 END) AS mss
-			
 		-- OPTION (RECOMPILE)
 		;
 	END
@@ -848,14 +831,13 @@ END;
 																						WHEN ms.Id = @MatchSection_Early AND m.EventDate > @Today THEN 1 END)
 											 WHEN m.EventStatus = ms.EventStatus AND ms.Id = @MatchSection_Closed THEN 1
 											 ELSE 0 END) AS mss
-			
 		-- OPTION (RECOMPILE)
 		;
 	END;	
 
 	DROP TABLE IF EXISTS #tmpBetType;
 	DROP TABLE IF EXISTS #tmpCustomer;
-	DROP TABLE IF EXISTS #tmpMatchSum;
+	DROP TABLE IF EXISTS #tmpMatchSum_Group;
 	DROP TABLE IF EXISTS #tmpMatchInfo;
 	DROP TABLE IF EXISTS #tmpMatchInfo14;
 	DROP TABLE IF EXISTS #tmpCustTrans;
