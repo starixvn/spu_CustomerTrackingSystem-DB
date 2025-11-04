@@ -1,8 +1,8 @@
-/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*<info serverAlias="DBCTS-bodb02,DBCTS-WASAVerse" databaseType="1"></info>*/
 /*
 Creator: 	20251020@Long.Luu
 Task:	 	Extend Sporttype from Tinyint to Smallint [Redmine ID: 242108] 	
-DBName:		DB062
+DBName:		DB061, DB062
 */
 
 USE bodb02;
