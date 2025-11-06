@@ -316,34 +316,34 @@ BEGIN
 				,	tmp.LeagueName
 			FROM (
 					SELECT DISTINCT 
-							m.MatchID
-						,	m.HomeId
+							match.MatchID
+						,	match.HomeId
 						,	h.TeamName AS HomeName
-						,	m.AwayId
+						,	match.AwayId
 						,	a.TeamName AS AwayName
-						,	m.EventDate
-						,	m.GlobalShowTime
-						,	m.EventStatus
+						,	match.EventDate
+						,	match.GlobalShowTime
+						,	match.EventStatus
 						,	tmp.SportType
 						,	l.LeagueId
 						,	l.LeagueName
-					FROM bodb02.dbo.Match AS m WITH(NOLOCK)
-						INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-						INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
-						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
-						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
-						INNER JOIN @tmpSport AS tmp ON m.Sporttype = tmp.SportType
-						INNER JOIN @tmpMatchSection AS ms ON ms.EventStatus = m.eventstatus
-					WHERE	m.EventDate >= @FDate 
-							AND m.EventDate <= @TDate 
-							AND l.IsTest = 0 AND m.isTestMatch = 0
+					FROM bodb02.dbo.Match AS match WITH(NOLOCK)
+						INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON match.leagueid = l.leagueid
+						INNER JOIN #tmpLeagueGroup AS lgroup WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lgroup.LeagueGroupID,l.LeagueGroupID)
+						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = match.homeid 
+						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = match.awayid
+						INNER JOIN @tmpSport AS tmp ON match.Sporttype = tmp.SportType
+						INNER JOIN @tmpMatchSection AS ms ON ms.EventStatus = match.eventstatus
+					WHERE	match.EventDate >= @FDate 
+							AND match.EventDate <= @TDate 
+							AND l.IsTest = 0 AND match.isTestMatch = 0
 							AND (CASE WHEN @IsExcludeSabaGroup = 1 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
-											AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
+											AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE match.SportType = s.SportType) THEN 1
 									  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID NOT IN (42,74,108,113,122,151)
-											AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE m.SportType = s.SportType) THEN 1
+											AND EXISTS (SELECT 1 FROM @tmpSport AS s WHERE match.SportType = s.SportType) THEN 1
 									  WHEN @IsExcludeSabaGroup = 0 AND l.LeagueGroupID IN (42,74,108,113,122,151)
 											AND EXISTS (SELECT 1 FROM @tmpSportSabaLeagueGroup AS sl 
-																	WHERE m.SportType = sl.SportType AND l.LeagueGroupID = sl.LeagueGroupID) THEN 1
+																	WHERE match.SportType = sl.SportType AND l.LeagueGroupID = sl.LeagueGroupID) THEN 1
 									  ELSE 0 END = 1)
 					) AS tmp
 				WHERE (tmp.LeagueName LIKE '%' + @LeagueEvent + '%'
@@ -370,9 +370,9 @@ BEGIN
 					SELECT DISTINCT 
 							m.MatchID
 						,	m.HomeId
-						,	h.TeamName AS HomeName
+						,	home.TeamName AS HomeName
 						,	m.AwayId
-						,	a.TeamName AS AwayName
+						,	away.TeamName AS AwayName
 						,	m.EventDate
 						,	m.GlobalShowTime
 						,	m.EventStatus
@@ -381,9 +381,9 @@ BEGIN
 						,	l.LeagueName
 					FROM bodb02.dbo.Match AS m WITH(NOLOCK)
 						INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
-						INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
-						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
-						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
+						INNER JOIN #tmpLeagueGroup AS lgroup WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lgroup.LeagueGroupID,l.LeagueGroupID)
+						INNER JOIN bodb02.dbo.team AS home WITH(NOLOCK) ON home.TeamId = m.homeid 
+						INNER JOIN bodb02.dbo.team AS away WITH(NOLOCK) ON away.TeamId = m.awayid
 						INNER JOIN @tmpSportSabaLeagueGroup AS tmp ON m.Sporttype = tmp.SportType
 						INNER JOIN @tmpMatchSection AS ms ON ms.EventStatus = m.eventstatus
 					WHERE	m.EventDate >= @FDate 
@@ -437,7 +437,7 @@ BEGIN
 				,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustAmountAway ELSE 0 END) AS AmountWay
 				,	SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustTicketHome ELSE 0 END) AS TicketHome
 				,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustTicketAway ELSE 0 END) AS TicketAway
-				,	STRING_AGG(CAST(CASE WHEN tmpCust.CustAmountHome >= @UserAmount OR tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustID ELSE NULL END AS VARCHAR(20)),',') AS ListCustID
+				,	STRING_AGG(CAST(CASE WHEN tmpCust.CustAmountHome >= @UserAmount OR tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustID ELSE NULL END AS VARCHAR(MAX)),',') AS ListCustID
 				,	0 AS IsFrom14
 			FROM (
 					SELECT 	tmp.MatchId
@@ -627,7 +627,7 @@ BEGIN
 			,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustAmountAway ELSE 0 END) AS AmountWay
 			,	SUM(CASE WHEN tmpCust.CustAmountHome >= @UserAmount THEN tmpCust.CustTicketHome ELSE 0 END) AS TicketHome
 			,	SUM(CASE WHEN tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustTicketAway ELSE 0 END) AS TicketAway
-			,	STRING_AGG(CAST(CASE WHEN tmpCust.CustAmountHome >= @UserAmount OR tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustID ELSE NULL END AS VARCHAR(20)),',') AS ListCustID
+			,	STRING_AGG(CAST(CASE WHEN tmpCust.CustAmountHome >= @UserAmount OR tmpCust.CustAmountAway >= @UserAmount THEN tmpCust.CustID ELSE NULL END AS VARCHAR(MAX)),',') AS ListCustID
 			,	1 AS IsFrom14
 		FROM (
 			SELECT 	tmp.MatchId
@@ -664,8 +664,8 @@ BEGIN
 				OR tmpCust.CustAmountAway >= @UserAmount
 				GROUP BY a.RootCustID, tmpCust.MatchId, tmpCust.BetChoiceType, tmpCust.Bettype, tmpCust.LiveIndicator, tmpCust.BetId
 				HAVING (SUM(tmpCust.CustAmountHome) >=  @TotalAmount OR SUM(tmpCust.CustAmountAway) >=  @TotalAmount)
-						AND SUM(CASE WHEN a.CustID = a.RootCustID THEN 1 ELSE 0 END) > 0 --Only Root
-						AND SUM(CASE WHEN a.CustID <> a.RootCustID THEN 1 ELSE 0 END) > 0  -- Only Association
+						AND SUM(CASE WHEN a.CustID = a.RootCustID THEN 1 ELSE 0 END) > 0
+						AND SUM(CASE WHEN a.CustID <> a.RootCustID THEN 1 ELSE 0 END) > 0
 			OPTION (RECOMPILE) ;	
 
 		IF (@@ROWCOUNT > 0)
