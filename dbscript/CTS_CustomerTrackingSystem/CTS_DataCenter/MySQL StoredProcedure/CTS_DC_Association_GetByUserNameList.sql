@@ -86,8 +86,8 @@ BEGIN
 				AND asDv.CTSCustID <> tmpCd.CTSCustID
 		);
 
-        INSERT INTO Temp_Association(RootCustID, AssCustID, AssociationType)
-        SELECT  tmpCd.CustID AS RootCustID
+        INSERT IGNORE INTO Temp_Association(RootCustID, AssCustID, AssociationType)
+        SELECT DISTINCT  tmpCd.CustID AS RootCustID
             ,	cus.CustID AS AssCustID
             ,	CONST_ASSTYPE_DEVICE AS AssociationType
         FROM Temp_CustDevice AS tmpCd
@@ -153,7 +153,7 @@ BEGIN
 		);
 
 		INSERT IGNORE INTO Temp_Association(RootCustID, AssCustID, AssociationType)
-		SELECT  tmpgAI.CustID AS RootCustID
+		SELECT DISTINCT tmpgAI.CustID AS RootCustID
 			,	cus.CustID AS AssCustID
 			,	CONST_ASSTYPE_BETTINGPATTERN AS AssociationType
 		FROM Temp_CustGroupByAI AS tmpgAI
