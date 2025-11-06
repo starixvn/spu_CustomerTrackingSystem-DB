@@ -106,9 +106,10 @@ BEGIN
 	IF OBJECT_ID('tempdb..#tmpAssoc') IS NOT NULL DROP TABLE #tmpAssoc;
     CREATE TABLE #tmpAssoc
 	(
-        	RootCustID	INT	NOT NULL
-		,	CustID		INT	NOT NULL
+        	CustID			INT	NOT NULL
+		,	RootCustID		INT	NOT NULL
     );
+	CREATE CLUSTERED INDEX CIX_tmpAssoc_CustID ON #tmpAssoc(CustID);
 
 	IF	OBJECT_ID('tempdb..#tmpLeagueGroup') IS NOT NULL
 	BEGIN
@@ -232,16 +233,15 @@ BEGIN
 	SELECT j.RootCustID, TRY_CAST(ss.value AS INT)
 	FROM OPENJSON(@AssociationsList) WITH (
  			RootCustID			INT				'$.RootCustID'
-		,	AssCustIDList	VARCHAR(MAX)	'$.AssCustIDList'
+		,	AssCustIDList		VARCHAR(MAX)	'$.AssCustIDList'
 	) AS j
-	CROSS APPLY STRING_SPLIT(ISNULL(NULLIF(j.AssCustIDList,''), '0'), ',') AS ss
+	CROSS APPLY STRING_SPLIT(ISNULL(NULLIF(j.AssCustIDList,''), '0'), ',') AS ss;
 
-	UNION ALL
-	SELECT j.RootCustID, j.RootCustID
-	FROM OPENJSON(@AssociationsList) WITH (
- 			RootCustID			INT				'$.RootCustID'
-		,	AssCustIDList	VARCHAR(MAX)	'$.AssCustIDList'
-	) AS j;	
+	INSERT INTO #tmpAssoc(RootCustID, CustID)
+	SELECT DISTINCT
+    		RootCustID
+    	,	RootCustID AS CustID
+	FROM #tmpAssoc;
 	
 	INSERT INTO #tmpBetType(BetType,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIdPattern,BetId)
 	SELECT	j.BetType
@@ -327,8 +327,8 @@ BEGIN
 						,	tmp.SportType
 						,	l.LeagueId
 						,	l.LeagueName
-					FROM bodb02.dbo.Match AS m
-						INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
+					FROM bodb02.dbo.Match AS m WITH(NOLOCK)
+						INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 						INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
 						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
@@ -379,8 +379,8 @@ BEGIN
 						,	tmp.SportType
 						,	l.LeagueId
 						,	l.LeagueName
-					FROM bodb02.dbo.Match AS m
-						INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
+					FROM bodb02.dbo.Match AS m WITH(NOLOCK)
+						INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 						INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
 						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
@@ -468,8 +468,9 @@ BEGIN
 					WHERE tmpCust.CustAmountHome >= @UserAmount
 						OR tmpCust.CustAmountAway >= @UserAmount
 					GROUP BY a.RootCustID, tmpCust.MatchId, tmpCust.BetChoiceType, tmpCust.Bettype, tmpCust.LiveIndicator, tmpCust.BetId
-					HAVING SUM(tmpCust.CustAmountHome) >=  @TotalAmount
-						OR SUM(tmpCust.CustAmountAway) >=  @TotalAmount
+					HAVING (SUM(tmpCust.CustAmountHome) >=  @TotalAmount OR SUM(tmpCust.CustAmountAway) >=  @TotalAmount)
+						AND SUM(CASE WHEN a.CustID = a.RootCustID THEN 1 ELSE 0 END) > 0 --Only Root
+						AND SUM(CASE WHEN a.CustID <> a.RootCustID THEN 1 ELSE 0 END) > 0  -- Only Association
 					OPTION (RECOMPILE) ;
 
 			IF (@@ROWCOUNT > 0)
@@ -522,8 +523,8 @@ BEGIN
 						,	tmp.SportType
 						,	l.LeagueId
 						,	l.LeagueName
-					FROM bodb02.dbo.Match14 AS m
-						INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
+					FROM bodb02.dbo.Match14 AS m WITH(NOLOCK)
+						INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 						INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
 						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
@@ -573,8 +574,8 @@ BEGIN
 							,	tmp.SportType
 							,	l.LeagueId
 							,	l.LeagueName
-						FROM bodb02.dbo.Match14 AS m
-							INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
+						FROM bodb02.dbo.Match14 AS m WITH(NOLOCK)
+							INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 							INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
 							INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 							INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
@@ -662,8 +663,9 @@ BEGIN
 				WHERE tmpCust.CustAmountHome >= @UserAmount
 				OR tmpCust.CustAmountAway >= @UserAmount
 				GROUP BY a.RootCustID, tmpCust.MatchId, tmpCust.BetChoiceType, tmpCust.Bettype, tmpCust.LiveIndicator, tmpCust.BetId
-				HAVING SUM(tmpCust.CustAmountHome) >=  @TotalAmount
-					OR SUM(tmpCust.CustAmountAway) >=  @TotalAmount
+				HAVING (SUM(tmpCust.CustAmountHome) >=  @TotalAmount OR SUM(tmpCust.CustAmountAway) >=  @TotalAmount)
+						AND SUM(CASE WHEN a.CustID = a.RootCustID THEN 1 ELSE 0 END) > 0 --Only Root
+						AND SUM(CASE WHEN a.CustID <> a.RootCustID THEN 1 ELSE 0 END) > 0  -- Only Association
 			OPTION (RECOMPILE) ;	
 
 		IF (@@ROWCOUNT > 0)
