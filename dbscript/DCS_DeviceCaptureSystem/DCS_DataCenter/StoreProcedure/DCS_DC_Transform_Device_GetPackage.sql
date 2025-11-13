@@ -22,17 +22,16 @@ BEGIN
             - 20240503@Jonathan.Doan: HF Division by 0 [Redmine ID: #204757]
 			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
             - 20250909@Jonathan.Doan: Remove FP code [Redmine ID: #236716]
+			- 20251113@Jonathan.Doan: Remove SYSTEMSETTINGID_MINCREATEDDATE [Redmine ID: #244163]
 
 	    Param's Explanation (filtered by):
 			CALL DCS_DC_Transform_Device_GetPackage(100, 2);
 	*/
     DECLARE 	CONST_SYSTEMSETTINGID_MINTRANSID 			INT 		DEFAULT 1;
-    DECLARE 	CONST_SYSTEMSETTINGID_MINCREATEDDATE 		INT 		DEFAULT 2;
 	
 	DECLARE		lv_TotalRecord			INT UNSIGNED DEFAULT 0;
 	DECLARE		lv_RateBatch			DECIMAL(4,2);
     DECLARE 	lv_FromTransID			BIGINT UNSIGNED;
-    DECLARE		lv_FromCreatedDate		DATE;
     DECLARE		lv_CountAccountID		INT;
     DECLARE		lv_NoOfBatchOfAccountID	INT;
 
@@ -69,8 +68,7 @@ BEGIN
     ADD KEY IX_Temp_Trans_AccountID (AccountID),
     ADD KEY IX_Temp_Trans_RawTransID (RawTransID);
     
-	SET lv_FromTransID = IFNULL((SELECT MIN(TransID) FROM Temp_Trans), lv_FromTransID); 
-	SET lv_FromCreatedDate = IFNULL((SELECT MIN(CreatedDate) FROM Temp_Trans), DATE_ADD(CURRENT_TIMESTAMP(), INTERVAL -2 WEEK));
+	SET lv_FromTransID = IFNULL((SELECT MIN(TransID) FROM Temp_Trans), lv_FromTransID);
     
     INSERT INTO Temp_Account(AccountID)
 	SELECT DISTINCT AccountID
@@ -95,13 +93,6 @@ BEGIN
 			SET VValue = CONCAT('', lv_FromTransID),
 				UpdatedTime = CURRENT_TIMESTAMP()
 			WHERE ID = CONST_SYSTEMSETTINGID_MINTRANSID;
-		END IF;
-
-		IF(lv_FromCreatedDate IS NOT NULL) THEN
-			UPDATE DCS_DataCenter.SystemSetting
-			SET VValue = CONCAT('', lv_FromCreatedDate),
-				UpdatedTime = CURRENT_TIMESTAMP()
-			WHERE ID = CONST_SYSTEMSETTINGID_MINCREATEDDATE;
 		END IF;
 		
 		#RETURN OUTPUT

@@ -52,8 +52,7 @@ BEGIN
 			,   CEIL(@RowId/ip_NoOfTickets) as batchID
 		FROM 	DCS_DataCenter.RawTransaction AS rt
 		WHERE	rt.TransID >= lv_FromTransID
-		    AND rt.IsProcessed = ip_IsProcessed
-		LIMIT	 lv_TotalRecord
+		LIMIT	lv_TotalRecord
 	) AS t
 	GROUP BY batchID;
     

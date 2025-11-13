@@ -35,12 +35,12 @@ BEGIN
 			- 20241111@Jonathan.Doan: Add Insert FP_Tagging [Redmine ID: #212696]
             - 20250825@Casey.Huynh: AI Power Device Fingerprint And Remove FPJs [Redmine ID: #236716]
 			- 20251009@Jonathan.Doan: Add field Indicate Tagging Type & FP version[Redmine ID: #240781]
+			- 20251113@Jonathan.Doan: Remove SYSTEMSETTINGID_MINCREATEDDATE [Redmine ID: #244163]
             
 	    Param's Explanation (filtered by):
 		Example:
 			CALL DCS_DC_Transform_Transaction_Insert(1,200);
     */
-    DECLARE 	CONST_SYSTEMSETTINGID_MINCREATEDDATE	INT DEFAULT 2;
     
     DECLARE 	CONST_FPPATTERNTYPE01					INT DEFAULT 1;
     DECLARE 	CONST_FPPATTERNTYPE02					INT DEFAULT 2;
@@ -48,7 +48,6 @@ BEGIN
     DECLARE 	CONST_SCRIPTVERSIONTYPE_ACTIVATOR		INT DEFAULT 1;
     DECLARE 	CONST_SCRIPTVERSIONTYPE_FINGERPRINT		INT DEFAULT 2;
     
-	DECLARE		lv_SysMinCreatedDate					DATETIME;
     DECLARE 	lv_CurrentDate 							DATETIME(4) DEFAULT CURRENT_TIMESTAMP(4);
     DECLARE 	lv_ListFPTagging 						LONGTEXT;
 
@@ -131,11 +130,6 @@ BEGIN
         ,	LastUsedDate 		DATE
         ,	PRIMARY KEY (ScriptVersionType, ScriptVersion)
     );
-       
-    SELECT DATE(VValue)
-    INTO lv_SysMinCreatedDate
-    FROM DCS_DataCenter.SystemSetting 
-    WHERE ID = CONST_SYSTEMSETTINGID_MINCREATEDDATE;
 
 	INSERT INTO Temp_RawTransaction(TransID, LoginName, TransTime, SubscriberID, SubscriberType, DeviceCode , URLDetails, UserAgentKey, IP, IPID, ActionResultID, Flagged, PluginID, TransStatus, CreatedDate, FingerprintCode, BotDetectionValue, BotComponentID, FakeIP, IsIncognitoMode, ChallengeCode, WebRTCIPCode, FPPatternCode01, FPPatternCode02, TransFlow, ActivatorVersion, FingerprintVersion, TaggingType)
 	SELECT  rt.TransID
@@ -170,8 +164,7 @@ BEGIN
         INNER JOIN CTS_Admin.Subscriber AS su ON rt.SubscriberName = su.SubscriberName
 	    LEFT JOIN DCS_DataCenter.ActionResult AS ar ON rt.Action = ar.Action AND IFNULL(rt.ActionResult,'') = ar.ActionResult
 	WHERE   rt.IsProcessed = 0
-	    AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID
-        AND rt.CreatedDate >= lv_SysMinCreatedDate;   
+	    AND rt.TransID BETWEEN ip_FromTransID AND ip_ToTransID;   
 	
 
     /* === Add index for Temp_RawTransaction === */
