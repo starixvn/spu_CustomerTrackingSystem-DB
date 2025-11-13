@@ -15,6 +15,7 @@ BEGIN
 			- 20220627@Casey.Huynh [Redmine ID: #174218]: Created 
             - 20231120@Thomas.Nguyen [Redmine ID: #188553]: Add the condition SportType = 2 and KickOffTime < 60mins
             - 20250716@Winfred.pham [Redmine ID: #227848]: [CTS] - Customer Classification - Classify Saba Soccer Group Betting into CC3101-3201 and KickOffTime < 30mins
+            - 20251113@Winfred.pham [Redmine ID: #239955]: [CTS] - Customer Classification - Classify by sport Saba Soccer Group Betting into CC3101-3201
 
 		Param's Explanation:
         
@@ -34,6 +35,7 @@ BEGIN
      WHERE	mm.ClassifyStatus = 0
 		AND ((mm.SportType = 1 AND mm.KickOffTime < lv_Sub90minute)
 			OR (mm.SportType = 2 AND mm.KickOffTime < lv_Sub60minute)
-			OR (mm.SportType = 1 AND mm.LeagueGroupID = 42 AND mm.KickOffTime < lv_Sub30minute)) ; 
+			OR (mm.SportType = 1 AND mm.LeagueGroupID = 42 AND mm.KickOffTime < lv_Sub30minute AND mm.ClassifyStatusBySport = 0)) ; 
+
 END$$
 DELIMITER ;
