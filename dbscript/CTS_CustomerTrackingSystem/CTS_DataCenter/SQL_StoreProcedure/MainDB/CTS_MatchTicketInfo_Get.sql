@@ -39,6 +39,7 @@ AS
 		- 20250506@Casey.Huynh:	Danger Monitor - Fix LeagueGroup Filter [Redmine ID: #226078]
         - 20250807@Winfred.Pham: Get Data for Sum betType [Redmine ID: #202508 ]
         - 20250923@Long.Luu: 	Add Agents ORI6RM & ORI20RM  as internal account [Redmine ID: #239117]
+		- 20251031@Logan.Nguyen: 	Add WITH(NOLOCK) [Redmine ID: #239956]
 
 	Params Explaination:
 		,@BettypeList='[	{"BetType":1, "BetChoiceType":2}
@@ -436,8 +437,8 @@ BEGIN
 						,	tmp.SportType
 						,	l.LeagueId
 						,	l.LeagueName
-					FROM bodb02.dbo.Match AS m
-						INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
+					FROM bodb02.dbo.Match AS m WITH(NOLOCK)
+						INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 						INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
 						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
@@ -488,8 +489,8 @@ BEGIN
 						,	tmp.SportType
 						,	l.LeagueId
 						,	l.LeagueName
-					FROM bodb02.dbo.Match AS m
-						INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
+					FROM bodb02.dbo.Match AS m WITH(NOLOCK)
+						INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 						INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
 						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
@@ -628,8 +629,8 @@ BEGIN
 						,	tmp.SportType
 						,	l.LeagueId
 						,	l.LeagueName
-					FROM bodb02.dbo.Match14 AS m
-						INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
+					FROM bodb02.dbo.Match14 AS m WITH(NOLOCK)
+						INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 						INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
 						INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 						INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
@@ -679,8 +680,8 @@ BEGIN
 							,	tmp.SportType
 							,	l.LeagueId
 							,	l.LeagueName
-						FROM bodb02.dbo.Match14 AS m
-							INNER JOIN bodb02.dbo.league AS l ON m.leagueid = l.leagueid
+						FROM bodb02.dbo.Match14 AS m WITH(NOLOCK)
+							INNER JOIN bodb02.dbo.league AS l WITH(NOLOCK) ON m.leagueid = l.leagueid
 							INNER JOIN #tmpLeagueGroup AS lg WITH(NOLOCK) ON l.LeagueGroupID = ISNULL(lg.LeagueGroupID,l.LeagueGroupID)
 							INNER JOIN bodb02.dbo.team AS h WITH(NOLOCK) ON h.TeamId = m.homeid 
 							INNER JOIN bodb02.dbo.team AS a WITH(NOLOCK) ON a.TeamId = m.awayid
@@ -774,7 +775,7 @@ BEGIN
 			IF EXISTS (SELECT 1 FROM @tmpMatchSection WHERE Id = @MatchSection_Closed)
 			BEGIN
 				INSERT INTO @tmpMatchSection (Id, IsFrom14, EventStatus)
-				SELECT @MatchSection_Closed, 1, *
+				SELECT @MatchSection_Closed, 1, X.a
 				FROM (VALUES ('Completed'),('Closed'),('Postponed'),('internal'))  AS X(a);
 			END;
 			
