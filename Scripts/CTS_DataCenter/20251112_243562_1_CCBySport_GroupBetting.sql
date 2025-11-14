@@ -1,12 +1,12 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
 /*
-Creator:	20250724@Casey.Huynh
+Creator:	20251113@Winfred.pham
 Task:	 	
 Server:  	Master
 DBName:		CTS_DataCenter
 
 Revisions: 
-		- 20250724@Casey.Huynh: Created  [Redmine ID: #219679]
+		- 20251113@Winfred.pham: [CTS] - Customer Classification - Classify by sport Saba Soccer Group Betting into CC3101-3201  [Redmine ID: #239955]
 Reviewer:
 */
 
