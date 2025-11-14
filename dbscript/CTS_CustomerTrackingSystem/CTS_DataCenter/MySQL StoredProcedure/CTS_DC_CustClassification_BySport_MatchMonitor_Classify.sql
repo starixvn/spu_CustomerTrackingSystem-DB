@@ -1,8 +1,9 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassificationBySport_MatchMonitor_Classify`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_MatchMonitor_Classify`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationBySport_MatchMonitor_Classify`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_MatchMonitor_Classify`(
+    IN ip_BatchSize			INT
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -17,25 +18,20 @@ BEGIN
 		Param's Explanation:
         
 		Example:
-			CALL CTS_DataCenter.CTS_DC_CustClassificationBySport_MatchMonitor_Classify();
+			CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_MatchMonitor_Classify();
 
 	 */
 
 	DECLARE	CONST_CATEID_SYSTEMDETECTGB				INT;
   	DECLARE	CONST_CATEGROUPID_SYSTEMDETECTGB		INT;
     
-	DECLARE lv_PackSize INT;
 	DECLARE lv_MatchID INT;
 
     SET CONST_CATEID_SYSTEMDETECTGB	 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SYSTEMDETECTGB');    
     SET CONST_CATEGROUPID_SYSTEMDETECTGB 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SYSTEMDETECTGB');
 
         /*****GET SYSTEM Parameter VALUE****/
-    SELECT s.ParameterValue
-    INTO lv_PackSize
-    FROM CTS_DataCenter.SystemParameter AS s
-    WHERE s.ParameterID = 199;
-    
+   
     SELECT s.ParameterValue
     INTO lv_MatchID
     FROM CTS_DataCenter.SystemParameter AS s
@@ -100,7 +96,7 @@ BEGIN
         WHERE mmd.MatchID = lv_MatchID
 			AND mmd.Reason = 0
 			AND mmd.ClassifyStatusBySport = 0
-        LIMIT lv_PackSize
+        LIMIT ip_BatchSize
 	)
 	SELECT	js.CustID
 		,	cte.MMDetailsID

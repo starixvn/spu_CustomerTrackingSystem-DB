@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassificationBySport_MatchMonitor_Completed`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_MatchMonitor_Completed`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassificationBySport_MatchMonitor_Completed`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_MatchMonitor_Completed`(
 		IN ip_MatchID			INT
     ,	IN ip_MMDetailsIDList	TEXT
 )
@@ -19,7 +19,7 @@ BEGIN
 		Param's Explanation:
         
 		Example:
-			CALL CTS_DataCenter.CTS_DC_CustClassificationBySport_MatchMonitor_Completed();
+			CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_MatchMonitor_Completed();
 	 */ 
 	DROP TEMPORARY TABLE IF EXISTS Temp_MMDetailsID;    
 	CREATE TEMPORARY TABLE Temp_MMDetailsID(	  

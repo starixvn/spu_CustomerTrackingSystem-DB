@@ -1,5 +1,5 @@
 /*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
-CREATE PROCEDURE [dbo].[CTS_ProblemAccountsClassificationBySport_Daily]
+CREATE PROCEDURE [dbo].[CTS_ProblemAccountsClassification_BySport_Daily]
 	@ListCustInfo			VARCHAR(MAX),
 	@FunctionId				SMALLINT = 12
 AS
@@ -15,7 +15,7 @@ AS
 	Param's Explanation:
 
 	Example:
-		EXEC CTS_ProblemAccountsClassificationBySport_Daily @ListCustInfo = '[{"CustID":1096006, "SportGroup":0},{"CustID":1096006, "SportGroup":2},{"CustID":1277, "SportGroup":0},{"CustID":249550995, "SportGroup":1},{"CustID":43290047, "SportGroup":1},{"CustID":43290027, "SportGroup":1}]';
+		EXEC CTS_ProblemAccountsClassification_BySport_Daily @ListCustInfo = '[{"CustID":1096006, "SportGroup":0},{"CustID":1096006, "SportGroup":2},{"CustID":1277, "SportGroup":0},{"CustID":249550995, "SportGroup":1},{"CustID":43290047, "SportGroup":1},{"CustID":43290027, "SportGroup":1}]';
 
 */
 BEGIN
@@ -102,7 +102,7 @@ BEGIN
 
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpRawData AS a
-	WHERE a.SportGroup IN (@SportGroup_NonSport, @SportGroup_General, @SportGroup_SabaVRBasketball);
+	WHERE a.SportGroup IN (@SportGroup_General, @SportGroup_NonSport, @SportGroup_SabaVRBasketball);
 
 	-- #2: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportGroup, TurnoverRM, WinlossRM, BetCount, ActiveDays)
