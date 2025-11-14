@@ -12,12 +12,13 @@ Reviewer:
 
 USE CTS_DataCenter;
 
-#1. New table: CTSCustomerClassificationBySport_DailyPAQueue (ID, CustID, CreatedTime)
-CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassificationBySport_DailyPAQueue(
+#1. New table: CTSCustomerClassification_BySport_DailyPAQueue (ID, CustID, CreatedTime)
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_BySport_DailyPAQueue(
 		ID 			BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
     ,	CustID 		BIGINT UNSIGNED NOT NULL
     ,	CreatedTime DATETIME NOT NULL
-	,	INDEX	IX_CTSCustomerClassificationBySport_DailyPAQueue_CreatedTime_CustID(CreatedTime, CustID)  
+	,	INDEX	IX_CTSCustomerClassification_BySport_DailyPAQueue_CreatedTime(CreatedTime)  
+    ,	INDEX	IX_CTSCustomerClassification_BySport_DailyPAQueue_CustID(CustID) 
 )ENGINE=INNODB, AUTO_INCREMENT = 1;
 
 #================================================================================
@@ -37,7 +38,7 @@ SELECT * FROM CTS_DataCenter.StaticList WHERE ListID = 24;
 #=========================CTS_DataCenter.SystemParameter===================================
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
-VALUES	(199,'Classification_BySport_MM_PackSize','Last Classification_BySport_MatchMonitor_PackSize.ID','INT','100')
+VALUES	(199,'Classification_BySport_MM_BatchSize','Last Classification_BySport_MatchMonitor_BatchSize.ID','INT','100')
 	,	(200,'Classification_BySport_MM_InProcessMatchID','In_process_BySport MatchMonitor.MatchID','INT ',0)
 	,	(201,'DailyScan_PA_BySport_BatchSize','DailyScan_PA_BySport_BatchSize','BIGINT','5000')
 	,	(202,'DailyScan_PA_BySport_LastScannedTime','Last Scanned Time Daily ScanPA_BySport','DATETIME','2025-11-12 21:00:00');
