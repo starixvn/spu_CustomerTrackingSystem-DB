@@ -38,7 +38,9 @@ SELECT * FROM CTS_DataCenter.StaticList WHERE ListID = 24;
 
 INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
 VALUES	(199,'Classification_BySport_MM_PackSize','Last Classification_BySport_MatchMonitor_PackSize.ID','INT','100')
-	,	(200,'Classification_BySport_MM_InProcessMatchID','In_process_BySport MatchMonitor.MatchID','INT ',0);
+	,	(200,'Classification_BySport_MM_InProcessMatchID','In_process_BySport MatchMonitor.MatchID','INT ',0)
+	,	(201,'DailyScan_PA_BySport_BatchSize','DailyScan_PA_BySport_BatchSize','BIGINT','5000')
+	,	(202,'DailyScan_PA_BySport_LastScannedTime','Last Scanned Time Daily ScanPA_BySport','DATETIME','2025-11-12 21:00:00');
 
-SELECT * FROM CTS_DataCenter.SystemParameter WHERe ParameterID IN (199,200);
+SELECT * FROM CTS_DataCenter.SystemParameter WHERe ParameterID IN (199,200,201,202);
 #===============================================================================================================
