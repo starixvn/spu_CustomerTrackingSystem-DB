@@ -29,10 +29,7 @@ BEGIN
 	DECLARE @CurrentDateTime			DATETIME = GETDATE();
 	DECLARE @CurrentDate				DATE	 = GETDATE();
 
-	DECLARE @SportGroup_SabaVRSoccer	 SMALLINT = 145,
-			@SportGroup_SabaVRBasketball SMALLINT = 912,
-			@SportGroup_NonSport		 SMALLINT = 229,
-			@SportGroup_General			 SMALLINT = 0;
+	DECLARE @SportGroup_SabaVRSoccer	 SMALLINT = 145;
 
 	DECLARE @ListCustIds				VARCHAR(MAX);
 
@@ -92,7 +89,7 @@ BEGIN
 	) AS js;
 
 	WITH CTE_CustIds AS (
-		SELECT DISTINCT CustId FROM #tmpCustInfo
+		SELECT DISTINCT CustId FROM #tmpCustInfo WHERE SportGroup = @SportGroup_SabaVRSoccer
 	)
 	SELECT @ListCustIds = STRING_AGG(CAST(CustId AS VARCHAR(MAX)), ',') FROM CTE_CustIds;
 
@@ -102,7 +99,7 @@ BEGIN
 
 	DELETE a WITH (ROWLOCK)
 	FROM #tmpRawData AS a
-	WHERE a.SportGroup IN (@SportGroup_General, @SportGroup_NonSport, @SportGroup_SabaVRBasketball);
+	WHERE a.SportGroup NOT IN (@SportGroup_SabaVRSoccer);
 
 	-- #2: Sum data by custid
 	INSERT INTO #tmpCustomerAccummulatedInfo(CustId, SportGroup, TurnoverRM, WinlossRM, BetCount, ActiveDays)
