@@ -1,7 +1,6 @@
 /*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[CTS_ProblemAccountsClassification_BySport_Daily]
-	@ListCustInfo			VARCHAR(MAX),
-	@FunctionId				SMALLINT = 12
+	@ListCustInfo			VARCHAR(MAX)
 AS
 /*
 	Created: 20251113@Winfred.pham
