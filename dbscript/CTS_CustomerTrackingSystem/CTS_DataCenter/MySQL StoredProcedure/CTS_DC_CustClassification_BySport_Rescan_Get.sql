@@ -107,7 +107,6 @@ sp: BEGIN
 		,	cust.CustID
 		, 	cc.CategoryID
         ,	cat.CategoryName
-		, 	cc.TVSReasonID
 		, 	cc.RoleID
 		, 	cc.SubscriberID
 		, 	cc.IsLicensee
@@ -115,7 +114,6 @@ sp: BEGIN
 		, 	CASE WHEN cc.CreatedBy IS NULL THEN CONST_CREATEDBY_STARIXITID ELSE cc.CreatedBy END AS CreatedBy
         ,	cc.CreatedDate
 		, 	cc.LastModifiedDate
-        ,   cc.IssueTypeID
 		, 	CASE WHEN cc.CategoryID IS NULL THEN CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL ELSE cc.InputFlowID END AS InputFlowID
         ,   ccs.SportType AS DWSportType
 	FROM Temp_CustInfo AS cust
