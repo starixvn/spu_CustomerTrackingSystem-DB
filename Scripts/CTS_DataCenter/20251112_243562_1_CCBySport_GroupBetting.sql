@@ -34,7 +34,8 @@ ALTER TABLE MatchMonitorDetails
 ;
 
 INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,ItemParentItemID,PriorityOrder,Status,Description,CreatedDate)
-VALUES(@ListID:=24,@ItemID:=31,@ListName:='Flow Classification BySport Insert',@ListNameDisplay:='INPUTFLOWID',@ItemName:='CONST_INPUTFLOWID_BYSPORT_INSERT_PACATEGORY',@ItemNameDisplay:='CONST_INPUTFLOWID_BYSPORT_INSERT_PACATEGORY',@ItemValue:='335',@ItemDefaultValue:='335',@ItemParentItemID:=4,@PriorityOrder:=NULL,@Status:=1,@Description:=NULL,@CreatedDate:=NOW())
+VALUES	(@ListID:=24,@ItemID:=31,@ListName:='Flow Classification BySport Insert',@ListNameDisplay:='INPUTFLOWID',@ItemName:='CONST_INPUTFLOWID_BYSPORT_INSERT_PACATEGORY',@ItemNameDisplay:='CONST_INPUTFLOWID_BYSPORT_INSERT_PACATEGORY',@ItemValue:='335',@ItemDefaultValue:='335',@ItemParentItemID:=4,@PriorityOrder:=NULL,@Status:=1,@Description:=NULL,@CreatedDate:=NOW())
+	,	(@ListID:=24,@ItemID:=32,@ListName:='Flow Classification BySport Rescan',@ListNameDisplay:='INPUTFLOWID',@ItemName:='CONST_INPUTFLOWID_BYSPORT_RESCAN_PACATEGORY',@ItemNameDisplay:='CONST_INPUTFLOWID_BYSPORT_RESCAN_PACATEGORY',@ItemValue:='375',@ItemDefaultValue:='375',@ItemParentItemID:=4,@PriorityOrder:=NULL,@Status:=1,@Description:=NULL,@CreatedDate:=NOW())
 ;
 SELECT * FROM CTS_DataCenter.StaticList WHERE ListID = 24;
 
