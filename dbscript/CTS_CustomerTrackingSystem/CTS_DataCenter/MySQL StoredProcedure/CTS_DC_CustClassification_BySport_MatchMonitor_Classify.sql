@@ -42,8 +42,7 @@ BEGIN
 		SELECT mm.MatchID
         INTO lv_MatchID
         FROM CTS_DataCenter.MatchMonitor AS mm
-        WHERE mm.SportType IN (1) 	
-            AND mm.ClassifyStatusBySport = 2 AND mm.LeagueGroupID = 42
+        WHERE mm.SportType IN (1) AND mm.ClassifyStatusBySport = 2 AND mm.LeagueGroupID = 42
         ORDER BY mm.KickOffTime ASC
         LIMIT 1;
         
@@ -55,8 +54,7 @@ BEGIN
     SELECT CASE WHEN SportType IN (1) AND mm.LeagueGroupID = 42 THEN 145 ELSE 0 END AS lv_SportGroup
     INTO lv_SportGroup
     FROM CTS_DataCenter.MatchMonitor AS mm
-    WHERE mm.SportType IN (1) AND  	
-            AND mm.ClassifyStatusBySport = 2 AND mm.MatchID = lv_MatchID
+    WHERE mm.SportType IN (1) AND  mm.ClassifyStatusBySport = 2 AND mm.MatchID = lv_MatchID
     ORDER BY mm.KickOffTime ASC
     LIMIT 1;
  
