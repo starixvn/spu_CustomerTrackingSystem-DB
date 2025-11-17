@@ -21,6 +21,7 @@ BEGIN
 			- 20210510@Aries.Nguyen: Remove insert log dba_SP_PerformanceStats [Redmine ID: #154792]
             - 20210622@Aries.Nguyen: Update coding convention [Redmine ID: #157203]
 			- 20240806@Jonathan.Doan: Change data flow v6 [Redmine ID: #206403]
+			- 20251113@Jonathan.Doan: Remove field IsProcessed [Redmine ID: #244163]
             
 	    Param's Explanation (filtered by):
 			CALL DCS_DC_Transform_RawTrans_GetPackage(0,10,2);
