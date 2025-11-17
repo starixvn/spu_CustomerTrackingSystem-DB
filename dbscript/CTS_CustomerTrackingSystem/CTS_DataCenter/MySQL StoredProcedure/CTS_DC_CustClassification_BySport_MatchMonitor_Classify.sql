@@ -35,7 +35,7 @@ BEGIN
     SELECT s.ParameterValue
     INTO lv_MatchID
     FROM CTS_DataCenter.SystemParameter AS s
-    WHERE s.ParameterID = 200;
+    WHERE s.ParameterID = 199;
    
     IF lv_MatchID = 0 THEN    
 		SELECT mm.MatchID
@@ -48,7 +48,7 @@ BEGIN
         
         UPDATE CTS_DataCenter.SystemParameter AS s
         SET s.ParameterValue = lv_MatchID
-        WHERE s.ParameterID = 200;        
+        WHERE s.ParameterID = 199;        
 	END IF;
  
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorDetailsCust;

@@ -42,7 +42,7 @@ BEGIN
         
         UPDATE CTS_DataCenter.SystemParameter AS s
         SET s.ParameterValue = 0
-        WHERE s.ParameterID = 200;   
+        WHERE s.ParameterID = 199;   
 	END IF;    
 END$$
 DELIMITER ;
