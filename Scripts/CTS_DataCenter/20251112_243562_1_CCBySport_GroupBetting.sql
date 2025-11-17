@@ -16,9 +16,10 @@ USE CTS_DataCenter;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_BySport_DailyPAQueue(
 		ID 			BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
     ,	CustID 		BIGINT UNSIGNED NOT NULL
+	,	SportGroup	SMALLINT NOT NULL
     ,	CreatedTime DATETIME NOT NULL
 	,	INDEX	IX_CTSCustomerClassification_BySport_DailyPAQueue_CreatedTime(CreatedTime)  
-    ,	INDEX	IX_CTSCustomerClassification_BySport_DailyPAQueue_CustID(CustID) 
+    ,	INDEX	IX_CTSCustomerClassification_BySport_DailyPAQueue_CustID(CustID, SportGroup) 
 )ENGINE=INNODB, AUTO_INCREMENT = 1;
 
 #================================================================================
@@ -41,5 +42,5 @@ INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDe
 VALUES	(199,'Classification_BySport_MM_InProcessMatchID','In_process_BySport MatchMonitor.MatchID','INT ',0)
 	,	(200,'DailyScan_PA_BySport_LastScannedTime','Last Scanned Time Daily ScanPA_BySport','DATETIME','2025-11-12 21:00:00');
 
-SELECT * FROM CTS_DataCenter.SystemParameter WHERe ParameterID IN (199,200);
+SELECT * FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (199,200);
 #===============================================================================================================
