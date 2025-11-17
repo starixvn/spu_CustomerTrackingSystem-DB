@@ -243,8 +243,6 @@ BEGIN
 			, 	cls.LastModifiedDate 	=  lv_CurrentDateTime
 			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime); 
 			
-		SET lv_UpdatedCount = FOUND_ROWS();
-		
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport(
 				CustID, CTSCustID, SportID, ParentID, CategoryID, CreatedDate, CreatedBy
 			, 	LastModifiedDate, LastModifiedBy, LastScannedDate)
@@ -262,8 +260,6 @@ BEGIN
 		WHERE 	(temp.DataChangeType = 0 AND temp.IsDataChanged = 1) 
 			OR 	(temp.IsFromOldPA 	= 1 AND lv_IsRescan = 0); /*temp.IsDataChanged = 0*/
 		
-		SET lv_InsertedCount = FOUND_ROWS();
-
 		UPDATE Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = temp.NewCategoryID
 		SET temp.TargetCCForHistory =	CASE	WHEN temp.SpecialCC IS NOT NULL THEN temp.SpecialCC
