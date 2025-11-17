@@ -158,10 +158,11 @@ BEGIN
 							END;
 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_History(
-			CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate
+			CustID, CTSCustID, SportID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate
 		, 	TargetCC, SourceTypeID, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT  tmp.CustID
 		, 	tmp.CTSCustID
+		,	tmp.SportGroup AS SportID
 		, 	tmp.RelevantCategoryID
 		, 	tmp.ParentID
 		, 	lv_CurrentDateTime AS LastModifiedDate
@@ -182,9 +183,10 @@ BEGIN
     WHERE tmp.IsDataChanged = 1
 		AND tmp.ParentID <> CONST_PARENTID_WRAPPER;
 
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, SportID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT  tmp.CustID
 		, 	tmp.CTSCustID
+		,	tmp.SportGroup AS SportID
 		, 	CASE WHEN tmp.IsDataChanged = 1 THEN tmp.RelevantCategoryID ELSE tmp.CategoryID END AS CategoryID
 		, 	tmp.ParentID
 		, 	lv_CurrentDateTime AS LastModifiedDate
