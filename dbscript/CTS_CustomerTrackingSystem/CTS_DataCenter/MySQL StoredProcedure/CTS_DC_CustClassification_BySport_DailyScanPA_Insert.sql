@@ -17,7 +17,7 @@ BEGIN
 			- 20251114@Logan.Nguyen: Add new category/class for daily scan PA By Sport [Redmine ID: #239955]
 
 		Param's Explanation (filtered by):      
-			- CALL CTS_DC_CustClassification_BySport_DailyScanPA_Insert ('[{"CustID": 224340007,"DWSportType": 0,"WinlossStatus": 2,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10},{"CustID": 224340007,"SportGroup": 2,"WinlossStatus": 0,"TurnoverRM":150,"WinlossRM":-15000,"BetCount":15,"ActiveDays":10}]');
+			- CALL CTS_DC_CustClassification_BySport_DailyScanPA_Insert ('[{"CustID": 224340007,"SportGroup": 0,"WinlossStatus": 2,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10},{"CustID": 224340007,"SportGroup": 2,"WinlossStatus": 0,"TurnoverRM":150,"WinlossRM":-15000,"BetCount":15,"ActiveDays":10}]');
 	*/ 
 	DECLARE CONST_CATEID_VVIP 					INT;
 	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 		INT;
@@ -26,7 +26,6 @@ BEGIN
 	DECLARE CONST_PARENTID_PA               	INT;
 	DECLARE CONST_PARENTID_WRAPPER 				INT;
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
-    DECLARE CONST_REMARKID_PAMARKEDDIRECTLY		INT;
     DECLARE CONST_REMARKID_PAAFFECTEDBYUPLINE	INT;
 	DECLARE CONST_REMARKID_RESCANROBOT			INT;
 	DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
@@ -42,7 +41,6 @@ BEGIN
 	SET CONST_CATEID_LICBA 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
 	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
-	SET CONST_REMARKID_PAMARKEDDIRECTLY 		= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_PAMARKEDDIRECTLY');
 	SET CONST_REMARKID_PAAFFECTEDBYUPLINE 		= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_PAAFFECTEDBYUPLINE');
 	SET CONST_REMARKID_RESCANROBOT 				= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_RESCANROBOT');
 
@@ -62,7 +60,6 @@ BEGIN
         ,	WinlossRM				DECIMAL(20,4)
         , 	BetCount				BIGINT 
         , 	ActiveDays				INT
-        ,	IsMarkedDirectly		BIT(1)
         ,	IsLicenseeVIP			BIT(1)
         ,	IsLicenseeBA			BIT(1)
         , 	IsDataChanged			BIT(1)
@@ -88,7 +85,7 @@ BEGIN
     /* START */
     INSERT IGNORE INTO Temp_PA(
 			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetDangerLevel1, IsDangerProbation
-		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsMarkedDirectly,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime, IsRobot, SportGroup)
+		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime, IsRobot, SportGroup)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
@@ -102,7 +99,6 @@ BEGIN
         , 	js.WinlossRM
         , 	js.BetCount
         , 	js.ActiveDays
-        ,	clss.IsMarkedDirectly
         ,	cust.IsLicenseeVIP
         ,	cust.IsLicenseeBA
         ,	CASE WHEN js.WinlossStatus = 1 THEN 0 /*No Change*/
@@ -126,9 +122,8 @@ BEGIN
 			,   SportGroup		SMALLINT 				PATH "$.SportGroup"
 		 )) AS js
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON js.CustID = cust.CustID AND cust.CustSubID = 0 AND cust.IsInternal = 0
-		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS clss ON clss.CustID = js.CustID
+		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS clss ON clss.CustID = js.CustID AND clss.SportID = js.SportGroup
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1 AND cate.RelevantCategoryID IS NOT NULL
-		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = cate.CategoryID AND ccs.SportType = js.SportGroup
 	,	LATERAL (SELECT CASE WHEN cust.IsLicensee = 1 THEN tbl.Ext_ABIDangerLevel_Licensee  ELSE tbl.Ext_ABIDangerLevel_Credit END AS TargetDangerLevel1
 				,	tbl.CustomerClass AS TargetCC
 				FROM CTS_DataCenter.CustomerCategory AS tbl 
@@ -143,8 +138,7 @@ BEGIN
 						AND clss.CategoryID = CONST_CATEID_VVIP); 
         
     UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS clss
-		INNER JOIN Temp_PA AS tmp ON tmp.CustID = clss.CustID AND tmp.ParentID = clss.ParentID AND tmp.CategoryID = clss.CategoryID
-		INNER JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.CategoryID AND ccs.SportType = tmp.SportGroup
+		INNER JOIN Temp_PA AS tmp ON tmp.CustID = clss.CustID AND tmp.ParentID = clss.ParentID AND tmp.CategoryID = clss.CategoryID AND tmp.SportGroup = clss.SportID
     SET 	clss.CategoryID = tmp.RelevantCategoryID
         ,	clss.LastModifiedBy = lv_CreatedBy
         ,	tmp.CategoryID = tmp.RelevantCategoryID 
@@ -178,7 +172,6 @@ BEGIN
 		, 	TargetCC
 		, 	CASE WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
 				 WHEN tmp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT 
-				 WHEN tmp.IsMarkedDirectly = 1 THEN CONST_REMARKID_PAMARKEDDIRECTLY
 				 ELSE CONST_REMARKID_PAAFFECTEDBYUPLINE END AS SourceTypeID
 		,   tmp.IsDataChanged
         ,	tmp.TargetDangerLevel1
@@ -205,7 +198,6 @@ BEGIN
 		, 	TargetCC
 		, 	CASE WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
 				 WHEN tmp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT 
-				 WHEN tmp.IsMarkedDirectly = 1 THEN CONST_REMARKID_PAMARKEDDIRECTLY
 				 ELSE CONST_REMARKID_PAAFFECTEDBYUPLINE END AS SourceTypeID
 		,   tmp.IsDataChanged
         ,	tmp.TargetDangerLevel1
@@ -216,17 +208,7 @@ BEGIN
         ,   tmp.PerformanceTime
 	FROM Temp_PA AS tmp
 		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.RelevantCategoryID;
-    
-	SELECT 	DISTINCT
-			tmp.CustID
-		,	tmp.CTSCustID
-        ,	CASE WHEN cat.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot
-		,	CASE WHEN cat.ParentID = CONST_PARENTID_PA THEN 1 ELSE 0 END AS IsPA
-		,	tmp.SportGroup  AS SportGroup
-    FROM Temp_PA AS tmp
-		INNER JOIN CTS_DataCenter.CustomerCategory AS cat ON tmp.CategoryID = cat.CategoryID AND cat.IsActive = 1
-    WHERE IsDataChanged = 1; 
-    
+
 	SELECT DISTINCT
        tmp.CustID,
        tmp.SportGroup AS SportGroup
