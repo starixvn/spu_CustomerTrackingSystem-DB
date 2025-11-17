@@ -18,7 +18,7 @@ sp: BEGIN
         Param's Explanation:
 
 		Example:
-			- CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_Rescan_Get("1,2,3,4");
+			- CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_Rescan_Get('[{"CTSCustID":1, "SportID": 145}]');
 	*/ 
     DECLARE	CONST_PARENTID_PA						INT;
     DECLARE CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL			INT DEFAULT 9;
