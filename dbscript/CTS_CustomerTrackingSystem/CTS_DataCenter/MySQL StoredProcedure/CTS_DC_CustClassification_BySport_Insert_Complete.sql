@@ -27,6 +27,7 @@ BEGIN
 	DECLARE CONST_PARENTID_NORMAL							INT;
 	DECLARE CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL			INT;
 	DECLARE CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC		INT;
+	DECLARE CONST_INPUTFLOWID_BYSPORT_RESCAN_PACATEGORY		INT;
 	DECLARE CONST_ACTIONTYPE_INSERT 						INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 						INT DEFAULT 1;
 	DECLARE CONST_SOURCETYPE_CUSTOMERCLASS_ADD_MANUAL		INT DEFAULT 10;
@@ -42,6 +43,7 @@ BEGIN
 	SET CONST_PARENTID_NORMAL								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_NORMAL');
 	SET CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL');
 	SET CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC');
+	SET CONST_INPUTFLOWID_BYSPORT_RESCAN_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_RESCAN_PACATEGORY');
 	SET CONST_REMARKID_AUTOMARKGB							= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_AUTOMARKGB');
 
 	IF ip_InputFlowID = CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC THEN
@@ -266,7 +268,7 @@ BEGIN
 												ELSE temp.TargetCC
 										END;
 
-		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_History(
+		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_History(
 				CustID, CTSCustID, SportID, ParentID, CategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays
 			,	TargetCC, ActionType, LastModifiedDate, LastModifiedBy, InsertDate, PerformanceTime, Remark, SourceTypeID)
 		SELECT 	temp.CustID
@@ -292,7 +294,7 @@ BEGIN
 		WHERE temp.IsDataChanged = 1 
 		ORDER BY temp.LastModifiedDate ASC, temp.NewCategoryID ASC;
 		
-		INSERT INTO CTS_DataCenter.CTSCustomerClassification_Log(
+		INSERT INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(
 				CustID, CTSCustID, SportID, ParentID, CategoryID, TurnoverRM, WinlossRM, BetCount, ActiveDays
 			,	TargetCC, OldCategoryID, DWCategoryID, IsDataChanged, ActionType, LastModifiedDate, LastModifiedBy
 			,	InsertDate, PerformanceTime, Remark, SourceTypeID)

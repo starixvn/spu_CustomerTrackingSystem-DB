@@ -19,6 +19,7 @@ BEGIN
 			
 		Example:
 			- CALL CTS_DC_CustClassification_BySport_Insert_GetInfo(332, '[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]');
+			- CALL CTS_DC_CustClassification_BySport_Insert_GetInfo_xpre(335, '[{"CustID":1290,"CTSCustID":1003273192,"CategoryID":20900,"SportGroup":145,"TurnoverRM":20000.0,"WinlossRM":-10000.0,"CreatedBy":8,"Remark":null,"WinlossStatus":2,"MatchID":83717954,"BetCount":10,"ActiveDays":5,"PerformanceTime":"2025-11-17T02:32:57.063"}]');
 		
 		Revisions: 
 			- 20240618@Victoria.Le: Initial Writing [Redmine ID: #205317]
@@ -50,11 +51,14 @@ BEGIN
 		,	SportID						SMALLINT UNSIGNED
 		,	Remark						VARCHAR(500)
 		,	CreatedBy					INT UNSIGNED
+		,	CreatedDate					DATETIME
+		,	LastModifiedDate			DATETIME
 		, 	TurnoverRM					DECIMAL(20,4)
 		, 	WinlossRM					DECIMAL(20,4)
 		, 	BetCount					BIGINT
 		, 	ActiveDays					INT	
 		,	DWCategoryID				INT UNSIGNED
+		,	ParentID					INT UNSIGNED
 		,	OldCategoryID 				INT UNSIGNED
 		,	OldCategoryGroupID			INT UNSIGNED
 		,	NewCategoryID				INT UNSIGNED
@@ -64,6 +68,7 @@ BEGIN
 		,	IsDataChanged				TINYINT(1) DEFAULT 1 /*0: No change category => No Action*/
 		,	OldTargetCC					INT
 		,	TargetCC					INT
+		,	TargetCCForHistory			INT
 		, 	ActionType					SMALLINT DEFAULT 0 /* 0: Insert; 1: Update, 3: Ignore Exist PA, 4: Ignore PIN; 5: Not satisfy Pass Probation*/
 		,	PerformanceTime				DATETIME
 		,	SpecialCC					INT
@@ -74,13 +79,12 @@ BEGIN
 		,	IsFromOldPA					TINYINT(1) DEFAULT 0
 		,	DWCategoryGroupID   		INT UNSIGNED
 		,	IsPAProbation	     		TINYINT(1) DEFAULT 0
-		,	ParentID					INT UNSIGNED
+
 		, 	RelevantCategoryID			INT UNSIGNED
 		,	RelevantCategoryGroupID   	INT UNSIGNED
 		,	RelevantIsPAProbation	   	TINYINT(1)
 		,	MatchID						INT
 		,	DataChangeType				TINYINT DEFAULT 0	/* 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE */
-		, 	ActionType					SMALLINT DEFAULT 0 
 		, 	WinlossStatus				SMALLINT /*LOSING  = 0 (PROBATION), KEEPSTATE = 1 (NOT CHANGE), WINNING = 2 (NOT PROBATION);*/
 		,	PRIMARY KEY (CustID, SportID, DWCategoryID)
 		, 	INDEX IX_Temp_NewCC_BySport_CustID_NewCategoryID (CustID, NewCategoryID)  
@@ -94,7 +98,6 @@ BEGIN
         ,	OldCategoryID 								INT UNSIGNED
         ,	OldCategoryGroupID							INT UNSIGNED
 		,	CTSCustID									BIGINT UNSIGNED
-		,	SubscriberID								INT UNSIGNED
 		,	RoleID										INT
 		,	ParentID									INT UNSIGNED
 		,	ExistCategoryID								INT UNSIGNED
@@ -146,17 +149,15 @@ BEGIN
 																					AND cls.ParentID = CONST_PARENTID_WRAPPER
 																					AND cls.CategoryID = CONST_CATEID_SPECIALCC;
 
-	ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_BYSPORT_INSERT_PA THEN 
+	ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_BYSPORT_INSERT_PACATEGORY THEN 
 
 			INSERT INTO Temp_NewClassification(
-					CustID, CTSCustID, SportID, RoleID, SubscriberID, DWCategoryID, CreatedBy, Remark, MatchID
+					CustID, CTSCustID, SportID, DWCategoryID, CreatedBy, Remark, MatchID
 				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, IsPAProbation, RelevantCategoryID, CategoryPriority, CustomerClassPriority
-				,	ParentID, IsDataChanged, PerformanceTime, SpecialCC)
+				,	ParentID, IsDataChanged, PerformanceTime, SpecialCC, CreatedDate)
 			SELECT 	tmpJs.CustID
 				,	CASE WHEN tmpJs.CTSCustID = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
 				,	tmpJs.SportID
-				,	CASE WHEN tmpJs.RoleID = 0 THEN cus.RoleID ELSE tmpJs.RoleID END
-				,	CASE WHEN tmpJs.SubscriberID = 0 THEN cus.SubscriberID ELSE tmpJs.SubscriberID END
 				,	tmpJs.DWCategoryID
 				,	tmpJs.CreatedBy 
 				,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN CONCAT('Auto MatchID: ', MatchID) ELSE tmpJs.Remark END) AS Remark
@@ -173,13 +174,12 @@ BEGIN
 				,	0 AS IsDataChanged
 				,	tmpJs.PerformanceTime
 				,	sp.CustomerClass AS SpecialCC
+				,	tmpJs.CreatedDate
 			FROM JSON_TABLE(ip_CustInfo,
 							"$[*]" COLUMNS(
 												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
 											,	CTSCustID 					BIGINT UNSIGNED		PATH "$.CTSCustID"
 											, 	SportID						SMALLINT UNSIGNED	PATH "$.SportGroup"
-											,	RoleID 						INT					PATH "$.RoleID" 
-											,	SubscriberID 				INT UNSIGNED		PATH "$.SubscriberID"
 											,	DWCategoryID				INT UNSIGNED		PATH "$.CategoryID"
 											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
 											, 	Remark						VARCHAR(500)		PATH "$.Remark"
@@ -188,6 +188,7 @@ BEGIN
 											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
 											, 	BetCount					BIGINT 				PATH "$.BetCount"
 											, 	PerformanceTime				DATETIME			PATH "$.PerformanceTime"
+											,	CreatedDate					DATETIME			PATH "$.CreatedDate"
 											,	MatchID						INT					PATH "$.MatchID"
 											)) AS tmpJs
 				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0

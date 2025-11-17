@@ -2,7 +2,9 @@
 DROP PROCEDURE IF EXISTS `CTS_DC_CustClassification_BySport_Insert_Process`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_Insert_Process`()
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_Insert_Process`(
+	IN ip_InputFlowID			INT
+)
 SQL SECURITY INVOKER
 BEGIN
 /*
@@ -57,7 +59,8 @@ BEGIN
 	CREATE TEMPORARY TABLE Temp_LastHistory(
 			CustID					BIGINT UNSIGNED 
 		,	SportID					SMALLINT UNSIGNED
-		,	CategoryID				INT 
+		,	CategoryID				INT
+		,	ParentID				INT 
 		,	TargetCC				INT
 		,	PRIMARY KEY (CustID, SportID)
 	);
@@ -167,11 +170,10 @@ BEGIN
 			, 	BetCount				BIGINT 
 			, 	ActiveDays				INT
 			,	WinlossStatus			TINYINT
-			,	IsLicensee				TINYINT(1)
 			,	PRIMARY KEY (CustID, SportID)
 		); 
 		
-		IF ip_InputFlowID = CONST_INPUTFLOWID_GENERAL_RESCAN_PACATEGORY THEN
+		IF ip_InputFlowID = CONST_INPUTFLOWID_BYSPORT_RESCAN_PACATEGORY THEN
 			SET lv_IsRescan = 1;
 		END IF;
         
@@ -238,7 +240,7 @@ BEGIN
 		WHERE 	temp.ParentID = CONST_PARENTID_PA AND lv_IsRescan = 1;
 		
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(
-				CustID, CTSCustID, SportID, SubscriberID, RoleID, ParentID, OldCategoryID, OldCategoryGroupID, ExistCategoryID, RelevantCategoryID
+				CustID, CTSCustID, SportID, ParentID, OldCategoryID, OldCategoryGroupID, ExistCategoryID, RelevantCategoryID
 			, 	Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate, InsertTime, SpecialCC, CustomerClass, CategoryPriority, CustomerClassPriority
 			,	IsPAProbation, IsNew, IsMultiCateIDSameParentID, IsKeepOldCateID) 
 		WITH CTE AS (
@@ -248,8 +250,6 @@ BEGIN
 		SELECT	cls.CustID
 			,	cls.CTSCustID
 			,	cls.SportID
-			,	cls.SubscriberID
-			,	cls.RoleID
 			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN NULL ELSE cat.ParentID END AS ParentID
 			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN cat.CategoryID ELSE cat.CategoryGroupID END AS OldCategoryID
 			,	CASE WHEN cls.ParentID = CONST_PARENTID_NORMAL THEN NULL ELSE cat.CategoryGroupID END AS OldCategoryGroupID /*NORMAL NOT CONSIDER TO WIN/LOSE >> SET NULL*/
@@ -380,7 +380,7 @@ BEGIN
 															AND temp_old.IsNew = 0
 															AND temp.WinlossStatus <> 1;
 		
-		INSERT IGNORE INTO Temp_CustProbationStatus(CustID, CTSCustID, SportID, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsPAProbation, WinlossStatus, IsLicensee)
+		INSERT IGNORE INTO Temp_CustProbationStatus(CustID, CTSCustID, SportID, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsPAProbation, WinlossStatus)
 		SELECT DISTINCT 
 				temp.CustID
 			,	temp.CTSCustID
@@ -391,20 +391,17 @@ BEGIN
 			,	temp.ActiveDays
 			,	(CASE WHEN temp.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation
 			,	temp.WinlossStatus
-			,	temp.IsLicensee
 		FROM Temp_NewClassification AS temp;
 		
 		/*existing PA - existing and new: the same CateGroup - WinlossStatus <> KEEP*/
 		INSERT INTO Temp_NewClassification(
-				CustID, CTSCustID, SportID, SubscriberID, RoleID, ParentID, DWCategoryID, DWCategoryGroupID, OldCategoryID, NewCategoryID, NewCategoryGroupID
+				CustID, CTSCustID, SportID, ParentID, DWCategoryID, DWCategoryGroupID, OldCategoryID, NewCategoryID, NewCategoryGroupID
 			, 	TargetCC, Remark, WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays
 			, 	IsDataChanged, DataChangeType, CustomerClassPriority, SpecialCC
 			, 	LastModifiedDate, CreatedBy, IsPAProbation)
 		SELECT 	temp_old.CustID
 			,	temp_old.CTSCustID
 			,	temp_old.SportID
-			,	temp_old.SubscriberID
-			,	temp_old.RoleID
 			,	temp_old.ParentID
 			,	temp_old.ExistCategoryID AS DWCategoryID
 			,	temp_old.ExistCategoryID AS DWCategoryGroupID

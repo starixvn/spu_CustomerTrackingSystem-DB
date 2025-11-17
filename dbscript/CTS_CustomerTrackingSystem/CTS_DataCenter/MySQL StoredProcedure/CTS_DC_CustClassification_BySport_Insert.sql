@@ -51,7 +51,7 @@ BEGIN
 		END IF;
 
 		/*STEP 3: Process*/
-		CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_Insert_Process ();
+		CALL CTS_DataCenter.CTS_DC_CustClassification_BySport_Insert_Process (ip_InputFlowID);
 		
 	END IF;
 	
