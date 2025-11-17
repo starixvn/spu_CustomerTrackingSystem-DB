@@ -13,7 +13,7 @@ BEGIN
 		DB:			CTS_DataCenter
 		Original: 
 		Revisions:
-			- 20251113@Winfred.pham : [CTS] - Customer Classification - Classify by sport Saba Soccer Group Betting into CC3101-3201 [Redmine ID: #239955]
+			- 20251113@Winfred.pham : Created [Redmine ID: #239955]
             
 		Param's Explanation:
         
@@ -26,6 +26,7 @@ BEGIN
   	DECLARE	CONST_CATEGROUPID_SYSTEMDETECTGB		INT;
     
 	DECLARE lv_MatchID INT;
+    DECLARE lv_SportGroup INT = 0;
 
     SET CONST_CATEID_SYSTEMDETECTGB	 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SYSTEMDETECTGB');    
     SET CONST_CATEGROUPID_SYSTEMDETECTGB 		= CTS_DC_CategoryTypeParent_Get ('CONST_CATEGROUPID_SYSTEMDETECTGB');
@@ -41,8 +42,8 @@ BEGIN
 		SELECT mm.MatchID
         INTO lv_MatchID
         FROM CTS_DataCenter.MatchMonitor AS mm
-        WHERE mm.ClassifyStatusBySport = 2	
-            AND SportType IN (1) AND mm.LeagueGroupID = 42
+        WHERE mm.SportType IN (1) AND mm.ClassifyStatus = 2  	
+            AND mm.ClassifyStatusBySport = 2 AND mm.LeagueGroupID = 42
         ORDER BY mm.KickOffTime ASC
         LIMIT 1;
         
@@ -50,6 +51,14 @@ BEGIN
         SET s.ParameterValue = lv_MatchID
         WHERE s.ParameterID = 199;        
 	END IF;
+
+    SELECT CASE WHEN SportType IN (1) AND mm.LeagueGroupID = 42 THEN 145 ELSE 0 END AS lv_SportGroup
+    INTO lv_SportGroup
+    FROM CTS_DataCenter.MatchMonitor AS mm
+    WHERE mm.SportType IN (1) AND mm.ClassifyStatus = 2  	
+            AND mm.ClassifyStatusBySport = 2 AND mm.MatchID = lv_MatchID
+    ORDER BY mm.KickOffTime ASC
+    LIMIT 1;
  
     DROP TEMPORARY TABLE IF EXISTS Temp_MatchMonitorDetailsCust;
     CREATE TEMPORARY TABLE Temp_MatchMonitorDetailsCust(
@@ -127,13 +136,14 @@ BEGIN
         ,	tmpCust.IsLicensee
         ,	CONST_CATEID_SYSTEMDETECTGB AS CategoryID # Group Betting
         , 	CONST_CATEGROUPID_SYSTEMDETECTGB AS CategoryGroup # Group Betting
+        ,   lv_SportGroup AS SportGroup
 	FROM Temp_Cust AS tmpCust
 	WHERE NOT EXISTS (	SELECT 1 
-						FROM CTS_DataCenter.CTSCustomerClassification AS cls 
+						FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cls 
 							INNER JOIN Temp_ExcludePACategoryID AS exl ON cls.CategoryID = exl.CategoryID
-						WHERE cls.CustID = tmpCust.CustID);
+						WHERE cls.CustID = tmpCust.CustID AND cls.sportID = lv_SportGroup);
         
-    SELECT GROUP_CONCAT(DISTINCT MmDetailsID) AS MmDetailsIDList
+    SELECT GROUP_CONCAT(DISTINCT MMDetailsID) AS MMDetailsIDList
     FROM Temp_MatchMonitorDetailsCust AS tmp;
     
     SELECT lv_MatchID AS MatchID;

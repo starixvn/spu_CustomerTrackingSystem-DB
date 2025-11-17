@@ -1,6 +1,7 @@
 /*<info serverAlias="DBVR2-bodb_VR2Model" executers="wsv_cts" isFunction="0" isNested="0"></info>*/
 CREATE PROCEDURE [dbo].[CTS_ProblemAccountsClassification_BySport_Daily]
-	@ListCustInfo			VARCHAR(MAX)
+	@ListCustInfo			VARCHAR(MAX),
+	@FunctionId				SMALLINT = 12
 AS
 /*
 	Created: 20251113@Winfred.pham
@@ -9,7 +10,7 @@ AS
 	Original:
 
 	Revisions:
-		- 20251113@Winfred.pham : [CTS] - Customer Classification - Classify by sport Saba Soccer Group Betting into CC3101-3201 [Redmine ID: #239955]
+		- 20251113@Winfred.pham : Created [Redmine ID: #239955]
 
 	Param's Explanation:
 
