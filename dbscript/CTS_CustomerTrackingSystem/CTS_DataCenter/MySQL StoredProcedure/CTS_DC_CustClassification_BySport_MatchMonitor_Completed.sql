@@ -34,10 +34,10 @@ BEGIN
         
         UPDATE CTS_DataCenter.MatchMonitorDetails AS mmd
 		INNER JOIN Temp_MMDetailsID AS tmp ON mmd.ID = tmp.MMDetailsID
-		SET mmd.ClassifyStatusBySport = 1, mmd.ClassifyStatus = 1; # Completed
+		SET mmd.ClassifyStatusBySport = 1; # Completed
 	ELSE
 		UPDATE CTS_DataCenter.MatchMonitor AS mm
-		SET mm.ClassifyStatusBySport = 1, mm.ClassifyStatus = 1
+		SET mm.ClassifyStatusBySport = 1
 		WHERE mm.MatchID = ip_MatchID;
         
         UPDATE CTS_DataCenter.SystemParameter AS s
