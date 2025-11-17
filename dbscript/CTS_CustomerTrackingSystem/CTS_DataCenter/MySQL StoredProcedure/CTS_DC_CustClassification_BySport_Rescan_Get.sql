@@ -40,7 +40,7 @@ sp: BEGIN
     
 	DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;    
 	CREATE TEMPORARY TABLE Temp_CustInfo (	  
-			CTSCustID		BIGINT UNSIGNED PRIMARY KEY 
+			CTSCustID		BIGINT UNSIGNED  
         ,   CustID			BIGINT UNSIGNED 
         ,	SportID 	    SMALLINT UNSIGNED
 		,	RoleID 			TINYINT 
@@ -50,6 +50,7 @@ sp: BEGIN
         , 	SubscriberID	INT 
         ,	IsLicensee		BIT 
         ,	IsLicenseeVIP	BIT
+		,	PRIMARY KEY(CustID, SportID)
      ); 
          
     DROP TEMPORARY TABLE IF EXISTS Temp_CustCategory;    
