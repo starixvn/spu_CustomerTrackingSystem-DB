@@ -159,7 +159,7 @@ BEGIN
 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_History(
 			CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate
-		, 	TargetCC, SourceTypeID, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
+		, 	TargetCC, SourceTypeID, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT  tmp.CustID
 		, 	tmp.CTSCustID
 		, 	tmp.RelevantCategoryID
@@ -172,7 +172,6 @@ BEGIN
 		, 	CASE WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
 				 WHEN tmp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT 
 				 ELSE CONST_REMARKID_PAAFFECTEDBYUPLINE END AS SourceTypeID
-        ,	tmp.TargetDangerLevel1
         ,	tmp.TurnoverRM
         ,	tmp.WinlossRM
         , 	tmp.BetCount
@@ -183,7 +182,7 @@ BEGIN
     WHERE tmp.IsDataChanged = 1
 		AND tmp.ParentID <> CONST_PARENTID_WRAPPER;
 
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, TargetDangerLevel1,TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT  tmp.CustID
 		, 	tmp.CTSCustID
 		, 	CASE WHEN tmp.IsDataChanged = 1 THEN tmp.RelevantCategoryID ELSE tmp.CategoryID END AS CategoryID
@@ -196,7 +195,6 @@ BEGIN
 		, 	CASE WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
 				 WHEN tmp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT 
 				 ELSE CONST_REMARKID_PAAFFECTEDBYUPLINE END AS SourceTypeID
-        ,	tmp.TargetDangerLevel1
         ,	tmp.TurnoverRM
         ,	tmp.WinlossRM
         , 	tmp.BetCount
