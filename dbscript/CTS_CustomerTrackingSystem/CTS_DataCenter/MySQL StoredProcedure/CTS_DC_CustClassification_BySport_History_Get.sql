@@ -17,6 +17,7 @@ BEGIN
 				- 20220908@Casey.Huynh: Created [Redmine ID: #176992]
                 - 20240320@Thomas.Nguyen: Return more Remark, SourceTypeName, SourceTypeID [Redmine ID: #201360]
 				- 20240628@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
+				- 20251117@Thomas.Nguyen: Classify Saba Soccer in System Detect GB CC3101/CC3201 - Get Remark [Redmine ID: #239995]
 
 		Param's Explanation:
         
@@ -60,13 +61,14 @@ BEGIN
 		,	clh.TargetCC
 		,	clh.LastModifiedDate 
 		,	IFNULL(us.UserName, clh.LastModifiedBy) AS CreatedBy
-		,	TRIM(TRAILING '|' FROM TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
+		,	TRIM(TRAILING '|' FROM TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(tmpcr.Remark, 
 							   '[Winloss]', IFNULL(FORMAT(clh.WinlossRM, 2),0))
 							,   '[Margin]', CASE WHEN IFNULL(clh.TurnOverRM,0) = 0 THEN 0 ELSE ROUND((clh.WinlossRM/clh.TurnOverRM) * 100, 3) END)
 							,   '[BetCount]', IFNULL(clh.BetCount,0))
 							,   '[TurnOver]', IFNULL(FORMAT(clh.TurnOverRM, 2),0))
 							,   '[ActiveDays]', IFNULL(clh.ActiveDays,0))
 							,   '[Remark]', IFNULL(clh.Remark,''))
+							,   '[MatchID]', CASE WHEN clh.Remark LIKE 'Auto MatchID: %' THEN REPLACE(clh.Remark,'Auto MatchID: ','') ELSE '' END)
 							)) AS Remark
     FROM	CTS_DataCenter.CTSCustomerClassification_BySport_History AS clh
 		LEFT JOIN Temp_CustRemark AS tmpcr ON tmpcr.HistoryID = clh.ID

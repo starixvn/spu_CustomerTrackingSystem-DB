@@ -21,18 +21,24 @@ BEGIN
 			- CALL CTS_DC_CustClassification_BySport_Insert_GetInfo(332, '[{"CustID":1275,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":1280,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5002646,"CategoryID":40700,"CategoryGroupID":0,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0},{"CustID":5022391,"CategoryID":0,"CategoryGroupID":40100,"CreatedTime":"2024-07-02T02:32:57.063","TurnoverRM":0.0,"WinlossRM":0.0,"BetCount":0,"ActiveDays":0,"PerformanceTime":"2024-07-02T02:32:57.063","LastXDaysMargin":0.0,"ProbationPeriodWinloss":0.0,"TaggingID":0,"TaggingType":0,"TWBetCount":0,"TWGroupBettingRate":0.0,"TWTicketRejectRate":0.0,"TWDesktopUsageRate":0.0,"ScanTaggingType":0}]');
 		
 		Revisions: 
-			- 20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
+			- 20240618@Victoria.Le: Initial Writing [Redmine ID: #205317]
+			- 20251113@Thomas.Nguyen: Classify Saba Soccer in System Detect GB CC3101/CC3201 - Add new InputFlowID for PA [Redmine ID: #239995]
 			
 */
 	DECLARE CONST_PARENTID_WRAPPER 							INT;
 	DECLARE CONST_CATEID_SPECIALCC 							INT;
 	DECLARE CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL			INT;
 	DECLARE CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC		INT;
+	DECLARE CONST_INPUTFLOWID_BYSPORT_INSERT_PACATEGORY		INT;
+
+	DECLARE CONST_PARENTID_PA 								INT;
 	
+	SET CONST_PARENTID_PA 									= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_PARENTID_WRAPPER								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 	SET CONST_CATEID_SPECIALCC								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
 	SET CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL				= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL');
 	SET CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC');
+	SET CONST_INPUTFLOWID_BYSPORT_INSERT_PACATEGORY			= CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_INSERT_PACATEGORY');
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_NewClassification;    
 	CREATE TEMPORARY TABLE Temp_NewClassification(	  	
@@ -63,7 +69,19 @@ BEGIN
 		,	SpecialCC					INT
 		,	SourceTypeID      			SMALLINT
 		,	IsFromOld					TINYINT(1) DEFAULT 0
-		,	IsReturnData				TINYINT(1) DEFAULT 1			
+		,	IsReturnData				TINYINT(1) DEFAULT 1		
+		,	IsExistPA					TINYINT(1) DEFAULT 0	
+		,	IsFromOldPA					TINYINT(1) DEFAULT 0
+		,	DWCategoryGroupID   		INT UNSIGNED
+		,	IsPAProbation	     		TINYINT(1) DEFAULT 0
+		,	ParentID					INT UNSIGNED
+		, 	RelevantCategoryID			INT UNSIGNED
+		,	RelevantCategoryGroupID   	INT UNSIGNED
+		,	RelevantIsPAProbation	   	TINYINT(1)
+		,	MatchID						INT
+		,	DataChangeType				TINYINT DEFAULT 0	/* 0: New OR Change Category, 1: Change Probation Status, 2: NOT CHANGE */
+		, 	ActionType					SMALLINT DEFAULT 0 
+		, 	WinlossStatus				SMALLINT /*LOSING  = 0 (PROBATION), KEEPSTATE = 1 (NOT CHANGE), WINNING = 2 (NOT PROBATION);*/
 		,	PRIMARY KEY (CustID, SportID, DWCategoryID)
 		, 	INDEX IX_Temp_NewCC_BySport_CustID_NewCategoryID (CustID, NewCategoryID)  
 		, 	INDEX IX_Temp_NewCC_BySport_CustID_ActionType (CustID, ActionType)  
@@ -75,6 +93,28 @@ BEGIN
 		,	SportID										SMALLINT UNSIGNED
         ,	OldCategoryID 								INT UNSIGNED
         ,	OldCategoryGroupID							INT UNSIGNED
+		,	CTSCustID									BIGINT UNSIGNED
+		,	SubscriberID								INT UNSIGNED
+		,	RoleID										INT
+		,	ParentID									INT UNSIGNED
+		,	ExistCategoryID								INT UNSIGNED
+		,	RelevantCategoryID							INT UNSIGNED
+		,	Remark										VARCHAR(500)
+		,	CreatedDate									DATETIME
+		,	CreatedBy									INT UNSIGNED
+		,	LastModifiedDate							DATETIME
+		,	LastModifiedBy								INT UNSIGNED
+		,	LastScannedDate								DATETIME
+		,	InsertTime									DATETIME
+		,	SpecialCC	       							SMALLINT 
+		,	CustomerClass								INT 
+		,	CategoryPriority							SMALLINT
+		,	CustomerClassPriority						SMALLINT
+		,	IsPAProbation								TINYINT(1)
+		,	IsMultiCateIDSameParentID					TINYINT(1)
+		,	IsKeepOldCateID								TINYINT(1)
+		,	IsNew										TINYINT(1) DEFAULT 1
+		,	IsRemove									TINYINT(1) DEFAULT NULL
         ,	PRIMARY KEY (CustID, SportID)
 	); 
 
@@ -106,6 +146,57 @@ BEGIN
 																					AND cls.ParentID = CONST_PARENTID_WRAPPER
 																					AND cls.CategoryID = CONST_CATEID_SPECIALCC;
 
+	ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_BYSPORT_INSERT_PA THEN 
+
+			INSERT INTO Temp_NewClassification(
+					CustID, CTSCustID, SportID, RoleID, SubscriberID, DWCategoryID, CreatedBy, Remark, MatchID
+				, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, IsPAProbation, RelevantCategoryID, CategoryPriority, CustomerClassPriority
+				,	ParentID, IsDataChanged, PerformanceTime, SpecialCC)
+			SELECT 	tmpJs.CustID
+				,	CASE WHEN tmpJs.CTSCustID = 0 THEN cus.CTSCustID ELSE tmpJs.CTSCustID END
+				,	tmpJs.SportID
+				,	CASE WHEN tmpJs.RoleID = 0 THEN cus.RoleID ELSE tmpJs.RoleID END
+				,	CASE WHEN tmpJs.SubscriberID = 0 THEN cus.SubscriberID ELSE tmpJs.SubscriberID END
+				,	tmpJs.DWCategoryID
+				,	tmpJs.CreatedBy 
+				,	(CASE WHEN tmpJs.MatchID IS NOT NULL THEN CONCAT('Auto MatchID: ', MatchID) ELSE tmpJs.Remark END) AS Remark
+				,	tmpJs.MatchID
+				, 	IFNULL(tmpJs.WinlossStatus,2) AS  WinlossStatus
+				, 	tmpJs.TurnoverRM
+				, 	tmpJs.WinlossRM 
+				, 	tmpJs.BetCount 
+				,	(CASE WHEN tmpJs.WinlossStatus = 0 THEN 1 ELSE 0 END) AS IsPAProbation	/*1: PROBATION, 0: NOT PROBATION*/
+				,	cat.RelevantCategoryID
+				,	cat.CategoryPriority
+				,	cat.CustomerClassPriority
+				,	cat.ParentID
+				,	0 AS IsDataChanged
+				,	tmpJs.PerformanceTime
+				,	sp.CustomerClass AS SpecialCC
+			FROM JSON_TABLE(ip_CustInfo,
+							"$[*]" COLUMNS(
+												CustID 						BIGINT UNSIGNED		PATH "$.CustID"
+											,	CTSCustID 					BIGINT UNSIGNED		PATH "$.CTSCustID"
+											, 	SportID						SMALLINT UNSIGNED	PATH "$.SportGroup"
+											,	RoleID 						INT					PATH "$.RoleID" 
+											,	SubscriberID 				INT UNSIGNED		PATH "$.SubscriberID"
+											,	DWCategoryID				INT UNSIGNED		PATH "$.CategoryID"
+											, 	CreatedBy					INT UNSIGNED		PATH "$.CreatedBy"
+											, 	Remark						VARCHAR(500)		PATH "$.Remark"
+											,	WinlossStatus				SMALLINT 			PATH "$.WinlossStatus" 
+											,	TurnoverRM					DECIMAL(20,4)		PATH "$.TurnoverRM"
+											,	WinlossRM					DECIMAL(20,4) 		PATH "$.WinlossRM"
+											, 	BetCount					BIGINT 				PATH "$.BetCount"
+											, 	PerformanceTime				DATETIME			PATH "$.PerformanceTime"
+											,	MatchID						INT					PATH "$.MatchID"
+											)) AS tmpJs
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmpJs.CustID AND cus.CustSubID = 0
+				LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cat.CategoryID = tmpJs.DWCategoryID
+				LEFT JOIN CTS_DataCenter.SpecialCustomerClass_BySport AS sp ON tmpJs.CustID = sp.CustID AND tmpJs.SportID = sp.SportID
+			ON DUPLICATE KEY UPDATE TurnoverRM = IFNULL(Temp_NewClassification.TurnoverRM, tmpJs.TurnoverRM) 
+								,	WinlossRM = IFNULL(Temp_NewClassification.WinlossRM, tmpJs.WinlossRM)
+								,	BetCount = IFNULL(Temp_NewClassification.BetCount, tmpJs.BetCount);
+
 	ELSEIF ip_InputFlowID = CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL THEN 
 	
 		INSERT IGNORE INTO Temp_NewClassification(
@@ -136,6 +227,15 @@ BEGIN
 			LEFT JOIN CTS_DataCenter.SpecialCustomerClass_BySport AS sp ON tmpJs.CustID = sp.CustID AND tmpJs.SportID = sp.SportID
 		WHERE tmpJs.DWCategoryID <> 0;
 		
+		UPDATE Temp_NewClassification AS temp
+		SET temp.IsExistPA = 1
+		WHERE EXISTS (	SELECT 1
+						FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cls
+						WHERE temp.CustID = cls.CustID
+							AND temp.SportID = cls.SportID
+							AND cls.ParentID = CONST_PARENTID_PA
+						);
+
 	END IF;
 
 
