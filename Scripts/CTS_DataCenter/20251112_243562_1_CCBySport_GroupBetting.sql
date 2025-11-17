@@ -13,6 +13,8 @@ Reviewer:
 USE CTS_DataCenter;
 
 #1. New table: CTSCustomerClassification_BySport_DailyPAQueue (ID, CustID, CreatedTime)
+
+#DROP TABLE IF EXISTS  CTS_DataCenter.CTSCustomerClassification_BySport_DailyPAQueue;
 CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_BySport_DailyPAQueue(
 		ID 			BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
     ,	CustID 		BIGINT UNSIGNED NOT NULL
