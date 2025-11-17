@@ -125,7 +125,7 @@ sp: BEGIN
         ,	cc.CreatedDate
 		, 	cc.LastModifiedDate
 		, 	CASE WHEN cc.CategoryID IS NULL THEN CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL ELSE cc.InputFlowID END AS InputFlowID
-        ,   cust.SportID AS DWSportType
+        ,   cust.SportID
 	FROM Temp_CustInfo AS cust
 		LEFT JOIN Temp_CustCategory AS cc ON cc.CustID = cust.CustID
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cc.CategoryID = cat.CategoryID
