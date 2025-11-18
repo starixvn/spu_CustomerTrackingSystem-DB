@@ -53,3 +53,6 @@ VALUES	(199,'Classification_BySport_MM_InProcessMatchID','In_process_BySport Mat
 
 SELECT * FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (199,200);
 #===============================================================================================================
+UPDATE CTS_DataCenter.CustomerClassification_Remark AS ccr
+SET ccr.RemarkTemplate = 'Match ID: [MatchID] | Win loss: [Winloss]'
+WHERE ccr.RemarkID = 35;
