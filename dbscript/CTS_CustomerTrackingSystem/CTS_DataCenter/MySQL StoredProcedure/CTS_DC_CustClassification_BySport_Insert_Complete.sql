@@ -246,13 +246,13 @@ BEGIN
 			, 	cls.LastScannedDate 	=  DATE(lv_CurrentDateTime); 
 			
 		INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport(
-				CustID, CTSCustID, SportID, ParentID, CategoryID, CreatedDate, CreatedBy
-			, 	LastModifiedDate, LastModifiedBy, LastScannedDate)
+				CustID, CTSCustID, SportID, ParentID, CategoryID, Remark, CreatedDate, CreatedBy, LastModifiedDate, LastModifiedBy, LastScannedDate)
 		SELECT 	temp.CustID
 			,	temp.CTSCustID
 			, 	temp.SportID
 			, 	temp.ParentID
 			, 	temp.NewCategoryGroupID AS CategoryID
+			,	temp.Remark
 			, 	CASE WHEN lv_IsRescan = 1 THEN temp.CreatedDate ELSE lv_CurrentDateTime END AS CreatedDate
 			, 	temp.CreatedBy
 			, 	lv_CurrentDateTime AS LastModifiedDate
