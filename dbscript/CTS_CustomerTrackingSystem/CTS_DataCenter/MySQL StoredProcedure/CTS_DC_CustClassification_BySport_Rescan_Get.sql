@@ -117,7 +117,7 @@ sp: BEGIN
 	FROM Temp_CustInfo AS cust
 		LEFT JOIN Temp_CustCategory AS cc ON cc.CustID = cust.CustID
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cc.CategoryID = cat.CategoryID
-	WHERE cc.CustID IS NOT NULL;
+	;
     
 END$$
 
