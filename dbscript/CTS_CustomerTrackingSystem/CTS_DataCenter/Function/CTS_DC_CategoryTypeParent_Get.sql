@@ -25,6 +25,7 @@ BEGIN
 		Revisions: 
 			- 20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
 			- 20241003@Thomas.Nguyen: 		CC Agency [Redmine ID: #185799]
+			- 20241003@winfred.pham: 		Rescan by sport [Redmine ID: #239955]
 */
 
 	DECLARE CONST_LIST_CLASSIFICATION		INT DEFAULT 6;
@@ -78,6 +79,10 @@ BEGIN
 		
 	ELSEIF ip_CateTypeParentName LIKE '%INPUTFLOWID_BYSPORT_REMOVE%' THEN 
 		SET lv_GetTypeID = 5;
+		SET lv_GroupID = 2;
+			
+	ELSEIF ip_CateTypeParentName LIKE '%INPUTFLOWID_BYSPORT_RESCAN%' THEN 
+		SET lv_GetTypeID = 6;
 		SET lv_GroupID = 2;
 		
 	END IF;
