@@ -39,13 +39,10 @@ BEGIN
         , 	TargetDangerLevel1 		SMALLINT 
         ,	IsDangerProbation 		BIT(1)
         , 	WinlossStatus			SMALLINT /*LOSING  = 0,KEEPSTATE = 1, WINNING = 2;*/
-        , 	IsLicensee				BIT(1)
         ,	TurnoverRM				DECIMAL(20,4)
         ,	WinlossRM				DECIMAL(20,4)
         , 	BetCount				BIGINT 
         , 	ActiveDays				INT
-        ,	IsLicenseeVIP			BIT(1)
-        ,	IsLicenseeBA			BIT(1)
         , 	IsDataChanged			BIT(1)
         ,	PerformanceTime		    DATETIME(3)
 		,	SportGroup				SMALLINT
@@ -55,7 +52,7 @@ BEGIN
     /* START */
     INSERT IGNORE INTO Temp_PA(
 			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetDangerLevel1, IsDangerProbation
-		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime, SportGroup)
+		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDataChanged, PerformanceTime, SportGroup)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
@@ -69,8 +66,6 @@ BEGIN
         , 	js.WinlossRM
         , 	js.BetCount
         , 	js.ActiveDays
-        ,	cust.IsLicenseeVIP
-        ,	cust.IsLicenseeBA
         ,	CASE WHEN js.WinlossStatus = 1 THEN 0 /*No Change*/
 				 WHEN js.WinlossStatus = 0 AND cate.IsDangerProbation = 0 THEN 1  /*Lose + PA => Update */
 				 WHEN js.WinlossStatus = 0 AND cate.IsDangerProbation = 1 THEN 0  /*Lose + Probation =>  No Change*/
@@ -147,7 +142,7 @@ BEGIN
     WHERE tmp.IsDataChanged = 1
 		AND tmp.ParentID <> CONST_PARENTID_WRAPPER;
 
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, SportID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, SportID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, tmp.IsDataChanged, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT  tmp.CustID
 		, 	tmp.CTSCustID
 		,	tmp.SportGroup AS SportID
@@ -159,6 +154,7 @@ BEGIN
 		, 	DATE(lv_CurrentDateTime) AS InsertDate
 		, 	TargetCC
 		, 	ccs.RemarkTemplateID
+		,   tmp.IsDataChanged
         ,	tmp.TurnoverRM
         ,	tmp.WinlossRM
         , 	tmp.BetCount
