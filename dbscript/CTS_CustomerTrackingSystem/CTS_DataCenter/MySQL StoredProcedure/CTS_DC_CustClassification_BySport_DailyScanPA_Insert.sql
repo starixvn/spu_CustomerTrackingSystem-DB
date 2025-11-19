@@ -46,13 +46,14 @@ BEGIN
         , 	IsDataChanged			BIT(1)
         ,	PerformanceTime		    DATETIME(3)
 		,	SportGroup				SMALLINT
+		,	Remark					VARCHAR(500) DEFAULT NULL
         , 	PRIMARY KEY(CustID, SportGroup, CategoryID)  
     );  
         
     /* START */
     INSERT IGNORE INTO Temp_PA(
 			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetDangerLevel1, IsDangerProbation
-		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDataChanged, PerformanceTime, SportGroup)
+		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDataChanged, PerformanceTime, SportGroup, Remark)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
@@ -74,6 +75,7 @@ BEGIN
 			END AS IsDataChanged
         ,   js.PerformanceTime
 		,	js.SportGroup
+		, 	clss.Remark
 	FROM JSON_TABLE(ip_ProblemAccount,
 		"$[*]" COLUMNS(
 				CustID 			BIGINT UNSIGNED			PATH "$.CustID"
@@ -120,7 +122,7 @@ BEGIN
 
     INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_History(
 			CustID, CTSCustID, SportID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate
-		, 	TargetCC, SourceTypeID, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
+		, 	TargetCC, SourceTypeID, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, Remark)
 	SELECT  tmp.CustID
 		, 	tmp.CTSCustID
 		,	tmp.SportGroup AS SportID
@@ -131,18 +133,21 @@ BEGIN
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
 		, 	DATE(lv_CurrentDateTime) AS InsertDate
 		, 	TargetCC
-		, 	ccs.RemarkTemplateID
+		, 	ccs.RemarkTemplateID AS SourceTypeID
         ,	tmp.TurnoverRM
         ,	tmp.WinlossRM
         , 	tmp.BetCount
         , 	tmp.ActiveDays
         ,   tmp.PerformanceTime
+		, 	tmp.Remark
 	FROM Temp_PA AS tmp
 		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.RelevantCategoryID
     WHERE tmp.IsDataChanged = 1
 		AND tmp.ParentID <> CONST_PARENTID_WRAPPER;
 
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, SportID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, SportID, CategoryID, ParentID, 
+			LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID
+			, IsDataChanged, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime, Remark)
 	SELECT  tmp.CustID
 		, 	tmp.CTSCustID
 		,	tmp.SportGroup AS SportID
@@ -153,13 +158,14 @@ BEGIN
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
 		, 	DATE(lv_CurrentDateTime) AS InsertDate
 		, 	TargetCC
-		, 	ccs.RemarkTemplateID
+		, 	ccs.RemarkTemplateID AS SourceTypeID
 		,   tmp.IsDataChanged
         ,	tmp.TurnoverRM
         ,	tmp.WinlossRM
         , 	tmp.BetCount
         , 	tmp.ActiveDays
         ,   tmp.PerformanceTime
+		, 	tmp.Remark
 	FROM Temp_PA AS tmp
 		LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = tmp.RelevantCategoryID;
 
