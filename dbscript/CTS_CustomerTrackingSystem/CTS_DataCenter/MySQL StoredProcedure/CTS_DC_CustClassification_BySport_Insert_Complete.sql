@@ -31,7 +31,6 @@ BEGIN
 	DECLARE CONST_ACTIONTYPE_INSERT 						INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 						INT DEFAULT 1;
 	DECLARE CONST_SOURCETYPE_CUSTOMERCLASS_ADD_MANUAL		INT DEFAULT 10;
-	DECLARE CONST_REMARKID_AUTOMARKGB						INT;
 
 	DECLARE	lv_CurrentDateTime								DATETIME DEFAULT CURRENT_TIMESTAMP();
 	DECLARE lv_ActionType									INT;
@@ -44,7 +43,6 @@ BEGIN
 	SET CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL');
 	SET CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC');
 	SET CONST_INPUTFLOWID_BYSPORT_RESCAN_PACATEGORY			= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_INPUTFLOWID_BYSPORT_RESCAN_PACATEGORY');
-	SET CONST_REMARKID_AUTOMARKGB							= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_AUTOMARKGB');
 
 	IF ip_InputFlowID = CONST_INPUTFLOWID_BYSPORT_INSERT_SPECIALCC THEN
 		SET lv_ActionType 		= 0;
@@ -287,8 +285,7 @@ BEGIN
 			, 	DATE(lv_CurrentDateTime) AS InsertDate
 			, 	temp.PerformanceTime
 			,	temp.Remark
-			, 	(CASE	WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
-						WHEN temp.MatchID IS NOT NULL THEN CONST_REMARKID_AUTOMARKGB END) AS SourceTypeID
+			, 	ccs.RemarkTemplateID AS SourceTypeID
 		FROM Temp_NewClassification AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID 
 		WHERE temp.IsDataChanged = 1 
@@ -317,8 +314,7 @@ BEGIN
 			,	DATE(lv_CurrentDateTime) AS InsertDate
 			,	temp.PerformanceTime
 			,	temp.Remark
-			, 	(CASE	WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
-						WHEN temp.MatchID IS NOT NULL THEN CONST_REMARKID_AUTOMARKGB END) AS SourceTypeID
+			, 	ccs.RemarkTemplateID AS SourceTypeID
 		FROM Temp_NewClassification AS temp
 			LEFT JOIN CTS_DataCenter.CustomerCategorySettings AS ccs ON ccs.CategoryID = temp.NewCategoryID;
 

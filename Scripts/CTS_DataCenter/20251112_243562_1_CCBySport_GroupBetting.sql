@@ -56,3 +56,7 @@ SELECT * FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (199,200);
 UPDATE CTS_DataCenter.CustomerClassification_Remark AS ccr
 SET ccr.RemarkTemplate = 'Match ID: [MatchID] | Win loss: [Winloss]'
 WHERE ccr.RemarkID = 35;
+
+UPDATE CTS_DataCenter.CustomerCategorySettings
+SET RemarkTemplateID = 35
+WHERE CategoryID in (20900,25900);
