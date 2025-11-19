@@ -142,7 +142,7 @@ BEGIN
     WHERE tmp.IsDataChanged = 1
 		AND tmp.ParentID <> CONST_PARENTID_WRAPPER;
 
-    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, SportID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, tmp.IsDataChanged, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
+    INSERT IGNORE INTO CTS_DataCenter.CTSCustomerClassification_BySport_Log(CustID, CTSCustID, SportID, CategoryID, ParentID, LastModifiedDate, LastModifiedBy, ActionType, InsertDate, TargetCC, SourceTypeID, IsDataChanged, TurnoverRM, WinlossRM, BetCount, ActiveDays, PerformanceTime)
 	SELECT  tmp.CustID
 		, 	tmp.CTSCustID
 		,	tmp.SportGroup AS SportID
