@@ -20,29 +20,13 @@ BEGIN
 			- CALL CTS_DC_CustClassification_BySport_DailyScanPA_Insert ('[{"CustID": 224340007,"SportGroup": 0,"WinlossStatus": 2,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10},{"CustID": 224340007,"SportGroup": 2,"WinlossStatus": 0,"TurnoverRM":150,"WinlossRM":-15000,"BetCount":15,"ActiveDays":10}]');
 	*/ 
 	DECLARE CONST_CATEID_VVIP 					INT;
-	DECLARE CONST_CATEID_LICVIPSUSPICIOUS 		INT;
-	DECLARE CONST_CATEID_LICVIPDANGEROUS 		INT;
-	DECLARE CONST_CATEID_LICBA 					INT;
-	DECLARE CONST_PARENTID_PA               	INT;
 	DECLARE CONST_PARENTID_WRAPPER 				INT;
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
-    DECLARE CONST_REMARKID_PAAFFECTEDBYUPLINE	INT;
-	DECLARE CONST_REMARKID_RESCANROBOT			INT;
 	DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
     DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIMESTAMP(); 
-    DECLARE lv_LicBACC							INT UNSIGNED;
-    DECLARE lv_LicVIPCC_Danger					INT UNSIGNED;
-    DECLARE lv_LicVIPCC_Suspicious				INT UNSIGNED;
-    DECLARE lv_LicBAPriority					SMALLINT UNSIGNED;
 
 	SET CONST_CATEID_VVIP 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
-	SET CONST_CATEID_LICVIPSUSPICIOUS 			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPSUSPICIOUS');
-	SET CONST_CATEID_LICVIPDANGEROUS			= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICVIPDANGEROUS');
-	SET CONST_CATEID_LICBA 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_LICBA');
-	SET CONST_PARENTID_PA 				    	= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_PA');
 	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
-	SET CONST_REMARKID_PAAFFECTEDBYUPLINE 		= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_PAAFFECTEDBYUPLINE');
-	SET CONST_REMARKID_RESCANROBOT 				= CTS_DC_CategoryTypeParent_Get ('CONST_REMARKID_RESCANROBOT');
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
 	CREATE TEMPORARY TABLE Temp_PA(	  
@@ -64,28 +48,14 @@ BEGIN
         ,	IsLicenseeBA			BIT(1)
         , 	IsDataChanged			BIT(1)
         ,	PerformanceTime		    DATETIME(3)
-		,	IsRobot					BIT(1)
 		,	SportGroup				SMALLINT
         , 	PRIMARY KEY(CustID, SportGroup, CategoryID)  
     );  
-    
-    /* INIT */    
-    SELECT CustomerClass, CustomerClassPriority 
-    INTO lv_LicBACC, lv_LicBAPriority
-    FROM CustomerCategory WHERE CategoryID = CONST_CATEID_LICBA;
-    
-    SELECT CustomerClass
-    INTO lv_LicVIPCC_Danger
-    FROM CustomerCategory WHERE CategoryID = CONST_CATEID_LICVIPDANGEROUS;
-    
-    SELECT CustomerClass
-    INTO lv_LicVIPCC_Suspicious
-    FROM CustomerCategory WHERE CategoryID = CONST_CATEID_LICVIPSUSPICIOUS;    
-    
+        
     /* START */
     INSERT IGNORE INTO Temp_PA(
 			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetDangerLevel1, IsDangerProbation
-		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime, IsRobot, SportGroup)
+		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays,IsLicenseeVIP,IsLicenseeBA, IsDataChanged, PerformanceTime, SportGroup)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
         ,	clss.CategoryID
@@ -108,7 +78,6 @@ BEGIN
                  WHEN js.WinlossStatus = 2 AND cate.IsDangerProbation = 1 THEN 1  /*Win + Probation => Update */
 			END AS IsDataChanged
         ,   js.PerformanceTime
-		,	CASE WHEN cate.CustomerClassName = 'Robot' THEN 1 ELSE 0 END AS IsRobot
 		,	js.SportGroup
 	FROM JSON_TABLE(ip_ProblemAccount,
 		"$[*]" COLUMNS(
@@ -151,9 +120,6 @@ BEGIN
         LEFT JOIN CTS_DataCenter.SpecialCustomerClass AS s ON t.CustID = s.CustID       
     SET 	t.TargetCC = 	CASE
 								WHEN s.CustomerClass IS NOT NULL THEN s.CustomerClass
-                                WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 1 THEN lv_LicVIPCC_Suspicious
-                                WHEN t.IsLicenseeVIP = 1 AND c.IsDangerProbation = 0 THEN lv_LicVIPCC_Danger
-                                WHEN t.IsLicenseeBA = 1 AND c.CustomerClassPriority > lv_LicBAPriority THEN lv_LicBACC
                                 ELSE t.TargetCC
 							END;
 
@@ -170,9 +136,7 @@ BEGIN
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
 		, 	DATE(lv_CurrentDateTime) AS InsertDate
 		, 	TargetCC
-		, 	CASE WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
-				 WHEN tmp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT 
-				 ELSE CONST_REMARKID_PAAFFECTEDBYUPLINE END AS SourceTypeID
+		, 	ccs.RemarkTemplateID
         ,	tmp.TurnoverRM
         ,	tmp.WinlossRM
         , 	tmp.BetCount
@@ -194,9 +158,7 @@ BEGIN
 		, 	CONST_ACTIONTYPE_UPDATE AS ActionType
 		, 	DATE(lv_CurrentDateTime) AS InsertDate
 		, 	TargetCC
-		, 	CASE WHEN ccs.RemarkTemplateID IS NOT NULL THEN ccs.RemarkTemplateID
-				 WHEN tmp.IsRobot = 1 THEN CONST_REMARKID_RESCANROBOT 
-				 ELSE CONST_REMARKID_PAAFFECTEDBYUPLINE END AS SourceTypeID
+		, 	ccs.RemarkTemplateID
         ,	tmp.TurnoverRM
         ,	tmp.WinlossRM
         , 	tmp.BetCount
