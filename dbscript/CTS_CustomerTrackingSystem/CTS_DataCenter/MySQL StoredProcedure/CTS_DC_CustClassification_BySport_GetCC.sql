@@ -17,6 +17,7 @@ BEGIN
             - 20230725@Jonas.Huynh: Renovate BySport [Redmine ID: #189875]
             - 20240319@Thomas.Nguyen: Add logic for Special CC BySport [Redmine ID: #201360]
 			- 20240628@Thomas.Nguyen: Renovate CC phase 2 [Redmine ID: #205317]
+            - 20251118@Thomas.Nguyen: Get CustomerClass by priority [Redmine ID: #239995]
 
         Param's Explanation:     
         Example:
@@ -25,8 +26,8 @@ BEGIN
 	DECLARE CONST_PARENTID_WRAPPER 							INT;
 	DECLARE CONST_CATEID_SPECIALCC 							INT;
 
-	SET CONST_PARENTID_WRAPPER								= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
-	SET CONST_CATEID_SPECIALCC								= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
+	SET CONST_PARENTID_WRAPPER								= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
+	SET CONST_CATEID_SPECIALCC								= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SPECIALCC');
 
     DROP TEMPORARY TABLE IF EXISTS Temp_CustInfo;
     CREATE TEMPORARY TABLE 		Temp_CustInfo (
@@ -44,14 +45,20 @@ BEGIN
             , 	SportGroup			SMALLINT UNSIGNED	PATH "$.SportGroup"		
 		 )) AS 	tmp;              
   
+  	-- Get CustomerClass by priority
 	SELECT	tmp.CustID
 		,	tmp.SportGroup AS SportID
-		,	COALESCE(sb.CustomerClass, cate.CustomerClass, - 1) AS CustomerClass
+		,	COALESCE(sb.CustomerClass, clss.CustomerClass, -1) AS CustomerClass
 	FROM Temp_CustInfo AS tmp
 		LEFT JOIN CTS_DataCenter.SpecialCustomerClass_BySport AS sb ON sb.CustID = tmp.CustID AND sb.SportID = tmp.SportGroup
-		LEFT JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS clss 
-			ON tmp.CustID = clss.CustID AND tmp.SportGroup = clss.SportID AND clss.ParentID <> CONST_PARENTID_WRAPPER AND clss.CategoryID <> CONST_CATEID_SPECIALCC
-		LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = clss.CategoryID AND cate.IsActive = 1;
+		LEFT JOIN LATERAL (
+			SELECT cate.CustomerClass
+			FROM CTS_DataCenter.CTSCustomerClassification_BySport AS cls
+				INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = cls.CategoryID AND cate.IsActive = 1
+			WHERE cls.CustID = tmp.CustID AND cls.SportID = tmp.SportGroup AND cls.ParentID <> CONST_PARENTID_WRAPPER AND cls.CategoryID <> CONST_CATEID_SPECIALCC
+			ORDER BY cate.CustomerClassPriority ASC, cls.LastModifiedDate DESC
+			LIMIT 1
+		) AS clss ON TRUE;
 
 END$$
 
