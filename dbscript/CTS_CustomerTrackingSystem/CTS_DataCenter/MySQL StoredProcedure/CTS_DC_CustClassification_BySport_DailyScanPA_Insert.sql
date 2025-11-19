@@ -114,7 +114,7 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CustomerCategory AS c ON t.CategoryID = c.CategoryID 
 																AND c.IsActive = 1
 																AND c.RelevantCategoryID IS NOT NULL
-        LEFT JOIN CTS_DataCenter.SpecialCustomerClass_BySport AS s ON t.CustID = s.CustID       
+        LEFT JOIN CTS_DataCenter.SpecialCustomerClass_BySport AS s ON t.CustID = s.CustID  AND t.SportGroup = s.SportID     
     SET 	t.TargetCC = 	CASE
 								WHEN s.CustomerClass IS NOT NULL THEN s.CustomerClass
                                 ELSE t.TargetCC
