@@ -28,6 +28,7 @@ BEGIN
 	DECLARE CONST_PARENTID_PA		 							INT;
 	DECLARE CONST_ACTIONTYPE_INSERT 							INT DEFAULT 0;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 							INT DEFAULT 1;
+	DECLARE CONST_ACTIONTYPE_EXISTEDPA 							INT DEFAULT 3;
 	DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 					INT DEFAULT 5;
 	DECLARE CONST_SOURCETYPE_SAMECATEGORY 						INT DEFAULT 0;
 	DECLARE CONST_SOURCETYPE_LESSTHAN10TICKETS					INT DEFAULT 1;
@@ -83,21 +84,23 @@ BEGIN
 
 		UPDATE Temp_NewClassification AS temp 
 		SET 	temp.NewCategoryGroupID = temp.DWCategoryID 
-			,	temp.NewCategoryID 		= temp.DWCategoryID 
-		;
+			,	temp.NewCategoryID 		= temp.DWCategoryID
+		WHERE temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA);
 		
 		INSERT IGNORE INTO Temp_CTSCustomerClassification_Old(CustID, SportID, OldCategoryGroupID, OldCategoryID)
 		SELECT DISTINCT temp.CustID, temp.SportID, cc.CategoryGroupID, cate.CategoryID
 		FROM Temp_NewClassification AS temp
 			INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS cate ON temp.CustID = cate.CustID AND cate.ParentID = CONST_PARENTID_NORMAL
 																					AND temp.SportID = cate.SportID
-			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID;
+			INNER JOIN CTS_DataCenter.CustomerCategory AS cc ON cc.CategoryID = cate.CategoryID
+		WHERE temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA);
 		
 		UPDATE Temp_NewClassification AS temp
 			LEFT JOIN Temp_CTSCustomerClassification_Old AS o ON temp.CustID = o.CustID AND temp.SportID = o.SportID
 		SET 	temp.OldCategoryGroupID 	= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryGroupID END
 			,	temp.OldCategoryID 			= CASE WHEN o.CustID IS NULL THEN CONST_CATEID_NEW ELSE o.OldCategoryID END
-			,	temp.IsFromOld				= CASE WHEN o.CustID IS NULL THEN 0 ELSE 1 END;
+			,	temp.IsFromOld				= CASE WHEN o.CustID IS NULL THEN 0 ELSE 1 END
+		WHERE temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA);
 
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsReturnData = CASE WHEN temp.ActionType = CONST_ACTIONTYPE_RESCAN_CHANGECC AND temp.IsReturnData = 0 THEN 1 ELSE temp.IsReturnData END
@@ -113,7 +116,8 @@ BEGIN
 											THEN  CONST_SOURCETYPE_LESSTHAN10TICKETS
 										WHEN temp.OldCategoryGroupID = temp.NewCategoryGroupID 
 											THEN CONST_SOURCETYPE_SAMECATEGORY
-									END;
+									END
+		WHERE temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA);
 		
 		UPDATE Temp_NewClassification AS temp
 		SET 	temp.IsDataChanged = 0
@@ -122,7 +126,8 @@ BEGIN
 		
 		UPDATE Temp_NewClassification AS temp 
 			LEFT JOIN CTS_DataCenter.CustomerCategory AS cate ON cate.CategoryID = temp.NewCategoryID
-		SET 	temp.TargetCC = IFNULL(temp.SpecialCC, cate.CustomerClass);
+		SET 	temp.TargetCC = IFNULL(temp.SpecialCC, cate.CustomerClass)
+		WHERE temp.ActionType NOT IN (CONST_ACTIONTYPE_EXISTEDPA);
 		
 		INSERT IGNORE INTO Temp_UpdateCustomerClass(CustID, SportID, CustomerClass)
 		SELECT 	temp.CustID
