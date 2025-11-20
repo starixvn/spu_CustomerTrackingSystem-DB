@@ -87,7 +87,7 @@ sp: BEGIN
     SELECT tmp.CTSCustID					        AS CTSCustID
 		,	tmp.CustID						        AS CustID
         ,   tmp.SportID					            AS SportID
-        ,	CASE WHEN cate.IsPAProbation THEN cate.RelevantCategoryID ELSE s.CategoryID END AS CategoryID
+        ,	CASE WHEN cate.IsPAProbation = 1 THEN cate.RelevantCategoryID ELSE s.CategoryID END AS CategoryID
         ,	tmp.SubscriberID				        AS SubscriberID
 		,	tmp.IsLicensee					        AS IsLicensee
         ,	s.Remark						        AS Remark
@@ -115,7 +115,7 @@ sp: BEGIN
 		, 	CASE WHEN cc.CategoryID IS NULL THEN CONST_INPUTFLOWID_BYSPORT_INSERT_NORMAL ELSE cc.InputFlowID END AS InputFlowID
         ,   cust.SportID
 	FROM Temp_CustInfo AS cust
-		LEFT JOIN Temp_CustCategory AS cc ON cc.CustID = cust.CustID
+		LEFT JOIN Temp_CustCategory AS cc ON cc.CustID = cust.CustID AND cc.SportID = cust.SportID
         LEFT JOIN CTS_DataCenter.CustomerCategory AS cat ON cc.CategoryID = cat.CategoryID
 	;
     
