@@ -93,6 +93,7 @@ BEGIN
         , 	DeviceStatus			TINYINT
         , 	DeviceFingerprintID		BIGINT UNSIGNED
         , 	FPPatternID01			BIGINT UNSIGNED NOT NULL
+        , 	FPPatternID02			BIGINT UNSIGNED NOT NULL
         ,	TransFlow				TINYINT(1)
 	);
     
@@ -159,7 +160,7 @@ BEGIN
 	EXECUTE stmt1;
     
     
-	INSERT INTO Temp_Transaction(TransID, RawTransID, AccountID, LoginName, SubscriberID, UserAgentKey, IP, DeviceCode, CreatedDate, TransTime, FingerprintCode, FPPatternID01, TransFlow)
+	INSERT INTO Temp_Transaction(TransID, RawTransID, AccountID, LoginName, SubscriberID, UserAgentKey, IP, DeviceCode, CreatedDate, TransTime, FingerprintCode, FPPatternID01, FPPatternID02, TransFlow)
     SELECT 	trans.TransID
 		, 	trans.RawTransID
 		, 	trans.AccountID
@@ -172,6 +173,7 @@ BEGIN
 		, 	trans.TransTime
 		, 	trans.FingerprintCode
         ,	IFNULL(trans.FPPatternID01, 0) AS FPPatternID01
+        ,	IFNULL(trans.FPPatternID02, 0) AS FPPatternID02
         ,	trans.TransFlow
 	FROM Temp_Input AS tmp
 		INNER JOIN DCS_DataCenter.Transaction AS trans ON trans.TransID = tmp.TransID
