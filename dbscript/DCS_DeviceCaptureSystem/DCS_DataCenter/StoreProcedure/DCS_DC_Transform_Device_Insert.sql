@@ -47,7 +47,7 @@ BEGIN
     DECLARE CONST_DEVICESTATUS_OLD_FPPATTERN02		TINYINT DEFAULT 5; 			# Old Device Recover by Acccount FPPATTERN02
 	
 	DECLARE CONST_FPPATTERNTYPE01	INT DEFAULT 1;
-    DECLARE CONST_FPPATTERNTYPE02	INT DEFAULT 2;
+	DECLARE CONST_FPPATTERNTYPE02	INT DEFAULT 2;
     
     DECLARE CONST_TRANSFLOW_OLD		INT DEFAULT 0;
     DECLARE CONST_TRANSFLOW_NEW		INT DEFAULT 1;
@@ -148,9 +148,8 @@ BEGIN
 			AccountID				BIGINT UNSIGNED
         ,	DeviceCode   			VARCHAR(32)
 		,	FPPatternID01			BIGINT UNSIGNED NOT NULL
-        ,	FPPatternType			TINYINT
         ,	PatternToCheck			BIGINT UNSIGNED
-        ,	PRIMARY KEY 			PK_Temp_FPPatternCheck(AccountID, DeviceCode, FPPatternID01, FPPatternType)
+        ,	PRIMARY KEY 			PK_Temp_FPPatternCheck(AccountID, DeviceCode, FPPatternID01)
 	);
 	
     
@@ -275,11 +274,10 @@ BEGIN
     WHERE rd.DeviceID = 0; #--> just get recover case
 
     #recover new steps - FPPattern-based device recovery (only insert when DeviceID found)
-    INSERT IGNORE INTO Temp_FPPatternCheck(AccountID, DeviceCode, FPPatternID01, FPPatternType)
+    INSERT IGNORE INTO Temp_FPPatternCheck(AccountID, DeviceCode, FPPatternID01)
     SELECT	tmpT.AccountID
         ,	tmpT.DeviceCode
         ,	tmpT.FPPatternID01
-        ,	1 AS FPPatternType
     FROM Temp_Transaction AS tmpT
     WHERE tmpT.TransFlow = CONST_TRANSFLOW_NEW
         AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice td WHERE td.DeviceCode = tmpT.DeviceCode);
@@ -291,9 +289,8 @@ BEGIN
 		,	MAX(pt.DeviceID) AS DeviceID
 		,	CONST_DEVICESTATUS_OLD_FPPATTERN01 AS DeviceStatus
     FROM Temp_FPPatternCheck AS tmp
-		INNER JOIN DCS_DataCenter.DeviceFPPattern AS pt ON pt.FPPatternType = tmp.FPPatternType AND pt.FPPatternID = tmp.FPPatternID01
+		INNER JOIN DCS_DataCenter.DeviceFPPattern AS pt ON pt.FPPatternID = tmp.FPPatternID01
 		INNER JOIN DCS_DataCenter.Association AS ass ON ass.AccountID = tmp.AccountID AND ass.DeviceID = pt.DeviceID
-    WHERE tmp.FPPatternType = 1
 	GROUP BY tmp.AccountID, tmp.FPPatternID01, tmp.DeviceCode;
     
 
@@ -341,7 +338,7 @@ BEGIN
 		ORDER BY ts.TransId ASC
 		LIMIT 1
 	) AS rd
-	WHERE rd.DeviceID = 0; #--> just get recover case
+	WHERE rd.DeviceID = 0;
     
     # INSERT new Devices
     INSERT IGNORE INTO DCS_DataCenter.Device(FirstDeviceCode, UserAgentKey, FirstTransID, CreatedTime, CreatedDate, InsertTime)
@@ -356,7 +353,7 @@ BEGIN
 		AND NOT EXISTS (SELECT 1 FROM Temp_ExistedDevice AS de WHERE de.DeviceCode = tts.DeviceCode)
 		AND NOT EXISTS (SELECT 1 FROM Temp_RecoveredDevice AS dr WHERE dr.DeviceCode = tts.DeviceCode)
 		AND NOT EXISTS (SELECT 1 FROM Temp_RecoveredDeviceNew AS dr WHERE dr.DeviceCode = tts.DeviceCode)
-    GROUP BY tts.DeviceCode, tts.UserAgentKey; #--> Use GROUP BY UserAgentKey combined with INSERT IGNORE to correctly retrieve the UserAgentKey of the first record
+    GROUP BY tts.DeviceCode, tts.UserAgentKey;
     
     # INSERT new DeviceCode
     # NEW code - new DeviceID
@@ -442,15 +439,27 @@ BEGIN
     GROUP BY tts.FingerprintCode, tmpEd.DeviceID;
 
     # INSERT new FPpattern
-	INSERT IGNORE INTO DCS_DataCenter.DeviceFPPattern(DeviceID, FPPatternID, InsertedTime)
+	INSERT IGNORE INTO DCS_DataCenter.DeviceFPPattern(DeviceID, FPPatternID, FPPatternType, InsertedTime)
 	SELECT 	tmpEd.DeviceID
 		,	tts.FPPatternID01 AS FPPatternID
+		,	CONST_FPPATTERNTYPE01 AS FPPatternType
 		,	lv_InsertionTime AS InsertedTime
 	FROM Temp_Transaction AS tts
 		INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
     WHERE tts.TransFlow = CONST_TRANSFLOW_NEW
 		AND tts.FPPatternID01 > 0
     GROUP BY tmpEd.DeviceID, tts.FPPatternID01;
+    
+	INSERT IGNORE INTO DCS_DataCenter.DeviceFPPattern(DeviceID, FPPatternID, FPPatternType, InsertedTime)
+	SELECT 	tmpEd.DeviceID
+		,	tts.FPPatternID02 AS FPPatternID
+		,	CONST_FPPATTERNTYPE02 AS FPPatternType
+		,	lv_InsertionTime AS InsertedTime
+	FROM Temp_Transaction AS tts
+		INNER JOIN Temp_ExistedDevice AS tmpEd ON tmpEd.DeviceCode = tts.DeviceCode
+    WHERE tts.TransFlow = CONST_TRANSFLOW_NEW
+		AND tts.FPPatternID02 > 0
+    GROUP BY tmpEd.DeviceID, tts.FPPatternID02;
     
     # UPDATE back Temp_ExistedDevice
     UPDATE Temp_ExistedDevice AS de
