@@ -16,7 +16,7 @@ BEGIN
 			- 20220627@Casey.Huynh [Redmine ID: #174218]: Created 
             - 20220113@Casey.Huynh: Rename Table [Redmine ID: #179502]
             - 20250716@Winfred.pham [CTS] - Customer Classification - Classify Saba Soccer Group Betting into CC3101-3201  [Redmine ID: #227848]:
-			- 20251113@Winfred.pham : [CTS] - Customer Classification - Classify by sport Saba Soccer Group Betting into CC3101-3201 [Redmine ID: #239955]
+			- 20251113@Winfred.pham : Update Status Classify by sport Saba Soccer Group Betting into CC3101-3201 [Redmine ID: #239955]
             
 		Param's Explanation:
         

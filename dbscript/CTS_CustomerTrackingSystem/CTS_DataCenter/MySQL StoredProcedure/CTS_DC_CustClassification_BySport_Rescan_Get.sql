@@ -69,7 +69,7 @@ sp: BEGIN
 	FROM JSON_TABLE(ip_CustInfoList,
 		 "$[*]" COLUMNS(
 				CustID	    BIGINT UNSIGNED	PATH "$.CustID" 
-			, 	SportID		BIGINT UNSIGNED	PATH "$.SportID" )
+			, 	SportID		SMALLINT UNSIGNED	PATH "$.SportID" )
 	) AS infoList;
      
     INSERT  INTO Temp_CustInfo(CTSCustID,CustID,SubscriberID,IsLicensee, SportID)
