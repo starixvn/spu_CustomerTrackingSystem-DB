@@ -9,11 +9,11 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_Daily
 BEGIN
 	/*
 		Created: 20251114@Logan.Nguyen
-		Task:  Return PA category for daily scan PA By Sport [Redmine ID: #239955]
+		Task: Complete daily PA BySport scan: remove processed records from queue and update LastScannedTime [Redmine ID: #239955]
 		DB: CTS_DataCenter
 		Original:
 		Revisions:
-            - 20251114@Logan.Nguyen: Get PA category for daily scan PA By Sport [Redmine ID: #239955]
+            - 20251114@Logan.Nguyen: Implement Complete step for daily PA BySport (clear queue + update SystemParameter) [Redmine ID: #239955]
 
 		Param's Explanation (filtered by):      
 			 CALL CTS_DC_CustClassification_BySport_DailyScanPA_Complete (

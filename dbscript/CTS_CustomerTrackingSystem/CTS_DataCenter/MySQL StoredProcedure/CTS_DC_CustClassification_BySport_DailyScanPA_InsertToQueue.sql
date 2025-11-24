@@ -14,7 +14,7 @@ BEGIN
         
 		Original:
 		Revisions:
-			- 20251113@Logan.Nguyen: 	Get List CustID and SportType for daily scan PA By Sport [Redmine ID: #239955]
+			- 20251113@Logan.Nguyen:	Initial version – insert List<CustID, SportGroup> into BySport PA daily queue [Redmine ID: #239955]
 
 		Param's Explanation (filtered by):      
 			CALL CTS_DC_CustClassification_BySport_DailyScanPA_InsertToQueue (

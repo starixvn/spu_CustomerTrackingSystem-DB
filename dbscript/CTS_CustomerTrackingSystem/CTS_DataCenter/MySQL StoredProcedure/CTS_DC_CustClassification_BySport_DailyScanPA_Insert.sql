@@ -19,13 +19,11 @@ BEGIN
 		Param's Explanation (filtered by):      
 			- CALL CTS_DC_CustClassification_BySport_DailyScanPA_Insert ('[{"CustID": 224340007,"SportGroup": 0,"WinlossStatus": 2,"TurnoverRM":100,"WinlossRM":10,"BetCount":15,"ActiveDays":10},{"CustID": 224340007,"SportGroup": 2,"WinlossStatus": 0,"TurnoverRM":150,"WinlossRM":-15000,"BetCount":15,"ActiveDays":10}]');
 	*/ 
-	DECLARE CONST_CATEID_VVIP 					INT;
 	DECLARE CONST_PARENTID_WRAPPER 				INT;
     DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
 	DECLARE lv_CreatedBy 						INT DEFAULT 10278938;
     DECLARE lv_CurrentDateTime 					DATETIME DEFAULT CURRENT_TIMESTAMP(); 
 
-	SET CONST_CATEID_VVIP 						= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_VVIP');
 	SET CONST_PARENTID_WRAPPER 					= CTS_DC_CategoryTypeParent_Get ('CONST_PARENTID_WRAPPER');
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_PA;    
@@ -36,7 +34,6 @@ BEGIN
         , 	CategoryID				INT UNSIGNED
         , 	RelevantCategoryID 	    INT UNSIGNED
         , 	TargetCC 				INT UNSIGNED
-        , 	TargetDangerLevel1 		SMALLINT 
         ,	IsDangerProbation 		BIT(1)
         , 	WinlossStatus			SMALLINT /*LOSING  = 0,KEEPSTATE = 1, WINNING = 2;*/
         ,	TurnoverRM				DECIMAL(20,4)
@@ -52,7 +49,7 @@ BEGIN
         
     /* START */
     INSERT IGNORE INTO Temp_PA(
-			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC,TargetDangerLevel1, IsDangerProbation
+			CustID, CTSCustID, CategoryID, RelevantCategoryID, ParentID,TargetCC, IsDangerProbation
 		, 	WinlossStatus, TurnoverRM, WinlossRM, BetCount, ActiveDays, IsDataChanged, PerformanceTime, SportGroup, Remark)
 	SELECT 	js.CustID
 		,	cust.CTSCustID
@@ -60,7 +57,6 @@ BEGIN
         ,	cate.RelevantCategoryID
         ,	clss.ParentID
         ,	desCate.TargetCC
-        ,	desCate.TargetDangerLevel1
         ,	cate.IsDangerProbation
 		, 	js.WinlossStatus 
         , 	js.TurnoverRM
@@ -90,18 +86,10 @@ BEGIN
 		INNER JOIN CTS_DataCenter.CTSCustomer AS cust ON js.CustID = cust.CustID AND cust.CustSubID = 0 AND cust.IsInternal = 0
 		INNER JOIN CTS_DataCenter.CTSCustomerClassification_BySport AS clss ON clss.CustID = js.CustID AND clss.SportID = js.SportGroup
         INNER JOIN CTS_DataCenter.CustomerCategory AS cate ON clss.CategoryID = cate.CategoryID AND cate.IsActive = 1 AND cate.RelevantCategoryID IS NOT NULL
-	,	LATERAL (SELECT CASE WHEN cust.IsLicensee = 1 THEN tbl.Ext_ABIDangerLevel_Licensee  ELSE tbl.Ext_ABIDangerLevel_Credit END AS TargetDangerLevel1
-				,	tbl.CustomerClass AS TargetCC
+	,	LATERAL (SELECT tbl.CustomerClass AS TargetCC
 				FROM CTS_DataCenter.CustomerCategory AS tbl 
 				WHERE cate.RelevantCategoryID = tbl.CategoryID AND tbl.IsActive = 1
-				LIMIT 1) AS desCate; 
-    
-    DELETE pa
-    FROM Temp_PA AS pa
-    WHERE EXISTS (	SELECT 1 
-					FROM CTS_DataCenter.CTSCustomerClassification_BySport AS clss 
-					WHERE clss.CTSCustID = pa.CTSCustID
-						AND clss.CategoryID = CONST_CATEID_VVIP); 
+				LIMIT 1) AS desCate;  
         
     UPDATE CTS_DataCenter.CTSCustomerClassification_BySport AS clss
 		INNER JOIN Temp_PA AS tmp ON tmp.CustID = clss.CustID AND tmp.ParentID = clss.ParentID AND tmp.CategoryID = clss.CategoryID AND tmp.SportGroup = clss.SportID
