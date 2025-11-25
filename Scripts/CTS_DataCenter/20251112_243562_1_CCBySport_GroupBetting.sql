@@ -1,0 +1,62 @@
+/*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2"></info>*/
+/*
+Creator:	20251113@Winfred.pham
+Task:	 	
+Server:  	Master
+DBName:		CTS_DataCenter
+
+Revisions: 
+		- 20251113@Winfred.pham: [CTS] - Customer Classification - Classify by sport Saba Soccer Group Betting into CC3101-3201  [Redmine ID: #239955]
+Reviewer:
+*/
+
+USE CTS_DataCenter;
+
+#1. New table: CTSCustomerClassification_BySport_DailyPAQueue (ID, CustID, CreatedTime)
+
+#DROP TABLE IF EXISTS  CTS_DataCenter.CTSCustomerClassification_BySport_DailyPAQueue;
+CREATE TABLE IF NOT EXISTS CTS_DataCenter.CTSCustomerClassification_BySport_DailyPAQueue(
+		ID 			BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+    ,	CustID 		BIGINT UNSIGNED NOT NULL
+	,	SportGroup	SMALLINT NOT NULL
+    ,	CreatedTime DATETIME NOT NULL
+	,	INDEX	IX_CTSCustomerClassification_BySport_DailyPAQueue_CreatedTime(CreatedTime)  
+    ,	INDEX	IX_CTSCustomerClassification_BySport_DailyPAQueue_CustID(CustID, SportGroup) 
+)ENGINE=INNODB, AUTO_INCREMENT = 1;
+
+#================================================================================
+ALTER TABLE MatchMonitor
+	ADD COLUMN ClassifyStatusBySport TINYINT DEFAULT 0
+;
+
+ALTER TABLE MatchMonitorDetails
+	ADD COLUMN ClassifyStatusBySport TINYINT DEFAULT 0
+;
+
+UPDATE CTS_DataCenter.MatchMonitor AS mm 
+SET mm.ClassifyStatusBySport = 1 ;
+
+UPDATE CTS_DataCenter.MatchMonitorDetails AS mm 
+SET mm.ClassifyStatusBySport = 1 ;
+
+INSERT INTO CTS_DataCenter.StaticList(ListID,ItemID,ListName,ListNameDisplay,ItemName,ItemNameDisplay,ItemValue,ItemDefaultValue,ItemParentItemID,PriorityOrder,Status,Description,CreatedDate)
+VALUES	(@ListID:=24,@ItemID:=31,@ListName:='Flow Classification BySport Insert',@ListNameDisplay:='INPUTFLOWID',@ItemName:='CONST_INPUTFLOWID_BYSPORT_INSERT_PACATEGORY',@ItemNameDisplay:='CONST_INPUTFLOWID_BYSPORT_INSERT_PACATEGORY',@ItemValue:='335',@ItemDefaultValue:='335',@ItemParentItemID:=4,@PriorityOrder:=NULL,@Status:=1,@Description:=NULL,@CreatedDate:=NOW())
+	,	(@ListID:=24,@ItemID:=32,@ListName:='Flow Classification BySport Rescan',@ListNameDisplay:='INPUTFLOWID',@ItemName:='CONST_INPUTFLOWID_BYSPORT_RESCAN_PACATEGORY',@ItemNameDisplay:='CONST_INPUTFLOWID_BYSPORT_RESCAN_PACATEGORY',@ItemValue:='375',@ItemDefaultValue:='375',@ItemParentItemID:=6,@PriorityOrder:=NULL,@Status:=1,@Description:=NULL,@CreatedDate:=NOW())
+;
+SELECT * FROM CTS_DataCenter.StaticList WHERE ListID = 24;
+
+#=========================CTS_DataCenter.SystemParameter===================================
+
+INSERT INTO CTS_DataCenter.SystemParameter(ParameterID,ParameterName,ParameterDesc,ParameterDataType,ParameterValue)
+VALUES	(199,'Classification_BySport_MM_InProcessMatchID','In_process_BySport MatchMonitor.MatchID','INT ',0)
+	,	(200,'DailyScan_PA_BySport_LastScannedTime','Last Scanned Time Daily ScanPA_BySport','DATETIME','2025-11-12 21:00:00');
+
+SELECT * FROM CTS_DataCenter.SystemParameter WHERE ParameterID IN (199,200);
+#===============================================================================================================
+UPDATE CTS_DataCenter.CustomerClassification_Remark AS ccr
+SET ccr.RemarkTemplate = 'Match ID: [MatchID] | Win loss: [Winloss]'
+WHERE ccr.RemarkID = 35;
+
+UPDATE CTS_DataCenter.CustomerCategorySettings
+SET RemarkTemplateID = 35
+WHERE CategoryID in (20900,25900);

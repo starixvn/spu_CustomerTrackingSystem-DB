@@ -17,21 +17,23 @@ BEGIN
 			- CALL CTS_DC_CustClassification_BySport_Insert_PreProcess();
 		
 		Revisions: 
-			- 20240618@Victoria.Le: 		Initial Writing [Redmine ID: #205317]
+			- 20240618@Victoria.Le: Initial Writing [Redmine ID: #205317]
+			- 20251113@Thomas.Nguyen: Classify Saba Soccer in System Detect GB CC3101/CC3201 - Add new ActionType for Existing PA [Redmine ID: #239995]
 */
 	DECLARE CONST_CATEID_PROBATION		      	INT;
 	DECLARE CONST_CATEID_SMART			      	INT;
 	DECLARE CONST_CATEID_RISKY			      	INT;
 	DECLARE	CONST_ACTIONTYPE_UPDATE 			INT DEFAULT 1;
+	DECLARE CONST_ACTIONTYPE_EXISTEDPA 			INT DEFAULT 3;
 	DECLARE CONST_ACTIONTYPE_IGNOREPROBATION 	INT DEFAULT 5;
 	DECLARE CONST_LIST_BYSPORT				 	INT DEFAULT 23;
 	
 	DECLARE lv_CurrentDate						DATE DEFAULT CURRENT_DATE();
 	DECLARE lv_ToProbationLastDay 				DATE DEFAULT DATE_SUB(lv_CurrentDate, INTERVAL 2 DAY);
 
-	SET CONST_CATEID_PROBATION	 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_PROBATION');
-	SET CONST_CATEID_SMART		 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SMART');
-	SET CONST_CATEID_RISKY		 				= CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_RISKY');
+	SET CONST_CATEID_PROBATION	 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_PROBATION');
+	SET CONST_CATEID_SMART		 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_SMART');
+	SET CONST_CATEID_RISKY		 				= CTS_DataCenter.CTS_DC_CategoryTypeParent_Get ('CONST_CATEID_RISKY');
 
 	/* TEMPORARY TABLE */
 	DROP TEMPORARY TABLE IF EXISTS Temp_ProbationCustomers;    
@@ -79,6 +81,11 @@ BEGIN
 		INNER JOIN Temp_ProbationCustomers AS pro ON temp.CustID = pro.CustID AND temp.SportID = pro.SportID
     WHERE pro.IsPassProbationRule = 0;
 	
+	INSERT IGNORE INTO Temp_CustIgnoranceAction(CustID, SportID, ActionType, IsReturnData)
+	SELECT DISTINCT temp.CustID, temp.SportID, CONST_ACTIONTYPE_EXISTEDPA, 0 AS IsReturnData
+	FROM Temp_NewClassification AS temp
+	WHERE temp.IsExistPA = 1;
+
 	UPDATE Temp_NewClassification AS temp
 		INNER JOIN Temp_ProbationCustomers AS pro ON pro.CustID = temp.CustID AND pro.SportID = temp.SportID
 	SET 	temp.IsDataChanged = 0
