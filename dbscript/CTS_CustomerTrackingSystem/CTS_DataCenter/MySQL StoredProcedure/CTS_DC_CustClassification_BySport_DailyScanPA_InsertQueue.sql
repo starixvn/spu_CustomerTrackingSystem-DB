@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsServiceAdmin" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_DailyScanPA_InsertToQueue`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_DailyScanPA_InsertQueue`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_DailyScanPA_InsertToQueue`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_CustClassification_BySport_DailyScanPA_InsertQueue`(
 		IN ip_CustInfoList		TEXT
 )
     SQL SECURITY INVOKER
@@ -17,7 +17,7 @@ BEGIN
 			- 20251113@Logan.Nguyen:	Initial version – insert List<CustID, SportGroup> into BySport PA daily queue [Redmine ID: #239955]
 
 		Param's Explanation (filtered by):      
-			CALL CTS_DC_CustClassification_BySport_DailyScanPA_InsertToQueue (
+			CALL CTS_DC_CustClassification_BySport_DailyScanPA_InsertQueue (
     			'[{"CustID":761925,"SportGroup":1}]'
 			);
 	*/

@@ -1,8 +1,8 @@
 /*<info serverAlias="CTSMain-CTS_DataCenter" databaseType="2" executers="ctsService" isFunction="0" isNested="0"></info>*/
-DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_DailyScanPA_GetFromQueue`;
+DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_DailyScanPA_GetQueue`;
 
 DELIMITER $$
-CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_DailyScanPA_GetFromQueue`(
+CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_DailyScanPA_GetQueue`(
 	IN ip_BatchSize INT
 )
     SQL SECURITY INVOKER
@@ -16,7 +16,7 @@ BEGIN
 			- 20251113@Logan.Nguyen: 	Get List CustID and SportType for daily scan PA By Sport [Redmine ID: #239955]
             
 		Param's Explanation (filtered by):    
-			CALL CTS_DC_CustClassification_BySport_DailyScanPA_GetFromQueue(500);
+			CALL CTS_DC_CustClassification_BySport_DailyScanPA_GetQueue(500);
 	*/ 
    
     DECLARE lv_LastScannedTime		DATETIME;
