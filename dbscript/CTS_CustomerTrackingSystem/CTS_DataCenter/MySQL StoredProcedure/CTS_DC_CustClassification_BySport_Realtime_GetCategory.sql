@@ -3,7 +3,7 @@ DROP PROCEDURE IF EXISTS `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_Rea
 
 DELIMITER $$
 CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DataCenter`.`CTS_DC_CustClassification_BySport_Realtime_GetCategory`(
-	  IN ip_CustInfoList      	TEXT
+	  IN ip_CustInfoList      	LONGTEXT
 )
     SQL SECURITY INVOKER
 BEGIN
