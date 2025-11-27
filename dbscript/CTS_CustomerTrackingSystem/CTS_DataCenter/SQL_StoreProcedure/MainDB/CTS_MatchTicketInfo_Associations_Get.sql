@@ -18,6 +18,7 @@ ALTER PROCEDURE [dbo].[CTS_MatchTicketInfo_Associations_Get]
 	,	@UserAmount				MONEY = 0
 	,	@TotalAmount			MONEY = 0
 	,	@AssociationsList		VARCHAR(MAX) = '[]' -- JSON
+	,	@AssUplineList			VARCHAR(MAX) = '[]' -- JSON
 AS
 
 /*
@@ -27,6 +28,7 @@ AS
 
 	Revisions:
 		- 20251031@Logan.Nguyen: Created [Redmine ID: #239956]
+		- 20251127@Winfred.Pham: Add filter by Agent Association [Redmine ID: #240100]
 
 	Params Explaination:
 		,@BettypeList='[	{"BetType":1, "BetChoiceType":2}
@@ -35,6 +37,7 @@ AS
 	
 	Params Explaination:
 		,@AssociationsList='[{"RootCustID": 1, "CustIDAssociations": "11,12,13"}, {"RootCustID": 2, "CustIDAssociations": "21,22,23"}]'
+		,@AssUplineList='[{"RootCustID": 1, "AssUplineCustID": "11,12,13", "AssUplineRoleID": "2"}, {"RootCustID": 2, "AssUplineCustID": "21,22,23", "AssUplineRoleID": "3"}]'
 
 	EXEC CTS_MatchTicketInfo_Associations_Get @FromDate = '2025-10-27 00:00:00'
 							 , @ToDate = '2025-11-03 00:00:00'
@@ -43,6 +46,7 @@ AS
 							 , @BettypeList = '[{"BetType":1,"BetChoiceType":2,"BetChoiceHome":"h","BetChoiceAway":"a","BetID":0},{"BetType":2,"BetChoiceType":2,"BetChoiceHome":"h","BetChoiceAway":"a","BetID":0},{"BetType":3,"BetChoiceType":2,"BetChoiceHome":"h","BetChoiceAway":"a","BetID":0},{"BetType":5,"BetChoiceType":1,"BetID":0},{"BetType":6,"BetChoiceType":1,"BetID":0},{"BetType":7,"BetChoiceType":2,"BetChoiceHome":"h","BetChoiceAway":"a","BetID":0},{"BetType":8,"BetChoiceType":2,"BetChoiceHome":"h","BetChoiceAway":"a","BetID":0},{"BetType":12,"BetChoiceType":2,"BetChoiceHome":"h","BetChoiceAway":"a","BetID":0},{"BetType":15,"BetChoiceType":1,"BetID":0},{"BetType":126,"BetChoiceType":1,"BetID":0},{"BetType":413,"BetChoiceType":1,"BetID":0},{"BetType":414,"BetChoiceType":1,"BetID":0}]'
 							 , @DangerLevels = ''
 							 , @AssociationsList='[{"RootCustID": 1, "CustIDAssociations": "11,12,13"}, {"RootCustID": 2, "CustIDAssociations": "21,22,23"}]'
+							 , @AssUplineList='[{"RootCustID": 1, "AssUplineCustID": "11,12,13", "AssUplineRoleID": "2"}, {"RootCustID": 2, "AssUplineCustID": "21,22,23", "AssUplineRoleID": "3"}]'
 							 , @LeagueGroupList = '1,2,3,4,5,6,7,8,9,10,11,12,13,14,41,72,73,77,78,79,80,81,82,99,100,101,102,103,104,105,106,107,0'
 							 , @MarketList = '0,1'
 							 , @SportSabaLeagueGroup = ''
@@ -242,6 +246,49 @@ BEGIN
     		RootCustID
     	,	RootCustID AS CustID
 	FROM #tmpAssoc;
+
+	IF @AssUplineList <> ''
+	BEGIN
+		IF OBJECT_ID('tempdb..#tmpAgentAssoc') IS NOT NULL DROP TABLE #tmpAgentAssoc;
+		CREATE TABLE #tmpAgentAssoc
+		(
+				AgentCustID		INT	NOT NULL
+			,	RootCustID		INT	NOT NULL
+			,	Roleid 			TINYINT	NOT NULL
+		);
+		CREATE CLUSTERED INDEX CIX_tmpAgentAssoc_CustID ON #tmpAgentAssoc(AgentCustID, Roleid);
+
+		INSERT INTO #tmpAgentAssoc( RootCustID, AgentCustID, Roleid)
+		SELECT j.RootCustID, TRY_CAST(ss.value AS INT), j.AssUplineRoleID
+		FROM OPENJSON(@AssUplineList) WITH (
+				RootCustID			INT				'$.RootCustID'
+			,	AssUplineCustID	VARCHAR(MAX)		'$.AssUplineCustID'
+			,	AssUplineRoleID	TINYINT				'$.AssUplineRoleID'
+		) AS j
+		CROSS APPLY STRING_SPLIT(ISNULL(NULLIF(j.AssUplineCustID,''), '0'), ',') AS ss;
+
+		INSERT INTO #tmpAssoc(RootCustID, CustID)
+		SELECT DISTINCT
+			RootCustID
+		,	CustID
+		FROM (	SELECT aa.RootCustID, c.CustID 
+				FROM bodb02.dbo.Custinfo c WITH(NOLOCK)
+					INNER JOIN #tmpAgentAssoc aa ON c.recommend = aa.AgentCustID AND aa.Roleid = 2
+				WHERE c.Roleid = 1
+				UNION ALL
+				SELECT aa.RootCustID, c.CustID 
+				FROM bodb02.dbo.Custinfo c WITH(NOLOCK)
+					INNER JOIN #tmpAgentAssoc aa ON c.mrecommend = aa.AgentCustID AND aa.Roleid = 3
+				WHERE c.Roleid = 1
+				UNION ALL
+				SELECT aa.RootCustID, c.CustID 
+				FROM bodb02.dbo.Custinfo c WITH(NOLOCK)
+					INNER JOIN #tmpAgentAssoc aa ON c.srecommend = aa.AgentCustID AND aa.Roleid = 4
+				WHERE c.Roleid = 1
+			) a
+		WHERE EXISTS (SELECT TOP 1 1 FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK) WHERE b.CustID = a.CustID)
+		   OR EXISTS (SELECT TOP 1 1 FROM bodb02.dbo.bettrans AS b WITH(NOLOCK) WHERE b.CustID = a.CustID);
+	END;
 	
 	INSERT INTO #tmpBetType(BetType,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIdPattern,BetId)
 	SELECT	j.BetType
@@ -843,5 +890,5 @@ END;
 	DROP TABLE IF EXISTS #tmpMatchInfo;
 	DROP TABLE IF EXISTS #tmpMatchInfo14;
 	DROP TABLE IF EXISTS #tmpCustTrans;
-
+	DROP TABLE IF EXISTS #tmpAgentAssoc;
 END;
