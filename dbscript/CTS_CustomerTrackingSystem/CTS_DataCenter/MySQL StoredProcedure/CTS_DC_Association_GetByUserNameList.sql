@@ -7,6 +7,7 @@ CREATE DEFINER=`ctsOwner`@`%` PROCEDURE `CTS_DC_Association_GetByUserNameList`(
 	,   IN  ip_HasDevice		BOOLEAN
     ,   IN  ip_HasAI			BOOLEAN
     ,   IN  ip_HasIP			BOOLEAN
+    ,   IN  ip_HasAgent			BOOLEAN
 )
     SQL SECURITY INVOKER
 BEGIN
@@ -16,6 +17,7 @@ BEGIN
 		DB:			CTS_DataCenter
 		Revisions:
 			- 20251031@Thomas.Nguyen: 	Created [Redmine ID: #239956]
+			- 20251127@Thomas.Nguyen: 	Add logic for association by Agent level 1 [Redmine ID: #244100]
             
 		Param's Explanation (filtered by):
 			- ip_UserNameList: list of usernames
@@ -28,6 +30,12 @@ BEGIN
     DECLARE CONST_ASSTYPE_BETTINGPATTERN 			INT DEFAULT 2;
     DECLARE CONST_ASSTYPE_IP 						INT DEFAULT 4;
 	DECLARE CONST_ASSSTATUS_ACTIVE 					INT DEFAULT 1;    
+	DECLARE CONST_DIRECT_MEMBER_MASTER      		INT DEFAULT -3;
+	DECLARE CONST_DIRECT_MEMBER_SUPER       		INT DEFAULT -4;
+	DECLARE CONST_ROLEID_MEMBER 					INT DEFAULT 1;
+	DECLARE CONST_ROLEID_AGENT 						INT DEFAULT 2;
+	DECLARE CONST_ROLEID_MASTER 					INT DEFAULT 3;
+	DECLARE CONST_ROLEID_SUPER 						INT DEFAULT 4;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Username;
     CREATE TEMPORARY TABLE Temp_Username(
@@ -38,6 +46,7 @@ BEGIN
     CREATE TEMPORARY TABLE Temp_Cust(
 			CTSCustID			BIGINT UNSIGNED PRIMARY KEY
 		,	CustID 				BIGINT UNSIGNED
+		,	UplineCustID		BIGINT UNSIGNED
         ,   INDEX IX_Temp_Cust_CustID(CustID)
 	);
 
@@ -49,13 +58,32 @@ BEGIN
         , 	PRIMARY KEY (RootCustID, AssCustID, AssociationType)
 	); 
     
+	DROP TEMPORARY TABLE IF EXISTS Temp_Upline;
+	CREATE TEMPORARY TABLE Temp_Upline(
+			UplineCTSCustID			BIGINT UNSIGNED
+		,	UplineCustID			BIGINT UNSIGNED
+		,	RootCustID 		    BIGINT UNSIGNED
+		,	PRIMARY KEY (UplineCTSCustID, RootCustID)
+	);
+
+	DROP TEMPORARY TABLE IF EXISTS Temp_UplineAssociation;
+    CREATE TEMPORARY TABLE 		Temp_UplineAssociation(
+			RootCustID 		    BIGINT UNSIGNED
+		,	AssUplineCustID 	BIGINT UNSIGNED
+        , 	AssUplineRoleID		INT
+        , 	PRIMARY KEY (RootCustID, AssUplineCustID)
+	); 
+
 	SET @sql = CONCAT("INSERT INTO Temp_Username (Username) VALUES ('", REPLACE(ip_UserNameList, ",", "'),('"),"');");
 	PREPARE stmt1 FROM @sql;
 	EXECUTE stmt1;
 
-	INSERT INTO Temp_Cust(CTSCustID, CustID)
+	INSERT INTO Temp_Cust(CTSCustID, CustID, UplineCustID)
 	SELECT 	cus.CTSCustID
 		,	cus.CustID
+		,	CASE WHEN cus.Recommend = CONST_DIRECT_MEMBER_SUPER THEN cus.SRecommend
+				 WHEN cus.Recommend = CONST_DIRECT_MEMBER_MASTER THEN cus.MRecommend
+				 ELSE cus.Recommend END AS UplineCustID
 	FROM CTS_DataCenter.CTSCustomer AS cus
 		INNER JOIN Temp_Username AS tmp ON cus.Username = tmp.Username;
     
@@ -192,10 +220,60 @@ BEGIN
 		WHERE EXISTS (SELECT 1 FROM Temp_AssociationByIP_AssType AS tmpAt WHERE tmpAt.AssTypeItemValue = asIP.AssType);
 	END IF;
 
+	/*=================================================GET Association By Agent ==============================================*/    
+	IF ip_HasAgent = 1 THEN
+		INSERT INTO Temp_Upline(UplineCTSCustID, UplineCustID, RootCustID)
+		SELECT 	cus.CTSCustID AS UplineCTSCustID
+			,	cus.CustID AS UplineCustID
+			,	tmp.CustID AS RootCustID
+		FROM Temp_Cust AS tmp
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.UplineCustID 
+															AND cus.IsInternal = 0
+															AND cus.CustSubID = 0;
+
+		DROP TEMPORARY TABLE IF EXISTS Temp_UplineCustDevice;
+		CREATE TEMPORARY TABLE Temp_UplineCustDevice(
+				DCSDeviceID				BIGINT UNSIGNED
+			,	UplineCTSCustID			BIGINT UNSIGNED
+			,	UplineCustID			BIGINT UNSIGNED
+			,	RootCustID				BIGINT UNSIGNED
+			,	PRIMARY KEY PK_Temp_UplineCustDevice(DCSDeviceID, UplineCTSCustID)
+		);
+
+		INSERT INTO Temp_UplineCustDevice(DCSDeviceID, UplineCTSCustID, UplineCustID, RootCustID)
+		SELECT 	asDv.DCSDeviceID
+			,	tmpUp.UplineCTSCustID
+			,	tmpUp.UplineCustID
+			,	tmpUp.RootCustID
+		FROM  Temp_Upline AS tmpUp
+			INNER JOIN CTS_DataCenter.AssociationByDevice AS asDv ON asDv.CTSCustID = tmpUp.UplineCTSCustID;
+
+		DELETE tmpCd
+		FROM Temp_UplineCustDevice AS tmpCd
+		WHERE NOT EXISTS (
+			SELECT 1
+			FROM CTS_DataCenter.AssociationByDevice AS asDv	
+				INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = asDv.CTSCustID AND cus.CustSubID = 0 AND cus.RoleID <> CONST_ROLEID_MEMBER
+			WHERE asDv.DCSDeviceID = tmpCd.DCSDeviceID
+				AND asDv.CTSCustID <> tmpCd.UplineCTSCustID
+		);
+
+        INSERT IGNORE INTO Temp_UplineAssociation(RootCustID, AssUplineCustID, AssUplineRoleID)
+        SELECT DISTINCT  tmpCd.RootCustID AS RootCustID
+            ,	cus.CustID AS AssUplineCustID
+            ,	cus.RoleID AS AssUplineRoleID
+        FROM Temp_UplineCustDevice AS tmpCd
+            INNER JOIN CTS_DataCenter.AssociationByDevice AS asDv ON asDv.DCSDeviceID = tmpCd.DCSDeviceID AND asDv.CTSCustID <> tmpCd.UplineCTSCustID
+			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CTSCustID = asDv.CTSCustID AND cus.CustSubID = 0 AND cus.RoleID <> CONST_ROLEID_MEMBER;
+	END IF;
+
     SELECT	RootCustID
 		,	GROUP_CONCAT(DISTINCT AssCustID SEPARATOR ',') AS AssCustIDList
 	FROM Temp_Association
 	GROUP BY RootCustID;
 
+	SELECT	JSON_ARRAYAGG(JSON_OBJECT('RootCustID', RootCustID,'AssUplineCustID', AssUplineCustID, 'AssUplineRoleID', AssUplineRoleID)) AS AssUplineList
+	FROM Temp_UplineAssociation;
+	
 END$$
 DELIMITER ;
