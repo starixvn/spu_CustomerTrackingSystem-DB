@@ -25,6 +25,7 @@ AS
 		- 20240826@Casey.Huynh: 	Add Fitler Event and return LeagueName, HomeName, ScoreName	[Redmine ID: 152883]
 		- 20250211@Tony.Nguyen:		Add SportList [Redmine ID: 217782]
 		- 20250401@Logan.Nguyen:	Handle duplicate primary key temporary table [Redmine ID: #219106]
+		- 20251201@Thomas.Nguyen: Upgrade SportType DataType from TINYINT to SMALLINT [Redmine ID: #245209]
 
 	Params Explaination:
 		- @MatchIds:
@@ -122,7 +123,7 @@ BEGIN
 		END
 
 		CREATE TABLE #tmpSportList (
-				SportType			TINYINT
+				SportType			SMALLINT
 		)
 
 		INSERT INTO #tmpSportList (SportType)
@@ -389,8 +390,7 @@ BEGIN
 	WITH CTE_MatchesInfo
 		AS
 			(
-			SELECT	*
-					, ROW_NUMBER() OVER (PARTITION BY MatchId ORDER BY DataSource ASC) AS rn
+			SELECT	MatchId, ROW_NUMBER() OVER (PARTITION BY MatchId ORDER BY DataSource ASC) AS rn
 			FROM	#tmpMatchesInfo
 			)
 	DELETE	FROM CTE_MatchesInfo
