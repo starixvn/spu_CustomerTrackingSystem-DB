@@ -9,6 +9,9 @@ CREATE PROCEDURE [dbo].[CTS_BIAlert_GetCustByRuleID]
 		@RuleID					INT
 	,	@CaptureDate			DATE
 	,	@BatchSize				INT = 5
+    ,	@TotalCust              INT 	OUTPUT
+	,	@FromDate               DATE 	OUTPUT
+	,	@ToDate                 DATE 	OUTPUT
 AS
 /*
 	Created: 20251128@Thomas.Nguyen
@@ -22,19 +25,20 @@ AS
 	Param's Explanation:
 
 	Example:
-		EXEC CTS_BIAlert_GetCustByRuleID @RuleID = 1, @CaptureDate = '2025-11-25';
+		DECLARE @TotalCust INT
+			,	@FromDate DATE
+			,	@ToDate DATE 
+	EXEC CTS_BIAlert_GetCustByRuleID_xpre @RuleID = 1, @CaptureDate = '2025-11-25',@BatchSize = 5, @TotalCust = @TotalCust OUTPUT, @FromDate = @FromDate OUTPUT, @ToDate = @ToDate OUTPUT;
+
+	SELECT @TotalCust, @FromDate, @ToDate;
 
 */
 BEGIN
 	
 	SET NOCOUNT ON;
 
-	DECLARE @TotalCust					INT;
-	DECLARE @FromDate					DATE;
-	DECLARE @ToDate						DATE;
-	
 	CREATE TABLE #Temp_Cust(
-		CustID INT PRIMARY KEY
+		CustID INT
 	);
 
 	INSERT INTO #Temp_Cust(CustID)
@@ -52,8 +56,6 @@ BEGIN
 	SELECT	tmp.CustID
 		,	cus.UserName
 	FROM #Temp_Cust AS tmp
-	INNER JOIN bodb02.dbo.Customer AS cus WITH(NOLOCK) ON tmp.CustID = cus.CustID;
-
-	SELECT @FromDate AS FromDate, @ToDate AS ToDate, @TotalCust AS TotalCust;
+		INNER JOIN bodb02.dbo.Customer AS cus WITH(NOLOCK) ON tmp.CustID = cus.CustID;
 
 END;
