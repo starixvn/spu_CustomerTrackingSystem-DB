@@ -28,7 +28,7 @@ AS
 
 	Revisions:
 		- 20251031@Logan.Nguyen: Created [Redmine ID: #239956]
-		- 20251127@Winfred.Pham: Add filter by Agent Association [Redmine ID: #240100]
+		- 20251127@Winfred.Pham: Add filter by Agent Association [Redmine ID: #244100]
 
 	Params Explaination:
 		,@BettypeList='[	{"BetType":1, "BetChoiceType":2}
@@ -241,12 +241,6 @@ BEGIN
 	) AS j
 	CROSS APPLY STRING_SPLIT(ISNULL(NULLIF(j.AssCustIDList,''), '0'), ',') AS ss;
 
-	INSERT INTO #tmpAssoc(RootCustID, CustID)
-	SELECT DISTINCT
-    		RootCustID
-    	,	RootCustID AS CustID
-	FROM #tmpAssoc;
-
 	IF @AssUplineList <> ''
 	BEGIN
 		IF OBJECT_ID('tempdb..#tmpAgentAssoc') IS NOT NULL DROP TABLE #tmpAgentAssoc;
@@ -279,17 +273,23 @@ BEGIN
 				SELECT aa.RootCustID, c.CustID 
 				FROM bodb02.dbo.Custinfo c WITH(NOLOCK)
 					INNER JOIN #tmpAgentAssoc aa ON c.mrecommend = aa.AgentCustID AND aa.Roleid = 3
-				WHERE c.Roleid = 1
+				WHERE c.Roleid = 1 AND c.recommend = -3
 				UNION ALL
 				SELECT aa.RootCustID, c.CustID 
 				FROM bodb02.dbo.Custinfo c WITH(NOLOCK)
 					INNER JOIN #tmpAgentAssoc aa ON c.srecommend = aa.AgentCustID AND aa.Roleid = 4
-				WHERE c.Roleid = 1
+				WHERE c.Roleid = 1 AND c.recommend = -4
 			) a
 		WHERE EXISTS (SELECT TOP 1 1 FROM bodb02.dbo.bettrans14 AS b WITH(NOLOCK) WHERE b.CustID = a.CustID)
 		   OR EXISTS (SELECT TOP 1 1 FROM bodb02.dbo.bettrans AS b WITH(NOLOCK) WHERE b.CustID = a.CustID);
 	END;
 	
+	INSERT INTO #tmpAssoc(RootCustID, CustID)
+	SELECT DISTINCT
+    		RootCustID
+    	,	RootCustID AS CustID
+	FROM #tmpAssoc;
+
 	INSERT INTO #tmpBetType(BetType,BetChoiceType,BetChoiceHome,BetChoiceAway,BetIdPattern,BetId)
 	SELECT	j.BetType
 		,	j.BetChoiceType
