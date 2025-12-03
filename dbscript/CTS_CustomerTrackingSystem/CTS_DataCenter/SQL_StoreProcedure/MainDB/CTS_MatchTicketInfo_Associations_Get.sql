@@ -113,7 +113,7 @@ BEGIN
         	CustID			INT	NOT NULL
 		,	RootCustID		INT	NOT NULL
     );
-	CREATE CLUSTERED INDEX CIX_tmpAssoc_CustID ON #tmpAssoc(CustID);
+	CREATE CLUSTERED INDEX CIX_tmpAssoc_CustID ON #tmpAssoc(CustID,	RootCustID);
 
 	IF	OBJECT_ID('tempdb..#tmpLeagueGroup') IS NOT NULL
 	BEGIN
@@ -293,7 +293,7 @@ BEGIN
                     INNER JOIN #tmpAgentAssoc AS aa ON c.srecommend = aa.AgentCustID AND aa.Roleid = 4
                 WHERE c.recommend = -4
             ) a
-        WHERE NOT EXISTS (SELECT TOP 1 1 FROM #tmpAssoc AS ac WITH(NOLOCK) WHERE ac.CustID = a.CustID);
+        WHERE NOT EXISTS (SELECT TOP 1 1 FROM #tmpAssoc AS ac WITH(NOLOCK) WHERE ac.CustID = a.CustID AND ac.RootCustID = a.RootCustID);
 	END;
 	
 	INSERT INTO #tmpAssoc(RootCustID, CustID)
