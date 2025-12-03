@@ -241,7 +241,7 @@ BEGIN
 	) AS j
 	CROSS APPLY STRING_SPLIT(ISNULL(NULLIF(j.AssCustIDList,''), '0'), ',') AS ss;
 
-	IF @AssUplineList <> ''
+	IF @AssUplineList <> '[]'
 	BEGIN
 		IF OBJECT_ID('tempdb..#tmpAgentAssoc') IS NOT NULL DROP TABLE #tmpAgentAssoc;
 		CREATE TABLE #tmpAgentAssoc
