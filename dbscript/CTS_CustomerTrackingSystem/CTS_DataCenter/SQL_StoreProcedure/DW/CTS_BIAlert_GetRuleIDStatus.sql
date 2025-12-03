@@ -34,7 +34,7 @@ BEGIN
 		SELECT TOP 1 1 
 		FROM dbo.AlertSystem_DataRuleStatus WITH(NOLOCK) 
 		WHERE RuleID = @RuleID AND StatusID = 1 
-            AND (FinishTime >= @CheckDate AND FinishTime < DATEADD(DAY, 1, @CheckDate)) OR (FinishTime > @CheckDate)
+            AND ((FinishTime >= @CheckDate AND FinishTime < DATEADD(DAY, 1, @CheckDate)) OR FinishTime > @CheckDate)
 	)
 	BEGIN
 		SET @RuleIDStatus = 1;
