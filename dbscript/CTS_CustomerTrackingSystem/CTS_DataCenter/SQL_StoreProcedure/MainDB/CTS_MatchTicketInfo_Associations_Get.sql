@@ -266,34 +266,34 @@ BEGIN
             RootCustID
         ,   CustID
         FROM (  SELECT aa.RootCustID, c.CustID 
-                FROM bodb02.dbo.bettrans c WITH(NOLOCK)
-                    INNER JOIN #tmpAgentAssoc aa ON c.recommend = aa.AgentCustID AND aa.Roleid = 2
+                FROM bodb02.dbo.bettrans AS c WITH(NOLOCK)
+                    INNER JOIN #tmpAgentAssoc AS aa ON c.recommend = aa.AgentCustID AND aa.Roleid = 2
                 UNION ALL
                 SELECT aa.RootCustID, c.CustID 
-                FROM bodb02.dbo.bettrans c WITH(NOLOCK)
-                    INNER JOIN #tmpAgentAssoc aa ON c.mrecommend = aa.AgentCustID AND aa.Roleid = 3
+                FROM bodb02.dbo.bettrans AS c WITH(NOLOCK)
+                    INNER JOIN #tmpAgentAssoc AS aa ON c.mrecommend = aa.AgentCustID AND aa.Roleid = 3
                 WHERE c.recommend = -3
                 UNION ALL
                 SELECT aa.RootCustID, c.CustID 
-                FROM bodb02.dbo.bettrans c WITH(NOLOCK)
-                    INNER JOIN #tmpAgentAssoc aa ON c.srecommend = aa.AgentCustID AND aa.Roleid = 4
+                FROM bodb02.dbo.bettrans AS c WITH(NOLOCK)
+                    INNER JOIN #tmpAgentAssoc AS aa ON c.srecommend = aa.AgentCustID AND aa.Roleid = 4
                 WHERE c.recommend = -4
                 UNION ALL
                 SELECT aa.RootCustID, c.CustID 
-                FROM bodb02.dbo.bettrans14 c WITH(NOLOCK)
-                    INNER JOIN #tmpAgentAssoc aa ON c.recommend = aa.AgentCustID AND aa.Roleid = 2
+                FROM bodb02.dbo.bettrans14 AS c WITH(NOLOCK)
+                    INNER JOIN #tmpAgentAssoc AS aa ON c.recommend = aa.AgentCustID AND aa.Roleid = 2
                 UNION ALL
                 SELECT aa.RootCustID, c.CustID 
-                FROM bodb02.dbo.bettrans14 c WITH(NOLOCK)
-                    INNER JOIN #tmpAgentAssoc aa ON c.mrecommend = aa.AgentCustID AND aa.Roleid = 3
+                FROM bodb02.dbo.bettrans14 AS c WITH(NOLOCK)
+                    INNER JOIN #tmpAgentAssoc AS aa ON c.mrecommend = aa.AgentCustID AND aa.Roleid = 3
                 WHERE c.recommend = -3
                 UNION ALL
                 SELECT aa.RootCustID, c.CustID 
-                FROM bodb02.dbo.bettrans14 c WITH(NOLOCK)
-                    INNER JOIN #tmpAgentAssoc aa ON c.srecommend = aa.AgentCustID AND aa.Roleid = 4
+                FROM bodb02.dbo.bettrans14 AS c WITH(NOLOCK)
+                    INNER JOIN #tmpAgentAssoc AS aa ON c.srecommend = aa.AgentCustID AND aa.Roleid = 4
                 WHERE c.recommend = -4
             ) a
-        WHERE NOT EXISTS (SELECT TOP 1 1 FROM #tmpAssoc ac WITH(NOLOCK) WHERE ac.CustID = a.CustID);
+        WHERE NOT EXISTS (SELECT TOP 1 1 FROM #tmpAssoc AS ac WITH(NOLOCK) WHERE ac.CustID = a.CustID);
 	END;
 	
 	INSERT INTO #tmpAssoc(RootCustID, CustID)
