@@ -78,9 +78,9 @@ BEGIN
 
 	--===============================================================================================
 	DECLARE @tmpBUMBData AS TABLE (BUDay DATETIME,	MBDay DATETIME);
-	DECLARE @tmpSport AS TABLE (SportType TINYINT PRIMARY KEY);
+	DECLARE @tmpSport AS TABLE (SportType SMALLINT PRIMARY KEY);
 	DECLARE @tmpMatchSection AS TABLE (Id TINYINT, EventStatus NVARCHAR(50), IsFrom14 BIT DEFAULT 0);
-	DECLARE @tmpSportSabaLeagueGroup AS TABLE (SportType TINYINT, LeagueGroupID INT INDEX IX_SabaLeagueGroup);
+	DECLARE @tmpSportSabaLeagueGroup AS TABLE (SportType SMALLINT, LeagueGroupID INT INDEX IX_SabaLeagueGroup);
 
 	IF	OBJECT_ID('tempdb..#tmpBetType') IS NOT NULL
 	BEGIN
@@ -343,7 +343,7 @@ BEGIN
 		SET @IsExcludeSabaGroup = 0;
 	
 		INSERT INTO @tmpSportSabaLeagueGroup (SportType, LeagueGroupID)
-		SELECT 	CAST(LEFT(ssk.value, CHARINDEX('_', ssk.value)-1) AS TINYINT) AS SportType
+		SELECT 	CAST(LEFT(ssk.value, CHARINDEX('_', ssk.value)-1) AS SMALLINT) AS SportType
 			,	CAST(SUBSTRING(ssk.value, CHARINDEX('_', ssk.value)+1, 6) AS TINYINT) AS LeagueGroupID
 		FROM STRING_SPLIT (@SportSabaLeagueGroup, ',') AS ssk
 		WHERE LEN(ssk.value) > 0;
