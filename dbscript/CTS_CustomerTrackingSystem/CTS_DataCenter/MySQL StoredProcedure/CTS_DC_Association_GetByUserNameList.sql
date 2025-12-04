@@ -33,12 +33,6 @@ BEGIN
 	DECLARE CONST_DIRECT_MEMBER_MASTER      		INT DEFAULT -3;
 	DECLARE CONST_DIRECT_MEMBER_SUPER       		INT DEFAULT -4;
 	DECLARE CONST_ROLEID_MEMBER 					INT DEFAULT 1;
-	DECLARE CONST_ROLEID_AGENT 						INT DEFAULT 2;
-	DECLARE CONST_ROLEID_MASTER 					INT DEFAULT 3;
-	DECLARE CONST_ROLEID_SUPER 						INT DEFAULT 4;
-
-	DECLARE lv_CurrentDateTime 						DATETIME DEFAULT CURRENT_TIMESTAMP();
-	DECLARE lv_ValidDay 							INT DEFAULT 7;
 
 	DROP TEMPORARY TABLE IF EXISTS Temp_Username;
     CREATE TEMPORARY TABLE Temp_Username(
@@ -233,13 +227,7 @@ BEGIN
 			INNER JOIN CTS_DataCenter.CTSCustomer AS cus ON cus.CustID = tmp.UplineCustID 
 															AND cus.IsInternal = 0
 															AND cus.CustSubID = 0
-															AND cus.IsLicensee = 0
-															AND (cus.RoleID = CONST_ROLEID_AGENT 
-																OR (cus.RoleID = CONST_ROLEID_MASTER AND cus.Recommend = CONST_DIRECT_MEMBER_MASTER) 
-																OR (cus.RoleID = CONST_ROLEID_SUPER AND cus.Recommend = CONST_DIRECT_MEMBER_SUPER))
-			LEFT JOIN CTS_Archive.CTSCustomerAssociationStatus AS cas ON cas.CTSCustID = cus.CTSCustID AND cus.RoleID = CONST_ROLEID_AGENT 
-																		AND cas.LastTicketDate < DATE_SUB(lv_CurrentDateTime, INTERVAL lv_ValidDay DAY)
-		WHERE cas.CTSCustID IS NULL;
+															AND cus.IsLicensee = 0;
 
 		DROP TEMPORARY TABLE IF EXISTS Temp_UplineCustDevice;
 		CREATE TEMPORARY TABLE Temp_UplineCustDevice(
